@@ -9,15 +9,14 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-html,body{height:100%;background:#DDDBD7;}
+html,body{height:100%;background:#383e4e;}
 body{overscroll-behavior:none;}
-input[type=number]::-webkit-inner-spin-button,
-input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;}
 input[type=number]{-moz-appearance:textfield;}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes fu{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-@keyframes fogIn{from{opacity:0;filter:blur(6px) brightness(1.1)}to{opacity:1;filter:blur(0) brightness(1)}}
-::placeholder{color:#9A9894;}
+@keyframes fogIn{from{opacity:0;filter:blur(6px)}to{opacity:1;filter:blur(0)}}
+::placeholder{color:#606678;}
 </style>
 </head>
 <body>
@@ -25,28 +24,13 @@ input[type=number]{-moz-appearance:textfield;}
 <script type="text/babel">
 const {useState,useEffect,useCallback,useRef}=React;
 
-/* ─── PALETTE: cold mist, fog, silver ─────────────────────────
-   Inspired by: IGLOO website — grey haze, white condensed type,
-   clinical precision, architectural spacing
-──────────────────────────────────────────────────────────────── */
 const C={
-  bg:      "#DDDBD7",   // warm fog
-  bgDeep:  "#C8C6C2",   // deeper fog
-  card:    "#E8E6E2",   // card surface, slightly lighter
-  cardDim: "#D0CEC9",   // dimmed card
-  border:  "#B8B6B2",   // visible border
-  borderL: "#CCCAC6",   // light border
-  tx:      "#141414",   // near black
-  tx2:     "#4A4846",   // mid grey text
-  tx3:     "#8A8886",   // dim label
-  accent:  "#141414",   // BLACK accent — like IGLOO logotype
-  accentL: "#E0DED9",   // accent bg tint
-  red:     "#C0392B",   // only for alerts / PR
-  green:   "#1E6B47",
-  blue:    "#1A3A5C",
-  purple:  "#3D2B4A",
-  yellow:  "#7A5C28",
-  white:   "#F5F3EF",
+  bg:"#383e4e",bgDeep:"#2c3040",card:"#424858",cardDim:"#3a4050",
+  border:"#525a6e",borderL:"#4a5264",
+  tx:"#F0F2F5",tx2:"#C8CDD8",tx3:"#7a8294",
+  accent:"#F0F2F5",
+  red:"#d96060",green:"#5faa88",blue:"#6a8fc0",purple:"#8878c0",yellow:"#c0a870",
+  white:"#FFFFFF",
 };
 const mono="'SF Mono','Fira Code','Courier New',monospace";
 const sans="-apple-system,'SF Pro Display','Helvetica Neue',sans-serif";
@@ -58,32 +42,126 @@ const L={
 const DN={es:["LU","MA","MI","JU","VI","SA","DO"],en:["MO","TU","WE","TH","FR","SA","SU"]};
 const DF={es:["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"],en:["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]};
 
-const TP={
-  ppl6:{n:{es:"PPL × 6",en:"PPL × 6"},d:6,s:[
-    {l:"PUSH A",c:C.accent,ex:[{e:"Bench Press",s:4,r:"6–8"},{e:"Incline Dumbbell Press",s:3,r:"8–10"},{e:"Overhead Press",s:3,r:"8–10"},{e:"Lateral Raise",s:4,r:"12–15"},{e:"Tricep Pushdown",s:3,r:"10–12"},{e:"Overhead Tricep Extension",s:3,r:"10–12"}]},
-    {l:"PULL A",c:C.blue,ex:[{e:"Pull Up",s:4,r:"6–10"},{e:"Barbell Row",s:4,r:"8–10"},{e:"Dumbbell Row",s:3,r:"10–12"},{e:"Face Pull",s:3,r:"15–20"},{e:"Barbell Curl",s:3,r:"10–12"},{e:"Hammer Curl",s:3,r:"10–12"}]},
-    {l:"LEGS A",c:C.green,ex:[{e:"Barbell Squat",s:4,r:"6–8"},{e:"Bulgarian Split Squat",s:3,r:"10–12"},{e:"Leg Extension",s:3,r:"12–15"},{e:"Hip Thrust",s:3,r:"10–12"},{e:"Calf Raise",s:4,r:"15–20"}]},
-    {l:"PUSH B",c:C.accent,ex:[{e:"Overhead Press",s:4,r:"6–8"},{e:"Incline Bench Press",s:3,r:"8–10"},{e:"Dumbbell Flyes",s:3,r:"12–15"},{e:"Lateral Raise",s:4,r:"12–15"},{e:"Dips",s:3,r:"8–12"},{e:"Skull Crusher",s:3,r:"10–12"}]},
-    {l:"PULL B",c:C.blue,ex:[{e:"Pendlay Row",s:4,r:"6–8"},{e:"Chin Up",s:4,r:"8–12"},{e:"Cable Row",s:3,r:"10–12"},{e:"Reverse Fly",s:3,r:"15–20"},{e:"Preacher Curl",s:3,r:"10–12"},{e:"Reverse Curl",s:3,r:"12–15"}]},
-    {l:"LEGS B",c:C.green,ex:[{e:"Romanian Deadlift",s:4,r:"8–10"},{e:"Front Squat",s:3,r:"8–10"},{e:"Leg Curl",s:3,r:"12–15"},{e:"Walking Lunge",s:3,r:"12/leg"},{e:"Seated Calf Raise",s:4,r:"15–20"}]},
-  ]},
-  ppl3:{n:{es:"PPL × 3",en:"PPL × 3"},d:3,s:[
-    {l:"PUSH",c:C.accent,ex:[{e:"Bench Press",s:4,r:"6–8"},{e:"Overhead Press",s:3,r:"8–10"},{e:"Incline Dumbbell Press",s:3,r:"10–12"},{e:"Lateral Raise",s:4,r:"12–15"},{e:"Dips",s:3,r:"10–12"}]},
-    {l:"PULL",c:C.blue,ex:[{e:"Pull Up",s:4,r:"6–10"},{e:"Barbell Row",s:4,r:"8–10"},{e:"Face Pull",s:3,r:"15–20"},{e:"Barbell Curl",s:3,r:"10–12"},{e:"Hammer Curl",s:3,r:"10–12"}]},
-    {l:"LEGS",c:C.green,ex:[{e:"Barbell Squat",s:4,r:"6–8"},{e:"Romanian Deadlift",s:3,r:"8–10"},{e:"Leg Extension",s:3,r:"12–15"},{e:"Leg Curl",s:3,r:"12–15"},{e:"Calf Raise",s:4,r:"15–20"}]},
-  ]},
-  ul4:{n:{es:"Upper Lower × 4",en:"Upper Lower × 4"},d:4,s:[
-    {l:"UPPER A",c:C.accent,ex:[{e:"Bench Press",s:4,r:"6–8"},{e:"Barbell Row",s:4,r:"6–8"},{e:"Overhead Press",s:3,r:"8–10"},{e:"Pull Up",s:3,r:"8–12"},{e:"Lateral Raise",s:3,r:"12–15"},{e:"Barbell Curl",s:3,r:"10–12"}]},
-    {l:"LOWER A",c:C.green,ex:[{e:"Barbell Squat",s:4,r:"6–8"},{e:"Romanian Deadlift",s:3,r:"8–10"},{e:"Leg Extension",s:3,r:"12–15"},{e:"Leg Curl",s:3,r:"12–15"},{e:"Calf Raise",s:4,r:"15–20"}]},
-    {l:"UPPER B",c:C.blue,ex:[{e:"Overhead Press",s:4,r:"6–8"},{e:"Chin Up",s:4,r:"8–12"},{e:"Incline Dumbbell Press",s:3,r:"8–10"},{e:"Cable Row",s:3,r:"10–12"},{e:"Lateral Raise",s:3,r:"12–15"},{e:"Hammer Curl",s:3,r:"10–12"}]},
-    {l:"LOWER B",c:C.green,ex:[{e:"Deadlift",s:4,r:"5–6"},{e:"Front Squat",s:3,r:"8–10"},{e:"Bulgarian Split Squat",s:3,r:"10–12"},{e:"Leg Extension",s:3,r:"12–15"},{e:"Calf Raise",s:4,r:"15–20"}]},
-  ]},
-  fb3:{n:{es:"Full Body × 3",en:"Full Body × 3"},d:3,s:[
-    {l:"FULL BODY A",c:C.accent,ex:[{e:"Barbell Squat",s:4,r:"6–8"},{e:"Bench Press",s:4,r:"6–8"},{e:"Barbell Row",s:3,r:"8–10"},{e:"Overhead Press",s:3,r:"8–10"},{e:"Barbell Curl",s:2,r:"10–12"},{e:"Calf Raise",s:3,r:"15–20"}]},
-    {l:"FULL BODY B",c:C.blue,ex:[{e:"Deadlift",s:4,r:"5–6"},{e:"Incline Bench Press",s:3,r:"8–10"},{e:"Pull Up",s:3,r:"8–12"},{e:"Lateral Raise",s:3,r:"12–15"},{e:"Tricep Pushdown",s:2,r:"10–12"},{e:"Leg Curl",s:3,r:"12–15"}]},
-    {l:"FULL BODY C",c:C.green,ex:[{e:"Front Squat",s:3,r:"8–10"},{e:"Overhead Press",s:4,r:"6–8"},{e:"Chin Up",s:3,r:"8–12"},{e:"Dumbbell Bench Press",s:3,r:"10–12"},{e:"Romanian Deadlift",s:3,r:"10–12"},{e:"Calf Raise",s:3,r:"15–20"}]},
-  ]},
+// ─── RUTINAS ──────────────────────────────────────────────
+// 12 programas × 5 objetivos. s/r base = hipertrofia.
+// Adaptación por objetivo via buildRoutine().
+// ──────────────────────────────────────────────────────────
+const RAW={
+  "3beg":[
+    {l:"FULL BODY A",ex:[{e:"Goblet Squat",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Dumbbell Bench Press",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Lat Pulldown",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Dumbbell Shoulder Press",s:2,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Leg Curl",s:2,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Plank",s:3,r:"30-45s",rs:"30-45s",rc:"45-60s",rr:"30-45s",rg:"30-45s"}]},
+    {l:"FULL BODY B",ex:[{e:"Romanian Deadlift",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Incline Dumbbell Press",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Cable Row",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Lateral Raise",s:3,r:"15-20",rs:"12-15",rc:"15-20",rr:"15-20",rg:"15-20"},{e:"Leg Extension",s:2,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Dumbbell Curl",s:2,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"}]},
+    {l:"FULL BODY C",ex:[{e:"Leg Press",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Dumbbell Bench Press",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Lat Pulldown",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Dumbbell Shoulder Press",s:2,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Calf Raise",s:3,r:"15-20",rs:"12-15",rc:"20-25",rr:"15-20",rg:"15-20"},{e:"Tricep Pushdown",s:2,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"}]},
+  ],
+  "3int":[
+    {l:"PUSH",ex:[{e:"Bench Press",s:4,r:"6-10",rs:"3-5",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Overhead Press",s:3,r:"8-10",rs:"4-6",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Incline Dumbbell Press",s:3,r:"10-12",rs:"6-8",rc:"12-15",rr:"10-12",rg:"10-12"},{e:"Lateral Raise",s:4,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Tricep Pushdown",s:3,r:"10-12",rs:"8-10",rc:"15-20",rr:"10-12",rg:"10-12"}]},
+    {l:"PULL",ex:[{e:"Pull Up",s:4,r:"6-10",rs:"4-6",rc:"10-15",rr:"8-12",rg:"8-12"},{e:"Barbell Row",s:4,r:"6-10",rs:"4-6",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Face Pull",s:3,r:"15-20",rs:"12-15",rc:"15-20",rr:"15-20",rg:"15-20"},{e:"Barbell Curl",s:3,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Hammer Curl",s:3,r:"10-12",rs:"8-10",rc:"12-15",rr:"10-12",rg:"10-12"}]},
+    {l:"LEGS",ex:[{e:"Barbell Squat",s:4,r:"6-10",rs:"3-5",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Romanian Deadlift",s:3,r:"8-10",rs:"5-6",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Leg Extension",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Leg Curl",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Calf Raise",s:4,r:"15-20",rs:"12-15",rc:"20-25",rr:"15-20",rg:"15-20"}]},
+  ],
+  "3adv":[
+    {l:"PUSH",ex:[{e:"Bench Press",s:4,r:"5-8",rs:"2-4",rc:"12-15",rr:"6-10",rg:"8-10"},{e:"Overhead Press",s:4,r:"6-8",rs:"3-5",rc:"12-15",rr:"8-10",rg:"8-10"},{e:"Incline Bench Press",s:3,r:"8-10",rs:"5-6",rc:"12-15",rr:"8-12",rg:"8-10"},{e:"Cable Fly",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Lateral Raise",s:4,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Skull Crusher",s:3,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Tricep Pushdown",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"}]},
+    {l:"PULL",ex:[{e:"Weighted Pull Up",s:4,r:"5-8",rs:"3-5",rc:"8-12",rr:"6-10",rg:"6-10"},{e:"Barbell Row",s:4,r:"5-8",rs:"3-5",rc:"12-15",rr:"8-10",rg:"8-10"},{e:"Dumbbell Row",s:3,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Face Pull",s:3,r:"15-20",rs:"12-15",rc:"15-20",rr:"15-20",rg:"15-20"},{e:"Reverse Fly",s:3,r:"15-20",rs:"12-15",rc:"15-20",rr:"15-20",rg:"15-20"},{e:"Barbell Curl",s:3,r:"6-10",rs:"4-6",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Hammer Curl",s:3,r:"10-12",rs:"8-10",rc:"12-15",rr:"10-12",rg:"10-12"}]},
+    {l:"LEGS",ex:[{e:"Barbell Squat",s:5,r:"5-8",rs:"2-4",rc:"10-15",rr:"6-10",rg:"6-10"},{e:"Romanian Deadlift",s:4,r:"6-10",rs:"4-5",rc:"12-15",rr:"8-12",rg:"8-10"},{e:"Bulgarian Split Squat",s:3,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Leg Extension",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Leg Curl",s:3,r:"10-15",rs:"8-10",rc:"15-20",rr:"10-15",rg:"10-15"},{e:"Calf Raise",s:4,r:"15-20",rs:"12-15",rc:"20-25",rr:"15-20",rg:"15-20"}]},
+  ],
+  "4beg":[
+    {l:"UPPER A",ex:[{e:"Dumbbell Bench Press",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Lat Pulldown",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Dumbbell Shoulder Press",s:3,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Cable Row",s:3,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Lateral Raise",s:3,r:"15-20",rs:"12-15",rc:"15-20",rr:"15-20",rg:"15-20"},{e:"Dumbbell Curl",s:2,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"}]},
+    {l:"LOWER A",ex:[{e:"Goblet Squat",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Romanian Deadlift",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Leg Press",s:3,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Leg Curl",s:3,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Calf Raise",s:3,r:"15-20",rs:"12-15",rc:"20-25",rr:"15-20",rg:"15-20"}]},
+    {l:"UPPER B",ex:[{e:"Incline Dumbbell Press",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Lat Pulldown",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Dumbbell Shoulder Press",s:3,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Cable Row",s:3,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Face Pull",s:3,r:"15-20",rs:"12-15",rc:"15-20",rr:"15-20",rg:"15-20"},{e:"Tricep Pushdown",s:2,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"}]},
+    {l:"LOWER B",ex:[{e:"Leg Press",s:4,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Leg Curl",s:3,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Bulgarian Split Squat",s:3,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Leg Extension",s:3,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Calf Raise",s:3,r:"15-20",rs:"12-15",rc:"20-25",rr:"15-20",rg:"15-20"}]},
+  ],
+  "4int":[
+    {l:"UPPER A",ex:[{e:"Bench Press",s:4,r:"6-10",rs:"3-5",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Barbell Row",s:4,r:"6-10",rs:"3-5",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Overhead Press",s:3,r:"8-10",rs:"4-6",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Pull Up",s:3,r:"6-10",rs:"4-6",rc:"10-15",rr:"8-12",rg:"8-12"},{e:"Lateral Raise",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Barbell Curl",s:3,r:"10-12",rs:"6-8",rc:"12-15",rr:"10-12",rg:"10-12"}]},
+    {l:"LOWER A",ex:[{e:"Barbell Squat",s:4,r:"6-10",rs:"3-5",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Romanian Deadlift",s:3,r:"8-10",rs:"5-6",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Leg Extension",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Leg Curl",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Calf Raise",s:4,r:"15-20",rs:"12-15",rc:"20-25",rr:"15-20",rg:"15-20"}]},
+    {l:"UPPER B",ex:[{e:"Overhead Press",s:4,r:"6-10",rs:"3-5",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Chin Up",s:4,r:"6-10",rs:"4-6",rc:"10-15",rr:"8-12",rg:"8-12"},{e:"Incline Dumbbell Press",s:3,r:"8-12",rs:"5-6",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Cable Row",s:3,r:"10-12",rs:"6-8",rc:"12-15",rr:"10-12",rg:"10-12"},{e:"Face Pull",s:3,r:"15-20",rs:"12-15",rc:"15-20",rr:"15-20",rg:"15-20"},{e:"Hammer Curl",s:3,r:"10-12",rs:"8-10",rc:"12-15",rr:"10-12",rg:"10-12"}]},
+    {l:"LOWER B",ex:[{e:"Deadlift",s:4,r:"5-6",rs:"2-4",rc:"8-10",rr:"5-8",rg:"5-8"},{e:"Bulgarian Split Squat",s:3,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Leg Press",s:3,r:"10-15",rs:"8-10",rc:"15-20",rr:"10-15",rg:"10-15"},{e:"Leg Extension",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Calf Raise",s:4,r:"15-20",rs:"12-15",rc:"20-25",rr:"15-20",rg:"15-20"}]},
+  ],
+  "4adv":[
+    {l:"UPPER A",ex:[{e:"Bench Press",s:5,r:"4-8",rs:"2-4",rc:"10-15",rr:"6-10",rg:"6-10"},{e:"Barbell Row",s:4,r:"5-8",rs:"3-5",rc:"12-15",rr:"6-10",rg:"6-10"},{e:"Overhead Press",s:4,r:"6-8",rs:"3-5",rc:"12-15",rr:"8-10",rg:"8-10"},{e:"Weighted Pull Up",s:4,r:"5-8",rs:"3-5",rc:"8-12",rr:"6-10",rg:"6-10"},{e:"Lateral Raise",s:4,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Face Pull",s:3,r:"15-20",rs:"12-15",rc:"15-20",rr:"15-20",rg:"15-20"},{e:"Barbell Curl",s:3,r:"6-10",rs:"4-6",rc:"12-15",rr:"8-12",rg:"8-12"}]},
+    {l:"LOWER A",ex:[{e:"Barbell Squat",s:5,r:"4-8",rs:"2-4",rc:"10-15",rr:"6-10",rg:"6-10"},{e:"Romanian Deadlift",s:4,r:"6-10",rs:"4-5",rc:"12-15",rr:"8-12",rg:"8-10"},{e:"Bulgarian Split Squat",s:3,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Leg Extension",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Leg Curl",s:3,r:"10-15",rs:"8-10",rc:"15-20",rr:"10-15",rg:"10-15"},{e:"Calf Raise",s:5,r:"10-15",rs:"8-12",rc:"15-20",rr:"10-15",rg:"10-15"}]},
+    {l:"UPPER B",ex:[{e:"Incline Bench Press",s:4,r:"5-8",rs:"3-5",rc:"10-15",rr:"6-10",rg:"6-10"},{e:"Chin Up",s:4,r:"5-8",rs:"3-5",rc:"8-12",rr:"6-10",rg:"6-10"},{e:"Dumbbell Shoulder Press",s:4,r:"8-10",rs:"5-6",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Cable Row",s:4,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Cable Fly",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Reverse Fly",s:3,r:"15-20",rs:"12-15",rc:"15-20",rr:"15-20",rg:"15-20"},{e:"Skull Crusher",s:3,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"}]},
+    {l:"LOWER B",ex:[{e:"Deadlift",s:5,r:"3-5",rs:"1-3",rc:"6-8",rr:"4-6",rg:"4-6"},{e:"Front Squat",s:4,r:"5-8",rs:"3-5",rc:"10-12",rr:"6-10",rg:"6-10"},{e:"Leg Press",s:3,r:"10-15",rs:"8-10",rc:"15-20",rr:"10-15",rg:"10-15"},{e:"Leg Curl",s:4,r:"10-15",rs:"8-10",rc:"15-20",rr:"10-15",rg:"10-15"},{e:"Hip Thrust",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Calf Raise",s:5,r:"10-15",rs:"8-12",rc:"15-20",rr:"10-15",rg:"10-15"}]},
+  ],
+  "5beg":[
+    {l:"FULL BODY A",ex:[{e:"Goblet Squat",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Dumbbell Bench Press",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Lat Pulldown",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Dumbbell Shoulder Press",s:2,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Leg Curl",s:2,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Tricep Pushdown",s:2,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"}]},
+    {l:"FULL BODY B",ex:[{e:"Romanian Deadlift",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Incline Dumbbell Press",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Cable Row",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Lateral Raise",s:3,r:"15-20",rs:"12-15",rc:"15-20",rr:"15-20",rg:"15-20"},{e:"Leg Extension",s:2,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Dumbbell Curl",s:2,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"}]},
+  ],
+  "5int":[
+    {l:"PUSH",ex:[{e:"Bench Press",s:4,r:"6-10",rs:"3-5",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Overhead Press",s:3,r:"8-10",rs:"4-6",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Incline Dumbbell Press",s:3,r:"10-12",rs:"6-8",rc:"12-15",rr:"10-12",rg:"10-12"},{e:"Lateral Raise",s:4,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Tricep Pushdown",s:3,r:"10-12",rs:"8-10",rc:"15-20",rr:"10-12",rg:"10-12"}]},
+    {l:"PULL",ex:[{e:"Pull Up",s:4,r:"6-10",rs:"4-6",rc:"10-15",rr:"8-12",rg:"8-12"},{e:"Barbell Row",s:4,r:"6-10",rs:"4-6",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Face Pull",s:3,r:"15-20",rs:"12-15",rc:"15-20",rr:"15-20",rg:"15-20"},{e:"Barbell Curl",s:3,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Hammer Curl",s:3,r:"10-12",rs:"8-10",rc:"12-15",rr:"10-12",rg:"10-12"}]},
+    {l:"LEGS",ex:[{e:"Barbell Squat",s:4,r:"6-10",rs:"3-5",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Romanian Deadlift",s:3,r:"8-10",rs:"5-6",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Leg Extension",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Leg Curl",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Calf Raise",s:4,r:"15-20",rs:"12-15",rc:"20-25",rr:"15-20",rg:"15-20"}]},
+    {l:"UPPER",ex:[{e:"Overhead Press",s:4,r:"6-10",rs:"3-5",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Chin Up",s:4,r:"6-10",rs:"4-6",rc:"10-15",rr:"8-12",rg:"8-12"},{e:"Incline Bench Press",s:3,r:"8-12",rs:"5-6",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Cable Row",s:3,r:"10-12",rs:"6-8",rc:"12-15",rr:"10-12",rg:"10-12"},{e:"Lateral Raise",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"}]},
+    {l:"LOWER",ex:[{e:"Deadlift",s:4,r:"5-6",rs:"2-4",rc:"8-10",rr:"5-8",rg:"5-8"},{e:"Bulgarian Split Squat",s:3,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Leg Press",s:3,r:"10-15",rs:"8-10",rc:"15-20",rr:"10-15",rg:"10-15"},{e:"Leg Curl",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Calf Raise",s:4,r:"15-20",rs:"12-15",rc:"20-25",rr:"15-20",rg:"15-20"}]},
+  ],
+  "5adv":[
+    {l:"PUSH",ex:[{e:"Bench Press",s:5,r:"4-8",rs:"2-4",rc:"10-15",rr:"6-10",rg:"6-10"},{e:"Overhead Press",s:4,r:"5-8",rs:"3-5",rc:"10-15",rr:"6-10",rg:"6-10"},{e:"Incline Bench Press",s:3,r:"8-10",rs:"5-6",rc:"12-15",rr:"8-12",rg:"8-10"},{e:"Cable Fly",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Lateral Raise",s:4,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Skull Crusher",s:3,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"}]},
+    {l:"PULL",ex:[{e:"Weighted Pull Up",s:5,r:"4-8",rs:"2-4",rc:"8-12",rr:"5-10",rg:"5-10"},{e:"Barbell Row",s:4,r:"5-8",rs:"3-5",rc:"10-15",rr:"6-10",rg:"6-10"},{e:"Dumbbell Row",s:3,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Face Pull",s:3,r:"15-20",rs:"12-15",rc:"15-20",rr:"15-20",rg:"15-20"},{e:"Barbell Curl",s:3,r:"6-10",rs:"4-6",rc:"10-15",rr:"8-12",rg:"8-12"},{e:"Hammer Curl",s:3,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"}]},
+    {l:"LEGS",ex:[{e:"Barbell Squat",s:5,r:"4-8",rs:"2-4",rc:"10-15",rr:"5-10",rg:"5-10"},{e:"Romanian Deadlift",s:4,r:"6-10",rs:"4-5",rc:"12-15",rr:"8-12",rg:"8-10"},{e:"Bulgarian Split Squat",s:3,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Leg Extension",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Leg Curl",s:3,r:"10-15",rs:"8-10",rc:"15-20",rr:"10-15",rg:"10-15"},{e:"Calf Raise",s:4,r:"12-15",rs:"8-12",rc:"15-20",rr:"12-15",rg:"12-15"}]},
+    {l:"UPPER",ex:[{e:"Incline Bench Press",s:4,r:"5-8",rs:"3-5",rc:"10-15",rr:"6-10",rg:"6-10"},{e:"Chin Up",s:4,r:"5-8",rs:"3-5",rc:"8-12",rr:"6-10",rg:"6-10"},{e:"Dumbbell Shoulder Press",s:4,r:"6-10",rs:"4-6",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Cable Row",s:4,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Reverse Fly",s:3,r:"15-20",rs:"12-15",rc:"15-20",rr:"15-20",rg:"15-20"},{e:"Tricep Pushdown",s:3,r:"10-15",rs:"8-10",rc:"15-20",rr:"10-15",rg:"10-15"}]},
+    {l:"LOWER",ex:[{e:"Deadlift",s:5,r:"3-5",rs:"1-3",rc:"6-8",rr:"4-6",rg:"4-6"},{e:"Front Squat",s:4,r:"5-8",rs:"3-5",rc:"10-12",rr:"6-10",rg:"6-10"},{e:"Hip Thrust",s:4,r:"8-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Leg Press",s:3,r:"10-15",rs:"8-10",rc:"15-20",rr:"10-15",rg:"10-15"},{e:"Leg Curl",s:4,r:"10-15",rs:"8-10",rc:"15-20",rr:"10-15",rg:"10-15"},{e:"Calf Raise",s:4,r:"12-15",rs:"8-12",rc:"15-20",rr:"12-15",rg:"12-15"}]},
+  ],
+  "6beg":[
+    {l:"PUSH A",ex:[{e:"Dumbbell Bench Press",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Dumbbell Shoulder Press",s:3,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Incline Dumbbell Press",s:3,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Lateral Raise",s:3,r:"15-20",rs:"12-15",rc:"15-20",rr:"15-20",rg:"15-20"},{e:"Tricep Pushdown",s:2,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"}]},
+    {l:"PULL A",ex:[{e:"Lat Pulldown",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Cable Row",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Face Pull",s:3,r:"15-20",rs:"12-15",rc:"15-20",rr:"15-20",rg:"15-20"},{e:"Dumbbell Curl",s:2,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Hammer Curl",s:2,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"}]},
+    {l:"LEGS A",ex:[{e:"Goblet Squat",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Romanian Deadlift",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Leg Press",s:3,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Leg Extension",s:2,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Calf Raise",s:3,r:"15-20",rs:"12-15",rc:"20-25",rr:"15-20",rg:"15-20"}]},
+    {l:"PUSH B",ex:[{e:"Dumbbell Bench Press",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Dumbbell Shoulder Press",s:3,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Cable Fly",s:3,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Lateral Raise",s:3,r:"15-20",rs:"12-15",rc:"15-20",rr:"15-20",rg:"15-20"},{e:"Overhead Tricep Extension",s:2,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"}]},
+    {l:"PULL B",ex:[{e:"Lat Pulldown",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Cable Row",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Reverse Fly",s:3,r:"15-20",rs:"12-15",rc:"15-20",rr:"15-20",rg:"15-20"},{e:"Dumbbell Curl",s:2,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Preacher Curl",s:2,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"}]},
+    {l:"LEGS B",ex:[{e:"Leg Press",s:4,r:"10-15",rs:"8-10",rc:"15-20",rr:"10-15",rg:"10-15"},{e:"Leg Curl",s:3,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Bulgarian Split Squat",s:3,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Leg Extension",s:2,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Calf Raise",s:3,r:"15-20",rs:"12-15",rc:"20-25",rr:"15-20",rg:"15-20"}]},
+  ],
+  "6int":[
+    {l:"PUSH A",ex:[{e:"Bench Press",s:4,r:"6-10",rs:"3-5",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Overhead Press",s:3,r:"8-10",rs:"4-6",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Incline Dumbbell Press",s:3,r:"10-12",rs:"6-8",rc:"12-15",rr:"10-12",rg:"10-12"},{e:"Lateral Raise",s:4,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Tricep Pushdown",s:3,r:"10-12",rs:"8-10",rc:"15-20",rr:"10-12",rg:"10-12"}]},
+    {l:"PULL A",ex:[{e:"Pull Up",s:4,r:"6-10",rs:"4-6",rc:"10-15",rr:"8-12",rg:"8-12"},{e:"Barbell Row",s:4,r:"6-10",rs:"4-6",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Face Pull",s:3,r:"15-20",rs:"12-15",rc:"15-20",rr:"15-20",rg:"15-20"},{e:"Barbell Curl",s:3,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Hammer Curl",s:3,r:"10-12",rs:"8-10",rc:"12-15",rr:"10-12",rg:"10-12"}]},
+    {l:"LEGS A",ex:[{e:"Barbell Squat",s:4,r:"6-10",rs:"3-5",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Romanian Deadlift",s:3,r:"8-10",rs:"5-6",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Leg Extension",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Leg Curl",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Calf Raise",s:4,r:"15-20",rs:"12-15",rc:"20-25",rr:"15-20",rg:"15-20"}]},
+    {l:"PUSH B",ex:[{e:"Overhead Press",s:4,r:"6-10",rs:"3-5",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Incline Bench Press",s:3,r:"8-10",rs:"5-6",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Dumbbell Flyes",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Lateral Raise",s:4,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Skull Crusher",s:3,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"}]},
+    {l:"PULL B",ex:[{e:"Pendlay Row",s:4,r:"6-8",rs:"3-5",rc:"10-15",rr:"6-10",rg:"6-10"},{e:"Chin Up",s:4,r:"6-10",rs:"4-6",rc:"10-15",rr:"8-12",rg:"8-12"},{e:"Cable Row",s:3,r:"10-12",rs:"6-8",rc:"12-15",rr:"10-12",rg:"10-12"},{e:"Reverse Fly",s:3,r:"15-20",rs:"12-15",rc:"15-20",rr:"15-20",rg:"15-20"},{e:"Preacher Curl",s:3,r:"10-12",rs:"6-8",rc:"12-15",rr:"10-12",rg:"10-12"}]},
+    {l:"LEGS B",ex:[{e:"Romanian Deadlift",s:4,r:"6-10",rs:"4-5",rc:"12-15",rr:"8-12",rg:"8-10"},{e:"Front Squat",s:3,r:"6-10",rs:"4-5",rc:"10-12",rr:"6-10",rg:"6-10"},{e:"Bulgarian Split Squat",s:3,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Leg Curl",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Calf Raise",s:4,r:"15-20",rs:"12-15",rc:"20-25",rr:"15-20",rg:"15-20"}]},
+  ],
+  "6adv":[
+    {l:"PUSH A",ex:[{e:"Bench Press",s:5,r:"4-8",rs:"2-4",rc:"10-15",rr:"6-10",rg:"6-10"},{e:"Overhead Press",s:4,r:"5-8",rs:"3-5",rc:"10-15",rr:"6-10",rg:"6-10"},{e:"Incline Dumbbell Press",s:3,r:"8-12",rs:"5-6",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Cable Fly",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Lateral Raise",s:4,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Skull Crusher",s:3,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"}]},
+    {l:"PULL A",ex:[{e:"Weighted Pull Up",s:5,r:"4-8",rs:"2-4",rc:"8-12",rr:"5-10",rg:"5-10"},{e:"Barbell Row",s:4,r:"5-8",rs:"3-5",rc:"10-15",rr:"6-10",rg:"6-10"},{e:"Face Pull",s:3,r:"15-20",rs:"12-15",rc:"15-20",rr:"15-20",rg:"15-20"},{e:"Reverse Fly",s:3,r:"15-20",rs:"12-15",rc:"15-20",rr:"15-20",rg:"15-20"},{e:"Barbell Curl",s:3,r:"6-10",rs:"4-6",rc:"10-15",rr:"8-12",rg:"8-12"},{e:"Hammer Curl",s:3,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"}]},
+    {l:"LEGS A",ex:[{e:"Barbell Squat",s:5,r:"4-8",rs:"2-4",rc:"10-15",rr:"5-10",rg:"5-10"},{e:"Romanian Deadlift",s:4,r:"6-10",rs:"4-5",rc:"12-15",rr:"8-12",rg:"8-10"},{e:"Leg Extension",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Leg Curl",s:3,r:"10-15",rs:"8-10",rc:"15-20",rr:"10-15",rg:"10-15"},{e:"Hip Thrust",s:3,r:"8-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Calf Raise",s:4,r:"12-15",rs:"8-12",rc:"15-20",rr:"12-15",rg:"12-15"}]},
+    {l:"PUSH B",ex:[{e:"Incline Bench Press",s:5,r:"4-8",rs:"2-4",rc:"10-15",rr:"6-10",rg:"6-10"},{e:"Dumbbell Shoulder Press",s:4,r:"6-10",rs:"4-6",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Cable Fly",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Lateral Raise",s:4,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Overhead Tricep Extension",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Tricep Pushdown",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"}]},
+    {l:"PULL B",ex:[{e:"Pendlay Row",s:5,r:"4-8",rs:"2-4",rc:"10-15",rr:"5-10",rg:"5-10"},{e:"Chin Up",s:4,r:"5-8",rs:"3-5",rc:"8-12",rr:"6-10",rg:"6-10"},{e:"Dumbbell Row",s:3,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Cable Row",s:3,r:"10-12",rs:"6-8",rc:"12-15",rr:"10-12",rg:"10-12"},{e:"Preacher Curl",s:3,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Reverse Curl",s:3,r:"10-12",rs:"8-10",rc:"12-15",rr:"10-12",rg:"10-12"}]},
+    {l:"LEGS B",ex:[{e:"Deadlift",s:5,r:"3-5",rs:"1-3",rc:"6-8",rr:"4-6",rg:"4-6"},{e:"Front Squat",s:4,r:"5-8",rs:"3-5",rc:"10-12",rr:"6-10",rg:"6-10"},{e:"Bulgarian Split Squat",s:3,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Leg Curl",s:4,r:"10-15",rs:"8-10",rc:"15-20",rr:"10-15",rg:"10-15"},{e:"Hip Thrust",s:3,r:"8-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Calf Raise",s:4,r:"12-15",rs:"8-12",rc:"15-20",rr:"12-15",rg:"12-15"}]},
+  ],
 };
+
+const PROG_NAMES={
+  "3beg":{es:"Full Body × 3",en:"Full Body × 3"},
+  "3int":{es:"PPL × 3",en:"PPL × 3"},
+  "3adv":{es:"PPL × 3 Avanzado",en:"PPL × 3 Advanced"},
+  "4beg":{es:"Upper Lower × 4",en:"Upper Lower × 4"},
+  "4int":{es:"Upper Lower × 4",en:"Upper Lower × 4"},
+  "4adv":{es:"Upper Lower × 4 Avanzado",en:"Upper Lower × 4 Advanced"},
+  "5beg":{es:"Full Body × 5",en:"Full Body × 5"},
+  "5int":{es:"PPL × 5",en:"PPL × 5"},
+  "5adv":{es:"PPL × 5 Avanzado",en:"PPL × 5 Advanced"},
+  "6beg":{es:"PPL × 6 Light",en:"PPL × 6 Light"},
+  "6int":{es:"PPL × 6",en:"PPL × 6"},
+  "6adv":{es:"PPL × 6 Avanzado",en:"PPL × 6 Advanced"},
+};
+
+// Adapta reps/series según objetivo
+function applyGoal(ex,goal){
+  let s=ex.s,r=ex.r;
+  if(goal==="strength"){s=Math.min(ex.s+1,5);r=ex.rs;}
+  else if(goal==="lose"){s=Math.max(ex.s-1,3);r=ex.rc;}
+  else if(goal==="recomp"){r=ex.rr;}
+  else if(goal==="general"){s=Math.max(ex.s-1,3);r=ex.rg;}
+  return{e:ex.e,s,r};
+}
+
+// Distribuye N splits en 7 días según selectedDays (array de 0-6)
+function buildRoutine7(splits,selectedDays,goal){
+  const r=Array(7).fill(null);
+  const adapted=splits.map(d=>({...d,ex:d.ex.map(e=>applyGoal(e,goal))}));
+  // Para 5beg: secuencia A B A B A
+  const seq=adapted.length===2
+    ?[adapted[0],adapted[1],adapted[0],adapted[1],adapted[0]].slice(0,selectedDays.length)
+    :adapted.slice(0,selectedDays.length);
+  selectedDays.forEach((dayIdx,i)=>{
+    if(seq[i])r[dayIdx]={...seq[i],ex:seq[i].ex.map((x,j)=>({...x,id:`${dayIdx}${j}`}))};
+  });
+  return r;
+}
 
 const wk=()=>{const d=new Date(),y=d.getFullYear(),s=new Date(y,0,1);return`${y}W${Math.ceil(((d-s)/864e5+s.getDay()+1)/7)}`;};
 const tdy=()=>new Date().toISOString().slice(0,10);
@@ -92,62 +170,59 @@ const store={
   set:(k,v)=>{try{localStorage.setItem(k,v);}catch{}}
 };
 
-// Static image map — wger.de open source, no auth needed
-const GIF_STATIC={
+// Static exercise image map — wger.de open source DB
+const IMG={
   "bench press":"https://wger.de/media/exercise-images/192/Bench-press-1.png",
-  "incline dumbbell press":"https://wger.de/media/exercise-images/1277/9f3c7817-3e3d-417d-8b08-2c0a1aa5fe03.jpg",
-  "overhead press":"https://wger.de/media/exercise-images/61/Close-grip-bench-press-1.png",
-  "lateral raise":"https://wger.de/media/exercise-images/148/lateral-dumbbell-raises-large-2.png",
-  "tricep pushdown":"https://wger.de/media/exercise-images/1185/c5ca283d-8958-4fd8-9d59-a3f52a3ac66b.jpg",
-  "overhead tricep extension":"https://wger.de/media/exercise-images/1519/fab7f641-27d4-40b5-8edd-1a0a137bfd94.gif",
-  "incline bench press":"https://wger.de/media/exercise-images/61/Close-grip-bench-press-1.png",
-  "dumbbell flyes":"https://wger.de/media/exercise-images/1643/a6a603e9-a83a-4106-92a7-7d32e1b64c68.webp",
-  "dips":"https://wger.de/media/exercise-images/194/34600351-8b0b-4cb0-8daa-583537be15b0.png",
-  "skull crusher":"https://wger.de/media/exercise-images/193/Preacher-curl-1.png",
-  "pull up":"https://wger.de/media/exercise-images/475/b0554016-16fd-4dbe-be47-a2a17d16ae0e.jpg",
-  "chin up":"https://wger.de/media/exercise-images/475/b0554016-16fd-4dbe-be47-a2a17d16ae0e.jpg",
-  "barbell row":"https://wger.de/media/exercise-images/192/Bench-press-1.png",
-  "dumbbell row":"https://wger.de/media/exercise-images/301/One-arm-dumbbell-row-1.png",
-  "pendlay row":"https://wger.de/media/exercise-images/301/One-arm-dumbbell-row-1.png",
+  "incline bench press":"https://wger.de/media/exercise-images/1049/Incline-Bench-Press-1.png",
+  "incline dumbbell press":"https://wger.de/media/exercise-images/2245/Incline-dumbbell-press-1.png",
+  "dumbbell bench press":"https://wger.de/media/exercise-images/2245/Incline-dumbbell-press-1.png",
+  "dumbbell flyes":"https://wger.de/media/exercise-images/2753/Dumbbell-Incline-Fly-1.png",
+  "dips":"https://wger.de/media/exercise-images/781/Dips-1.png",
+  "overhead press":"https://wger.de/media/exercise-images/1069/Overhead-Press-1.png",
+  "lateral raise":"https://wger.de/media/exercise-images/148/Lateral-Raises-1.png",
+  "tricep pushdown":"https://wger.de/media/exercise-images/2141/Triceps-Pushdown-1.png",
+  "overhead tricep extension":"https://wger.de/media/exercise-images/2141/Triceps-Pushdown-1.png",
+  "skull crusher":"https://wger.de/media/exercise-images/2431/Floor-Skull-Crusher-1.png",
+  "pull up":"https://wger.de/media/exercise-images/107/Pull-ups-1.png",
+  "chin up":"https://wger.de/media/exercise-images/803/Chin-Up-1.png",
+  "barbell row":"https://wger.de/media/exercise-images/2817/Barbell-Row-1.png",
+  "pendlay row":"https://wger.de/media/exercise-images/2817/Barbell-Row-1.png",
+  "dumbbell row":"https://wger.de/media/exercise-images/2192/Dumbbell-rear-delt-row-1.png",
+  "cable row":"https://wger.de/media/exercise-images/2086/Seated-Cable-Row-1.png",
+  "reverse fly":"https://wger.de/media/exercise-images/2832/Reverse-Fly-Standing-1.png",
   "face pull":"https://wger.de/media/exercise-images/394/Facepull-1.png",
-  "barbell curl":"https://wger.de/media/exercise-images/86/Hammer-curl-1.png",
-  "hammer curl":"https://wger.de/media/exercise-images/86/Hammer-curl-1.png",
-  "preacher curl":"https://wger.de/media/exercise-images/193/Preacher-curl-1.png",
-  "reverse curl":"https://wger.de/media/exercise-images/86/Hammer-curl-1.png",
-  "cable row":"https://wger.de/media/exercise-images/394/Facepull-1.png",
-  "reverse fly":"https://wger.de/media/exercise-images/148/lateral-dumbbell-raises-large-2.png",
-  "barbell squat":"https://wger.de/media/exercise-images/105/barbell-squat-1.png",
-  "bulgarian split squat":"https://wger.de/media/exercise-images/105/barbell-squat-1.png",
-  "leg extension":"https://wger.de/media/exercise-images/111/Leg-extension-1.png",
-  "leg curl":"https://wger.de/media/exercise-images/111/Leg-extension-1.png",
-  "hip thrust":"https://wger.de/media/exercise-images/105/barbell-squat-1.png",
-  "calf raise":"https://wger.de/media/exercise-images/133/Standing-calf-raise-1.png",
-  "seated calf raise":"https://wger.de/media/exercise-images/133/Standing-calf-raise-1.png",
-  "romanian deadlift":"https://wger.de/media/exercise-images/105/barbell-squat-1.png",
-  "front squat":"https://wger.de/media/exercise-images/191/Front-squat-1.png",
-  "walking lunge":"https://wger.de/media/exercise-images/105/barbell-squat-1.png",
-  "deadlift":"https://wger.de/media/exercise-images/105/Deadlift-1.png",
-  "dumbbell bench press":"https://wger.de/media/exercise-images/1277/9f3c7817-3e3d-417d-8b08-2c0a1aa5fe03.jpg",
+  "barbell curl":"https://wger.de/media/exercise-images/758/Barbell-Wrist-Curl-1.png",
+  "hammer curl":"https://wger.de/media/exercise-images/86/Hammer-Curls-1.png",
+  "preacher curl":"https://wger.de/media/exercise-images/193/Preacher-Curls-1.png",
+  "reverse curl":"https://wger.de/media/exercise-images/86/Hammer-Curls-1.png",
+  "barbell squat":"https://wger.de/media/exercise-images/2931/Barbell-Squat-1.png",
+  "front squat":"https://wger.de/media/exercise-images/191/Front-Squats-1.png",
+  "romanian deadlift":"https://wger.de/media/exercise-images/2886/Romanian-Deadlift-1.png",
+  "deadlift":"https://wger.de/media/exercise-images/105/Deadlifts-1.png",
+  "bulgarian split squat":"https://wger.de/media/exercise-images/1602/Bulgarian-split-squats-1.png",
+  "leg extension":"https://wger.de/media/exercise-images/804/Leg-Extension-1.png",
+  "leg curl":"https://wger.de/media/exercise-images/792/Leg-Curl-1.png",
+  "hip thrust":"https://wger.de/media/exercise-images/854/Hip-Thrust-1.png",
+  "walking lunge":"https://wger.de/media/exercise-images/3050/Walking-Lunges-1.png",
+  "calf raise":"https://wger.de/media/exercise-images/2162/Calf-raises-1.png",
+  "seated calf raise":"https://wger.de/media/exercise-images/2145/Seated-Calf-Raises-1.png",
 };
-const GIF_CACHE={};
-async function fetchGif(name){
-  const key=name.toLowerCase().trim();
-  if(key in GIF_CACHE)return GIF_CACHE[key];
-  const url=GIF_STATIC[key];
-  if(url) return(GIF_CACHE[key]={gifUrl:url,target:null});
-  return(GIF_CACHE[key]=null);
-}
+const getImg=name=>IMG[name.toLowerCase().trim()]||null;
 
-// ── WORKOUT SCREEN ──────────────────────────────────────────
+const VID={
+  "pull up":   "https://danielngr.github.io/FORJA/pull-ups.mp4",
+  "chin up":   "https://danielngr.github.io/FORJA/pull-ups.mp4",
+  "dumbbell flyes": "https://danielngr.github.io/FORJA/dumbbell-chest-fly.mp4",
+};
+const getVid=name=>VID[name.toLowerCase().trim()]||null;
+
 function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
-  const exs=day.ex,c=day.c;
+  const exs=day.ex;
   const[idx,setIdx]=useState(0);
   const[kg,setKg]=useState("");
   const[rp,setRp]=useState("");
   const[showHist,setShowHist]=useState(false);
-  const[gifData,setGifData]=useState({});
-  const[gifLoading,setGifLoading]=useState({});
-  const[gifErr,setGifErr]=useState({});
+  const[imgErr,setImgErr]=useState({});
   const[sliding,setSliding]=useState(false);
   const[slideDir,setSlideDir]=useState(0);
   const[dragY,setDragY]=useState(0);
@@ -159,18 +234,28 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
   const hist=ex?(logs[ex.id]||[]):[];
   const last=hist[0];
   const totalDone=exs.filter(x=>done[`${sel}-${x.id}`]).length;
+  const imgUrl=ex&&!imgErr[ex.id]?getImg(ex.e):null;
+  const vidUrl=ex?getVid(ex.e):null;
 
+  // Cargar último peso/reps del ejercicio actual (historial > localStorage > default)
   useEffect(()=>{
-    [idx,idx+1].forEach(i=>{
-      const e=exs[i];if(!e||e.id in gifData||gifLoading[e.id])return;
-      setGifLoading(p=>({...p,[e.id]:true}));
-      fetchGif(e.e).then(d=>{setGifData(p=>({...p,[e.id]:d}));setGifLoading(p=>({...p,[e.id]:false}));});
-    });
+    if(!ex) return;
+    if(hist.length>0){
+      setKg(String(hist[0].w||""));
+      setRp(String(hist[0].r||""));
+    } else {
+      try{
+        const saved=localStorage.getItem("fv9_last_"+ex.id);
+        if(saved){const p=JSON.parse(saved);setKg(p.w||"");setRp(p.r||"");}
+        else{setKg("");setRp("");}
+      }catch{setKg("");setRp("");}
+    }
+    setShowHist(false);
   },[idx]);
 
   const goTo=ni=>{
     if(ni<0||ni>=exs.length||sliding)return;
-    setSlideDir(ni>idx?-1:1);setSliding(true);setKg("");setRp("");setShowHist(false);
+    setSlideDir(ni>idx?-1:1);setSliding(true);setShowHist(false);
     setTimeout(()=>{setIdx(ni);setSlideDir(0);setSliding(false);},260);
   };
 
@@ -180,50 +265,117 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
   const onMD=e=>{startY.current=e.clientY;isDrag.current=true;};
   const onMM=e=>{if(isDrag.current)setDragY(e.clientY-startY.current);};
   const onMU=()=>{if(dragY<-55)goTo(idx+1);else if(dragY>55)goTo(idx-1);setDragY(0);isDrag.current=false;};
-  const handleSave=()=>{if(kg||rp){onSaveLog(ex.id,kg,rp);if(!isDone)onToggle(ex.id);}setKg("");setRp("");};
-
-  const gif=ex?gifData[ex.id]:null;
-  const loading=ex?!!gifLoading[ex.id]:false;
-  const hasGif=gif?.gifUrl&&!gifErr[ex?.id];
-  const ty=sliding?slideDir*110:(isDrag.current?Math.min(Math.max(dragY*0.35,-70),70):0);
+  const handleSave=()=>{
+    if(kg||rp){
+      onSaveLog(ex.id,kg,rp);
+      if(!isDone)onToggle(ex.id);
+      // persistir último peso/reps para este ejercicio
+      try{localStorage.setItem("fv9_last_"+ex.id,JSON.stringify({w:kg,r:rp}));}catch{}
+    }
+  };
   const sp=e=>e.stopPropagation();
+  const ty=sliding?slideDir*110:(isDrag.current?Math.min(Math.max(dragY*0.35,-70),70):0);
 
-  const NI=({val,set,label})=>(
-    <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:5}}>
-      <div style={{fontSize:9,color:C.tx3,fontFamily:mono,letterSpacing:2}}>{label}</div>
-      <input type="number" inputMode="decimal" value={val} onChange={e=>set(e.target.value)} placeholder="—"
-        onPointerDown={sp} onMouseDown={sp} onTouchStart={sp}
-        style={{width:"100%",padding:"14px 0",background:"transparent",border:"none",
-          borderBottom:`1.5px solid ${C.border}`,color:C.tx,fontSize:34,fontWeight:800,
-          fontFamily:sans,textAlign:"center",outline:"none",boxSizing:"border-box",caretColor:C.tx}}
-        onFocus={e=>e.target.style.borderBottomColor=C.tx}
-        onBlur={e=>e.target.style.borderBottomColor=C.border}/>
-    </div>
-  );
+  // ScrollPicker — estilo X/dark
+  const ScrollPicker=({val,set,label,items})=>{
+    const iH=54;
+    const listRef=useRef(null);
+    const isDragging=useRef(false);
+    const startYRef=useRef(0);
+    const startScrollRef=useRef(0);
+
+    useEffect(()=>{
+      if(listRef.current&&val){
+        const i=items.indexOf(val);
+        if(i>=0) listRef.current.scrollTop=i*iH;
+      }
+    },[]);
+
+    const snap=()=>{
+      if(!listRef.current)return;
+      const i=Math.round(listRef.current.scrollTop/iH);
+      const clamped=Math.max(0,Math.min(i,items.length-1));
+      listRef.current.scrollTop=clamped*iH;
+      set(items[clamped]);
+    };
+
+    const onScroll=()=>{
+      if(!listRef.current)return;
+      const i=Math.round(listRef.current.scrollTop/iH);
+      set(items[Math.max(0,Math.min(i,items.length-1))]);
+    };
+
+    const pds=e=>{e.stopPropagation();isDragging.current=true;const y=e.clientY||(e.touches&&e.touches[0]?e.touches[0].clientY:0);startYRef.current=y;startScrollRef.current=listRef.current?listRef.current.scrollTop:0;};
+    const pms=e=>{if(!isDragging.current)return;const y=e.clientY||(e.touches&&e.touches[0]?e.touches[0].clientY:0);if(listRef.current)listRef.current.scrollTop=startScrollRef.current-(y-startYRef.current);};
+    const pue=()=>{isDragging.current=false;snap();};
+
+    return(
+      <div onPointerDown={sp} onMouseDown={sp} onTouchStart={sp}
+        style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:8}}>
+        <div style={{fontSize:8,color:C.tx3,fontFamily:mono,letterSpacing:3,fontWeight:700}}>{label}</div>
+        <div style={{position:"relative",width:"100%",height:iH*3,overflow:"hidden",background:"transparent"}}>
+          {/* líneas de selección — estilo minimal */}
+          <div style={{position:"absolute",top:iH,left:0,right:0,height:iH,
+            borderTop:`1px solid ${C.border}`,borderBottom:`1px solid ${C.border}`,
+            zIndex:2,pointerEvents:"none"}}/>
+          {/* fade top */}
+          <div style={{position:"absolute",top:0,left:0,right:0,height:iH,
+            background:`linear-gradient(to bottom,${C.bg}FF,${C.bg}00)`,
+            zIndex:3,pointerEvents:"none"}}/>
+          {/* fade bottom */}
+          <div style={{position:"absolute",bottom:0,left:0,right:0,height:iH,
+            background:`linear-gradient(to top,${C.bg}FF,${C.bg}00)`,
+            zIndex:3,pointerEvents:"none"}}/>
+          <div ref={listRef} onScroll={onScroll}
+            onMouseDown={pds} onMouseMove={pms} onMouseUp={pue} onMouseLeave={pue}
+            onTouchStart={pds} onTouchMove={pms} onTouchEnd={pue}
+            style={{height:"100%",overflowY:"scroll",scrollSnapType:"y mandatory",
+              WebkitOverflowScrolling:"touch",scrollbarWidth:"none",cursor:"ns-resize",userSelect:"none"}}>
+            <style>{"[data-fpicker]::-webkit-scrollbar{display:none}"}</style>
+            <div style={{height:iH}}/>
+            {items.map((item,i)=>{
+              const isSel=item===val;
+              return(
+                <div key={i} data-fpicker
+                  onClick={()=>{set(item);if(listRef.current)listRef.current.scrollTop=i*iH;}}
+                  style={{height:iH,display:"flex",alignItems:"center",justifyContent:"center",
+                    scrollSnapAlign:"start",
+                    fontSize:isSel?30:16,
+                    fontWeight:isSel?800:300,
+                    fontFamily:isSel?sans:mono,
+                    color:isSel?C.tx:C.tx3,
+                    letterSpacing:isSel?-1:1,
+                    transition:"all 0.12s",cursor:"pointer"}}>
+                  {item}
+                </div>
+              );
+            })}
+            <div style={{height:iH}}/>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const kgItems=[...Array.from({length:21},(_,i)=>(i*0.5).toFixed(1).replace(".0","")),...Array.from({length:281},(_,i)=>((i+21)*0.5).toFixed(1).replace(".0",""))].map(String);
+  const kgAll=Array.from({length:301},(_,i)=>i===0?"0":(i*0.5%1===0?String(i*0.5):(i*0.5).toFixed(1)));
+  const rpItems=Array.from({length:50},(_,i)=>String(i+1));
 
   return(
     <div style={{position:"fixed",inset:0,background:C.bg,display:"flex",flexDirection:"column",overflow:"hidden",fontFamily:sans}}>
-
-      {/* TOP BAR */}
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
-        padding:"16px 20px 12px",borderBottom:`1px solid ${C.borderL}`,flexShrink:0,
-        background:C.bg}}>
-        <button onClick={onBack} style={{background:"none",border:"none",color:C.tx3,
-          fontSize:11,fontFamily:mono,letterSpacing:1.5,cursor:"pointer",padding:0}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px 20px 12px",borderBottom:`1px solid ${C.borderL}`,flexShrink:0,background:C.bg}}>
+        <button onClick={onBack} style={{background:"none",border:"none",color:C.tx3,fontSize:11,fontFamily:mono,letterSpacing:1.5,cursor:"pointer",padding:0}}>
           ← {lang==="es"?"VOLVER":"BACK"}
         </button>
         <div style={{fontSize:10,fontFamily:mono,color:C.tx2,letterSpacing:3,fontWeight:600}}>{day.l}</div>
         <div style={{display:"flex",gap:5,alignItems:"center"}}>
           {exs.map((_,i)=>(
-            <div key={i} onClick={()=>goTo(i)} style={{
-              width:i===idx?20:5,height:5,borderRadius:3,cursor:"pointer",
-              background:done[`${sel}-${exs[i].id}`]?C.tx:i===idx?C.tx:C.borderL,
-              transition:"all 0.3s"}}/>
+            <div key={i} onClick={()=>goTo(i)} style={{width:i===idx?20:5,height:5,borderRadius:3,cursor:"pointer",
+              background:done[`${sel}-${exs[i].id}`]?C.tx:i===idx?C.tx:C.borderL,transition:"all 0.3s"}}/>
           ))}
         </div>
       </div>
 
-      {/* SWIPEABLE BODY */}
       <div onTouchStart={onTS} onTouchMove={onTM} onTouchEnd={onTE}
         onMouseDown={onMD} onMouseMove={onMM} onMouseUp={onMU} onMouseLeave={onMU}
         style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",
@@ -232,7 +384,6 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
           opacity:Math.abs(ty)>30?Math.max(0.4,1-Math.abs(ty)/120):1,
           cursor:isDrag.current?"grabbing":"grab",userSelect:"none",minHeight:0}}>
 
-        {/* EXERCISE HEADER */}
         <div style={{padding:"18px 20px 10px",flexShrink:0}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
             <div style={{fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:2}}>
@@ -243,122 +394,82 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
               <div onPointerDown={sp} onMouseDown={sp} onTouchStart={sp}
                 onClick={e=>{sp(e);onToggle(ex.id);}}
                 style={{width:26,height:26,borderRadius:7,cursor:"pointer",
-                  background:isDone?C.tx:"transparent",
-                  border:`1.5px solid ${isDone?C.tx:C.border}`,
+                  background:isDone?C.tx:"transparent",border:`1.5px solid ${isDone?C.tx:C.border}`,
                   display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s"}}>
                 {isDone&&<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6.5L5 9.5L10 3" stroke={C.white} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
               </div>
             </div>
           </div>
-
-          {/* BIG NAME */}
-          <div style={{fontSize:32,fontWeight:900,color:C.tx,lineHeight:1,
-            letterSpacing:-1.5,textTransform:"uppercase",animation:"fu 0.3s ease",
-            fontFamily:sans}}>
-            {ex.e}
-          </div>
-          <div style={{display:"flex",gap:10,marginTop:7,alignItems:"center"}}>
+          <div style={{fontSize:32,fontWeight:900,color:C.tx,lineHeight:1,letterSpacing:-1.5,textTransform:"uppercase",animation:"fu 0.3s ease",fontFamily:sans}}>{ex.e}</div>
+          <div style={{marginTop:7}}>
             <span style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:1.5}}>{ex.s} × {ex.r}</span>
-            {gif?.target&&<span style={{fontSize:10,fontFamily:mono,color:C.tx2,letterSpacing:1}}>// {gif.target.toUpperCase()}</span>}
           </div>
         </div>
 
-        {/* GIF FRAME — fog frame, like IGLOO */}
         <div style={{margin:"0 14px",flex:1,minHeight:0}}>
-          <div style={{
-            width:"100%",height:"100%",borderRadius:20,overflow:"hidden",
-            background:"linear-gradient(145deg, #C8C6C2 0%, #B8B6B2 100%)",
-            border:`1px solid ${C.border}`,
-            display:"flex",alignItems:"center",justifyContent:"center",
-            position:"relative",
-            boxShadow:"inset 0 1px 0 rgba(255,255,255,0.6), 0 8px 40px rgba(0,0,0,0.12)"}}>
+          <div style={{width:"100%",height:"100%",borderRadius:20,overflow:"hidden",
+            background:"#424858",
+            border:`1px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"center",
+            position:"relative",boxShadow:`inset 0 1px 0 rgba(255,255,255,0.5),0 8px 40px rgba(0,0,0,0.10)`}}>
 
-            {loading&&(
-              <div style={{textAlign:"center"}}>
-                <div style={{width:24,height:24,border:`2px solid ${C.border}`,borderTopColor:C.tx,
-                  borderRadius:"50%",animation:"spin 0.8s linear infinite",margin:"0 auto 8px"}}/>
-                <div style={{fontSize:9,color:C.tx3,fontFamily:mono,letterSpacing:2}}>LOADING</div>
-              </div>
-            )}
-            {!loading&&hasGif&&(
-              <img src={gif.gifUrl} alt={ex.e}
-                onError={()=>setGifErr(p=>({...p,[ex.id]:true}))}
-                style={{width:"100%",height:"100%",objectFit:"contain",mixBlendMode:"multiply"}}/>
-            )}
-            {!loading&&!hasGif&&(
-              <div style={{textAlign:"center",opacity:0.3}}>
-                <div style={{fontSize:56,marginBottom:6,color:C.tx2}}>◎</div>
-                <div style={{fontSize:9,color:C.tx3,fontFamily:mono,letterSpacing:2}}>NO ANIMATION</div>
+            {vidUrl?(
+              <video key={vidUrl} src={vidUrl} autoPlay loop muted playsInline
+                style={{width:"100%",height:"100%",objectFit:"contain"}}/>
+            ):imgUrl?(
+              <img src={imgUrl} alt={ex.e} onError={()=>setImgErr(p=>({...p,[ex.id]:true}))}
+                style={{width:"100%",height:"100%",objectFit:"contain",filter:"brightness(0.95)"}}/>
+            ):(
+              <div style={{textAlign:"center",opacity:0.25}}>
+                <div style={{fontSize:52,color:C.tx2,marginBottom:6}}>◎</div>
+                <div style={{fontSize:9,color:C.tx3,fontFamily:mono,letterSpacing:2}}>NO IMAGE</div>
               </div>
             )}
 
-            {/* Corner crosshair marks — like IGLOO UI */}
-            {[
-              {top:10,left:10,borderTop:`1px solid ${C.tx2}`,borderLeft:`1px solid ${C.tx2}`},
+            {[{top:10,left:10,borderTop:`1px solid ${C.tx2}`,borderLeft:`1px solid ${C.tx2}`},
               {top:10,right:10,borderTop:`1px solid ${C.tx2}`,borderRight:`1px solid ${C.tx2}`},
               {bottom:10,left:10,borderBottom:`1px solid ${C.tx2}`,borderLeft:`1px solid ${C.tx2}`},
-              {bottom:10,right:10,borderBottom:`1px solid ${C.tx2}`,borderRight:`1px solid ${C.tx2}`},
-            ].map((s,i)=><div key={i} style={{position:"absolute",width:14,height:14,opacity:0.5,...s}}/>)}
+              {bottom:10,right:10,borderBottom:`1px solid ${C.tx2}`,borderRight:`1px solid ${C.tx2}`}
+            ].map((s,i)=><div key={i} style={{position:"absolute",width:14,height:14,opacity:0.4,...s}}/>)}
 
-            {/* Crosshair center lines — like IGLOO screenshot */}
-            <div style={{position:"absolute",top:"50%",left:"14%",width:"20%",height:"1px",background:`${C.tx2}40`}}/>
-            <div style={{position:"absolute",top:"50%",right:"14%",width:"20%",height:"1px",background:`${C.tx2}40`}}/>
-
-            {/* IGLOO-style label top left */}
-            <div style={{position:"absolute",top:10,left:10,fontSize:9,fontFamily:mono,
-              color:C.tx2,letterSpacing:1.5,fontWeight:600,padding:"3px 0 0 0"}}>
-              FORJA
-            </div>
-
+            <div style={{position:"absolute",top:10,left:14,fontSize:9,fontFamily:mono,color:C.tx2,letterSpacing:1.5,fontWeight:600}}>FORJA</div>
+            <div style={{position:"absolute",top:"50%",left:"12%",width:"18%",height:"1px",background:`${C.tx2}30`}}/>
+            <div style={{position:"absolute",top:"50%",right:"12%",width:"18%",height:"1px",background:`${C.tx2}30`}}/>
             {idx<exs.length-1&&(
-              <div style={{position:"absolute",bottom:10,right:10,
-                background:"rgba(180,178,174,0.85)",backdropFilter:"blur(8px)",
-                padding:"3px 10px",borderRadius:20,
-                fontSize:9,fontFamily:mono,color:C.tx2,letterSpacing:1}}>
-                {exs[idx+1]?.e?.toUpperCase().slice(0,14)} →
+              <div style={{position:"absolute",bottom:10,right:10,background:"rgba(200,198,194,0.85)",backdropFilter:"blur(8px)",padding:"3px 10px",borderRadius:20,fontSize:9,fontFamily:mono,color:C.tx2,letterSpacing:1}}>
+                {exs[idx+1]&&exs[idx+1].e?exs[idx+1].e.toUpperCase().slice(0,16):""} →
               </div>
             )}
           </div>
         </div>
 
-        {/* LOG SECTION */}
-        <div onPointerDown={sp} onMouseDown={sp} onTouchStart={sp}
-          style={{padding:"14px 20px 18px",flexShrink:0}}>
+        <div onPointerDown={sp} onMouseDown={sp} onTouchStart={sp} style={{padding:"14px 20px 18px",flexShrink:0}}>
           <div style={{display:"flex",gap:16,alignItems:"flex-end",marginBottom:14}}>
-            <NI val={kg} set={setKg} label="KG"/>
+            <ScrollPicker val={kg||kgAll[20]} set={setKg} label="KG" items={kgAll}/>
             <div style={{color:C.tx3,fontSize:24,fontWeight:200,paddingBottom:14,flexShrink:0}}>×</div>
-            <NI val={rp} set={setRp} label="REPS"/>
+            <ScrollPicker val={rp||rpItems[7]} set={setRp} label="REPS" items={rpItems}/>
           </div>
           <div style={{display:"flex",gap:10}}>
             <button onClick={e=>{sp(e);handleSave();}} onMouseDown={sp}
               style={{flex:1,padding:"16px 0",borderRadius:12,border:`1.5px solid ${(kg||rp)?C.tx:C.border}`,
-                cursor:"pointer",fontFamily:sans,
-                background:(kg||rp)?C.tx:C.card,
-                color:(kg||rp)?C.white:C.tx3,
-                fontSize:12,fontWeight:800,letterSpacing:2,transition:"all 0.2s"}}>
+                cursor:"pointer",fontFamily:sans,background:(kg||rp)?C.tx:C.card,
+                color:(kg||rp)?C.white:C.tx3,fontSize:12,fontWeight:800,letterSpacing:2,transition:"all 0.2s"}}>
               {t.save}
             </button>
             {idx<exs.length-1&&(
               <button onClick={e=>{sp(e);goTo(idx+1);}} onMouseDown={sp}
-                style={{padding:"16px 18px",borderRadius:12,
-                  border:`1.5px solid ${C.border}`,background:C.card,
-                  color:C.tx3,fontSize:13,cursor:"pointer",flexShrink:0}}>
-                →
-              </button>
+                style={{padding:"16px 18px",borderRadius:12,border:`1.5px solid ${C.border}`,background:C.card,color:C.tx3,fontSize:13,cursor:"pointer",flexShrink:0}}>→</button>
             )}
           </div>
           {hist.length>0&&(
             <button onClick={e=>{sp(e);setShowHist(!showHist);}} onMouseDown={sp}
-              style={{background:"none",border:"none",color:C.tx3,fontSize:10,fontFamily:mono,
-                letterSpacing:1.5,cursor:"pointer",padding:"10px 0 0",width:"100%",textAlign:"center"}}>
+              style={{background:"none",border:"none",color:C.tx3,fontSize:10,fontFamily:mono,letterSpacing:1.5,cursor:"pointer",padding:"10px 0 0",width:"100%",textAlign:"center"}}>
               {showHist?t.hideHist:`${t.hist} (${hist.length})`}
             </button>
           )}
           {showHist&&(
             <div style={{marginTop:8,borderTop:`1px solid ${C.borderL}`}}>
               {hist.slice(0,5).map((h,j)=>(
-                <div key={j} style={{display:"flex",justifyContent:"space-between",
-                  padding:"7px 0",borderBottom:`1px solid ${C.borderL}`,fontSize:11,fontFamily:mono}}>
+                <div key={j} style={{display:"flex",justifyContent:"space-between",padding:"7px 0",borderBottom:`1px solid ${C.borderL}`,fontSize:11,fontFamily:mono}}>
                   <span style={{color:C.tx3}}>{h.d}</span>
                   <span style={{color:C.tx,fontWeight:700}}>{h.w}kg × {h.r}</span>
                 </div>
@@ -368,16 +479,13 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
         </div>
       </div>
 
-      {/* PROGRESS BAR */}
       <div style={{height:2,background:C.borderL,flexShrink:0}}>
-        <div style={{height:"100%",background:C.tx,
-          width:`${(totalDone/exs.length)*100}%`,transition:"width 0.5s ease"}}/>
+        <div style={{height:"100%",background:C.tx,width:`${(totalDone/exs.length)*100}%`,transition:"width 0.5s ease"}}/>
       </div>
     </div>
   );
 }
 
-// ── APP ROOT ────────────────────────────────────────────────
 function App(){
   const[lang,setLang]=useState(null);
   const[step,setStep]=useState(0);
@@ -386,143 +494,169 @@ function App(){
   const[ready,setReady]=useState(false);
 
   useEffect(()=>{
-    try{
-      const p=store.get("fv8p");
-      if(p){const d=JSON.parse(p.value);setProfile(d);setLang(d.lang);
-        const r=store.get("fv8r");if(r)setRoutine(JSON.parse(r.value));setStep(99);}
-    }catch(_){}
+    try{const p=store.get("fv8p");if(p){const d=JSON.parse(p.value);setProfile(d);setLang(d.lang);const r=store.get("fv8r");if(r)setRoutine(JSON.parse(r.value));setStep(99);}}catch(_){}
     setReady(true);
   },[]);
 
-  const sp=useCallback(p=>{setProfile(p);store.set("fv8p",JSON.stringify(p));}, []);
-  const sr=useCallback(r=>{setRoutine(r);store.set("fv8r",JSON.stringify(r));}, []);
+  const sp=useCallback(p=>{setProfile(p);store.set("fv8p",JSON.stringify(p));},[]);
+  const sr=useCallback(r=>{setRoutine(r);store.set("fv8r",JSON.stringify(r));},[]);
 
   if(!ready)return <div style={{minHeight:"100vh",background:C.bg}}/>;
   if(step<99)return <Onboard lang={lang} setLang={setLang} step={step} setStep={setStep} sp={sp} sr={sr}/>;
   return <Main lang={lang} setLang={setLang} profile={profile} routine={routine} sp={sp} sr={sr} setStep={setStep}/>;
 }
 
-// ── ONBOARD ─────────────────────────────────────────────────
 function Onboard({lang,setLang,step,setStep,sp,sr}){
   const[goal,setGoal]=useState("");
   const[level,setLevel]=useState("");
-  const[days,setDays]=useState(6);
-  const[split,setSplit]=useState("");
+  const[ndays,setNdays]=useState(4);
+  const[selDays,setSelDays]=useState([]);   // índices 0-6 de días seleccionados
+  const[progKey,setProgKey]=useState("");   // "3int", "6adv", etc.
   const t=lang?L[lang]:L.en;
 
+  useEffect(()=>{ window.dispatchEvent(new CustomEvent("forja:mount")); });
+
+  // Auto-set progKey recommendation when level/ndays change
+  useEffect(()=>{
+    if(level&&ndays)setProgKey(`${ndays}${level}`);
+  },[level,ndays]);
+
+  // Default day selection when ndays changes
+  useEffect(()=>{
+    const defaults={
+      3:[0,2,4],   // L M J
+      4:[0,1,3,4], // L M J V
+      5:[0,1,2,3,4],// L-V
+      6:[0,1,2,3,4,5],// L-Sa
+    };
+    setSelDays(defaults[ndays]||[]);
+  },[ndays]);
+
+  const toggleDay=i=>{
+    if(selDays.includes(i)){
+      if(selDays.length>ndays)setSelDays(selDays.filter(d=>d!==i));
+      else if(selDays.length>1)setSelDays(selDays.filter(d=>d!==i));
+    } else {
+      if(selDays.length<ndays)setSelDays([...selDays,i].sort((a,b)=>a-b));
+    }
+  };
+
   const finish=()=>{
-    const tm=TP[split];
-    sp({lang,goal,level,days});
-    const r=Array(7).fill(null);
-    tm.s.forEach((s,i)=>{r[i]={...s,ex:s.ex.map((x,j)=>({...x,id:`${i}${j}`}))};});
+    const splits=RAW[progKey];
+    const r=buildRoutine7(splits,selDays,goal);
+    sp({lang,goal,level,days:ndays,selDays,progKey});
     sr(r);setStep(99);
   };
 
-  const Opt=({active,onClick,children})=>(
-    <button onClick={onClick} style={{
-      width:"100%",padding:"15px 18px",borderRadius:12,
-      border:`1.5px solid ${active?C.tx:C.borderL}`,
-      cursor:"pointer",
-      background:active?C.tx:C.card,
-      color:active?C.white:C.tx2,
-      fontSize:15,fontWeight:active?700:400,fontFamily:sans,
-      textAlign:"left",transition:"all 0.18s",
-      display:"flex",alignItems:"center",justifyContent:"space-between",
-      boxShadow:active?"0 4px 16px rgba(0,0,0,0.12)":"none"}}>
-      <span>{children}</span>
-      {active&&<div style={{width:7,height:7,borderRadius:"50%",background:C.white}}/>}
-    </button>
-  );
+  // Prog options filtered by ndays
+  const progOptions=[`${ndays}beg`,`${ndays}int`,`${ndays}adv`];
+
+  let _optIdx=0;
+  const Opt=({active,onClick,children})=>{
+    const n=String(++_optIdx).padStart(2,"0");
+    return(
+      <button onClick={onClick} style={{
+        width:"100%",padding:"14px 0",cursor:"pointer",background:"transparent",border:"none",
+        borderBottom:`1px solid ${active?C.border+"88":C.borderL+"55"}`,
+        display:"flex",alignItems:"center",gap:14,textAlign:"left",
+        transition:"all 0.15s",position:"relative",outline:"none"}}>
+        <div style={{width:2,height:active?"100%":"0%",background:C.tx,borderRadius:1,
+          transition:"height 0.2s ease",position:"absolute",left:-14,top:0,bottom:0,margin:"auto"}}/>
+        <span style={{fontSize:9,fontFamily:mono,color:active?C.tx3:C.borderL,letterSpacing:1,minWidth:20,transition:"color 0.15s"}}>{n}</span>
+        <span style={{flex:1,fontSize:14,fontWeight:active?700:400,fontFamily:active?sans:mono,
+          letterSpacing:active?-0.3:1.5,color:active?C.tx:C.tx3,textTransform:active?"none":"uppercase",transition:"all 0.15s"}}>
+          {children}
+        </span>
+        <span style={{fontSize:10,fontFamily:mono,color:active?C.tx:C.borderL,opacity:active?1:0,transition:"opacity 0.15s"}}>●</span>
+      </button>
+    );
+  };
 
   const Btn=({onClick,disabled,children,ghost})=>(
     <button onClick={onClick} disabled={disabled} style={{
-      width:"100%",padding:"17px",borderRadius:14,
-      border:`1.5px solid ${ghost?C.border:disabled?C.borderL:C.tx}`,
-      cursor:disabled?"default":"pointer",
-      background:ghost?C.card:disabled?C.cardDim:C.tx,
-      color:ghost?C.tx3:disabled?C.tx3:C.white,
-      fontSize:14,fontWeight:700,fontFamily:sans,letterSpacing:1.5,transition:"all 0.2s",
-      boxShadow:!ghost&&!disabled?"0 6px 24px rgba(0,0,0,0.15)":"none"}}>
-      {children}
+      width:"100%",padding:"16px 20px",cursor:disabled?"default":"pointer",
+      background:"transparent",border:"none",
+      borderTop:`1px solid ${disabled?C.borderL:ghost?C.borderL:C.tx}`,
+      borderBottom:`1px solid ${disabled?C.borderL:ghost?C.borderL:C.tx}`,
+      color:ghost?C.tx3:disabled?C.tx3:C.tx,
+      fontSize:11,fontWeight:700,fontFamily:mono,letterSpacing:4,textTransform:"uppercase",
+      display:"flex",alignItems:"center",justifyContent:"space-between",
+      transition:"all 0.2s",opacity:disabled?0.3:1,outline:"none"}}>
+      <span>{children}</span>
+      {!ghost&&!disabled&&<span style={{fontSize:16,letterSpacing:0}}>→</span>}
     </button>
   );
+
+  const TOTAL_STEPS=5;
 
   return(
     <div style={{minHeight:"100vh",background:C.bg,color:C.tx,fontFamily:sans}}>
       {step===0&&(
-        <div style={{padding:"0 26px",paddingTop:"13vh",animation:"fogIn 0.8s ease"}}>
-          {/* LOGO */}
-          <div style={{marginBottom:56}}>
-            <div style={{
-              fontSize:72,fontWeight:900,letterSpacing:-5,
-              color:C.tx,lineHeight:0.88,fontFamily:sans,
-              textTransform:"uppercase"}}>
-              FOR
-            </div>
-            <div style={{
-              fontSize:72,fontWeight:900,letterSpacing:-5,lineHeight:0.88,
-              color:C.tx,fontFamily:sans,textTransform:"uppercase",
-              WebkitTextStroke:`2px ${C.tx}`,
-              WebkitTextFillColor:"transparent"}}>
-              JA
-            </div>
-            <div style={{marginTop:16,display:"flex",alignItems:"center",gap:12}}>
+        <div style={{padding:"0 26px",paddingTop:"8vh",animation:"fogIn 0.8s ease"}}>
+          <div style={{marginBottom:40}}>
+            <canvas id="forja-logo-canvas" style={{width:"100%",height:180,display:"block"}}></canvas>
+            <div style={{marginTop:8,display:"flex",alignItems:"center",gap:12}}>
               <div style={{height:1,background:C.border,width:40}}/>
               <div style={{fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:3}}>TRAIN · TRACK · EVOLVE</div>
             </div>
           </div>
-
           <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:10}}>// SELECT LANGUAGE</div>
-          <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:36}}>
+          <div style={{display:"flex",flexDirection:"column",marginBottom:36,borderTop:`1px solid ${C.borderL}55`}}>
             <Opt active={lang==="es"} onClick={()=>setLang("es")}>Español</Opt>
             <Opt active={lang==="en"} onClick={()=>setLang("en")}>English</Opt>
           </div>
-          <Btn onClick={()=>setStep(1)} disabled={!lang}>{t.next} →</Btn>
+          <Btn onClick={()=>setStep(1)} disabled={!lang}>{t.next}</Btn>
         </div>
       )}
-
-      {step>=1&&step<=4&&(
+      {step>=1&&step<=TOTAL_STEPS&&(
         <div style={{padding:"0 26px",paddingTop:"7vh",paddingBottom:40,animation:"fu 0.4s ease"}}>
-          {/* Step bar */}
+          {/* progress bar */}
           <div style={{display:"flex",gap:6,marginBottom:36}}>
-            {[1,2,3,4].map(i=>(
-              <div key={i} style={{height:2,flex:1,borderRadius:1,
-                background:step>=i?C.tx:C.borderL,transition:"all 0.3s"}}/>
+            {Array(TOTAL_STEPS).fill(0).map((_,i)=>(
+              <div key={i} style={{height:2,flex:1,borderRadius:1,background:step>i?C.tx:C.borderL,transition:"all 0.3s"}}/>
             ))}
           </div>
 
+          {/* STEP 1 — Objetivo */}
           {step===1&&(<>
             <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{t.goal}</div>
             <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:24,lineHeight:1,textTransform:"uppercase"}}>
               {lang==="es"?"¿Qué buscas?":"What's your goal?"}
             </div>
-            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            <div style={{display:"flex",flexDirection:"column",borderTop:`1px solid ${C.borderL}55`}}>
               {[["muscle",t.muscle],["strength",t.strength],["lose",t.lose],["recomp",t.recomp],["general",t.general]].map(([id,lb])=>(
                 <Opt key={id} active={goal===id} onClick={()=>setGoal(id)}>{lb}</Opt>
               ))}
             </div>
             <div style={{display:"flex",gap:10,marginTop:28}}>
               <div style={{flex:1}}><Btn ghost onClick={()=>setStep(0)}>{t.back}</Btn></div>
-              <div style={{flex:2}}><Btn onClick={()=>setStep(2)} disabled={!goal}>{t.next} →</Btn></div>
+              <div style={{flex:2}}><Btn onClick={()=>setStep(2)} disabled={!goal}>{t.next}</Btn></div>
             </div>
           </>)}
 
+          {/* STEP 2 — Nivel */}
           {step===2&&(<>
             <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{t.level}</div>
             <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:24,lineHeight:1,textTransform:"uppercase"}}>
               {lang==="es"?"Tu experiencia":"Your experience"}
             </div>
-            <div style={{display:"flex",flexDirection:"column",gap:8}}>
-              {[["beg",t.beg],["int",t.int],["adv",t.adv]].map(([id,lb])=>(
-                <Opt key={id} active={level===id} onClick={()=>setLevel(id)}>{lb}</Opt>
+            <div style={{display:"flex",flexDirection:"column",borderTop:`1px solid ${C.borderL}55`}}>
+              {[["beg",t.beg,"< 1 año / < 1 year"],["int",t.int,"1–3 años / 1–3 years"],["adv",t.adv,"> 3 años / > 3 years"]].map(([id,lb,sub])=>(
+                <Opt key={id} active={level===id} onClick={()=>setLevel(id)}>
+                  <div>
+                    <div>{lb}</div>
+                    <div style={{fontSize:10,fontFamily:mono,opacity:0.45,letterSpacing:0.5,marginTop:2}}>{sub}</div>
+                  </div>
+                </Opt>
               ))}
             </div>
             <div style={{display:"flex",gap:10,marginTop:28}}>
               <div style={{flex:1}}><Btn ghost onClick={()=>setStep(1)}>{t.back}</Btn></div>
-              <div style={{flex:2}}><Btn onClick={()=>setStep(3)} disabled={!level}>{t.next} →</Btn></div>
+              <div style={{flex:2}}><Btn onClick={()=>setStep(3)} disabled={!level}>{t.next}</Btn></div>
             </div>
           </>)}
 
+          {/* STEP 3 — Cuántos días */}
           {step===3&&(<>
             <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{t.days}</div>
             <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:32,lineHeight:1,textTransform:"uppercase"}}>
@@ -530,41 +664,96 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             </div>
             <div style={{display:"flex",gap:10,justifyContent:"center"}}>
               {[3,4,5,6].map(n=>(
-                <button key={n} onClick={()=>setDays(n)} style={{
-                  width:68,height:84,borderRadius:14,
-                  border:`1.5px solid ${days===n?C.tx:C.borderL}`,
-                  cursor:"pointer",background:days===n?C.tx:C.card,
-                  color:days===n?C.white:C.tx2,
+                <button key={n} onClick={()=>setNdays(n)} style={{width:68,height:84,borderRadius:14,
+                  border:`1.5px solid ${ndays===n?C.tx:C.borderL}`,cursor:"pointer",
+                  background:ndays===n?C.tx:C.card,color:ndays===n?C.white:C.tx2,
                   fontSize:32,fontWeight:900,fontFamily:sans,transition:"all 0.2s",
-                  boxShadow:days===n?"0 4px 16px rgba(0,0,0,0.15)":"none"}}>
-                  {n}
-                </button>
+                  boxShadow:ndays===n?"0 4px 16px rgba(0,0,0,0.15)":"none"}}>{n}</button>
               ))}
             </div>
             <div style={{display:"flex",gap:10,marginTop:32}}>
               <div style={{flex:1}}><Btn ghost onClick={()=>setStep(2)}>{t.back}</Btn></div>
-              <div style={{flex:2}}><Btn onClick={()=>setStep(4)}>{t.next} →</Btn></div>
+              <div style={{flex:2}}><Btn onClick={()=>setStep(4)}>{t.next}</Btn></div>
             </div>
           </>)}
 
+          {/* STEP 4 — Qué días */}
           {step===4&&(<>
+            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>
+              {lang==="es"?"QUÉ DÍAS":"WHICH DAYS"}
+            </div>
+            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:8,lineHeight:1,textTransform:"uppercase"}}>
+              {lang==="es"?"Elige tus días":"Pick your days"}
+            </div>
+            <div style={{fontSize:11,fontFamily:mono,color:C.tx3,letterSpacing:0.5,marginBottom:28}}>
+              {lang==="es"?`Selecciona ${ndays} días`:`Select ${ndays} days`}
+              {" · "}<span style={{color:selDays.length===ndays?C.green:C.yellow}}>{selDays.length}/{ndays}</span>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:6,marginBottom:32}}>
+              {DN[lang||"es"].map((d,i)=>{
+                const active=selDays.includes(i);
+                const canAdd=selDays.length<ndays;
+                const splitIdx=selDays.indexOf(i);
+                const splitLabel=active&&RAW[progKey]&&RAW[progKey][splitIdx]?RAW[progKey][splitIdx].l.split(" ")[0]:"";
+                return(
+                  <button key={i} onClick={()=>toggleDay(i)} style={{
+                    padding:"10px 2px 8px",borderRadius:10,cursor:"pointer",
+                    border:`1.5px solid ${active?C.tx:C.borderL}`,
+                    background:active?C.tx:"transparent",
+                    color:active?C.white:canAdd?C.tx2:C.tx3,
+                    transition:"all 0.2s",textAlign:"center",
+                    opacity:(!active&&!canAdd)?0.35:1,minWidth:0}}>
+                    <div style={{fontSize:9,fontWeight:800,fontFamily:mono,letterSpacing:0.5}}>{d}</div>
+                    <div style={{fontSize:6,fontFamily:mono,marginTop:4,opacity:active?0.65:0.2,
+                      overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis",letterSpacing:0.3}}>
+                      {active?splitLabel:"—"}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            <div style={{display:"flex",gap:10}}>
+              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(3)}>{t.back}</Btn></div>
+              <div style={{flex:2}}><Btn onClick={()=>setStep(5)} disabled={selDays.length!==ndays}>{t.next}</Btn></div>
+            </div>
+          </>)}
+
+          {/* STEP 5 — Programa recomendado */}
+          {step===5&&(<>
             <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{t.split}</div>
-            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:24,lineHeight:1,textTransform:"uppercase"}}>
+            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:6,lineHeight:1,textTransform:"uppercase"}}>
               {lang==="es"?"Tu programa":"Your program"}
             </div>
-            <div style={{display:"flex",flexDirection:"column",gap:8}}>
-              {Object.entries(TP).map(([k,v])=>(
-                <Opt key={k} active={split===k} onClick={()=>setSplit(k)}>
-                  <div>
-                    <div style={{fontWeight:700,marginBottom:2}}>{v.n[lang||"es"]}</div>
-                    <div style={{fontSize:10,fontFamily:mono,opacity:0.6}}>{v.s.map(x=>x.l).join("  ·  ")}</div>
-                  </div>
-                </Opt>
-              ))}
+            <div style={{fontSize:11,fontFamily:mono,color:C.tx3,letterSpacing:0.5,marginBottom:24}}>
+              {lang==="es"?"Recomendado según tu nivel":"Recommended for your level"}
+              {" · "}<span style={{color:C.green,letterSpacing:1}}>★</span>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",borderTop:`1px solid ${C.borderL}55`}}>
+              {progOptions.map((k,oi)=>{
+                const pn=PROG_NAMES[k];
+                const splits=RAW[k];
+                const isRec=k===`${ndays}${level}`;
+                return(
+                  <Opt key={k} active={progKey===k} onClick={()=>setProgKey(k)}>
+                    <div style={{width:"100%"}}>
+                      <div style={{display:"flex",alignItems:"center",gap:8}}>
+                        <span style={{fontWeight:700}}>{pn[lang||"es"]}</span>
+                        {isRec&&<span style={{fontSize:8,fontFamily:mono,color:C.green,letterSpacing:1.5,
+                          border:`1px solid ${C.green}44`,padding:"1px 5px",borderRadius:3}}>
+                          {lang==="es"?"RECOMENDADO":"RECOMMENDED"}
+                        </span>}
+                      </div>
+                      <div style={{fontSize:10,fontFamily:mono,opacity:0.45,marginTop:3,letterSpacing:0.5}}>
+                        {splits.map(x=>x.l).join("  ·  ")}
+                      </div>
+                    </div>
+                  </Opt>
+                );
+              })}
             </div>
             <div style={{display:"flex",gap:10,marginTop:28}}>
-              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(3)}>{t.back}</Btn></div>
-              <div style={{flex:2}}><Btn onClick={finish} disabled={!split}>{t.go}</Btn></div>
+              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(4)}>{t.back}</Btn></div>
+              <div style={{flex:2}}><Btn onClick={finish} disabled={!progKey}>{t.go}</Btn></div>
             </div>
           </>)}
         </div>
@@ -573,7 +762,6 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
   );
 }
 
-// ── MAIN ────────────────────────────────────────────────────
 function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   const t=L[lang];
   const[sel,setSel]=useState(()=>{const d=new Date().getDay();return d===0?6:d-1;});
@@ -583,7 +771,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   const[macros,setMacros]=useState({});
   const[inWorkout,setInWorkout]=useState(false);
   const[addEx,setAddEx]=useState(false);
-  const[nex,setNex]=useState({e:"",s:3,r:"8–12"});
+  const[nex,setNex]=useState({e:"",s:3,r:"8-12"});
   const[addF,setAddF]=useState(false);
   const[fd,setFd]=useState({n:"",cal:"",prot:"",carbs:"",fat:"",m:"mid"});
   const[showSet,setShowSet]=useState(false);
@@ -597,12 +785,11 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
     try{const r=store.get(`fv8m:${today}`);if(r)setMacros(JSON.parse(r.value));}catch(_){}
   },[]);
 
-  const sd=useCallback(n=>{setDone(n);store.set(`fv8d:${w}`,JSON.stringify(n));}, [w]);
-  const slg=useCallback(n=>{setLogs(n);store.set("fv8l",JSON.stringify(n));}, []);
-  const sm=useCallback(n=>{setMacros(n);store.set(`fv8m:${today}`,JSON.stringify(n));}, [today]);
+  const sd=useCallback(n=>{setDone(n);store.set(`fv8d:${w}`,JSON.stringify(n));},[w]);
+  const slg=useCallback(n=>{setLogs(n);store.set("fv8l",JSON.stringify(n));},[]);
+  const sm=useCallback(n=>{setMacros(n);store.set(`fv8m:${today}`,JSON.stringify(n));},[today]);
 
   const day=routine?routine[sel]:null;
-  const c=day?day.c:C.tx;
   const exs=day?day.ex:[];
   const dc=exs.filter(x=>done[`${sel}-${x.id}`]).length;
   const pct=exs.length?dc/exs.length:0;
@@ -611,22 +798,23 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
 
   const toggle=id=>{const k=`${sel}-${id}`;sd({...done,[k]:!done[k]});};
   const saveLog=(id,kg,rp)=>{if(!kg&&!rp)return;const nl={...logs};if(!nl[id])nl[id]=[];nl[id]=[{d:today,w:kg,r:rp},...nl[id]].slice(0,30);slg(nl);};
-  const addExFn=()=>{if(!nex.e||!day)return;const r=[...routine];r[sel].ex=[...r[sel].ex,{...nex,id:`${sel}${Date.now()}`}];sr(r);setAddEx(false);setNex({e:"",s:3,r:"8–12"});};
+  const addExFn=()=>{if(!nex.e||!day)return;const r=[...routine];r[sel].ex=[...r[sel].ex,{...nex,id:`${sel}${Date.now()}`}];sr(r);setAddEx(false);setNex({e:"",s:3,r:"8-12"});};
   const rmEx=id=>{const r=[...routine];r[sel].ex=r[sel].ex.filter(x=>x.id!==id);sr(r);};
   const addFood=()=>{if(!fd.n||!fd.cal)return;const m={...macros};if(!m.entries)m.entries=[];m.entries.push({...fd,id:Date.now()});sm(m);setAddF(false);setFd({n:"",cal:"",prot:"",carbs:"",fat:"",m:"mid"});};
   const rmFood=id=>{const m={...macros};m.entries=(m.entries||[]).filter(x=>x.id!==id);sm(m);};
 
+  // Dispara evento custom cada vez que React renderiza — los scripts Three.js lo escuchan
+  useEffect(()=>{
+    window.dispatchEvent(new CustomEvent("forja:mount"));
+  });
+
   const Inp=({value,onChange,placeholder,type="text",style:s2={}})=>(
     <input type={type} value={value} onChange={onChange} placeholder={placeholder}
       style={{padding:"12px 14px",borderRadius:10,border:`1.5px solid ${C.borderL}`,
-        background:C.white,color:C.tx,fontSize:14,fontFamily:sans,
-        outline:"none",width:"100%",boxSizing:"border-box",...s2}}
+        background:C.card,color:C.tx,fontSize:14,fontFamily:sans,outline:"none",width:"100%",...s2}}
       onFocus={e=>e.target.style.borderColor=C.tx}
       onBlur={e=>e.target.style.borderColor=C.borderL}/>
   );
-
-  const mealC={am:C.yellow,mid:C.tx,snk:C.blue,pm:C.purple};
-  const macroC=[C.tx,C.green,C.blue,C.purple];
 
   if(inWorkout&&day){
     return <WorkoutScreen day={day} sel={sel} done={done} logs={logs}
@@ -635,21 +823,12 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
 
   return(
     <div style={{minHeight:"100vh",background:C.bg,color:C.tx,fontFamily:sans}}>
-
-      {/* HEADER */}
-      <div style={{background:C.bg,borderBottom:`1px solid ${C.borderL}`,
-        padding:"14px 18px 10px",position:"sticky",top:0,zIndex:10}}>
-
+      <div style={{background:C.bg,borderBottom:`1px solid ${C.borderL}`,padding:"14px 18px 10px",position:"sticky",top:0,zIndex:10}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
           <div>
-            {/* FORJA wordmark */}
             <div style={{fontSize:11,fontFamily:mono,color:C.tx3,letterSpacing:3,marginBottom:2,fontWeight:600}}>FORJA</div>
-            <div style={{fontSize:24,fontWeight:900,letterSpacing:-1,lineHeight:1,textTransform:"uppercase"}}>
-              {day?day.l:t.rest}
-            </div>
-            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:1.5,marginTop:2}}>
-              {DF[lang][sel].toUpperCase()}
-            </div>
+            <div style={{fontSize:24,fontWeight:900,letterSpacing:-1,lineHeight:1,textTransform:"uppercase"}}>{day?day.l:t.rest}</div>
+            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:1.5,marginTop:2}}>{DF[lang][sel].toUpperCase()}</div>
           </div>
           <div style={{display:"flex",alignItems:"flex-start",gap:10,paddingTop:2}}>
             {day&&exs.length>0&&(
@@ -660,104 +839,124 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                 </div>
               </div>
             )}
-            <button onClick={()=>setShowSet(!showSet)}
-              style={{width:30,height:30,borderRadius:8,border:`1.5px solid ${C.borderL}`,
-                background:C.card,cursor:"pointer",color:C.tx3,fontSize:13,
-                display:"flex",alignItems:"center",justifyContent:"center"}}>⚙</button>
+            <button onClick={()=>setShowSet(!showSet)} style={{width:30,height:30,borderRadius:8,border:`1.5px solid ${C.borderL}`,background:C.card,cursor:"pointer",color:C.tx3,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center"}}>⚙</button>
           </div>
         </div>
-
         {showSet&&(
           <div style={{display:"flex",gap:8,marginTop:10,paddingTop:10,borderTop:`1px solid ${C.borderL}`}}>
             <button onClick={()=>{const nl=lang==="es"?"en":"es";setLang(nl);sp({...profile,lang:nl});}}
-              style={{padding:"7px 12px",borderRadius:7,border:`1.5px solid ${C.borderL}`,
-                background:C.card,color:C.tx2,fontSize:10,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>
+              style={{padding:"7px 12px",borderRadius:7,border:`1.5px solid ${C.borderL}`,background:C.card,color:C.tx2,fontSize:10,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>
               {lang==="es"?"EN":"ES"}
             </button>
             <button onClick={()=>{setStep(0);setShowSet(false);}}
-              style={{padding:"7px 12px",borderRadius:7,border:`1.5px solid ${C.borderL}`,
-                background:C.card,color:C.tx2,fontSize:10,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>
+              style={{padding:"7px 12px",borderRadius:7,border:`1.5px solid ${C.borderL}`,background:C.card,color:C.tx2,fontSize:10,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>
               {t.reconfig.toUpperCase()}
             </button>
           </div>
         )}
-
-        {/* DAY PILLS */}
-        <div style={{display:"flex",gap:4,marginTop:10}}>
+        <div style={{display:"flex",gap:4,marginTop:12}}>
           {Array(7).fill(0).map((_,i)=>{
             const d=routine?routine[i]:null,de=d?d.ex:[],dd=de.filter(x=>done[`${i}-${x.id}`]).length;
-            const cp=de.length>0&&dd===de.length,isSel=sel===i;
+            const cp=de.length>0&&dd===de.length,isSel=sel===i,isRest=!d;
             return(
               <button key={i} onClick={()=>{setSel(i);setTab("train");setAddEx(false);setAddF(false);setInWorkout(false);}}
-                style={{flex:1,padding:"7px 0 5px",borderRadius:7,
-                  border:`1.5px solid ${isSel?C.tx:cp?"#1E6B4766":C.borderL}`,
-                  cursor:"pointer",
-                  background:isSel?C.tx:cp?"#1E6B4712":C.card,
-                  color:isSel?C.white:cp?C.green:C.tx3,
-                  fontSize:10,fontWeight:800,fontFamily:mono,letterSpacing:1,
-                  transition:"all 0.2s",textAlign:"center"}}>
-                {DN[lang][i]}
-                {cp&&!isSel&&<div style={{width:3,height:3,borderRadius:"50%",background:C.green,margin:"2px auto 0"}}/>}
+                style={{flex:1,padding:"10px 0 8px",borderRadius:10,
+                  border:`1.5px solid ${isSel?C.tx:cp?C.green+"44":C.borderL}`,cursor:"pointer",
+                  background:isSel?C.tx:cp?C.green+"0D":"transparent",
+                  color:isSel?C.white:cp?C.green:isRest?C.tx3:C.tx2,
+                  transition:"all 0.2s",textAlign:"center",position:"relative",overflow:"hidden"}}>
+                <div style={{fontSize:9,fontWeight:800,fontFamily:mono,letterSpacing:1.5,lineHeight:1}}>{DN[lang][i]}</div>
+                {d&&<div style={{fontSize:7,fontFamily:mono,marginTop:3,opacity:isSel?0.6:0.4,letterSpacing:0.5,padding:"0 2px",overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>{d.l.split(" ")[0]}</div>}
+                {!d&&<div style={{fontSize:7,fontFamily:mono,marginTop:3,opacity:0.3,letterSpacing:0.5}}>REST</div>}
+                {cp&&!isSel&&<div style={{position:"absolute",top:4,right:4,width:4,height:4,borderRadius:"50%",background:C.green}}/>}
+                {isSel&&<div style={{position:"absolute",bottom:0,left:"25%",right:"25%",height:2,background:C.white,borderRadius:1}}/>}
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* TABS */}
       <div style={{display:"flex",borderBottom:`1px solid ${C.borderL}`,padding:"0 18px",background:C.bg}}>
         {[{id:"train",l:t.train},{id:"macros",l:t.macros}].map(tb=>(
           <button key={tb.id} onClick={()=>{setTab(tb.id);setAddEx(false);setAddF(false);}}
             style={{padding:"13px 0",marginRight:22,border:"none",
-              borderBottom:`2px solid ${tab===tb.id?C.tx:"transparent"}`,
-              background:"transparent",
-              color:tab===tb.id?C.tx:C.tx3,
-              fontSize:10,fontWeight:700,fontFamily:mono,letterSpacing:2,
-              cursor:"pointer",transition:"all 0.2s"}}>
+              borderBottom:`2px solid ${tab===tb.id?C.tx:"transparent"}`,background:"transparent",
+              color:tab===tb.id?C.tx:C.tx3,fontSize:10,fontWeight:700,fontFamily:mono,letterSpacing:2,cursor:"pointer",transition:"all 0.2s"}}>
             {tb.l}
           </button>
         ))}
       </div>
 
       <div style={{padding:"14px 18px 90px"}}>
-
-        {/* TRAIN TAB */}
         {tab==="train"&&(
           <div>
             {!day?(
-              <div style={{textAlign:"center",padding:"70px 20px"}}>
-                <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:3,marginBottom:14}}>// REST DAY</div>
+              <div style={{textAlign:"center",padding:"40px 20px 60px"}}>
+                <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:3,marginBottom:16}}>// REST DAY</div>
+                <div id="forja-meditation-wrap" style={{width:"100%",height:260,margin:"0 auto 16px",position:"relative"}}>
+                  <canvas id="forja-meditation-canvas" style={{width:"100%",height:"100%",display:"block"}}></canvas>
+                </div>
                 <div style={{fontSize:38,fontWeight:900,letterSpacing:-2,textTransform:"uppercase"}}>{t.rest}</div>
-                <div style={{fontSize:13,color:C.tx3,marginTop:10}}>{t.restSub}</div>
+                <div style={{fontSize:13,color:C.tx3,marginTop:8}}>{t.restSub}</div>
               </div>
             ):(
               <>
-                <button onClick={()=>setInWorkout(true)} style={{
-                  width:"100%",padding:"18px 0",borderRadius:14,
-                  border:`1.5px solid ${C.tx}`,
-                  cursor:"pointer",background:C.tx,color:C.white,
-                  fontSize:12,fontWeight:800,fontFamily:mono,
-                  letterSpacing:2.5,marginBottom:18,
-                  boxShadow:"0 8px 32px rgba(0,0,0,0.18)",
-                  display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
-                  <span style={{fontSize:14}}>▶</span>{t.startWorkout}
-                </button>
-
-                {/* Exercise summary */}
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 0",borderTop:`1px solid ${C.borderL}`,borderBottom:`1px solid ${C.borderL}`}}>
-                  <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2}}>{exs.length} {lang==="es"?"EJERCICIOS":"EXERCISES"}</div>
-                  <div style={{display:"flex",gap:4}}>
-                    {exs.map((_,i)=>{const isDone=done[`${sel}-${exs[i].id}`];return <div key={i} style={{width:6,height:6,borderRadius:2,background:isDone?C.tx:C.borderL,transition:"background 0.2s"}}/>;} )}
+                {/* HERO CARD — alma de la pantalla */}
+                <div style={{
+                  width:"100%",borderRadius:22,background:"linear-gradient(135deg,#1A2540 0%,#0D1520 100%)",cursor:"default",
+                  marginBottom:16,padding:"26px 22px 22px",
+                  boxShadow:"0 16px 56px rgba(0,0,0,0.22)",
+                  position:"relative",overflow:"hidden",userSelect:"none"}}>
+                  
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:18}}>
+                    <div>
+                      <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,0.35)",letterSpacing:3,marginBottom:7,textTransform:"uppercase"}}>
+                        {DF[lang][sel]}
+                      </div>
+                      <div style={{fontSize:32,fontWeight:900,color:C.white,letterSpacing:-1.5,lineHeight:1,textTransform:"uppercase"}}>
+                        {day.l}
+                      </div>
+                      <div style={{fontSize:10,fontFamily:mono,color:"rgba(255,255,255,0.35)",marginTop:6,letterSpacing:1}}>
+                        {exs.length} {lang==="es"?"ejercicios":"exercises"}
+                      </div>
+                    </div>
+                    <div style={{textAlign:"right",paddingTop:2}}>
+                      <div style={{fontSize:36,fontWeight:900,lineHeight:1,
+                        color:pct===1?"#4ade80":pct>0?"rgba(255,255,255,0.9)":"rgba(255,255,255,0.2)"}}>
+                        {dc}
+                      </div>
+                      <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,0.3)",letterSpacing:1}}>
+                        / {exs.length}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{display:"flex",gap:3,marginBottom:22}}>
+                    {exs.map((ex,i)=>{
+                      const isDone=done[`${sel}-${ex.id}`];
+                      return <div key={i} style={{height:3,flex:1,borderRadius:2,
+                        background:isDone?"rgba(255,255,255,0.85)":"rgba(255,255,255,0.12)",
+                        transition:"background 0.3s"}}/>;
+                    })}
+                  </div>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:4}}>
+                    <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,0.35)",letterSpacing:2}}>
+                      {pct===1?(lang==="es"?"COMPLETADO":"COMPLETED"):(lang==="es"?"SEMANA EN CURSO":"WEEK IN PROGRESS")}
+                    </div>
+                    <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,0.35)",letterSpacing:1}}>
+                      {Math.round(pct*100)}%
+                    </div>
                   </div>
                 </div>
 
+                {/* ── PESA 3D — tap to start workout ── */}
+                <div id="forja-dumbbell-wrap" style={{width:"100%",height:260,marginTop:16,borderRadius:16,overflow:"hidden",position:"relative",background:C.bg,cursor:"pointer"}}
+                  onClick={()=>setInWorkout(true)}
+                >
+                  <canvas id="forja-dumbbell-canvas" style={{width:"100%",height:"100%",display:"block"}}></canvas>
+                </div>
+
                 {!addEx?(
-                  <button onClick={()=>setAddEx(true)} style={{
-                    width:"100%",padding:"13px 0",marginTop:12,borderRadius:10,
-                    border:`1.5px dashed ${C.border}`,background:"transparent",
-                    color:C.tx3,fontSize:10,fontFamily:mono,letterSpacing:2,cursor:"pointer"}}>
-                    {t.addEx}
-                  </button>
+                  <button onClick={()=>setAddEx(true)} style={{width:"100%",padding:"13px 0",marginTop:12,borderRadius:10,border:`1.5px dashed ${C.border}`,background:"transparent",color:C.tx3,fontSize:10,fontFamily:mono,letterSpacing:2,cursor:"pointer"}}>{t.addEx}</button>
                 ):(
                   <div style={{marginTop:12,padding:16,background:C.card,borderRadius:12,border:`1.5px solid ${C.borderL}`}}>
                     <Inp placeholder={t.exName} value={nex.e} onChange={e=>setNex({...nex,e:e.target.value})}/>
@@ -772,39 +971,19 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                       </div>
                     </div>
                     <div style={{display:"flex",gap:8,marginTop:12}}>
-                      <button onClick={()=>setAddEx(false)}
-                        style={{flex:1,padding:11,borderRadius:9,border:`1.5px solid ${C.borderL}`,
-                          background:"transparent",color:C.tx3,fontSize:12,cursor:"pointer",fontFamily:sans}}>
-                        {t.cancel}
-                      </button>
-                      <button onClick={addExFn}
-                        style={{flex:2,padding:11,borderRadius:9,border:"none",
-                          background:C.tx,color:C.white,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:sans}}>
-                        {lang==="es"?"AGREGAR":"ADD"}
-                      </button>
+                      <button onClick={()=>setAddEx(false)} style={{flex:1,padding:11,borderRadius:9,border:`1.5px solid ${C.borderL}`,background:"transparent",color:C.tx3,fontSize:12,cursor:"pointer",fontFamily:sans}}>{t.cancel}</button>
+                      <button onClick={addExFn} style={{flex:2,padding:11,borderRadius:9,border:"none",background:C.tx,color:C.white,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:sans}}>{lang==="es"?"AGREGAR":"ADD"}</button>
                     </div>
                   </div>
                 )}
 
                 <div style={{textAlign:"center",marginTop:22}}>
                   {!confirmR?(
-                    <button onClick={()=>setConfirmR(true)}
-                      style={{background:"none",border:`1px solid ${C.borderL}`,borderRadius:8,
-                        padding:"8px 18px",color:C.tx3,fontSize:9,fontFamily:mono,letterSpacing:2,cursor:"pointer"}}>
-                      {t.reset.toUpperCase()}
-                    </button>
+                    <button onClick={()=>setConfirmR(true)} style={{background:"none",border:`1px solid ${C.borderL}`,borderRadius:8,padding:"8px 18px",color:C.tx3,fontSize:9,fontFamily:mono,letterSpacing:2,cursor:"pointer"}}>{t.reset.toUpperCase()}</button>
                   ):(
                     <div style={{display:"flex",gap:8,justifyContent:"center"}}>
-                      <button onClick={()=>{sd({});setConfirmR(false);}}
-                        style={{padding:"8px 18px",borderRadius:8,border:"none",background:C.tx,
-                          color:C.white,fontSize:9,fontFamily:mono,letterSpacing:2,cursor:"pointer"}}>
-                        {t.yes.toUpperCase()}
-                      </button>
-                      <button onClick={()=>setConfirmR(false)}
-                        style={{padding:"8px 18px",borderRadius:8,border:`1px solid ${C.borderL}`,
-                          background:"transparent",color:C.tx3,fontSize:9,fontFamily:mono,letterSpacing:2,cursor:"pointer"}}>
-                        {t.cancel.toUpperCase()}
-                      </button>
+                      <button onClick={()=>{sd({});setConfirmR(false);}} style={{padding:"8px 18px",borderRadius:8,border:"none",background:C.tx,color:C.white,fontSize:9,fontFamily:mono,letterSpacing:2,cursor:"pointer"}}>{t.yes.toUpperCase()}</button>
+                      <button onClick={()=>setConfirmR(false)} style={{padding:"8px 18px",borderRadius:8,border:`1px solid ${C.borderL}`,background:"transparent",color:C.tx3,fontSize:9,fontFamily:mono,letterSpacing:2,cursor:"pointer"}}>{t.cancel.toUpperCase()}</button>
                     </div>
                   )}
                 </div>
@@ -813,15 +992,13 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
           </div>
         )}
 
-        {/* MACROS TAB */}
         {tab==="macros"&&(
           <div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
               {[{v:tot.cal,mx:mt.cal,c:C.tx,l:t.cal,u:"kcal"},{v:tot.prot,mx:mt.prot,c:C.green,l:t.prot,u:"g"},{v:tot.carbs,mx:mt.carbs,c:C.blue,l:t.carbs,u:"g"},{v:tot.fat,mx:mt.fat,c:C.purple,l:t.fat,u:"g"}].map((r,i)=>{
                 const left=r.mx-r.v,p2=Math.min(r.v/r.mx,1);
                 return(
-                  <div key={i} style={{padding:"14px",background:C.card,borderRadius:12,border:`1px solid ${C.borderL}`,
-                    boxShadow:"inset 0 1px 0 rgba(255,255,255,0.5)"}}>
+                  <div key={i} style={{padding:"14px",background:C.card,borderRadius:12,border:`1px solid ${C.borderL}`,boxShadow:"inset 0 1px 0 rgba(255,255,255,0.5)"}}>
                     <div style={{fontSize:9,fontFamily:mono,color:r.c,letterSpacing:2,marginBottom:6,fontWeight:600}}>{r.l}</div>
                     <div style={{fontSize:26,fontWeight:800,color:r.v>r.mx?C.red:C.tx}}>{r.v}</div>
                     <div style={{fontSize:9,fontFamily:mono,color:C.tx3,marginBottom:8}}>{r.u} / {r.mx}</div>
@@ -836,48 +1013,37 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
               })}
             </div>
 
-            {entries.map(f=>(
-              <div key={f.id} style={{display:"flex",alignItems:"center",padding:"12px 0",
-                borderBottom:`1px solid ${C.borderL}`,gap:12}}>
-                <div style={{width:3,height:32,borderRadius:2,background:mealC[f.m]||C.tx3,flexShrink:0}}/>
-                <div style={{flex:1}}>
-                  <div style={{fontSize:14,fontWeight:600}}>{f.n}</div>
-                  <div style={{display:"flex",gap:8,marginTop:2}}>
-                    <span style={{fontSize:10,fontFamily:mono,color:C.tx2}}>{f.cal}kcal</span>
-                    <span style={{fontSize:10,fontFamily:mono,color:C.green}}>{f.prot}P</span>
-                    <span style={{fontSize:10,fontFamily:mono,color:C.blue}}>{f.carbs}C</span>
-                    <span style={{fontSize:10,fontFamily:mono,color:C.purple}}>{f.fat}F</span>
+            {entries.map(f=>{
+              const mc={am:C.yellow,mid:C.tx,snk:C.blue,pm:C.purple};
+              return(
+                <div key={f.id} style={{display:"flex",alignItems:"center",padding:"12px 0",borderBottom:`1px solid ${C.borderL}`,gap:12}}>
+                  <div style={{width:3,height:32,borderRadius:2,background:mc[f.m]||C.tx3,flexShrink:0}}/>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:14,fontWeight:600}}>{f.n}</div>
+                    <div style={{display:"flex",gap:8,marginTop:2}}>
+                      <span style={{fontSize:10,fontFamily:mono,color:C.tx2}}>{f.cal}kcal</span>
+                      <span style={{fontSize:10,fontFamily:mono,color:C.green}}>{f.prot}P</span>
+                      <span style={{fontSize:10,fontFamily:mono,color:C.blue}}>{f.carbs}C</span>
+                      <span style={{fontSize:10,fontFamily:mono,color:C.purple}}>{f.fat}F</span>
+                    </div>
                   </div>
+                  <button onClick={()=>rmFood(f.id)} style={{background:"none",border:"none",color:C.tx3,fontSize:16,cursor:"pointer"}}>×</button>
                 </div>
-                <button onClick={()=>rmFood(f.id)}
-                  style={{background:"none",border:"none",color:C.tx3,fontSize:16,cursor:"pointer"}}>×</button>
-              </div>
-            ))}
+              );
+            })}
 
             {entries.length===0&&!addF&&(
-              <div style={{textAlign:"center",padding:"40px 0",fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:2}}>
-                // 0 KCAL LOGGED
-              </div>
+              <div style={{textAlign:"center",padding:"40px 0",fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:2}}>// 0 KCAL LOGGED</div>
             )}
 
             {!addF?(
-              <button onClick={()=>setAddF(true)} style={{
-                width:"100%",padding:"13px 0",marginTop:10,borderRadius:10,
-                border:`1.5px dashed ${C.border}`,background:"transparent",
-                color:C.green,fontSize:10,fontFamily:mono,letterSpacing:2,cursor:"pointer"}}>
-                {t.addFood}
-              </button>
+              <button onClick={()=>setAddF(true)} style={{width:"100%",padding:"13px 0",marginTop:10,borderRadius:10,border:`1.5px dashed ${C.border}`,background:"transparent",color:C.green,fontSize:10,fontFamily:mono,letterSpacing:2,cursor:"pointer"}}>{t.addFood}</button>
             ):(
               <div style={{marginTop:12,padding:16,background:C.card,borderRadius:12,border:`1.5px solid ${C.borderL}`}}>
                 <Inp placeholder={t.what} value={fd.n} onChange={e=>setFd({...fd,n:e.target.value})}/>
                 <div style={{display:"flex",gap:5,marginTop:8}}>
                   {[["am",t.am],["mid",t.mid],["snk",t.snk],["pm",t.pm]].map(([k,lb])=>(
-                    <button key={k} onClick={()=>setFd({...fd,m:k})} style={{
-                      flex:1,padding:"8px 0",borderRadius:7,
-                      border:`1.5px solid ${fd.m===k?C.tx:C.borderL}`,
-                      background:fd.m===k?C.tx:"transparent",
-                      color:fd.m===k?C.white:C.tx3,
-                      fontSize:9,fontFamily:mono,cursor:"pointer",transition:"all 0.15s"}}>
+                    <button key={k} onClick={()=>setFd({...fd,m:k})} style={{flex:1,padding:"8px 0",borderRadius:7,border:`1.5px solid ${fd.m===k?C.tx:C.borderL}`,background:fd.m===k?C.tx:"transparent",color:fd.m===k?C.white:C.tx3,fontSize:9,fontFamily:mono,cursor:"pointer",transition:"all 0.15s"}}>
                       {lb.slice(0,3).toUpperCase()}
                     </button>
                   ))}
@@ -886,22 +1052,13 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                   {[["cal","KCAL",C.tx],["prot","P",C.green],["carbs","C",C.blue],["fat","F",C.purple]].map(([k,lb,clr])=>(
                     <div key={k} style={{flex:1}}>
                       <div style={{fontSize:9,color:clr,fontFamily:mono,letterSpacing:1,textAlign:"center",marginBottom:3,fontWeight:600}}>{lb}</div>
-                      <Inp type="number" value={fd[k]} onChange={e=>setFd({...fd,[k]:e.target.value})}
-                        style={{textAlign:"center",fontSize:16,fontWeight:800,padding:9}}/>
+                      <Inp type="number" value={fd[k]} onChange={e=>setFd({...fd,[k]:e.target.value})} style={{textAlign:"center",fontSize:16,fontWeight:800,padding:9}}/>
                     </div>
                   ))}
                 </div>
                 <div style={{display:"flex",gap:8,marginTop:12}}>
-                  <button onClick={()=>setAddF(false)}
-                    style={{flex:1,padding:11,borderRadius:9,border:`1.5px solid ${C.borderL}`,
-                      background:"transparent",color:C.tx3,fontSize:10,fontFamily:mono,cursor:"pointer"}}>
-                    CANCEL
-                  </button>
-                  <button onClick={addFood}
-                    style={{flex:2,padding:11,borderRadius:9,border:"none",background:C.tx,
-                      color:C.white,fontSize:10,fontFamily:mono,fontWeight:700,cursor:"pointer",letterSpacing:1}}>
-                    {t.save}
-                  </button>
+                  <button onClick={()=>setAddF(false)} style={{flex:1,padding:11,borderRadius:9,border:`1.5px solid ${C.borderL}`,background:"transparent",color:C.tx3,fontSize:10,fontFamily:mono,cursor:"pointer"}}>CANCEL</button>
+                  <button onClick={addFood} style={{flex:2,padding:11,borderRadius:9,border:"none",background:C.tx,color:C.white,fontSize:10,fontFamily:mono,fontWeight:700,cursor:"pointer",letterSpacing:1}}>{t.save}</button>
                 </div>
               </div>
             )}
@@ -913,6 +1070,457 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function initDumbbell(){
+  function tryInit(){
+    const canvas = document.getElementById("forja-dumbbell-canvas");
+    if(!canvas || !window.THREE) return;
+    if(canvas.dataset.forjaInit) return;
+    canvas.dataset.forjaInit="1";
+    const wrap = canvas.parentElement;
+    const W = wrap.offsetWidth||360;
+    const H = wrap.offsetHeight||260;
+
+    const renderer = new THREE.WebGLRenderer({canvas, antialias:false, alpha:true});
+    renderer.setSize(W,H);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+    renderer.setClearColor(0x000000,0);
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(46,W/H,0.1,100);
+    camera.position.set(0,0,9.5);
+
+    const parts = [
+      {xC:0,     r:0.12, th:1.44, type:"cyl"},
+      {xC:-0.80, r:0.20, th:0.09, type:"disc"},
+      {xC: 0.80, r:0.20, th:0.09, type:"disc"},
+      {xC:-0.99, r:1.20, th:0.11, type:"disc"},
+      {xC: 0.99, r:1.20, th:0.11, type:"disc"},
+      {xC:-1.19, r:0.88, th:0.10, type:"disc"},
+      {xC: 1.19, r:0.88, th:0.10, type:"disc"},
+      {xC:-1.36, r:0.58, th:0.09, type:"disc"},
+      {xC: 1.36, r:0.58, th:0.09, type:"disc"},
+      {xC:-1.48, r:0.10, th:0.10, type:"cyl"},
+      {xC: 1.48, r:0.10, th:0.10, type:"cyl"},
+    ];
+    parts.forEach(p=>{ p.area = p.type==="cyl" ? p.th*p.r*2 : p.r*p.r; });
+    const totalArea = parts.reduce((s,p)=>s+p.area,0);
+    let acc=0;
+    parts.forEach(p=>{ p.w=p.area/totalArea; p.cumW=acc+p.w; acc=p.cumW; });
+
+    function samplePart(){
+      const rnd=Math.random();
+      const p=parts.find(p=>rnd<=p.cumW)||parts[parts.length-1];
+      const a=Math.random()*Math.PI*2;
+      if(p.type==="cyl") return {x:p.xC+(Math.random()-0.5)*p.th, y:Math.sin(a)*Math.random()*p.r, z:Math.cos(a)*Math.random()*p.r};
+      const rad=Math.sqrt(Math.random())*p.r;
+      return {x:p.xC+(Math.random()-0.5)*p.th, y:Math.sin(a)*rad, z:Math.cos(a)*rad};
+    }
+
+    const CORE=48000, DISP=42000, TOTAL=CORE+DISP;
+    const pos=new Float32Array(TOTAL*3), col=new Float32Array(TOTAL*3);
+
+    for(let i=0;i<CORE;i++){
+      const s=samplePart();
+      const zOff=(Math.random()-0.5)*0.26;
+      pos[i*3]=s.x+(Math.random()-0.5)*0.020;
+      pos[i*3+1]=s.y+(Math.random()-0.5)*0.020;
+      pos[i*3+2]=s.z+zOff;
+      const distR=Math.sqrt(s.y*s.y+s.z*s.z);
+      const radialT=Math.min(distR/1.20,1.0);
+      const depthT=(zOff+0.13)/0.26;
+      const t=radialT*0.40+depthT*0.20+Math.random()*0.08;
+      const v=0.70+t*0.30;
+      // blanco puro en el centro, azulado en bordes
+      col[i*3]=v*0.94; col[i*3+1]=v*0.96; col[i*3+2]=v;
+    }
+
+    for(let i=0;i<DISP;i++){
+      const idx=CORE+i;
+      const s=samplePart();
+      const sx=s.x, sy=s.y, sz=s.z;
+      const len=Math.sqrt(sy*sy+sz*sz)+0.001;
+      const ny=sy/len, nz=sz/len;
+      const nx=(Math.abs(sx)>0.8&&Math.abs(sy)<0.15&&Math.abs(sz)<0.15)?Math.sign(sx)*0.3:0;
+      const eD=Math.pow(Math.random(),0.35)*7.0;
+      const spread=1.4;
+      const dx=nx+(Math.random()-0.5)*spread;
+      const dy=ny+(Math.random()-0.5)*spread;
+      const dz=nz+(Math.random()-0.5)*spread;
+      const dlen=Math.sqrt(dx*dx+dy*dy+dz*dz)+0.001;
+      pos[idx*3]=sx+(dx/dlen)*eD;
+      pos[idx*3+1]=sy+(dy/dlen)*eD;
+      pos[idx*3+2]=sz+(dz/dlen)*eD;
+      const fadeT=eD/7.0;
+      const op=Math.max(0,1.0-fadeT*0.88);
+      // fade de blanco (#F0F2F5) hacia bg (#383e4e)
+      col[idx*3]=0.94*op+0.22*(1-op);
+      col[idx*3+1]=0.96*op+0.243*(1-op);
+      col[idx*3+2]=1.0*op+0.306*(1-op);
+    }
+
+    const geo=new THREE.BufferGeometry();
+    geo.setAttribute("position",new THREE.BufferAttribute(pos,3));
+    geo.setAttribute("color",   new THREE.BufferAttribute(col,3));
+    const mat=new THREE.PointsMaterial({size:0.014,vertexColors:true,transparent:true,opacity:0.88,sizeAttenuation:true});
+    const pts=new THREE.Points(geo,mat);
+    scene.add(pts);
+
+    let t=0, animId;
+    function animate(){
+      animId=requestAnimationFrame(animate);
+      t+=0.006;
+      pts.rotation.y=Math.sin(t*0.45)*0.50;
+      pts.rotation.x=Math.sin(t*0.28)*0.05;
+      renderer.render(scene,camera);
+    }
+    animate();
+
+    document.addEventListener("visibilitychange",()=>{
+      if(document.hidden){ cancelAnimationFrame(animId); } else { animate(); }
+    });
+  }
+
+  window.addEventListener("forja:mount", tryInit);
+  document.addEventListener("DOMContentLoaded", tryInit);
+  window.addEventListener("load", tryInit);
+  setInterval(tryInit, 200);
+})();
+</script>
+
+<script>
+(function initLogoParticles(){
+  function tryInit(){
+    const canvas=document.getElementById("forja-logo-canvas");
+    if(!canvas||!window.THREE) return;
+    if(canvas.dataset.linit) return;
+    canvas.dataset.linit="1";
+
+    const DPR=Math.min(window.devicePixelRatio||1,2);
+    const W=canvas.offsetWidth||320;
+    const H=canvas.offsetHeight||180;
+    canvas.width=W*DPR; canvas.height=H*DPR;
+
+    // 1. Renderizar "FORJA" en canvas 2D oculto para samplear píxeles
+    const off=document.createElement("canvas");
+    const OW=640, OH=180;
+    off.width=OW; off.height=OH;
+    const ctx=off.getContext("2d");
+    ctx.fillStyle="#ffffff";
+    ctx.fillRect(0,0,OW,OH);
+
+    // Dos líneas: FOR (solid) y JA (outline)
+    ctx.fillStyle="#000000";
+    ctx.font="900 108px Arial Black,Arial,sans-serif";
+    ctx.textBaseline="top";
+    ctx.letterSpacing="-4px";
+    ctx.fillText("FOR",8,4);
+
+    ctx.fillStyle="rgba(0,0,0,0)";
+    ctx.strokeStyle="#000000";
+    ctx.lineWidth=5;
+    ctx.strokeText("JA",8,90);
+
+    // Samplear píxeles oscuros
+    const imgData=ctx.getImageData(0,0,OW,OH);
+    const pts2d=[];
+    const stride=3; // cada N píxeles para no tener demasiados puntos
+    for(let y=0;y<OH;y+=stride){
+      for(let x=0;x<OW;x+=stride){
+        const i=(y*OW+x)*4;
+        const brightness=(imgData.data[i]+imgData.data[i+1]+imgData.data[i+2])/3;
+        if(brightness<160){
+          // normalizar a espacio 3D [-1,1]
+          pts2d.push({
+            x:(x/OW)*2-1,
+            y:1-(y/OH)*2,
+            outline: y>=90
+          });
+        }
+      }
+    }
+
+    // 2. Three.js
+    const renderer=new THREE.WebGLRenderer({canvas,antialias:false,alpha:true});
+    renderer.setSize(W,H);
+    renderer.setPixelRatio(DPR);
+    renderer.setClearColor(0x000000,0);
+
+    const scene=new THREE.Scene();
+    // Cámara ortográfica — top positivo arriba
+    const aspect=W/H;
+    const cam=new THREE.OrthographicCamera(-aspect,aspect,1,-1,0.1,100);
+    cam.position.set(0,0,10);
+
+    const TOTAL=pts2d.length;
+    const pos=new Float32Array(TOTAL*3);
+    const col=new Float32Array(TOTAL*3);
+    // partículas dispersas extra
+    const DISP=Math.floor(TOTAL*0.6);
+    const posD=new Float32Array(DISP*3);
+    const colD=new Float32Array(DISP*3);
+
+    const scaleX=aspect*1.08, scaleY=0.92;
+
+    for(let i=0;i<TOTAL;i++){
+      const p=pts2d[i];
+      pos[i*3]  =p.x*scaleX+(Math.random()-0.5)*0.015;
+      pos[i*3+1]=p.y*scaleY+(Math.random()-0.5)*0.015;
+      pos[i*3+2]=(Math.random()-0.5)*0.04;
+      const v=p.outline?(0.55+Math.random()*0.20):(0.80+Math.random()*0.18);
+      col[i*3]=v*0.94; col[i*3+1]=v*0.96; col[i*3+2]=v;
+    }
+
+    for(let i=0;i<DISP;i++){
+      const src=pts2d[Math.floor(Math.random()*TOTAL)];
+      const eD=Math.pow(Math.random(),0.4)*2.2;
+      const ang=Math.random()*Math.PI*2;
+      posD[i*3]  =src.x*scaleX+Math.cos(ang)*eD;
+      posD[i*3+1]=src.y*scaleY+Math.sin(ang)*eD;
+      posD[i*3+2]=(Math.random()-0.5)*0.3;
+      const fadeT=eD/2.2;
+      const op=Math.max(0,1-fadeT*0.92);
+      colD[i*3]=0.94*op+0.22*(1-op);
+      colD[i*3+1]=0.96*op+0.243*(1-op);
+      colD[i*3+2]=1.0*op+0.306*(1-op);
+    }
+
+    const geoC=new THREE.BufferGeometry();
+    geoC.setAttribute("position",new THREE.BufferAttribute(pos,3));
+    geoC.setAttribute("color",new THREE.BufferAttribute(col,3));
+    const matC=new THREE.PointsMaterial({size:0.022,vertexColors:true,transparent:true,opacity:0.90,sizeAttenuation:true});
+    scene.add(new THREE.Points(geoC,matC));
+
+    const geoD=new THREE.BufferGeometry();
+    geoD.setAttribute("position",new THREE.BufferAttribute(posD,3));
+    geoD.setAttribute("color",new THREE.BufferAttribute(colD,3));
+    const matD=new THREE.PointsMaterial({size:0.014,vertexColors:true,transparent:true,opacity:0.55,sizeAttenuation:true});
+    scene.add(new THREE.Points(geoD,matD));
+
+    let t=0,animId;
+    function animate(){
+      animId=requestAnimationFrame(animate);
+      t+=0.005;
+      // leve ondulación — más sutil que la pesa, solo en Y y Z
+      scene.children.forEach(obj=>{
+        obj.rotation.x=Math.sin(t*0.35)*0.04;
+        obj.rotation.z=Math.sin(t*0.22)*0.012;
+      });
+      renderer.render(scene,cam);
+    }
+    animate();
+
+    document.addEventListener("visibilitychange",()=>{
+      if(document.hidden){cancelAnimationFrame(animId);}else{animate();}
+    });
+  }
+
+  window.addEventListener("forja:mount", tryInit);
+  window.addEventListener("load",tryInit);
+  setInterval(tryInit, 200);
+})();
+</script>
+<script>
+(function initMeditation(){
+  function tryInit(){
+    const canvas=document.getElementById("forja-meditation-canvas");
+    if(!canvas||!window.THREE) return;
+    if(canvas.dataset.minit) return;
+    canvas.dataset.minit="1";
+
+    const wrap=canvas.parentElement;
+    const W=wrap.offsetWidth||360;
+    const H=wrap.offsetHeight||260;
+
+    const renderer=new THREE.WebGLRenderer({canvas,antialias:false,alpha:true});
+    renderer.setSize(W,H);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+    renderer.setClearColor(0x000000,0);
+
+    const scene=new THREE.Scene();
+    const camera=new THREE.PerspectiveCamera(46,W/H,0.1,100);
+    camera.position.set(0,0,9.5);
+
+    // ── Figura en posición lotus — misma técnica que la pesa ──
+    // Cada parte: {cx,cy, rx,ry, type, weight}
+    // type: "sphere" (cx,cy,r) | "capsule" (cx,cy, rx=halfLen, ry=radius) | "disc" (cx,cy, rx,ry=thin)
+    // Coordenadas: X = izq/der, Y = abajo/arriba en espacio 3D
+    //   Y+ = arriba. Figura centrada en 0,0.
+    //   Cabeza en Y≈1.3, base piernas en Y≈-1.0
+
+    const parts = [
+      // ── Cabeza
+      {cx:0,    cy: 1.22, rx:0.26, ry:0.26, type:"sphere"},
+      // ── Cuello
+      {cx:0,    cy: 0.92, rx:0.08, ry:0.12, type:"capsule_v"},
+      // ── Torso alto
+      {cx:0,    cy: 0.62, rx:0.26, ry:0.32, type:"sphere"},
+      // ── Torso bajo / abdomen
+      {cx:0,    cy: 0.28, rx:0.22, ry:0.22, type:"sphere"},
+      // ── Brazo izq: cae diagonal suave desde hombro a rodilla izq
+      {cx:-0.22, cy: 0.60, rx:0.07, ry:0.30, type:"capsule_diag_L"},
+      // ── Brazo der
+      {cx: 0.22, cy: 0.60, rx:0.07, ry:0.30, type:"capsule_diag_R"},
+      // ── Antebrazo izq: apoya en rodilla, casi horizontal con leve inclinación
+      {cx:-0.44, cy: 0.12, rx:0.18, ry:0.065, type:"capsule_h"},
+      // ── Antebrazo der
+      {cx: 0.44, cy: 0.12, rx:0.18, ry:0.065, type:"capsule_h"},
+      // ── Mano izq (mudra)
+      {cx:-0.58, cy: 0.12, rx:0.08, ry:0.08, type:"sphere"},
+      // ── Mano der
+      {cx: 0.58, cy: 0.12, rx:0.08, ry:0.08, type:"sphere"},
+      // ── Cadera / base: elipse ancha
+      {cx:0,    cy:-0.10, rx:0.44, ry:0.18, type:"sphere"},
+      // ── Muslo izq: sale horizontal desde cadera hacia afuera, luego curva — en loto real el muslo apunta hacia los lados
+      {cx:-0.36, cy:-0.18, rx:0.32, ry:0.12, type:"capsule_h"},
+      // ── Muslo der
+      {cx: 0.36, cy:-0.18, rx:0.32, ry:0.12, type:"capsule_h"},
+      // ── Rodilla izq (punta externa)
+      {cx:-0.64, cy:-0.16, rx:0.10, ry:0.10, type:"sphere"},
+      // ── Rodilla der
+      {cx: 0.64, cy:-0.16, rx:0.10, ry:0.10, type:"sphere"},
+      // ── Pantorrilla izq: desde rodilla izq va hacia centro-abajo (pie sobre muslo der)
+      {cx:-0.38, cy:-0.48, rx:0.32, ry:0.10, type:"capsule_diag45_R"},
+      // ── Pantorrilla der
+      {cx: 0.38, cy:-0.48, rx:0.32, ry:0.10, type:"capsule_diag45_L"},
+      // ── Pie izq encima muslo der (arriba del centro derecho)
+      {cx: 0.34, cy:-0.30, rx:0.13, ry:0.07, type:"sphere"},
+      // ── Pie der encima muslo izq
+      {cx:-0.34, cy:-0.30, rx:0.13, ry:0.07, type:"sphere"},
+    ];
+
+    // Asignar peso proporcional al volumen aproximado de cada parte
+    parts.forEach(p=>{
+      p.vol = p.rx * p.ry;
+    });
+    const totalVol = parts.reduce((s,p)=>s+p.vol,0);
+    let acc=0;
+    parts.forEach(p=>{ p.w=p.vol/totalVol; p.cumW=acc+p.w; acc=p.cumW; });
+
+    function samplePart(){
+      const rnd=Math.random();
+      const p=parts.find(p=>rnd<=p.cumW)||parts[parts.length-1];
+      const a=Math.random()*Math.PI*2;
+      const u=Math.random(), v=Math.random();
+
+      if(p.type==="sphere"){
+        const r=Math.sqrt(u)*p.rx;
+        return {x: p.cx + Math.cos(a)*r, y: p.cy + Math.sin(a)*r*( p.ry/p.rx ), z:(Math.random()-0.5)*p.rx*0.8};
+      }
+      if(p.type==="capsule_v"){
+        // cápsula vertical: longitud en Y, radio en X/Z
+        const yOff=(u-0.5)*p.ry*2;
+        const r=Math.sqrt(v)*p.rx;
+        return {x: p.cx + Math.cos(a)*r, y: p.cy + yOff, z:(Math.random()-0.5)*p.rx*0.6};
+      }
+      if(p.type==="capsule_h"){
+        // cápsula horizontal: longitud en X, radio en Y/Z
+        const xOff=(u-0.5)*p.rx*2;
+        const r=Math.sqrt(v)*p.ry;
+        return {x: p.cx + xOff, y: p.cy + Math.cos(a)*r, z:(Math.random()-0.5)*p.ry*0.6};
+      }
+      if(p.type==="capsule_diag_L"){
+        // diagonal: baja hacia izquierda (hombro→rodilla izq, ángulo ~35°)
+        const t2=(u-0.5)*p.ry*2;
+        const r=Math.sqrt(v)*p.rx;
+        const ang=0.60; // radianes
+        return {x: p.cx + Math.sin(a)*r - t2*Math.sin(ang), y: p.cy + Math.cos(a)*r*0.3 - t2*Math.cos(ang), z:(Math.random()-0.5)*p.rx*0.6};
+      }
+      if(p.type==="capsule_diag_R"){
+        const t2=(u-0.5)*p.ry*2;
+        const r=Math.sqrt(v)*p.rx;
+        const ang=0.60;
+        return {x: p.cx + Math.sin(a)*r + t2*Math.sin(ang), y: p.cy + Math.cos(a)*r*0.3 - t2*Math.cos(ang), z:(Math.random()-0.5)*p.rx*0.6};
+      }
+      if(p.type==="capsule_diag45_L"){
+        // muslo: desde cadera afuera-abajo hacia izquierda (ángulo 45°)
+        const t2=(u-0.5)*p.rx*2;
+        const r=Math.sqrt(v)*p.ry;
+        return {x: p.cx + Math.sin(a)*r*0.5 - t2*0.65, y: p.cy + Math.cos(a)*r - t2*0.65, z:(Math.random()-0.5)*p.ry*0.7};
+      }
+      if(p.type==="capsule_diag45_R"){
+        const t2=(u-0.5)*p.rx*2;
+        const r=Math.sqrt(v)*p.ry;
+        return {x: p.cx + Math.sin(a)*r*0.5 + t2*0.65, y: p.cy + Math.cos(a)*r - t2*0.65, z:(Math.random()-0.5)*p.ry*0.7};
+      }
+      // fallback sphere
+      const r=Math.sqrt(u)*p.rx;
+      return {x: p.cx+Math.cos(a)*r, y: p.cy+Math.sin(a)*r, z:(Math.random()-0.5)*p.rx};
+    }
+
+    const CORE=46000, DISP=40000, TOTAL=CORE+DISP;
+    const pos=new Float32Array(TOTAL*3), col=new Float32Array(TOTAL*3);
+
+    for(let i=0;i<CORE;i++){
+      const s=samplePart();
+      const zOff=(Math.random()-0.5)*0.22;
+      pos[i*3  ]=s.x+(Math.random()-0.5)*0.018;
+      pos[i*3+1]=s.y+(Math.random()-0.5)*0.018;
+      pos[i*3+2]=s.z+zOff;
+      // misma textura que la pesa: blanco brillante centro, azulado bordes
+      const distR=Math.sqrt(s.x*s.x);
+      const radialT=Math.min(distR/1.0,1.0);
+      const depthT=(zOff+0.11)/0.22;
+      const tv=radialT*0.35+depthT*0.20+Math.random()*0.08;
+      const v=0.70+tv*0.30;
+      col[i*3]=v*0.94; col[i*3+1]=v*0.96; col[i*3+2]=v;
+    }
+
+    // dispersión — idéntica a la pesa
+    for(let i=0;i<DISP;i++){
+      const idx=CORE+i;
+      const s=samplePart();
+      const sx=s.x, sy=s.y, sz=s.z;
+      const len=Math.sqrt(sx*sx+sy*sy)+0.001;
+      const nx=sx/len, ny=sy/len;
+      const eD=Math.pow(Math.random(),0.35)*7.0;
+      const spread=1.4;
+      const dx=nx+(Math.random()-0.5)*spread;
+      const dy=ny+(Math.random()-0.5)*spread;
+      const dz=(Math.random()-0.5)*spread;
+      const dlen=Math.sqrt(dx*dx+dy*dy+dz*dz)+0.001;
+      pos[idx*3  ]=sx+(dx/dlen)*eD;
+      pos[idx*3+1]=sy+(dy/dlen)*eD;
+      pos[idx*3+2]=sz+(dz/dlen)*eD;
+      const fadeT=eD/7.0;
+      const op=Math.max(0,1.0-fadeT*0.88);
+      col[idx*3  ]=0.94*op+0.22*(1-op);
+      col[idx*3+1]=0.96*op+0.243*(1-op);
+      col[idx*3+2]=1.0*op+0.306*(1-op);
+    }
+
+    const geo=new THREE.BufferGeometry();
+    geo.setAttribute("position",new THREE.BufferAttribute(pos,3));
+    geo.setAttribute("color",new THREE.BufferAttribute(col,3));
+    const mat=new THREE.PointsMaterial({size:0.015,vertexColors:true,transparent:true,opacity:0.88,sizeAttenuation:true});
+    const pts=new THREE.Points(geo,mat);
+    scene.add(pts);
+
+    let t=0,animId;
+    function animate(){
+      animId=requestAnimationFrame(animate);
+      t+=0.004;
+      // respiración: levita suave en Y
+      pts.position.y=Math.sin(t*0.50)*0.04;
+      // leve rotación Y — como la pesa pero más suave
+      pts.rotation.y=Math.sin(t*0.30)*0.18;
+      pts.rotation.x=Math.sin(t*0.22)*0.03;
+      renderer.render(scene,camera);
+    }
+    animate();
+
+    document.addEventListener("visibilitychange",()=>{
+      if(document.hidden){cancelAnimationFrame(animId);}else{animate();}
+    });
+  }
+
+  window.addEventListener("forja:mount", tryInit);
+  window.addEventListener("load", tryInit);
+  setInterval(tryInit, 200);
+})();
 </script>
 </body>
 </html>
