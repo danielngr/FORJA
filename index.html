@@ -415,24 +415,60 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
     sr(r);setStep(99);
   };
 
-  const Opt=({active,onClick,children})=>(
-    <button onClick={onClick} style={{width:"100%",padding:"15px 18px",borderRadius:12,
-      border:`1.5px solid ${active?C.tx:C.borderL}`,cursor:"pointer",
-      background:active?C.tx:C.card,color:active?C.white:C.tx2,
-      fontSize:15,fontWeight:active?700:400,fontFamily:sans,textAlign:"left",transition:"all 0.18s",
-      display:"flex",alignItems:"center",justifyContent:"space-between",
-      boxShadow:active?"0 4px 16px rgba(0,0,0,0.12)":"none"}}>
-      <span>{children}</span>
-      {active&&<div style={{width:7,height:7,borderRadius:"50%",background:C.white}}/>}
-    </button>
-  );
+  // Opt — estilo FORJA: línea horizontal, índice mono, barra activa izquierda
+  let _optIdx=0;
+  const Opt=({active,onClick,children})=>{
+    const n=String(++_optIdx).padStart(2,"0");
+    return(
+      <button onClick={onClick} style={{
+        width:"100%",padding:"14px 0",cursor:"pointer",background:"transparent",border:"none",
+        borderBottom:`1px solid ${active?C.border+"88":C.borderL+"55"}`,
+        display:"flex",alignItems:"center",gap:14,textAlign:"left",
+        transition:"all 0.15s",position:"relative",outline:"none"}}>
+        {/* barra activa izquierda */}
+        <div style={{
+          width:2,height:active?"100%":"0%",
+          background:C.tx,borderRadius:1,
+          transition:"height 0.2s ease",
+          position:"absolute",left:-14,top:0,bottom:0,margin:"auto"}}/>
+        {/* número índice */}
+        <span style={{
+          fontSize:9,fontFamily:mono,color:active?C.tx3:C.borderL,
+          letterSpacing:1,minWidth:20,transition:"color 0.15s"}}>
+          {n}
+        </span>
+        {/* label */}
+        <span style={{
+          flex:1,fontSize:14,fontWeight:active?700:400,
+          fontFamily:active?sans:mono,letterSpacing:active?-0.3:1.5,
+          color:active?C.tx:C.tx3,textTransform:active?"none":"uppercase",
+          transition:"all 0.15s"}}>
+          {children}
+        </span>
+        {/* tick derecha */}
+        <span style={{
+          fontSize:10,fontFamily:mono,color:active?C.tx:C.borderL,
+          letterSpacing:0,opacity:active?1:0,transition:"opacity 0.15s"}}>
+          ●
+        </span>
+      </button>
+    );
+  };
+
   const Btn=({onClick,disabled,children,ghost})=>(
-    <button onClick={onClick} disabled={disabled} style={{width:"100%",padding:"17px",borderRadius:14,
-      border:`1.5px solid ${ghost?C.border:disabled?C.borderL:C.tx}`,cursor:disabled?"default":"pointer",
-      background:ghost?C.card:disabled?C.cardDim:C.tx,color:ghost?C.tx3:disabled?C.tx3:C.white,
-      fontSize:14,fontWeight:700,fontFamily:sans,letterSpacing:1.5,transition:"all 0.2s",
-      boxShadow:!ghost&&!disabled?"0 6px 24px rgba(0,0,0,0.15)":"none"}}>
-      {children}
+    <button onClick={onClick} disabled={disabled} style={{
+      width:"100%",padding:"16px 20px",cursor:disabled?"default":"pointer",
+      background:"transparent",
+      border:"none",
+      borderTop:`1px solid ${disabled?C.borderL:ghost?C.borderL:C.tx}`,
+      borderBottom:`1px solid ${disabled?C.borderL:ghost?C.borderL:C.tx}`,
+      color:ghost?C.tx3:disabled?C.tx3:C.tx,
+      fontSize:11,fontWeight:700,fontFamily:mono,
+      letterSpacing:4,textTransform:"uppercase",
+      display:"flex",alignItems:"center",justifyContent:"space-between",
+      transition:"all 0.2s",opacity:disabled?0.3:1,outline:"none"}}>
+      <span>{children}</span>
+      {!ghost&&!disabled&&<span style={{fontSize:16,letterSpacing:0}}>→</span>}
     </button>
   );
 
@@ -448,11 +484,11 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             </div>
           </div>
           <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:10}}>// SELECT LANGUAGE</div>
-          <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:36}}>
+          <div style={{display:"flex",flexDirection:"column",marginBottom:36,borderTop:`1px solid ${C.borderL}55`}}>
             <Opt active={lang==="es"} onClick={()=>setLang("es")}>Español</Opt>
             <Opt active={lang==="en"} onClick={()=>setLang("en")}>English</Opt>
           </div>
-          <Btn onClick={()=>setStep(1)} disabled={!lang}>{t.next} →</Btn>
+          <Btn onClick={()=>setStep(1)} disabled={!lang}>{t.next}</Btn>
         </div>
       )}
       {step>=1&&step<=4&&(
@@ -463,27 +499,27 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
           {step===1&&(<>
             <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{t.goal}</div>
             <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:24,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"¿Qué buscas?":"What's your goal?"}</div>
-            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            <div style={{display:"flex",flexDirection:"column",borderTop:`1px solid ${C.borderL}55`}}>
               {[["muscle",t.muscle],["strength",t.strength],["lose",t.lose],["recomp",t.recomp],["general",t.general]].map(([id,lb])=>(
                 <Opt key={id} active={goal===id} onClick={()=>setGoal(id)}>{lb}</Opt>
               ))}
             </div>
             <div style={{display:"flex",gap:10,marginTop:28}}>
               <div style={{flex:1}}><Btn ghost onClick={()=>setStep(0)}>{t.back}</Btn></div>
-              <div style={{flex:2}}><Btn onClick={()=>setStep(2)} disabled={!goal}>{t.next} →</Btn></div>
+              <div style={{flex:2}}><Btn onClick={()=>setStep(2)} disabled={!goal}>{t.next}</Btn></div>
             </div>
           </>)}
           {step===2&&(<>
             <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{t.level}</div>
             <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:24,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"Tu experiencia":"Your experience"}</div>
-            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            <div style={{display:"flex",flexDirection:"column",borderTop:`1px solid ${C.borderL}55`}}>
               {[["beg",t.beg],["int",t.int],["adv",t.adv]].map(([id,lb])=>(
                 <Opt key={id} active={level===id} onClick={()=>setLevel(id)}>{lb}</Opt>
               ))}
             </div>
             <div style={{display:"flex",gap:10,marginTop:28}}>
               <div style={{flex:1}}><Btn ghost onClick={()=>setStep(1)}>{t.back}</Btn></div>
-              <div style={{flex:2}}><Btn onClick={()=>setStep(3)} disabled={!level}>{t.next} →</Btn></div>
+              <div style={{flex:2}}><Btn onClick={()=>setStep(3)} disabled={!level}>{t.next}</Btn></div>
             </div>
           </>)}
           {step===3&&(<>
@@ -500,13 +536,13 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             </div>
             <div style={{display:"flex",gap:10,marginTop:32}}>
               <div style={{flex:1}}><Btn ghost onClick={()=>setStep(2)}>{t.back}</Btn></div>
-              <div style={{flex:2}}><Btn onClick={()=>setStep(4)}>{t.next} →</Btn></div>
+              <div style={{flex:2}}><Btn onClick={()=>setStep(4)}>{t.next}</Btn></div>
             </div>
           </>)}
           {step===4&&(<>
             <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{t.split}</div>
             <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:24,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"Tu programa":"Your program"}</div>
-            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            <div style={{display:"flex",flexDirection:"column",borderTop:`1px solid ${C.borderL}55`}}>
               {Object.entries(TP).map(([k,v])=>(
                 <Opt key={k} active={split===k} onClick={()=>setSplit(k)}>
                   <div>
