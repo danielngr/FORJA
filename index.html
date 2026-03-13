@@ -293,7 +293,10 @@ const VID={
 };
 const getVid=name=>VID[name.toLowerCase().trim()]||null;
 
-function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
+// ── Utilidades ──
+const epley=(w,r)=>r===1?+w:Math.round(+w*(1+0.0333*+r)); // 1RM estimado
+
+function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack,sessionStart}){
   const exs=day.ex;
   const[idx,setIdx]=useState(0);
   const[kg,setKg]=useState("");
@@ -303,6 +306,14 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
   const[sliding,setSliding]=useState(false);
   const[slideDir,setSlideDir]=useState(0);
   const[dragY,setDragY]=useState(0);
+  // ── NUEVOS ESTADOS ──
+  const[restSecs,setRestSecs]=useState(0);   // countdown descanso
+  const[restActive,setRestActive]=useState(false);
+  const[restDur,setRestDur]=useState(90);    // duración descanso configurable
+  const[showPR,setShowPR]=useState(null);    // nombre ejercicio con PR
+  const[sessionSecs,setSessionSecs]=useState(0); // cronómetro sesión
+  const[showGraph,setShowGraph]=useState(false);  // gráfica progreso
+  const restRef=useRef(null);
   const startY=useRef(0);
   const isDrag=useRef(false);
 
@@ -314,21 +325,45 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
   const imgUrl=ex&&!imgErr[ex.id]?getImg(ex.e):null;
   const vidUrl=ex?getVid(ex.e):null;
 
-  // Cargar último peso/reps del ejercicio actual (historial > localStorage > default)
+  // 1RM del historial
+  const best1RM=hist.length?Math.max(...hist.map(h=>epley(h.w,h.r))):0;
+  const current1RM=kg&&rp?epley(kg,rp):0;
+
+  // Cargar último peso/reps del ejercicio actual
   useEffect(()=>{
     if(!ex) return;
-    if(hist.length>0){
-      setKg(String(hist[0].w||""));
-      setRp(String(hist[0].r||""));
-    } else {
-      try{
-        const saved=localStorage.getItem("fv9_last_"+ex.id);
+    if(hist.length>0){setKg(String(hist[0].w||""));setRp(String(hist[0].r||""));}
+    else{
+      try{const saved=localStorage.getItem("fv9_last_"+ex.id);
         if(saved){const p=JSON.parse(saved);setKg(p.w||"");setRp(p.r||"");}
         else{setKg("");setRp("");}
       }catch{setKg("");setRp("");}
     }
     setShowHist(false);
   },[idx]);
+
+  // ── Cronómetro de sesión ──
+  useEffect(()=>{
+    const t=setInterval(()=>setSessionSecs(s=>s+1),1000);
+    return()=>clearInterval(t);
+  },[]);
+
+  // ── Temporizador de descanso ──
+  useEffect(()=>{
+    if(restActive&&restSecs>0){
+      restRef.current=setTimeout(()=>setRestSecs(s=>s-1),1000);
+    } else if(restSecs===0&&restActive){
+      setRestActive(false);
+      // Vibración al terminar descanso
+      try{navigator.vibrate&&navigator.vibrate([200,100,200]);}catch{}
+    }
+    return()=>clearTimeout(restRef.current);
+  },[restActive,restSecs]);
+
+  const startRest=()=>{setRestSecs(restDur);setRestActive(true);};
+  const stopRest=()=>{setRestActive(false);setRestSecs(0);};
+
+  const fmtTime=s=>`${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`;
 
   const goTo=ni=>{
     if(ni<0||ni>exs.length||sliding)return;
@@ -344,9 +379,17 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
   const onMU=()=>{if(dragY<-55)goTo(idx+1);else if(dragY>55)goTo(idx-1);setDragY(0);isDrag.current=false;};
   const handleSave=()=>{
     if(kg||rp){
+      // Detectar PR
+      const new1RM=epley(kg,rp);
+      if(new1RM>best1RM&&best1RM>0){
+        setShowPR(ex.e);
+        setTimeout(()=>setShowPR(null),3500);
+      }
       onSaveLog(ex.id,kg,rp);
       if(!isDone)onToggle(ex.id);
       try{localStorage.setItem("fv9_last_"+ex.id,JSON.stringify({w:kg,r:rp}));}catch{}
+      // Iniciar temporizador de descanso
+      startRest();
     }
   };
   const sp=e=>e.stopPropagation();
@@ -465,15 +508,20 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
         </div>
         <div style={{fontSize:30,fontWeight:900,letterSpacing:-1,color:C.tx,textAlign:"center",padding:"0 32px",animation:"fu 0.5s ease 0.3s both"}}>{msg}</div>
         <div style={{fontSize:12,color:C.tx3,marginTop:10,textAlign:"center",padding:"0 44px",lineHeight:1.7,animation:"fu 0.5s ease 0.5s both"}}>{sub}</div>
-        <div style={{display:"flex",gap:28,marginTop:32,animation:"fu 0.5s ease 0.7s both"}}>
+        <div style={{display:"flex",gap:22,marginTop:32,animation:"fu 0.5s ease 0.7s both"}}>
           <div style={{textAlign:"center"}}>
-            <div style={{fontSize:30,fontWeight:900,color:C.tx}}>{exs.length}</div>
+            <div style={{fontSize:28,fontWeight:900,color:C.tx}}>{exs.length}</div>
             <div style={{fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:2,marginTop:3}}>{lang==="es"?"EJERCICIOS":"EXERCISES"}</div>
           </div>
           <div style={{width:1,background:C.border}}/>
           <div style={{textAlign:"center"}}>
-            <div style={{fontSize:30,fontWeight:900,color:C.green}}>{totalDone}</div>
+            <div style={{fontSize:28,fontWeight:900,color:C.green}}>{totalDone}</div>
             <div style={{fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:2,marginTop:3}}>{lang==="es"?"COMPLETADOS":"COMPLETED"}</div>
+          </div>
+          <div style={{width:1,background:C.border}}/>
+          <div style={{textAlign:"center"}}>
+            <div style={{fontSize:28,fontWeight:900,color:C.blue}}>{fmtTime(sessionSecs)}</div>
+            <div style={{fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:2,marginTop:3}}>{lang==="es"?"DURACIÓN":"DURATION"}</div>
           </div>
         </div>
         <button onClick={onBack} style={{marginTop:40,padding:"15px 40px",borderRadius:14,
@@ -487,15 +535,66 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
 
   return(
     <div style={{position:"fixed",inset:0,background:C.bg,display:"flex",flexDirection:"column",overflow:"hidden",fontFamily:sans}}>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px 20px 12px",borderBottom:`1px solid ${C.borderL}`,flexShrink:0,background:C.bg}}>
+
+      {/* ── PR OVERLAY ── */}
+      {showPR&&(
+        <div style={{position:"fixed",top:0,left:0,right:0,zIndex:999,pointerEvents:"none",
+          display:"flex",justifyContent:"center",padding:"12px"}}>
+          <div style={{background:C.yellow,color:"#1a1400",padding:"10px 24px",borderRadius:20,
+            fontSize:11,fontWeight:800,fontFamily:mono,letterSpacing:2,
+            animation:"celebrate 0.4s cubic-bezier(.34,1.56,.64,1) both"}}>
+            🏆 {lang==="es"?"NUEVO RÉCORD":"NEW PR"} — {showPR.toUpperCase().slice(0,20)}
+          </div>
+        </div>
+      )}
+
+      {/* ── REST TIMER OVERLAY ── */}
+      {restActive&&(
+        <div style={{position:"fixed",inset:0,zIndex:998,background:"rgba(0,0,0,0.75)",
+          display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}
+          onClick={stopRest}>
+          <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,0.5)",letterSpacing:3,marginBottom:16}}>
+            {lang==="es"?"// DESCANSO — toca para saltar":"// REST — tap to skip"}
+          </div>
+          <div style={{fontSize:88,fontWeight:900,color:restSecs<=10?C.red:C.tx,
+            fontFamily:sans,letterSpacing:-4,lineHeight:1,
+            animation:restSecs<=5?"pulse 0.5s ease-in-out infinite":"none"}}>
+            {fmtTime(restSecs)}
+          </div>
+          {/* Anillo de progreso */}
+          <svg width="160" height="160" style={{position:"absolute",opacity:0.3}}>
+            <circle cx="80" cy="80" r="72" fill="none" stroke={C.tx} strokeWidth="4"
+              strokeDasharray={`${2*Math.PI*72}`}
+              strokeDashoffset={`${2*Math.PI*72*(1-restSecs/restDur)}`}
+              transform="rotate(-90 80 80)" style={{transition:"stroke-dashoffset 1s linear"}}/>
+          </svg>
+          {/* Selector de duración */}
+          <div style={{display:"flex",gap:8,marginTop:40}} onClick={e=>e.stopPropagation()}>
+            {[60,90,120,180].map(s=>(
+              <button key={s} onClick={()=>{setRestDur(s);setRestSecs(s);}}
+                style={{padding:"6px 14px",borderRadius:8,border:`1px solid ${restDur===s?C.tx:C.borderL}`,
+                  background:restDur===s?"rgba(255,255,255,0.15)":"transparent",
+                  color:restDur===s?C.tx:C.tx3,fontSize:10,fontFamily:mono,cursor:"pointer",letterSpacing:1}}>
+                {s}s
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── HEADER ── */}
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 20px 10px",borderBottom:`1px solid ${C.borderL}`,flexShrink:0,background:C.bg}}>
         <button onClick={onBack} style={{background:"none",border:"none",color:C.tx3,fontSize:11,fontFamily:mono,letterSpacing:1.5,cursor:"pointer",padding:0}}>
           ← {lang==="es"?"VOLVER":"BACK"}
         </button>
-        <div style={{fontSize:10,fontFamily:mono,color:C.tx2,letterSpacing:3,fontWeight:600}}>{day.l}</div>
+        <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2}}>
+          <div style={{fontSize:10,fontFamily:mono,color:C.tx2,letterSpacing:3,fontWeight:600}}>{day.l}</div>
+          <div style={{fontSize:11,fontFamily:mono,color:C.tx3,letterSpacing:1}}>{fmtTime(sessionSecs)}</div>
+        </div>
         <div style={{display:"flex",gap:5,alignItems:"center"}}>
           {exs.map((_,i)=>(
             <div key={i} onClick={()=>goTo(i)} style={{width:i===idx?20:5,height:5,borderRadius:3,cursor:"pointer",
-              background:done[`${sel}-${exs[i].id}`]?C.tx:i===idx?C.tx:C.borderL,transition:"all 0.3s"}}/>
+              background:done[`${sel}-${exs[i].id}`]?C.green:i===idx?C.tx:C.borderL,transition:"all 0.3s"}}/>
           ))}
         </div>
       </div>
@@ -508,8 +607,8 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
           opacity:Math.abs(ty)>30?Math.max(0.4,1-Math.abs(ty)/120):1,
           cursor:isDrag.current?"grabbing":"grab",userSelect:"none",minHeight:0}}>
 
-        <div style={{padding:"18px 20px 10px",flexShrink:0}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+        <div style={{padding:"14px 20px 10px",flexShrink:0}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
             <div style={{fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:2}}>
               {String(idx+1).padStart(2,"0")} / {String(exs.length).padStart(2,"0")}
             </div>
@@ -518,16 +617,59 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
               <div onPointerDown={sp} onMouseDown={sp} onTouchStart={sp}
                 onClick={e=>{sp(e);onToggle(ex.id);}}
                 style={{width:26,height:26,borderRadius:7,cursor:"pointer",
-                  background:isDone?C.tx:"transparent",border:`1.5px solid ${isDone?C.tx:C.border}`,
+                  background:isDone?C.green:"transparent",border:`1.5px solid ${isDone?C.green:C.border}`,
                   display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s"}}>
                 {isDone&&<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6.5L5 9.5L10 3" stroke={C.white} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
               </div>
             </div>
           </div>
-          <div style={{fontSize:32,fontWeight:900,color:C.tx,lineHeight:1,letterSpacing:-1.5,textTransform:"uppercase",animation:"fu 0.3s ease",fontFamily:sans}}>{ex.e}</div>
-          <div style={{marginTop:7}}>
-            <span style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:1.5}}>{ex.s} × {ex.r}</span>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+            <div>
+              <div style={{fontSize:30,fontWeight:900,color:C.tx,lineHeight:1,letterSpacing:-1.5,textTransform:"uppercase",animation:"fu 0.3s ease",fontFamily:sans}}>{ex.e}</div>
+              <div style={{marginTop:5,display:"flex",gap:12,alignItems:"center"}}>
+                <span style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:1.5}}>{ex.s} × {ex.r}</span>
+                {best1RM>0&&<span style={{fontSize:10,fontFamily:mono,color:C.purple,letterSpacing:1}}>1RM {best1RM}kg</span>}
+                {current1RM>best1RM&&best1RM>0&&<span style={{fontSize:9,fontFamily:mono,color:C.yellow,letterSpacing:1}}>↑ PR!</span>}
+              </div>
+            </div>
+            {hist.length>1&&(
+              <button onPointerDown={sp} onClick={e=>{sp(e);setShowGraph(!showGraph);}}
+                style={{background:"none",border:`1px solid ${C.borderL}`,borderRadius:8,padding:"5px 10px",
+                  color:C.tx3,fontSize:9,fontFamily:mono,cursor:"pointer",letterSpacing:1,flexShrink:0}}>
+                {showGraph?"✕":"📈"}
+              </button>
+            )}
           </div>
+
+          {/* ── MINI GRÁFICA DE PROGRESO ── */}
+          {showGraph&&hist.length>1&&(()=>{
+            const pts=hist.slice().reverse().map(h=>({d:h.d,v:epley(h.w,h.r)}));
+            const maxV=Math.max(...pts.map(p=>p.v));
+            const minV=Math.min(...pts.map(p=>p.v));
+            const range=maxV-minV||1;
+            const W2=300,H2=60;
+            const xs=pts.map((_,i)=>Math.round(i/(pts.length-1||1)*(W2-8)+4));
+            const ys=pts.map(p=>Math.round(H2-4-(p.v-minV)/range*(H2-8)));
+            const d="M"+xs.map((x,i)=>`${x},${ys[i]}`).join(" L");
+            return(
+              <div style={{marginTop:10,background:C.bgDeep,borderRadius:10,padding:"10px 12px"}}>
+                <svg width="100%" viewBox={`0 0 ${W2} ${H2}`} style={{display:"block"}}>
+                  <polyline points={xs.map((x,i)=>`${x},${ys[i]}`).join(" ")}
+                    fill="none" stroke={C.purple} strokeWidth="2" strokeLinejoin="round"/>
+                  {xs.map((x,i)=>(
+                    <circle key={i} cx={x} cy={ys[i]} r="3" fill={C.purple}/>
+                  ))}
+                  <text x={xs[xs.length-1]} y={ys[ys.length-1]-6}
+                    fontSize="9" fill={C.purple} textAnchor="middle" fontFamily="monospace">
+                    {pts[pts.length-1].v}kg
+                  </text>
+                </svg>
+                <div style={{fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:1,marginTop:2,textAlign:"center"}}>
+                  {lang==="es"?"1RM ESTIMADO":"ESTIMATED 1RM"} · {pts.length} {lang==="es"?"sesiones":"sessions"}
+                </div>
+              </div>
+            );
+          })()}
         </div>
 
         <div style={{margin:"0 14px",flex:1,minHeight:0}}>
@@ -743,34 +885,35 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
     <div style={{minHeight:"100vh",background:C.bg,color:C.tx,fontFamily:sans}}>
       {step===0&&(
         <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",animation:"fogIn 0.8s ease"}}>
-
-          {/* ── LOGO ── */}
-          <div style={{padding:"0 26px",paddingTop:"6vh"}}>
-            <canvas id="forja-logo-canvas" style={{width:"100%",height:160,display:"block"}}></canvas>
-          </div>
-
           {/* ── HERO VALUE PROP ── */}
-          <div style={{padding:"0 26px",marginTop:8,flex:1}}>
+          <div style={{padding:"0 26px",paddingTop:"6vh",flex:1}}>
+
+            {/* ── LOGO partículas — mancuerna ── */}
+            <canvas id="forja-logo-canvas" style={{width:"100%",height:160,display:"block",marginBottom:16}}></canvas>
 
             {/* Tagline — QUÉ ES */}
             <div style={{marginBottom:28}}>
               <div style={{fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:3,marginBottom:12}}>
-                // QUÉ ES FORJA
+                {lang==="en"?"// WHAT IS FORJA":"// QUÉ ES FORJA"}
               </div>
               <div style={{fontSize:26,fontWeight:900,letterSpacing:-1,lineHeight:1.15,color:C.tx}}>
-                Tu entrenador de gym
+                {lang==="en"?"Your gym coach":"Tu entrenador de gym"}
                 <br/>
-                <span style={{color:C.tx2}}>sin gimnasio ni coach.</span>
+                <span style={{color:C.tx2}}>{lang==="en"?"without gym or trainer.":"sin gimnasio ni coach."}</span>
               </div>
             </div>
 
-            {/* 3 pillars — PARA QUIÉN / POR QUÉ */}
+            {/* 3 pillars */}
             <div style={{display:"flex",flexDirection:"column",gap:0,borderTop:`1px solid ${C.borderL}44`,marginBottom:32}}>
-              {[
+              {(lang==="en"?[
+                {icon:"◎", text:"Personalized routine based on your body and goal"},
+                {icon:"◎", text:"Exercise videos with muscle activation highlights"},
+                {icon:"◎", text:"Track your weights and progress week by week"},
+              ]:[
                 {icon:"◎", text:"Rutina personalizada según tu cuerpo y objetivo"},
                 {icon:"◎", text:"Videos de cada ejercicio con músculos activados"},
                 {icon:"◎", text:"Registra tus pesos y evolución semana a semana"},
-              ].map((item,i)=>(
+              ]).map((item,i)=>(
                 <div key={i} style={{display:"flex",alignItems:"flex-start",gap:14,
                   padding:"14px 0",borderBottom:`1px solid ${C.borderL}33`}}>
                   <div style={{fontSize:10,color:C.tx3,flexShrink:0,marginTop:2,fontFamily:mono}}>{item.icon}</div>
@@ -798,7 +941,6 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               {lang==="en"?"START →":"EMPEZAR →"}
             </Btn>
 
-            {/* Social proof / note */}
             <div style={{textAlign:"center",marginTop:20,fontSize:10,fontFamily:mono,
               color:C.tx3,letterSpacing:1,opacity:0.6}}>
               {lang==="en"?"Free · No account needed · Works offline":"Gratis · Sin cuenta · Funciona sin internet"}
@@ -1059,7 +1201,22 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   const tot=entries.reduce((a,e)=>({cal:a.cal+(+e.cal||0),prot:a.prot+(+e.prot||0),carbs:a.carbs+(+e.carbs||0),fat:a.fat+(+e.fat||0)}),{cal:0,prot:0,carbs:0,fat:0});
 
   const toggle=id=>{const k=`${sel}-${id}`;sd({...done,[k]:!done[k]});};
-  const saveLog=(id,kg,rp)=>{if(!kg&&!rp)return;const nl={...logs};if(!nl[id])nl[id]=[];nl[id]=[{d:today,w:kg,r:rp},...nl[id]].slice(0,30);slg(nl);};
+  const saveLog=(id,kg,rp)=>{
+    if(!kg&&!rp)return;
+    const nl={...logs};
+    if(!nl[id])nl[id]=[];
+    nl[id]=[{d:today,w:kg,r:rp,rm:epley(kg,rp)},...nl[id]].slice(0,60);
+    slg(nl);
+  };
+
+  const exportData=()=>{
+    const data={profile,routine,logs,exported:today};
+    const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download=`forja_backup_${today}.json`;
+    a.click();
+  };
   const addExFn=()=>{if(!nex.e||!day)return;const r=[...routine];r[sel].ex=[...r[sel].ex,{...nex,id:`${sel}${Date.now()}`}];sr(r);setAddEx(false);setNex({e:"",s:3,r:"8-12"});};
   const rmEx=id=>{const r=[...routine];r[sel].ex=r[sel].ex.filter(x=>x.id!==id);sr(r);};
   const addFood=()=>{if(!fd.n||!fd.cal)return;const m={...macros};if(!m.entries)m.entries=[];m.entries.push({...fd,id:Date.now()});sm(m);setAddF(false);setFd({n:"",cal:"",prot:"",carbs:"",fat:"",m:"mid"});};
@@ -1215,7 +1372,6 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                   onClick={()=>setInWorkout(true)}
                 >
                   <canvas id="forja-dumbbell-canvas" style={{width:"100%",height:"100%",display:"block"}}></canvas>
-                  {/* Hint label */}
                   <div style={{position:"absolute",bottom:16,left:"50%",transform:"translateX(-50%)",
                     background:"rgba(240,242,245,0.12)",backdropFilter:"blur(8px)",
                     border:"1px solid rgba(240,242,245,0.20)",
@@ -1226,6 +1382,59 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                     ▶ {t.startWorkout}
                   </div>
                 </div>
+
+                {/* ── VOLUMEN SEMANAL POR MÚSCULO ── */}
+                {(()=>{
+                  // Calcular series por grupo muscular esta semana
+                  const muscleMap={
+                    "bench press":"Pecho","incline bench press":"Pecho","dumbbell bench press":"Pecho",
+                    "incline dumbbell press":"Pecho","cable fly":"Pecho","dumbbell flyes":"Pecho",
+                    "dips":"Pecho","push up":"Pecho","machine chest press":"Pecho",
+                    "pull up":"Espalda","chin up":"Espalda","barbell row":"Espalda","pendlay row":"Espalda",
+                    "dumbbell row":"Espalda","cable row":"Espalda","lat pulldown":"Espalda","machine pulldown":"Espalda",
+                    "overhead press":"Hombros","dumbbell shoulder press":"Hombros","lateral raise":"Hombros",
+                    "face pull":"Hombros","reverse fly":"Hombros",
+                    "barbell curl":"Bíceps","dumbbell curl":"Bíceps","hammer curl":"Bíceps","preacher curl":"Bíceps",
+                    "skull crusher":"Tríceps","tricep pushdown":"Tríceps","overhead tricep extension":"Tríceps",
+                    "barbell squat":"Piernas","front squat":"Piernas","leg press":"Piernas","leg extension":"Piernas",
+                    "leg curl":"Piernas","romanian deadlift":"Piernas","bulgarian split squat":"Piernas",
+                    "deadlift":"Piernas","hip thrust":"Glúteos","calf raise":"Gemelos",
+                  };
+                  const vol={};
+                  // Iterar todos los días de la semana
+                  if(routine)routine.forEach((day,di)=>{
+                    if(!day)return;
+                    day.ex.forEach(ex=>{
+                      if(done[`${di}-${ex.id}`]){
+                        const muscle=muscleMap[ex.e.toLowerCase()]||(lang==="es"?"Otro":"Other");
+                        vol[muscle]=(vol[muscle]||0)+ex.s;
+                      }
+                    });
+                  });
+                  const entries=Object.entries(vol).sort((a,b)=>b[1]-a[1]);
+                  if(!entries.length)return null;
+                  const maxV=entries[0][1];
+                  return(
+                    <div style={{marginTop:14,padding:"14px 16px",background:C.card,borderRadius:12,border:`1px solid ${C.borderL}`}}>
+                      <div style={{fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>
+                        {lang==="es"?"// VOLUMEN SEMANAL":"// WEEKLY VOLUME"}
+                      </div>
+                      <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                        {entries.map(([m,s])=>(
+                          <div key={m} style={{display:"flex",alignItems:"center",gap:10}}>
+                            <div style={{fontSize:10,fontFamily:mono,color:C.tx2,width:60,flexShrink:0}}>{m}</div>
+                            <div style={{flex:1,height:6,background:C.borderL,borderRadius:3,overflow:"hidden"}}>
+                              <div style={{height:"100%",width:`${(s/maxV)*100}%`,
+                                background:s>=10?C.green:s>=6?C.blue:C.yellow,
+                                borderRadius:3,transition:"width 0.5s"}}/>
+                            </div>
+                            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,width:28,textAlign:"right"}}>{s}s</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {!addEx?(
                   <button onClick={()=>setAddEx(true)} style={{width:"100%",padding:"13px 0",marginTop:12,borderRadius:10,border:`1.5px dashed ${C.border}`,background:"transparent",color:C.tx3,fontSize:10,fontFamily:mono,letterSpacing:2,cursor:"pointer"}}>{t.addEx}</button>
@@ -1249,9 +1458,14 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                   </div>
                 )}
 
-                <div style={{textAlign:"center",marginTop:22}}>
+                <div style={{textAlign:"center",marginTop:22,display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap"}}>
                   {!confirmR?(
-                    <button onClick={()=>setConfirmR(true)} style={{background:"none",border:`1px solid ${C.borderL}`,borderRadius:8,padding:"8px 18px",color:C.tx3,fontSize:9,fontFamily:mono,letterSpacing:2,cursor:"pointer"}}>{t.reset.toUpperCase()}</button>
+                    <>
+                      <button onClick={()=>setConfirmR(true)} style={{background:"none",border:`1px solid ${C.borderL}`,borderRadius:8,padding:"8px 18px",color:C.tx3,fontSize:9,fontFamily:mono,letterSpacing:2,cursor:"pointer"}}>{t.reset.toUpperCase()}</button>
+                      <button onClick={exportData} style={{background:"none",border:`1px solid ${C.borderL}`,borderRadius:8,padding:"8px 18px",color:C.tx3,fontSize:9,fontFamily:mono,letterSpacing:2,cursor:"pointer"}}>
+                        {lang==="es"?"↓ EXPORTAR":"↓ EXPORT"}
+                      </button>
+                    </>
                   ):(
                     <div style={{display:"flex",gap:8,justifyContent:"center"}}>
                       <button onClick={()=>{sd({});setConfirmR(false);}} style={{padding:"8px 18px",borderRadius:8,border:"none",background:C.tx,color:C.white,fontSize:9,fontFamily:mono,letterSpacing:2,cursor:"pointer"}}>{t.yes.toUpperCase()}</button>
@@ -1471,61 +1685,48 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     if(canvas.dataset.linit) return;
     canvas.dataset.linit="1";
 
-    const DPR=Math.min(window.devicePixelRatio||1,2);
     const W=canvas.offsetWidth||320;
-    const H=canvas.offsetHeight||180;
-    canvas.width=W*DPR; canvas.height=H*DPR;
+    const H=canvas.offsetHeight||160;
 
-    // 1. Renderizar "FORJA" en canvas 2D oculto para samplear píxeles
-    const off=document.createElement("canvas");
+    // Renderizar "FORJA" en canvas 2D — una línea, mismo tamaño, centrado
     const OW=800, OH=200;
+    const off=document.createElement("canvas");
     off.width=OW; off.height=OH;
     const ctx=off.getContext("2d");
     ctx.fillStyle="#ffffff";
     ctx.fillRect(0,0,OW,OH);
-
-    // FORJA en una línea, bold sólido, centrado
     ctx.fillStyle="#000000";
     ctx.font="900 148px Arial Black,Arial,sans-serif";
     ctx.textBaseline="middle";
     ctx.textAlign="center";
     ctx.fillText("FORJA",OW/2,OH/2);
 
-    // Samplear píxeles oscuros — stride más fino para más densidad
+    // Samplear píxeles oscuros
     const imgData=ctx.getImageData(0,0,OW,OH);
     const pts2d=[];
-    const stride=2;
-    for(let y=0;y<OH;y+=stride){
-      for(let x=0;x<OW;x+=stride){
+    for(let y=0;y<OH;y+=2){
+      for(let x=0;x<OW;x+=2){
         const i=(y*OW+x)*4;
-        const brightness=(imgData.data[i]+imgData.data[i+1]+imgData.data[i+2])/3;
-        if(brightness<140){
-          pts2d.push({
-            x:(x/OW)*2-1,
-            y:1-(y/OH)*2,
-            outline: false
-          });
+        if(imgData.data[i]<140){
+          pts2d.push({x:((x/OW)*2-1), y:(1-(y/OH)*2)});
         }
       }
     }
 
-    // 2. Three.js
     const renderer=new THREE.WebGLRenderer({canvas,antialias:false,alpha:true});
     renderer.setSize(W,H);
-    renderer.setPixelRatio(DPR);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
     renderer.setClearColor(0x000000,0);
 
     const scene=new THREE.Scene();
-    // Cámara ortográfica — top positivo arriba
     const aspect=W/H;
     const cam=new THREE.OrthographicCamera(-aspect,aspect,1,-1,0.1,100);
     cam.position.set(0,0,10);
 
     const TOTAL=pts2d.length;
+    const DISP=Math.floor(TOTAL*0.6);
     const pos=new Float32Array(TOTAL*3);
     const col=new Float32Array(TOTAL*3);
-    // partículas dispersas extra
-    const DISP=Math.floor(TOTAL*0.6);
     const posD=new Float32Array(DISP*3);
     const colD=new Float32Array(DISP*3);
 
@@ -1533,10 +1734,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
     for(let i=0;i<TOTAL;i++){
       const p=pts2d[i];
-      pos[i*3]  =p.x*scaleX+(Math.random()-0.5)*0.015;
+      pos[i*3  ]=p.x*scaleX+(Math.random()-0.5)*0.015;
       pos[i*3+1]=p.y*scaleY+(Math.random()-0.5)*0.015;
       pos[i*3+2]=(Math.random()-0.5)*0.04;
-      const v=p.outline?(0.72+Math.random()*0.26):(0.80+Math.random()*0.18);
+      const v=0.80+Math.random()*0.18;
       col[i*3]=v*0.94; col[i*3+1]=v*0.96; col[i*3+2]=v;
     }
 
@@ -1544,12 +1745,12 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       const src=pts2d[Math.floor(Math.random()*TOTAL)];
       const eD=Math.pow(Math.random(),0.4)*2.2;
       const ang=Math.random()*Math.PI*2;
-      posD[i*3]  =src.x*scaleX+Math.cos(ang)*eD;
+      posD[i*3  ]=src.x*scaleX+Math.cos(ang)*eD;
       posD[i*3+1]=src.y*scaleY+Math.sin(ang)*eD;
       posD[i*3+2]=(Math.random()-0.5)*0.3;
       const fadeT=eD/2.2;
       const op=Math.max(0,1-fadeT*0.92);
-      colD[i*3]=0.94*op+0.22*(1-op);
+      colD[i*3  ]=0.94*op+0.22*(1-op);
       colD[i*3+1]=0.96*op+0.243*(1-op);
       colD[i*3+2]=1.0*op+0.306*(1-op);
     }
@@ -1557,20 +1758,17 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     const geoC=new THREE.BufferGeometry();
     geoC.setAttribute("position",new THREE.BufferAttribute(pos,3));
     geoC.setAttribute("color",new THREE.BufferAttribute(col,3));
-    const matC=new THREE.PointsMaterial({size:0.020,vertexColors:true,transparent:true,opacity:0.95,sizeAttenuation:true});
-    scene.add(new THREE.Points(geoC,matC));
+    scene.add(new THREE.Points(geoC,new THREE.PointsMaterial({size:0.022,vertexColors:true,transparent:true,opacity:0.95,sizeAttenuation:true})));
 
     const geoD=new THREE.BufferGeometry();
     geoD.setAttribute("position",new THREE.BufferAttribute(posD,3));
     geoD.setAttribute("color",new THREE.BufferAttribute(colD,3));
-    const matD=new THREE.PointsMaterial({size:0.013,vertexColors:true,transparent:true,opacity:0.75,sizeAttenuation:true});
-    scene.add(new THREE.Points(geoD,matD));
+    scene.add(new THREE.Points(geoD,new THREE.PointsMaterial({size:0.013,vertexColors:true,transparent:true,opacity:0.75,sizeAttenuation:true})));
 
     let t=0,animId;
     function animate(){
       animId=requestAnimationFrame(animate);
       t+=0.005;
-      // leve ondulación — más sutil que la pesa, solo en Y y Z
       scene.children.forEach(obj=>{
         obj.rotation.x=Math.sin(t*0.35)*0.04;
         obj.rotation.z=Math.sin(t*0.22)*0.012;
