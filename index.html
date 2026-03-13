@@ -645,8 +645,12 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
   const[goal,setGoal]=useState("");
   const[level,setLevel]=useState("");
   const[ndays,setNdays]=useState(4);
-  const[selDays,setSelDays]=useState([]);   // índices 0-6 de días seleccionados
-  const[progKey,setProgKey]=useState("");   // "3int", "6adv", etc.
+  const[selDays,setSelDays]=useState([]);
+  const[progKey,setProgKey]=useState("");
+  // Body metrics
+  const[age,setAge]=useState("");
+  const[weight,setWeight]=useState("");
+  const[height,setHeight]=useState("");
   const t=lang?L[lang]:L.en;
 
   useEffect(()=>{ window.dispatchEvent(new CustomEvent("forja:mount")); });
@@ -656,15 +660,9 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
     if(level&&ndays)setProgKey(`${ndays}${level}`);
   },[level,ndays]);
 
-  // Default day selection when ndays changes
+  // Default day selection when ndays changes — always empty, user must pick
   useEffect(()=>{
-    const defaults={
-      3:[0,2,4],   // L M J
-      4:[0,1,3,4], // L M J V
-      5:[0,1,2,3,4],// L-V
-      6:[0,1,2,3,4,5],// L-Sa
-    };
-    setSelDays(defaults[ndays]||[]);
+    setSelDays([]);
   },[ndays]);
 
   const toggleDay=i=>{
@@ -678,8 +676,25 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
 
   const finish=()=>{
     const splits=RAW[progKey];
-    const r=buildRoutine7(splits,selDays,goal);
-    sp({lang,goal,level,days:ndays,selDays,progKey});
+    // Adjust routine based on body metrics
+    const ageN=+age||25;
+    const wN=+weight||70;
+    const hN=+height||170;
+    const bmi=wN/((hN/100)*(hN/100));
+    // Older (>45) or high BMI (>30) → reduce sets by 1, more reps
+    const needsEasy=(ageN>45)||(bmi>30);
+    // Young + lean (bmi<22) + adv → can push volume
+    const canPush=(ageN<35)&&(bmi<23)&&(level==="adv");
+    const adjustedSplits=splits.map(split=>({
+      ...split,
+      ex:split.ex.map(ex=>({
+        ...ex,
+        s: needsEasy ? Math.max(2,ex.s-1) : canPush ? Math.min(6,ex.s+1) : ex.s,
+        r: needsEasy ? (ex.r.includes("s")?ex.r:"12-15") : ex.r
+      }))
+    }));
+    const r=buildRoutine7(adjustedSplits,selDays,goal);
+    sp({lang,goal,level,days:ndays,selDays,progKey,age:ageN,weight:wN,height:hN});
     sr(r);setStep(99);
   };
 
@@ -722,7 +737,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
     </button>
   );
 
-  const TOTAL_STEPS=5;
+  const TOTAL_STEPS=6;
 
   return(
     <div style={{minHeight:"100vh",background:C.bg,color:C.tx,fontFamily:sans}}>
@@ -791,8 +806,53 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             </div>
           </>)}
 
-          {/* STEP 3 — Cuántos días */}
+          {/* STEP 3 — Datos físicos */}
           {step===3&&(<>
+            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>
+              {lang==="es"?"DATOS FÍSICOS":"BODY STATS"}
+            </div>
+            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:8,lineHeight:1,textTransform:"uppercase"}}>
+              {lang==="es"?"Tu cuerpo":"Your body"}
+            </div>
+            <div style={{fontSize:11,fontFamily:mono,color:C.tx3,letterSpacing:0.5,marginBottom:28}}>
+              {lang==="es"?"Ajustamos tu rutina según tus métricas.":"We tailor your routine to your metrics."}
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:16,marginBottom:32}}>
+              {[
+                {key:"age", label:lang==="es"?"EDAD (años)":"AGE (years)", val:age, set:setAge, min:14, max:80, unit:lang==="es"?"años":"yrs"},
+                {key:"weight", label:lang==="es"?"PESO (kg)":"WEIGHT (kg)", val:weight, set:setWeight, min:40, max:200, unit:"kg"},
+                {key:"height", label:lang==="es"?"ESTATURA (cm)":"HEIGHT (cm)", val:height, set:setHeight, min:140, max:220, unit:"cm"},
+              ].map(({key,label,val,set,min,max,unit})=>(
+                <div key={key}>
+                  <div style={{fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:8}}>{label}</div>
+                  <div style={{display:"flex",alignItems:"center",gap:12}}>
+                    <button onClick={()=>set(v=>String(Math.max(min,(+v||0)-1)))}
+                      style={{width:40,height:40,borderRadius:10,border:`1.5px solid ${C.borderL}`,
+                        background:C.card,color:C.tx,fontSize:20,cursor:"pointer",flexShrink:0}}>−</button>
+                    <div style={{flex:1,textAlign:"center",position:"relative"}}>
+                      <input type="number" value={val} onChange={e=>set(e.target.value)}
+                        min={min} max={max}
+                        style={{width:"100%",padding:"12px 0",textAlign:"center",
+                          background:"transparent",border:"none",borderBottom:`1.5px solid ${val?C.tx:C.borderL}`,
+                          color:C.tx,fontSize:28,fontWeight:900,fontFamily:sans,outline:"none",
+                          WebkitAppearance:"none",MozAppearance:"textfield"}}/>
+                      <div style={{fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:2,marginTop:4}}>{unit}</div>
+                    </div>
+                    <button onClick={()=>set(v=>String(Math.min(max,(+v||0)+1)))}
+                      style={{width:40,height:40,borderRadius:10,border:`1.5px solid ${C.borderL}`,
+                        background:C.card,color:C.tx,fontSize:20,cursor:"pointer",flexShrink:0}}>+</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{display:"flex",gap:10}}>
+              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(2)}>{t.back}</Btn></div>
+              <div style={{flex:2}}><Btn onClick={()=>setStep(4)}>{t.next}</Btn></div>
+            </div>
+          </>)}
+
+          {/* STEP 4 — Cuántos días */}
+          {step===4&&(<>
             <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{t.days}</div>
             <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:32,lineHeight:1,textTransform:"uppercase"}}>
               {lang==="es"?"¿Cuántos días?":"How many days?"}
@@ -807,13 +867,13 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               ))}
             </div>
             <div style={{display:"flex",gap:10,marginTop:32}}>
-              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(2)}>{t.back}</Btn></div>
-              <div style={{flex:2}}><Btn onClick={()=>setStep(4)}>{t.next}</Btn></div>
+              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(3)}>{t.back}</Btn></div>
+              <div style={{flex:2}}><Btn onClick={()=>setStep(5)}>{t.next}</Btn></div>
             </div>
           </>)}
 
-          {/* STEP 4 — Qué días */}
-          {step===4&&(<>
+          {/* STEP 5 — Qué días */}
+          {step===5&&(<>
             <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>
               {lang==="es"?"QUÉ DÍAS":"WHICH DAYS"}
             </div>
@@ -848,21 +908,40 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               })}
             </div>
             <div style={{display:"flex",gap:10}}>
-              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(3)}>{t.back}</Btn></div>
-              <div style={{flex:2}}><Btn onClick={()=>setStep(5)} disabled={selDays.length!==ndays}>{t.next}</Btn></div>
+              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(4)}>{t.back}</Btn></div>
+              <div style={{flex:2}}><Btn onClick={()=>setStep(6)} disabled={selDays.length!==ndays}>{t.next}</Btn></div>
             </div>
           </>)}
 
-          {/* STEP 5 — Programa recomendado */}
-          {step===5&&(<>
+          {/* STEP 6 — Programa recomendado */}
+          {step===6&&(<>
             <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{t.split}</div>
             <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:6,lineHeight:1,textTransform:"uppercase"}}>
               {lang==="es"?"Tu programa":"Your program"}
             </div>
-            <div style={{fontSize:11,fontFamily:mono,color:C.tx3,letterSpacing:0.5,marginBottom:24}}>
-              {lang==="es"?"Recomendado según tu nivel":"Recommended for your level"}
-              {" · "}<span style={{color:C.green,letterSpacing:1}}>★</span>
-            </div>
+            {(age||weight||height)&&(()=>{
+              const ageN=+age||25, wN=+weight||70, hN=+height||170;
+              const bmi=wN/((hN/100)*(hN/100));
+              const bmiLabel=bmi<18.5?"bajo":bmi<25?"normal":bmi<30?"sobrepeso":"alto";
+              const bmiLabelEn=bmi<18.5?"low":bmi<25?"normal":bmi<30?"overweight":"high";
+              const needsEasy=(ageN>45)||(bmi>30);
+              const canPush=(ageN<35)&&(bmi<23)&&(level==="adv");
+              const note=needsEasy
+                ?(lang==="es"?"Volumen ajustado para tu perfil.":"Volume adjusted for your profile.")
+                :canPush
+                ?(lang==="es"?"Volumen extra activado para ti.":"Extra volume unlocked for you.")
+                :(lang==="es"?"Rutina estándar para tu perfil.":"Standard routine for your profile.");
+              return(
+                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:18,
+                  padding:"8px 12px",borderRadius:8,background:C.card,border:`1px solid ${C.borderL}`}}>
+                  <div style={{fontSize:16}}>⚡</div>
+                  <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:0.5,lineHeight:1.5}}>
+                    {lang==="es"?`IMC ${bmi.toFixed(1)} (${bmiLabel})`:`BMI ${bmi.toFixed(1)} (${bmiLabelEn})`}
+                    {" · "}{note}
+                  </div>
+                </div>
+              );
+            })()}
             <div style={{display:"flex",flexDirection:"column",borderTop:`1px solid ${C.borderL}55`}}>
               {progOptions.map((k,oi)=>{
                 const pn=PROG_NAMES[k];
@@ -887,7 +966,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               })}
             </div>
             <div style={{display:"flex",gap:10,marginTop:28}}>
-              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(4)}>{t.back}</Btn></div>
+              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(5)}>{t.back}</Btn></div>
               <div style={{flex:2}}><Btn onClick={finish} disabled={!progKey}>{t.go}</Btn></div>
             </div>
           </>)}
