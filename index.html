@@ -42,32 +42,126 @@ const L={
 const DN={es:["LU","MA","MI","JU","VI","SA","DO"],en:["MO","TU","WE","TH","FR","SA","SU"]};
 const DF={es:["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"],en:["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]};
 
-const TP={
-  ppl6:{n:{es:"PPL × 6",en:"PPL × 6"},d:6,s:[
-    {l:"PUSH A",c:C.tx,ex:[{e:"Bench Press",s:4,r:"6-8"},{e:"Incline Dumbbell Press",s:3,r:"8-10"},{e:"Overhead Press",s:3,r:"8-10"},{e:"Lateral Raise",s:4,r:"12-15"},{e:"Tricep Pushdown",s:3,r:"10-12"},{e:"Overhead Tricep Extension",s:3,r:"10-12"}]},
-    {l:"PULL A",c:C.blue,ex:[{e:"Pull Up",s:4,r:"6-10"},{e:"Barbell Row",s:4,r:"8-10"},{e:"Dumbbell Row",s:3,r:"10-12"},{e:"Face Pull",s:3,r:"15-20"},{e:"Barbell Curl",s:3,r:"10-12"},{e:"Hammer Curl",s:3,r:"10-12"}]},
-    {l:"LEGS A",c:C.green,ex:[{e:"Barbell Squat",s:4,r:"6-8"},{e:"Bulgarian Split Squat",s:3,r:"10-12"},{e:"Leg Extension",s:3,r:"12-15"},{e:"Hip Thrust",s:3,r:"10-12"},{e:"Calf Raise",s:4,r:"15-20"}]},
-    {l:"PUSH B",c:C.tx,ex:[{e:"Overhead Press",s:4,r:"6-8"},{e:"Incline Bench Press",s:3,r:"8-10"},{e:"Dumbbell Flyes",s:3,r:"12-15"},{e:"Lateral Raise",s:4,r:"12-15"},{e:"Dips",s:3,r:"8-12"},{e:"Skull Crusher",s:3,r:"10-12"}]},
-    {l:"PULL B",c:C.blue,ex:[{e:"Pendlay Row",s:4,r:"6-8"},{e:"Chin Up",s:4,r:"8-12"},{e:"Cable Row",s:3,r:"10-12"},{e:"Reverse Fly",s:3,r:"15-20"},{e:"Preacher Curl",s:3,r:"10-12"},{e:"Reverse Curl",s:3,r:"12-15"}]},
-    {l:"LEGS B",c:C.green,ex:[{e:"Romanian Deadlift",s:4,r:"8-10"},{e:"Front Squat",s:3,r:"8-10"},{e:"Leg Curl",s:3,r:"12-15"},{e:"Walking Lunge",s:3,r:"12/leg"},{e:"Seated Calf Raise",s:4,r:"15-20"}]},
-  ]},
-  ppl3:{n:{es:"PPL × 3",en:"PPL × 3"},d:3,s:[
-    {l:"PUSH",c:C.tx,ex:[{e:"Bench Press",s:4,r:"6-8"},{e:"Overhead Press",s:3,r:"8-10"},{e:"Incline Dumbbell Press",s:3,r:"10-12"},{e:"Lateral Raise",s:4,r:"12-15"},{e:"Dips",s:3,r:"10-12"}]},
-    {l:"PULL",c:C.blue,ex:[{e:"Pull Up",s:4,r:"6-10"},{e:"Barbell Row",s:4,r:"8-10"},{e:"Face Pull",s:3,r:"15-20"},{e:"Barbell Curl",s:3,r:"10-12"},{e:"Hammer Curl",s:3,r:"10-12"}]},
-    {l:"LEGS",c:C.green,ex:[{e:"Barbell Squat",s:4,r:"6-8"},{e:"Romanian Deadlift",s:3,r:"8-10"},{e:"Leg Extension",s:3,r:"12-15"},{e:"Leg Curl",s:3,r:"12-15"},{e:"Calf Raise",s:4,r:"15-20"}]},
-  ]},
-  ul4:{n:{es:"Upper Lower × 4",en:"Upper Lower × 4"},d:4,s:[
-    {l:"UPPER A",c:C.tx,ex:[{e:"Bench Press",s:4,r:"6-8"},{e:"Barbell Row",s:4,r:"6-8"},{e:"Overhead Press",s:3,r:"8-10"},{e:"Pull Up",s:3,r:"8-12"},{e:"Lateral Raise",s:3,r:"12-15"},{e:"Barbell Curl",s:3,r:"10-12"}]},
-    {l:"LOWER A",c:C.green,ex:[{e:"Barbell Squat",s:4,r:"6-8"},{e:"Romanian Deadlift",s:3,r:"8-10"},{e:"Leg Extension",s:3,r:"12-15"},{e:"Leg Curl",s:3,r:"12-15"},{e:"Calf Raise",s:4,r:"15-20"}]},
-    {l:"UPPER B",c:C.blue,ex:[{e:"Overhead Press",s:4,r:"6-8"},{e:"Chin Up",s:4,r:"8-12"},{e:"Incline Dumbbell Press",s:3,r:"8-10"},{e:"Cable Row",s:3,r:"10-12"},{e:"Lateral Raise",s:3,r:"12-15"},{e:"Hammer Curl",s:3,r:"10-12"}]},
-    {l:"LOWER B",c:C.green,ex:[{e:"Deadlift",s:4,r:"5-6"},{e:"Front Squat",s:3,r:"8-10"},{e:"Bulgarian Split Squat",s:3,r:"10-12"},{e:"Leg Extension",s:3,r:"12-15"},{e:"Calf Raise",s:4,r:"15-20"}]},
-  ]},
-  fb3:{n:{es:"Full Body × 3",en:"Full Body × 3"},d:3,s:[
-    {l:"FULL BODY A",c:C.tx,ex:[{e:"Barbell Squat",s:4,r:"6-8"},{e:"Bench Press",s:4,r:"6-8"},{e:"Barbell Row",s:3,r:"8-10"},{e:"Overhead Press",s:3,r:"8-10"},{e:"Barbell Curl",s:2,r:"10-12"},{e:"Calf Raise",s:3,r:"15-20"}]},
-    {l:"FULL BODY B",c:C.blue,ex:[{e:"Deadlift",s:4,r:"5-6"},{e:"Incline Bench Press",s:3,r:"8-10"},{e:"Pull Up",s:3,r:"8-12"},{e:"Lateral Raise",s:3,r:"12-15"},{e:"Tricep Pushdown",s:2,r:"10-12"},{e:"Leg Curl",s:3,r:"12-15"}]},
-    {l:"FULL BODY C",c:C.green,ex:[{e:"Front Squat",s:3,r:"8-10"},{e:"Overhead Press",s:4,r:"6-8"},{e:"Chin Up",s:3,r:"8-12"},{e:"Dumbbell Bench Press",s:3,r:"10-12"},{e:"Romanian Deadlift",s:3,r:"10-12"},{e:"Calf Raise",s:3,r:"15-20"}]},
-  ]},
+// ─── RUTINAS ──────────────────────────────────────────────
+// 12 programas × 5 objetivos. s/r base = hipertrofia.
+// Adaptación por objetivo via buildRoutine().
+// ──────────────────────────────────────────────────────────
+const RAW={
+  "3beg":[
+    {l:"FULL BODY A",ex:[{e:"Goblet Squat",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Dumbbell Bench Press",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Lat Pulldown",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Dumbbell Shoulder Press",s:2,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Leg Curl",s:2,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Plank",s:3,r:"30-45s",rs:"30-45s",rc:"45-60s",rr:"30-45s",rg:"30-45s"}]},
+    {l:"FULL BODY B",ex:[{e:"Romanian Deadlift",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Incline Dumbbell Press",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Cable Row",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Lateral Raise",s:3,r:"15-20",rs:"12-15",rc:"15-20",rr:"15-20",rg:"15-20"},{e:"Leg Extension",s:2,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Dumbbell Curl",s:2,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"}]},
+    {l:"FULL BODY C",ex:[{e:"Leg Press",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Dumbbell Bench Press",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Lat Pulldown",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Dumbbell Shoulder Press",s:2,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Calf Raise",s:3,r:"15-20",rs:"12-15",rc:"20-25",rr:"15-20",rg:"15-20"},{e:"Tricep Pushdown",s:2,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"}]},
+  ],
+  "3int":[
+    {l:"PUSH",ex:[{e:"Bench Press",s:4,r:"6-10",rs:"3-5",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Overhead Press",s:3,r:"8-10",rs:"4-6",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Incline Dumbbell Press",s:3,r:"10-12",rs:"6-8",rc:"12-15",rr:"10-12",rg:"10-12"},{e:"Lateral Raise",s:4,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Tricep Pushdown",s:3,r:"10-12",rs:"8-10",rc:"15-20",rr:"10-12",rg:"10-12"}]},
+    {l:"PULL",ex:[{e:"Pull Up",s:4,r:"6-10",rs:"4-6",rc:"10-15",rr:"8-12",rg:"8-12"},{e:"Barbell Row",s:4,r:"6-10",rs:"4-6",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Face Pull",s:3,r:"15-20",rs:"12-15",rc:"15-20",rr:"15-20",rg:"15-20"},{e:"Barbell Curl",s:3,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Hammer Curl",s:3,r:"10-12",rs:"8-10",rc:"12-15",rr:"10-12",rg:"10-12"}]},
+    {l:"LEGS",ex:[{e:"Barbell Squat",s:4,r:"6-10",rs:"3-5",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Romanian Deadlift",s:3,r:"8-10",rs:"5-6",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Leg Extension",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Leg Curl",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Calf Raise",s:4,r:"15-20",rs:"12-15",rc:"20-25",rr:"15-20",rg:"15-20"}]},
+  ],
+  "3adv":[
+    {l:"PUSH",ex:[{e:"Bench Press",s:4,r:"5-8",rs:"2-4",rc:"12-15",rr:"6-10",rg:"8-10"},{e:"Overhead Press",s:4,r:"6-8",rs:"3-5",rc:"12-15",rr:"8-10",rg:"8-10"},{e:"Incline Bench Press",s:3,r:"8-10",rs:"5-6",rc:"12-15",rr:"8-12",rg:"8-10"},{e:"Cable Fly",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Lateral Raise",s:4,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Skull Crusher",s:3,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Tricep Pushdown",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"}]},
+    {l:"PULL",ex:[{e:"Weighted Pull Up",s:4,r:"5-8",rs:"3-5",rc:"8-12",rr:"6-10",rg:"6-10"},{e:"Barbell Row",s:4,r:"5-8",rs:"3-5",rc:"12-15",rr:"8-10",rg:"8-10"},{e:"Dumbbell Row",s:3,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Face Pull",s:3,r:"15-20",rs:"12-15",rc:"15-20",rr:"15-20",rg:"15-20"},{e:"Reverse Fly",s:3,r:"15-20",rs:"12-15",rc:"15-20",rr:"15-20",rg:"15-20"},{e:"Barbell Curl",s:3,r:"6-10",rs:"4-6",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Hammer Curl",s:3,r:"10-12",rs:"8-10",rc:"12-15",rr:"10-12",rg:"10-12"}]},
+    {l:"LEGS",ex:[{e:"Barbell Squat",s:5,r:"5-8",rs:"2-4",rc:"10-15",rr:"6-10",rg:"6-10"},{e:"Romanian Deadlift",s:4,r:"6-10",rs:"4-5",rc:"12-15",rr:"8-12",rg:"8-10"},{e:"Bulgarian Split Squat",s:3,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Leg Extension",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Leg Curl",s:3,r:"10-15",rs:"8-10",rc:"15-20",rr:"10-15",rg:"10-15"},{e:"Calf Raise",s:4,r:"15-20",rs:"12-15",rc:"20-25",rr:"15-20",rg:"15-20"}]},
+  ],
+  "4beg":[
+    {l:"UPPER A",ex:[{e:"Dumbbell Bench Press",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Lat Pulldown",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Dumbbell Shoulder Press",s:3,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Cable Row",s:3,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Lateral Raise",s:3,r:"15-20",rs:"12-15",rc:"15-20",rr:"15-20",rg:"15-20"},{e:"Dumbbell Curl",s:2,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"}]},
+    {l:"LOWER A",ex:[{e:"Goblet Squat",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Romanian Deadlift",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Leg Press",s:3,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Leg Curl",s:3,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Calf Raise",s:3,r:"15-20",rs:"12-15",rc:"20-25",rr:"15-20",rg:"15-20"}]},
+    {l:"UPPER B",ex:[{e:"Incline Dumbbell Press",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Lat Pulldown",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Dumbbell Shoulder Press",s:3,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Cable Row",s:3,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Face Pull",s:3,r:"15-20",rs:"12-15",rc:"15-20",rr:"15-20",rg:"15-20"},{e:"Tricep Pushdown",s:2,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"}]},
+    {l:"LOWER B",ex:[{e:"Leg Press",s:4,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Leg Curl",s:3,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Bulgarian Split Squat",s:3,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Leg Extension",s:3,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Calf Raise",s:3,r:"15-20",rs:"12-15",rc:"20-25",rr:"15-20",rg:"15-20"}]},
+  ],
+  "4int":[
+    {l:"UPPER A",ex:[{e:"Bench Press",s:4,r:"6-10",rs:"3-5",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Barbell Row",s:4,r:"6-10",rs:"3-5",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Overhead Press",s:3,r:"8-10",rs:"4-6",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Pull Up",s:3,r:"6-10",rs:"4-6",rc:"10-15",rr:"8-12",rg:"8-12"},{e:"Lateral Raise",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Barbell Curl",s:3,r:"10-12",rs:"6-8",rc:"12-15",rr:"10-12",rg:"10-12"}]},
+    {l:"LOWER A",ex:[{e:"Barbell Squat",s:4,r:"6-10",rs:"3-5",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Romanian Deadlift",s:3,r:"8-10",rs:"5-6",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Leg Extension",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Leg Curl",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Calf Raise",s:4,r:"15-20",rs:"12-15",rc:"20-25",rr:"15-20",rg:"15-20"}]},
+    {l:"UPPER B",ex:[{e:"Overhead Press",s:4,r:"6-10",rs:"3-5",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Chin Up",s:4,r:"6-10",rs:"4-6",rc:"10-15",rr:"8-12",rg:"8-12"},{e:"Incline Dumbbell Press",s:3,r:"8-12",rs:"5-6",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Cable Row",s:3,r:"10-12",rs:"6-8",rc:"12-15",rr:"10-12",rg:"10-12"},{e:"Face Pull",s:3,r:"15-20",rs:"12-15",rc:"15-20",rr:"15-20",rg:"15-20"},{e:"Hammer Curl",s:3,r:"10-12",rs:"8-10",rc:"12-15",rr:"10-12",rg:"10-12"}]},
+    {l:"LOWER B",ex:[{e:"Deadlift",s:4,r:"5-6",rs:"2-4",rc:"8-10",rr:"5-8",rg:"5-8"},{e:"Bulgarian Split Squat",s:3,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Leg Press",s:3,r:"10-15",rs:"8-10",rc:"15-20",rr:"10-15",rg:"10-15"},{e:"Leg Extension",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Calf Raise",s:4,r:"15-20",rs:"12-15",rc:"20-25",rr:"15-20",rg:"15-20"}]},
+  ],
+  "4adv":[
+    {l:"UPPER A",ex:[{e:"Bench Press",s:5,r:"4-8",rs:"2-4",rc:"10-15",rr:"6-10",rg:"6-10"},{e:"Barbell Row",s:4,r:"5-8",rs:"3-5",rc:"12-15",rr:"6-10",rg:"6-10"},{e:"Overhead Press",s:4,r:"6-8",rs:"3-5",rc:"12-15",rr:"8-10",rg:"8-10"},{e:"Weighted Pull Up",s:4,r:"5-8",rs:"3-5",rc:"8-12",rr:"6-10",rg:"6-10"},{e:"Lateral Raise",s:4,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Face Pull",s:3,r:"15-20",rs:"12-15",rc:"15-20",rr:"15-20",rg:"15-20"},{e:"Barbell Curl",s:3,r:"6-10",rs:"4-6",rc:"12-15",rr:"8-12",rg:"8-12"}]},
+    {l:"LOWER A",ex:[{e:"Barbell Squat",s:5,r:"4-8",rs:"2-4",rc:"10-15",rr:"6-10",rg:"6-10"},{e:"Romanian Deadlift",s:4,r:"6-10",rs:"4-5",rc:"12-15",rr:"8-12",rg:"8-10"},{e:"Bulgarian Split Squat",s:3,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Leg Extension",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Leg Curl",s:3,r:"10-15",rs:"8-10",rc:"15-20",rr:"10-15",rg:"10-15"},{e:"Calf Raise",s:5,r:"10-15",rs:"8-12",rc:"15-20",rr:"10-15",rg:"10-15"}]},
+    {l:"UPPER B",ex:[{e:"Incline Bench Press",s:4,r:"5-8",rs:"3-5",rc:"10-15",rr:"6-10",rg:"6-10"},{e:"Chin Up",s:4,r:"5-8",rs:"3-5",rc:"8-12",rr:"6-10",rg:"6-10"},{e:"Dumbbell Shoulder Press",s:4,r:"8-10",rs:"5-6",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Cable Row",s:4,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Cable Fly",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Reverse Fly",s:3,r:"15-20",rs:"12-15",rc:"15-20",rr:"15-20",rg:"15-20"},{e:"Skull Crusher",s:3,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"}]},
+    {l:"LOWER B",ex:[{e:"Deadlift",s:5,r:"3-5",rs:"1-3",rc:"6-8",rr:"4-6",rg:"4-6"},{e:"Front Squat",s:4,r:"5-8",rs:"3-5",rc:"10-12",rr:"6-10",rg:"6-10"},{e:"Leg Press",s:3,r:"10-15",rs:"8-10",rc:"15-20",rr:"10-15",rg:"10-15"},{e:"Leg Curl",s:4,r:"10-15",rs:"8-10",rc:"15-20",rr:"10-15",rg:"10-15"},{e:"Hip Thrust",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Calf Raise",s:5,r:"10-15",rs:"8-12",rc:"15-20",rr:"10-15",rg:"10-15"}]},
+  ],
+  "5beg":[
+    {l:"FULL BODY A",ex:[{e:"Goblet Squat",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Dumbbell Bench Press",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Lat Pulldown",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Dumbbell Shoulder Press",s:2,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Leg Curl",s:2,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Tricep Pushdown",s:2,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"}]},
+    {l:"FULL BODY B",ex:[{e:"Romanian Deadlift",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Incline Dumbbell Press",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Cable Row",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Lateral Raise",s:3,r:"15-20",rs:"12-15",rc:"15-20",rr:"15-20",rg:"15-20"},{e:"Leg Extension",s:2,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Dumbbell Curl",s:2,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"}]},
+  ],
+  "5int":[
+    {l:"PUSH",ex:[{e:"Bench Press",s:4,r:"6-10",rs:"3-5",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Overhead Press",s:3,r:"8-10",rs:"4-6",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Incline Dumbbell Press",s:3,r:"10-12",rs:"6-8",rc:"12-15",rr:"10-12",rg:"10-12"},{e:"Lateral Raise",s:4,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Tricep Pushdown",s:3,r:"10-12",rs:"8-10",rc:"15-20",rr:"10-12",rg:"10-12"}]},
+    {l:"PULL",ex:[{e:"Pull Up",s:4,r:"6-10",rs:"4-6",rc:"10-15",rr:"8-12",rg:"8-12"},{e:"Barbell Row",s:4,r:"6-10",rs:"4-6",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Face Pull",s:3,r:"15-20",rs:"12-15",rc:"15-20",rr:"15-20",rg:"15-20"},{e:"Barbell Curl",s:3,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Hammer Curl",s:3,r:"10-12",rs:"8-10",rc:"12-15",rr:"10-12",rg:"10-12"}]},
+    {l:"LEGS",ex:[{e:"Barbell Squat",s:4,r:"6-10",rs:"3-5",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Romanian Deadlift",s:3,r:"8-10",rs:"5-6",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Leg Extension",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Leg Curl",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Calf Raise",s:4,r:"15-20",rs:"12-15",rc:"20-25",rr:"15-20",rg:"15-20"}]},
+    {l:"UPPER",ex:[{e:"Overhead Press",s:4,r:"6-10",rs:"3-5",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Chin Up",s:4,r:"6-10",rs:"4-6",rc:"10-15",rr:"8-12",rg:"8-12"},{e:"Incline Bench Press",s:3,r:"8-12",rs:"5-6",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Cable Row",s:3,r:"10-12",rs:"6-8",rc:"12-15",rr:"10-12",rg:"10-12"},{e:"Lateral Raise",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"}]},
+    {l:"LOWER",ex:[{e:"Deadlift",s:4,r:"5-6",rs:"2-4",rc:"8-10",rr:"5-8",rg:"5-8"},{e:"Bulgarian Split Squat",s:3,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Leg Press",s:3,r:"10-15",rs:"8-10",rc:"15-20",rr:"10-15",rg:"10-15"},{e:"Leg Curl",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Calf Raise",s:4,r:"15-20",rs:"12-15",rc:"20-25",rr:"15-20",rg:"15-20"}]},
+  ],
+  "5adv":[
+    {l:"PUSH",ex:[{e:"Bench Press",s:5,r:"4-8",rs:"2-4",rc:"10-15",rr:"6-10",rg:"6-10"},{e:"Overhead Press",s:4,r:"5-8",rs:"3-5",rc:"10-15",rr:"6-10",rg:"6-10"},{e:"Incline Bench Press",s:3,r:"8-10",rs:"5-6",rc:"12-15",rr:"8-12",rg:"8-10"},{e:"Cable Fly",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Lateral Raise",s:4,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Skull Crusher",s:3,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"}]},
+    {l:"PULL",ex:[{e:"Weighted Pull Up",s:5,r:"4-8",rs:"2-4",rc:"8-12",rr:"5-10",rg:"5-10"},{e:"Barbell Row",s:4,r:"5-8",rs:"3-5",rc:"10-15",rr:"6-10",rg:"6-10"},{e:"Dumbbell Row",s:3,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Face Pull",s:3,r:"15-20",rs:"12-15",rc:"15-20",rr:"15-20",rg:"15-20"},{e:"Barbell Curl",s:3,r:"6-10",rs:"4-6",rc:"10-15",rr:"8-12",rg:"8-12"},{e:"Hammer Curl",s:3,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"}]},
+    {l:"LEGS",ex:[{e:"Barbell Squat",s:5,r:"4-8",rs:"2-4",rc:"10-15",rr:"5-10",rg:"5-10"},{e:"Romanian Deadlift",s:4,r:"6-10",rs:"4-5",rc:"12-15",rr:"8-12",rg:"8-10"},{e:"Bulgarian Split Squat",s:3,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Leg Extension",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Leg Curl",s:3,r:"10-15",rs:"8-10",rc:"15-20",rr:"10-15",rg:"10-15"},{e:"Calf Raise",s:4,r:"12-15",rs:"8-12",rc:"15-20",rr:"12-15",rg:"12-15"}]},
+    {l:"UPPER",ex:[{e:"Incline Bench Press",s:4,r:"5-8",rs:"3-5",rc:"10-15",rr:"6-10",rg:"6-10"},{e:"Chin Up",s:4,r:"5-8",rs:"3-5",rc:"8-12",rr:"6-10",rg:"6-10"},{e:"Dumbbell Shoulder Press",s:4,r:"6-10",rs:"4-6",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Cable Row",s:4,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Reverse Fly",s:3,r:"15-20",rs:"12-15",rc:"15-20",rr:"15-20",rg:"15-20"},{e:"Tricep Pushdown",s:3,r:"10-15",rs:"8-10",rc:"15-20",rr:"10-15",rg:"10-15"}]},
+    {l:"LOWER",ex:[{e:"Deadlift",s:5,r:"3-5",rs:"1-3",rc:"6-8",rr:"4-6",rg:"4-6"},{e:"Front Squat",s:4,r:"5-8",rs:"3-5",rc:"10-12",rr:"6-10",rg:"6-10"},{e:"Hip Thrust",s:4,r:"8-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Leg Press",s:3,r:"10-15",rs:"8-10",rc:"15-20",rr:"10-15",rg:"10-15"},{e:"Leg Curl",s:4,r:"10-15",rs:"8-10",rc:"15-20",rr:"10-15",rg:"10-15"},{e:"Calf Raise",s:4,r:"12-15",rs:"8-12",rc:"15-20",rr:"12-15",rg:"12-15"}]},
+  ],
+  "6beg":[
+    {l:"PUSH A",ex:[{e:"Dumbbell Bench Press",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Dumbbell Shoulder Press",s:3,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Incline Dumbbell Press",s:3,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Lateral Raise",s:3,r:"15-20",rs:"12-15",rc:"15-20",rr:"15-20",rg:"15-20"},{e:"Tricep Pushdown",s:2,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"}]},
+    {l:"PULL A",ex:[{e:"Lat Pulldown",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Cable Row",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Face Pull",s:3,r:"15-20",rs:"12-15",rc:"15-20",rr:"15-20",rg:"15-20"},{e:"Dumbbell Curl",s:2,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Hammer Curl",s:2,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"}]},
+    {l:"LEGS A",ex:[{e:"Goblet Squat",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Romanian Deadlift",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Leg Press",s:3,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Leg Extension",s:2,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Calf Raise",s:3,r:"15-20",rs:"12-15",rc:"20-25",rr:"15-20",rg:"15-20"}]},
+    {l:"PUSH B",ex:[{e:"Dumbbell Bench Press",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Dumbbell Shoulder Press",s:3,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Cable Fly",s:3,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Lateral Raise",s:3,r:"15-20",rs:"12-15",rc:"15-20",rr:"15-20",rg:"15-20"},{e:"Overhead Tricep Extension",s:2,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"}]},
+    {l:"PULL B",ex:[{e:"Lat Pulldown",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Cable Row",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Reverse Fly",s:3,r:"15-20",rs:"12-15",rc:"15-20",rr:"15-20",rg:"15-20"},{e:"Dumbbell Curl",s:2,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Preacher Curl",s:2,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"}]},
+    {l:"LEGS B",ex:[{e:"Leg Press",s:4,r:"10-15",rs:"8-10",rc:"15-20",rr:"10-15",rg:"10-15"},{e:"Leg Curl",s:3,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Bulgarian Split Squat",s:3,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Leg Extension",s:2,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Calf Raise",s:3,r:"15-20",rs:"12-15",rc:"20-25",rr:"15-20",rg:"15-20"}]},
+  ],
+  "6int":[
+    {l:"PUSH A",ex:[{e:"Bench Press",s:4,r:"6-10",rs:"3-5",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Overhead Press",s:3,r:"8-10",rs:"4-6",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Incline Dumbbell Press",s:3,r:"10-12",rs:"6-8",rc:"12-15",rr:"10-12",rg:"10-12"},{e:"Lateral Raise",s:4,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Tricep Pushdown",s:3,r:"10-12",rs:"8-10",rc:"15-20",rr:"10-12",rg:"10-12"}]},
+    {l:"PULL A",ex:[{e:"Pull Up",s:4,r:"6-10",rs:"4-6",rc:"10-15",rr:"8-12",rg:"8-12"},{e:"Barbell Row",s:4,r:"6-10",rs:"4-6",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Face Pull",s:3,r:"15-20",rs:"12-15",rc:"15-20",rr:"15-20",rg:"15-20"},{e:"Barbell Curl",s:3,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Hammer Curl",s:3,r:"10-12",rs:"8-10",rc:"12-15",rr:"10-12",rg:"10-12"}]},
+    {l:"LEGS A",ex:[{e:"Barbell Squat",s:4,r:"6-10",rs:"3-5",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Romanian Deadlift",s:3,r:"8-10",rs:"5-6",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Leg Extension",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Leg Curl",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Calf Raise",s:4,r:"15-20",rs:"12-15",rc:"20-25",rr:"15-20",rg:"15-20"}]},
+    {l:"PUSH B",ex:[{e:"Overhead Press",s:4,r:"6-10",rs:"3-5",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Incline Bench Press",s:3,r:"8-10",rs:"5-6",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Dumbbell Flyes",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Lateral Raise",s:4,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Skull Crusher",s:3,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"}]},
+    {l:"PULL B",ex:[{e:"Pendlay Row",s:4,r:"6-8",rs:"3-5",rc:"10-15",rr:"6-10",rg:"6-10"},{e:"Chin Up",s:4,r:"6-10",rs:"4-6",rc:"10-15",rr:"8-12",rg:"8-12"},{e:"Cable Row",s:3,r:"10-12",rs:"6-8",rc:"12-15",rr:"10-12",rg:"10-12"},{e:"Reverse Fly",s:3,r:"15-20",rs:"12-15",rc:"15-20",rr:"15-20",rg:"15-20"},{e:"Preacher Curl",s:3,r:"10-12",rs:"6-8",rc:"12-15",rr:"10-12",rg:"10-12"}]},
+    {l:"LEGS B",ex:[{e:"Romanian Deadlift",s:4,r:"6-10",rs:"4-5",rc:"12-15",rr:"8-12",rg:"8-10"},{e:"Front Squat",s:3,r:"6-10",rs:"4-5",rc:"10-12",rr:"6-10",rg:"6-10"},{e:"Bulgarian Split Squat",s:3,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Leg Curl",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Calf Raise",s:4,r:"15-20",rs:"12-15",rc:"20-25",rr:"15-20",rg:"15-20"}]},
+  ],
+  "6adv":[
+    {l:"PUSH A",ex:[{e:"Bench Press",s:5,r:"4-8",rs:"2-4",rc:"10-15",rr:"6-10",rg:"6-10"},{e:"Overhead Press",s:4,r:"5-8",rs:"3-5",rc:"10-15",rr:"6-10",rg:"6-10"},{e:"Incline Dumbbell Press",s:3,r:"8-12",rs:"5-6",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Cable Fly",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Lateral Raise",s:4,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Skull Crusher",s:3,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"}]},
+    {l:"PULL A",ex:[{e:"Weighted Pull Up",s:5,r:"4-8",rs:"2-4",rc:"8-12",rr:"5-10",rg:"5-10"},{e:"Barbell Row",s:4,r:"5-8",rs:"3-5",rc:"10-15",rr:"6-10",rg:"6-10"},{e:"Face Pull",s:3,r:"15-20",rs:"12-15",rc:"15-20",rr:"15-20",rg:"15-20"},{e:"Reverse Fly",s:3,r:"15-20",rs:"12-15",rc:"15-20",rr:"15-20",rg:"15-20"},{e:"Barbell Curl",s:3,r:"6-10",rs:"4-6",rc:"10-15",rr:"8-12",rg:"8-12"},{e:"Hammer Curl",s:3,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"}]},
+    {l:"LEGS A",ex:[{e:"Barbell Squat",s:5,r:"4-8",rs:"2-4",rc:"10-15",rr:"5-10",rg:"5-10"},{e:"Romanian Deadlift",s:4,r:"6-10",rs:"4-5",rc:"12-15",rr:"8-12",rg:"8-10"},{e:"Leg Extension",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Leg Curl",s:3,r:"10-15",rs:"8-10",rc:"15-20",rr:"10-15",rg:"10-15"},{e:"Hip Thrust",s:3,r:"8-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Calf Raise",s:4,r:"12-15",rs:"8-12",rc:"15-20",rr:"12-15",rg:"12-15"}]},
+    {l:"PUSH B",ex:[{e:"Incline Bench Press",s:5,r:"4-8",rs:"2-4",rc:"10-15",rr:"6-10",rg:"6-10"},{e:"Dumbbell Shoulder Press",s:4,r:"6-10",rs:"4-6",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Cable Fly",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Lateral Raise",s:4,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Overhead Tricep Extension",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Tricep Pushdown",s:3,r:"12-15",rs:"10-12",rc:"15-20",rr:"12-15",rg:"12-15"}]},
+    {l:"PULL B",ex:[{e:"Pendlay Row",s:5,r:"4-8",rs:"2-4",rc:"10-15",rr:"5-10",rg:"5-10"},{e:"Chin Up",s:4,r:"5-8",rs:"3-5",rc:"8-12",rr:"6-10",rg:"6-10"},{e:"Dumbbell Row",s:3,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Cable Row",s:3,r:"10-12",rs:"6-8",rc:"12-15",rr:"10-12",rg:"10-12"},{e:"Preacher Curl",s:3,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Reverse Curl",s:3,r:"10-12",rs:"8-10",rc:"12-15",rr:"10-12",rg:"10-12"}]},
+    {l:"LEGS B",ex:[{e:"Deadlift",s:5,r:"3-5",rs:"1-3",rc:"6-8",rr:"4-6",rg:"4-6"},{e:"Front Squat",s:4,r:"5-8",rs:"3-5",rc:"10-12",rr:"6-10",rg:"6-10"},{e:"Bulgarian Split Squat",s:3,r:"8-12",rs:"6-8",rc:"12-15",rr:"8-12",rg:"8-12"},{e:"Leg Curl",s:4,r:"10-15",rs:"8-10",rc:"15-20",rr:"10-15",rg:"10-15"},{e:"Hip Thrust",s:3,r:"8-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Calf Raise",s:4,r:"12-15",rs:"8-12",rc:"15-20",rr:"12-15",rg:"12-15"}]},
+  ],
 };
+
+const PROG_NAMES={
+  "3beg":{es:"Full Body × 3",en:"Full Body × 3"},
+  "3int":{es:"PPL × 3",en:"PPL × 3"},
+  "3adv":{es:"PPL × 3 Avanzado",en:"PPL × 3 Advanced"},
+  "4beg":{es:"Upper Lower × 4",en:"Upper Lower × 4"},
+  "4int":{es:"Upper Lower × 4",en:"Upper Lower × 4"},
+  "4adv":{es:"Upper Lower × 4 Avanzado",en:"Upper Lower × 4 Advanced"},
+  "5beg":{es:"Full Body × 5",en:"Full Body × 5"},
+  "5int":{es:"PPL × 5",en:"PPL × 5"},
+  "5adv":{es:"PPL × 5 Avanzado",en:"PPL × 5 Advanced"},
+  "6beg":{es:"PPL × 6 Light",en:"PPL × 6 Light"},
+  "6int":{es:"PPL × 6",en:"PPL × 6"},
+  "6adv":{es:"PPL × 6 Avanzado",en:"PPL × 6 Advanced"},
+};
+
+// Adapta reps/series según objetivo
+function applyGoal(ex,goal){
+  let s=ex.s,r=ex.r;
+  if(goal==="strength"){s=Math.min(ex.s+1,5);r=ex.rs;}
+  else if(goal==="lose"){s=Math.max(ex.s-1,3);r=ex.rc;}
+  else if(goal==="recomp"){r=ex.rr;}
+  else if(goal==="general"){s=Math.max(ex.s-1,3);r=ex.rg;}
+  return{e:ex.e,s,r};
+}
+
+// Distribuye N splits en 7 días según selectedDays (array de 0-6)
+function buildRoutine7(splits,selectedDays,goal){
+  const r=Array(7).fill(null);
+  const adapted=splits.map(d=>({...d,ex:d.ex.map(e=>applyGoal(e,goal))}));
+  // Para 5beg: secuencia A B A B A
+  const seq=adapted.length===2
+    ?[adapted[0],adapted[1],adapted[0],adapted[1],adapted[0]].slice(0,selectedDays.length)
+    :adapted.slice(0,selectedDays.length);
+  selectedDays.forEach((dayIdx,i)=>{
+    if(seq[i])r[dayIdx]={...seq[i],ex:seq[i].ex.map((x,j)=>({...x,id:`${dayIdx}${j}`}))};
+  });
+  return r;
+}
 
 const wk=()=>{const d=new Date(),y=d.getFullYear(),s=new Date(y,0,1);return`${y}W${Math.ceil(((d-s)/864e5+s.getDay()+1)/7)}`;};
 const tdy=()=>new Date().toISOString().slice(0,10);
@@ -203,7 +297,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
       set(items[Math.max(0,Math.min(i,items.length-1))]);
     };
 
-    const pds=e=>{e.stopPropagation();isDragging.current=true;const y=e.clientY||(e.touches&&e.touches[0]?e.touches[0].clientY:0);startYRef.current=y;startScrollRef.current=listRef.current?.scrollTop||0;};
+    const pds=e=>{e.stopPropagation();isDragging.current=true;const y=e.clientY||(e.touches&&e.touches[0]?e.touches[0].clientY:0);startYRef.current=y;startScrollRef.current=listRef.current?listRef.current.scrollTop:0;};
     const pms=e=>{if(!isDragging.current)return;const y=e.clientY||(e.touches&&e.touches[0]?e.touches[0].clientY:0);if(listRef.current)listRef.current.scrollTop=startScrollRef.current-(y-startYRef.current);};
     const pue=()=>{isDragging.current=false;snap();};
 
@@ -331,7 +425,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
             <div style={{position:"absolute",top:"50%",right:"12%",width:"18%",height:"1px",background:`${C.tx2}30`}}/>
             {idx<exs.length-1&&(
               <div style={{position:"absolute",bottom:10,right:10,background:"rgba(200,198,194,0.85)",backdropFilter:"blur(8px)",padding:"3px 10px",borderRadius:20,fontSize:9,fontFamily:mono,color:C.tx2,letterSpacing:1}}>
-                {exs[idx+1]?.e?.toUpperCase().slice(0,16)} →
+                {exs[idx+1]&&exs[idx+1].e?exs[idx+1].e.toUpperCase().slice(0,16):""} →
               </div>
             )}
           </div>
@@ -404,18 +498,46 @@ function App(){
 function Onboard({lang,setLang,step,setStep,sp,sr}){
   const[goal,setGoal]=useState("");
   const[level,setLevel]=useState("");
-  const[days,setDays]=useState(6);
-  const[split,setSplit]=useState("");
+  const[ndays,setNdays]=useState(4);
+  const[selDays,setSelDays]=useState([]);   // índices 0-6 de días seleccionados
+  const[progKey,setProgKey]=useState("");   // "3int", "6adv", etc.
   const t=lang?L[lang]:L.en;
 
+  // Auto-set progKey recommendation when level/ndays change
+  useEffect(()=>{
+    if(level&&ndays)setProgKey(`${ndays}${level}`);
+  },[level,ndays]);
+
+  // Default day selection when ndays changes
+  useEffect(()=>{
+    const defaults={
+      3:[0,2,4],   // L M J
+      4:[0,1,3,4], // L M J V
+      5:[0,1,2,3,4],// L-V
+      6:[0,1,2,3,4,5],// L-Sa
+    };
+    setSelDays(defaults[ndays]||[]);
+  },[ndays]);
+
+  const toggleDay=i=>{
+    if(selDays.includes(i)){
+      if(selDays.length>ndays)setSelDays(selDays.filter(d=>d!==i));
+      else if(selDays.length>1)setSelDays(selDays.filter(d=>d!==i));
+    } else {
+      if(selDays.length<ndays)setSelDays([...selDays,i].sort((a,b)=>a-b));
+    }
+  };
+
   const finish=()=>{
-    const tm=TP[split];sp({lang,goal,level,days});
-    const r=Array(7).fill(null);
-    tm.s.forEach((s,i)=>{r[i]={...s,ex:s.ex.map((x,j)=>({...x,id:`${i}${j}`}))};});
+    const splits=RAW[progKey];
+    const r=buildRoutine7(splits,selDays,goal);
+    sp({lang,goal,level,days:ndays,selDays,progKey});
     sr(r);setStep(99);
   };
 
-  // Opt — estilo FORJA: línea horizontal, índice mono, barra activa izquierda
+  // Prog options filtered by ndays
+  const progOptions=[`${ndays}beg`,`${ndays}int`,`${ndays}adv`];
+
   let _optIdx=0;
   const Opt=({active,onClick,children})=>{
     const n=String(++_optIdx).padStart(2,"0");
@@ -425,32 +547,14 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
         borderBottom:`1px solid ${active?C.border+"88":C.borderL+"55"}`,
         display:"flex",alignItems:"center",gap:14,textAlign:"left",
         transition:"all 0.15s",position:"relative",outline:"none"}}>
-        {/* barra activa izquierda */}
-        <div style={{
-          width:2,height:active?"100%":"0%",
-          background:C.tx,borderRadius:1,
-          transition:"height 0.2s ease",
-          position:"absolute",left:-14,top:0,bottom:0,margin:"auto"}}/>
-        {/* número índice */}
-        <span style={{
-          fontSize:9,fontFamily:mono,color:active?C.tx3:C.borderL,
-          letterSpacing:1,minWidth:20,transition:"color 0.15s"}}>
-          {n}
-        </span>
-        {/* label */}
-        <span style={{
-          flex:1,fontSize:14,fontWeight:active?700:400,
-          fontFamily:active?sans:mono,letterSpacing:active?-0.3:1.5,
-          color:active?C.tx:C.tx3,textTransform:active?"none":"uppercase",
-          transition:"all 0.15s"}}>
+        <div style={{width:2,height:active?"100%":"0%",background:C.tx,borderRadius:1,
+          transition:"height 0.2s ease",position:"absolute",left:-14,top:0,bottom:0,margin:"auto"}}/>
+        <span style={{fontSize:9,fontFamily:mono,color:active?C.tx3:C.borderL,letterSpacing:1,minWidth:20,transition:"color 0.15s"}}>{n}</span>
+        <span style={{flex:1,fontSize:14,fontWeight:active?700:400,fontFamily:active?sans:mono,
+          letterSpacing:active?-0.3:1.5,color:active?C.tx:C.tx3,textTransform:active?"none":"uppercase",transition:"all 0.15s"}}>
           {children}
         </span>
-        {/* tick derecha */}
-        <span style={{
-          fontSize:10,fontFamily:mono,color:active?C.tx:C.borderL,
-          letterSpacing:0,opacity:active?1:0,transition:"opacity 0.15s"}}>
-          ●
-        </span>
+        <span style={{fontSize:10,fontFamily:mono,color:active?C.tx:C.borderL,opacity:active?1:0,transition:"opacity 0.15s"}}>●</span>
       </button>
     );
   };
@@ -458,19 +562,19 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
   const Btn=({onClick,disabled,children,ghost})=>(
     <button onClick={onClick} disabled={disabled} style={{
       width:"100%",padding:"16px 20px",cursor:disabled?"default":"pointer",
-      background:"transparent",
-      border:"none",
+      background:"transparent",border:"none",
       borderTop:`1px solid ${disabled?C.borderL:ghost?C.borderL:C.tx}`,
       borderBottom:`1px solid ${disabled?C.borderL:ghost?C.borderL:C.tx}`,
       color:ghost?C.tx3:disabled?C.tx3:C.tx,
-      fontSize:11,fontWeight:700,fontFamily:mono,
-      letterSpacing:4,textTransform:"uppercase",
+      fontSize:11,fontWeight:700,fontFamily:mono,letterSpacing:4,textTransform:"uppercase",
       display:"flex",alignItems:"center",justifyContent:"space-between",
       transition:"all 0.2s",opacity:disabled?0.3:1,outline:"none"}}>
       <span>{children}</span>
       {!ghost&&!disabled&&<span style={{fontSize:16,letterSpacing:0}}>→</span>}
     </button>
   );
+
+  const TOTAL_STEPS=5;
 
   return(
     <div style={{minHeight:"100vh",background:C.bg,color:C.tx,fontFamily:sans}}>
@@ -491,14 +595,21 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
           <Btn onClick={()=>setStep(1)} disabled={!lang}>{t.next}</Btn>
         </div>
       )}
-      {step>=1&&step<=4&&(
+      {step>=1&&step<=TOTAL_STEPS&&(
         <div style={{padding:"0 26px",paddingTop:"7vh",paddingBottom:40,animation:"fu 0.4s ease"}}>
+          {/* progress bar */}
           <div style={{display:"flex",gap:6,marginBottom:36}}>
-            {[1,2,3,4].map(i=><div key={i} style={{height:2,flex:1,borderRadius:1,background:step>=i?C.tx:C.borderL,transition:"all 0.3s"}}/>)}
+            {Array(TOTAL_STEPS).fill(0).map((_,i)=>(
+              <div key={i} style={{height:2,flex:1,borderRadius:1,background:step>i?C.tx:C.borderL,transition:"all 0.3s"}}/>
+            ))}
           </div>
+
+          {/* STEP 1 — Objetivo */}
           {step===1&&(<>
             <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{t.goal}</div>
-            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:24,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"¿Qué buscas?":"What's your goal?"}</div>
+            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:24,lineHeight:1,textTransform:"uppercase"}}>
+              {lang==="es"?"¿Qué buscas?":"What's your goal?"}
+            </div>
             <div style={{display:"flex",flexDirection:"column",borderTop:`1px solid ${C.borderL}55`}}>
               {[["muscle",t.muscle],["strength",t.strength],["lose",t.lose],["recomp",t.recomp],["general",t.general]].map(([id,lb])=>(
                 <Opt key={id} active={goal===id} onClick={()=>setGoal(id)}>{lb}</Opt>
@@ -509,12 +620,21 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               <div style={{flex:2}}><Btn onClick={()=>setStep(2)} disabled={!goal}>{t.next}</Btn></div>
             </div>
           </>)}
+
+          {/* STEP 2 — Nivel */}
           {step===2&&(<>
             <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{t.level}</div>
-            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:24,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"Tu experiencia":"Your experience"}</div>
+            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:24,lineHeight:1,textTransform:"uppercase"}}>
+              {lang==="es"?"Tu experiencia":"Your experience"}
+            </div>
             <div style={{display:"flex",flexDirection:"column",borderTop:`1px solid ${C.borderL}55`}}>
-              {[["beg",t.beg],["int",t.int],["adv",t.adv]].map(([id,lb])=>(
-                <Opt key={id} active={level===id} onClick={()=>setLevel(id)}>{lb}</Opt>
+              {[["beg",t.beg,"< 1 año / < 1 year"],["int",t.int,"1–3 años / 1–3 years"],["adv",t.adv,"> 3 años / > 3 years"]].map(([id,lb,sub])=>(
+                <Opt key={id} active={level===id} onClick={()=>setLevel(id)}>
+                  <div>
+                    <div>{lb}</div>
+                    <div style={{fontSize:10,fontFamily:mono,opacity:0.45,letterSpacing:0.5,marginTop:2}}>{sub}</div>
+                  </div>
+                </Opt>
               ))}
             </div>
             <div style={{display:"flex",gap:10,marginTop:28}}>
@@ -522,16 +642,20 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               <div style={{flex:2}}><Btn onClick={()=>setStep(3)} disabled={!level}>{t.next}</Btn></div>
             </div>
           </>)}
+
+          {/* STEP 3 — Cuántos días */}
           {step===3&&(<>
             <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{t.days}</div>
-            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:32,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"¿Cuántos días?":"How many days?"}</div>
+            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:32,lineHeight:1,textTransform:"uppercase"}}>
+              {lang==="es"?"¿Cuántos días?":"How many days?"}
+            </div>
             <div style={{display:"flex",gap:10,justifyContent:"center"}}>
               {[3,4,5,6].map(n=>(
-                <button key={n} onClick={()=>setDays(n)} style={{width:68,height:84,borderRadius:14,
-                  border:`1.5px solid ${days===n?C.tx:C.borderL}`,cursor:"pointer",
-                  background:days===n?C.tx:C.card,color:days===n?C.white:C.tx2,
+                <button key={n} onClick={()=>setNdays(n)} style={{width:68,height:84,borderRadius:14,
+                  border:`1.5px solid ${ndays===n?C.tx:C.borderL}`,cursor:"pointer",
+                  background:ndays===n?C.tx:C.card,color:ndays===n?C.white:C.tx2,
                   fontSize:32,fontWeight:900,fontFamily:sans,transition:"all 0.2s",
-                  boxShadow:days===n?"0 4px 16px rgba(0,0,0,0.15)":"none"}}>{n}</button>
+                  boxShadow:ndays===n?"0 4px 16px rgba(0,0,0,0.15)":"none"}}>{n}</button>
               ))}
             </div>
             <div style={{display:"flex",gap:10,marginTop:32}}>
@@ -539,22 +663,82 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               <div style={{flex:2}}><Btn onClick={()=>setStep(4)}>{t.next}</Btn></div>
             </div>
           </>)}
+
+          {/* STEP 4 — Qué días */}
           {step===4&&(<>
+            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>
+              {lang==="es"?"QUÉ DÍAS":"WHICH DAYS"}
+            </div>
+            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:8,lineHeight:1,textTransform:"uppercase"}}>
+              {lang==="es"?"Elige tus días":"Pick your days"}
+            </div>
+            <div style={{fontSize:11,fontFamily:mono,color:C.tx3,letterSpacing:0.5,marginBottom:28}}>
+              {lang==="es"?`Selecciona ${ndays} días`:`Select ${ndays} days`}
+              {" · "}<span style={{color:selDays.length===ndays?C.green:C.yellow}}>{selDays.length}/{ndays}</span>
+            </div>
+            <div style={{display:"flex",gap:8,justifyContent:"center",marginBottom:32}}>
+              {DN[lang||"es"].map((d,i)=>{
+                const active=selDays.includes(i);
+                const canAdd=selDays.length<ndays;
+                return(
+                  <button key={i} onClick={()=>toggleDay(i)} style={{
+                    flex:1,paddingTop:12,paddingBottom:10,borderRadius:10,cursor:"pointer",
+                    border:`1.5px solid ${active?C.tx:C.borderL}`,
+                    background:active?C.tx:"transparent",
+                    color:active?C.white:canAdd?C.tx2:C.tx3,
+                    transition:"all 0.2s",textAlign:"center",
+                    opacity:(!active&&!canAdd)?0.35:1}}>
+                    <div style={{fontSize:9,fontWeight:800,fontFamily:mono,letterSpacing:1.5}}>{d}</div>
+                    {active&&<div style={{fontSize:6,fontFamily:mono,marginTop:4,opacity:0.7,letterSpacing:0.5}}>
+                      {(RAW[progKey]&&RAW[progKey][selDays.indexOf(i)]&&RAW[progKey][selDays.indexOf(i)].l)?RAW[progKey][selDays.indexOf(i)].l.split(" ")[0]:"●"}
+                    </div>}
+                    {!active&&<div style={{fontSize:8,marginTop:4,opacity:0.2}}>—</div>}
+                  </button>
+                );
+              })}
+            </div>
+            <div style={{display:"flex",gap:10}}>
+              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(3)}>{t.back}</Btn></div>
+              <div style={{flex:2}}><Btn onClick={()=>setStep(5)} disabled={selDays.length!==ndays}>{t.next}</Btn></div>
+            </div>
+          </>)}
+
+          {/* STEP 5 — Programa recomendado */}
+          {step===5&&(<>
             <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{t.split}</div>
-            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:24,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"Tu programa":"Your program"}</div>
+            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:6,lineHeight:1,textTransform:"uppercase"}}>
+              {lang==="es"?"Tu programa":"Your program"}
+            </div>
+            <div style={{fontSize:11,fontFamily:mono,color:C.tx3,letterSpacing:0.5,marginBottom:24}}>
+              {lang==="es"?"Recomendado según tu nivel":"Recommended for your level"}
+              {" · "}<span style={{color:C.green,letterSpacing:1}}>★</span>
+            </div>
             <div style={{display:"flex",flexDirection:"column",borderTop:`1px solid ${C.borderL}55`}}>
-              {Object.entries(TP).map(([k,v])=>(
-                <Opt key={k} active={split===k} onClick={()=>setSplit(k)}>
-                  <div>
-                    <div style={{fontWeight:700,marginBottom:2}}>{v.n[lang||"es"]}</div>
-                    <div style={{fontSize:10,fontFamily:mono,opacity:0.6}}>{v.s.map(x=>x.l).join("  ·  ")}</div>
-                  </div>
-                </Opt>
-              ))}
+              {progOptions.map((k,oi)=>{
+                const pn=PROG_NAMES[k];
+                const splits=RAW[k];
+                const isRec=k===`${ndays}${level}`;
+                return(
+                  <Opt key={k} active={progKey===k} onClick={()=>setProgKey(k)}>
+                    <div style={{width:"100%"}}>
+                      <div style={{display:"flex",alignItems:"center",gap:8}}>
+                        <span style={{fontWeight:700}}>{pn[lang||"es"]}</span>
+                        {isRec&&<span style={{fontSize:8,fontFamily:mono,color:C.green,letterSpacing:1.5,
+                          border:`1px solid ${C.green}44`,padding:"1px 5px",borderRadius:3}}>
+                          {lang==="es"?"RECOMENDADO":"RECOMMENDED"}
+                        </span>}
+                      </div>
+                      <div style={{fontSize:10,fontFamily:mono,opacity:0.45,marginTop:3,letterSpacing:0.5}}>
+                        {splits.map(x=>x.l).join("  ·  ")}
+                      </div>
+                    </div>
+                  </Opt>
+                );
+              })}
             </div>
             <div style={{display:"flex",gap:10,marginTop:28}}>
-              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(3)}>{t.back}</Btn></div>
-              <div style={{flex:2}}><Btn onClick={finish} disabled={!split}>{t.go}</Btn></div>
+              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(4)}>{t.back}</Btn></div>
+              <div style={{flex:2}}><Btn onClick={finish} disabled={!progKey}>{t.go}</Btn></div>
             </div>
           </>)}
         </div>
