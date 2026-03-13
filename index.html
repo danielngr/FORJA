@@ -1064,14 +1064,11 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 (function initDumbbell(){
-  let started=false;
   function tryInit(){
-    if(started) return;
     const canvas = document.getElementById("forja-dumbbell-canvas");
     if(!canvas || !window.THREE) return;
-    if(canvas.dataset.forjaInit) return; // ya inicializado
+    if(canvas.dataset.forjaInit) return;
     canvas.dataset.forjaInit="1";
-    started=true;
     const wrap = canvas.parentElement;
     const W = wrap.offsetWidth||360;
     const H = wrap.offsetHeight||260;
@@ -1176,27 +1173,20 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     });
   }
 
-  // forja:mount — React lo dispara en cada render, garantiza que el canvas existe
   window.addEventListener("forja:mount", tryInit);
-  // fallbacks
   document.addEventListener("DOMContentLoaded", tryInit);
   window.addEventListener("load", tryInit);
-  const poll = setInterval(()=>{ tryInit(); if(started) clearInterval(poll); }, 200);
-  setTimeout(()=>clearInterval(poll), 20000);
+  setInterval(tryInit, 200);
 })();
 </script>
 
 <script>
 (function initLogoParticles(){
-  let started=false;
-
   function tryInit(){
-    if(started) return;
     const canvas=document.getElementById("forja-logo-canvas");
     if(!canvas||!window.THREE) return;
     if(canvas.dataset.linit) return;
     canvas.dataset.linit="1";
-    started=true;
 
     const DPR=Math.min(window.devicePixelRatio||1,2);
     const W=canvas.offsetWidth||320;
@@ -1319,20 +1309,16 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
   window.addEventListener("forja:mount", tryInit);
   window.addEventListener("load",tryInit);
-  const poll=setInterval(()=>{tryInit();if(started)clearInterval(poll);},200);
-  setTimeout(()=>clearInterval(poll),20000);
+  setInterval(tryInit, 200);
 })();
 </script>
 <script>
 (function initMeditation(){
-  let started=false;
   function tryInit(){
-    if(started) return;
     const canvas=document.getElementById("forja-meditation-canvas");
     if(!canvas||!window.THREE) return;
     if(canvas.dataset.minit) return;
     canvas.dataset.minit="1";
-    started=true;
 
     const wrap=canvas.parentElement;
     const W=wrap.offsetWidth||360;
@@ -1344,115 +1330,157 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     renderer.setClearColor(0x000000,0);
 
     const scene=new THREE.Scene();
-    const camera=new THREE.PerspectiveCamera(46,W/H,0.1,100);
-    camera.position.set(0,0,9);
+    const camera=new THREE.PerspectiveCamera(50,W/H,0.1,100);
+    camera.position.set(0,0,8.5);
 
-    // ── Silueta de figura en loto, coordenadas normalizadas ──
-    // Cada shape: {pts:[[x,y],...], r, fill}
-    // Escala: unidades ~aprox a rango [-1.8, 1.8] en X, [-2.2, 1.5] en Y
-    function circle(cx,cy,r,n){
-      const pts=[];
-      for(let i=0;i<n;i++){
-        const a=Math.PI*2*i/n;
-        pts.push([cx+Math.cos(a)*r, cy+Math.sin(a)*r]);
-      }
-      return pts;
-    }
-    function ellipse(cx,cy,rx,ry,n){
-      const pts=[];
-      for(let i=0;i<n;i++){
-        const a=Math.PI*2*i/n;
-        pts.push([cx+Math.cos(a)*rx, cy+Math.sin(a)*ry]);
-      }
-      return pts;
-    }
+    // ── Dibujar silueta en canvas 2D oculto, samplear píxeles ──
+    const OW=320, OH=320;
+    const off=document.createElement("canvas");
+    off.width=OW; off.height=OH;
+    const ctx=off.getContext("2d");
+    ctx.fillStyle="#fff";
+    ctx.fillRect(0,0,OW,OH);
+    ctx.fillStyle="#000";
+    ctx.strokeStyle="#000";
 
-    const shapes=[
-      // Cabeza
-      {pts:circle(0, 1.20, 0.30, 60), r:0.30},
-      // Cuello/torso superior
-      {pts:ellipse(0, 0.72, 0.14, 0.18, 40), r:0.14},
-      // Torso
-      {pts:ellipse(0, 0.22, 0.38, 0.46, 80), r:0.38},
-      // Hombro izquierdo / brazo
-      {pts:ellipse(-0.44, 0.50, 0.10, 0.28, 40), r:0.10},
-      // Hombro derecho / brazo
-      {pts:ellipse( 0.44, 0.50, 0.10, 0.28, 40), r:0.10},
-      // Mano izquierda sobre rodilla
-      {pts:circle(-0.72, 0.08, 0.11, 30), r:0.11},
-      // Mano derecha sobre rodilla
-      {pts:circle( 0.72, 0.08, 0.11, 30), r:0.11},
-      // Pierna izquierda en loto (diagonal)
-      {pts:ellipse(-0.55, -0.44, 0.44, 0.16, 60), r:0.16},
-      // Pierna derecha en loto
-      {pts:ellipse( 0.55, -0.44, 0.44, 0.16, 60), r:0.16},
-      // Cruce central piernas
-      {pts:ellipse(0, -0.52, 0.28, 0.20, 60), r:0.20},
-      // Pie izquierdo
-      {pts:ellipse(-0.94, -0.44, 0.18, 0.10, 30), r:0.12},
-      // Pie derecho
-      {pts:ellipse( 0.94, -0.44, 0.18, 0.10, 30), r:0.12},
-    ];
+    const cx=OW/2, S=OW*0.38; // centro y escala
 
-    // Samplear puntos de los shapes
-    const allPts=[];
-    shapes.forEach(sh=>{
-      sh.pts.forEach(([px,py])=>{
-        // puntos sobre el contorno + relleno aleatorio
-        allPts.push({x:px, y:py});
-        // relleno interno
-        const nr=Math.floor(sh.r*180);
-        for(let k=0;k<nr;k++){
-          const a=Math.random()*Math.PI*2;
-          const d=Math.random()*sh.r;
-          const cx=sh.pts.reduce((s,p)=>s+p[0],0)/sh.pts.length;
-          const cy=sh.pts.reduce((s,p)=>s+p[1],0)/sh.pts.length;
-          allPts.push({x:cx+Math.cos(a)*d, y:cy+Math.sin(a)*d});
+    // ── Cabeza ──
+    ctx.beginPath();
+    ctx.arc(cx, OH*0.14, S*0.16, 0, Math.PI*2);
+    ctx.fill();
+
+    // ── Cuello ──
+    ctx.beginPath();
+    ctx.rect(cx-S*0.06, OH*0.14+S*0.16, S*0.12, S*0.12);
+    ctx.fill();
+
+    // ── Torso: trapecio redondeado ──
+    ctx.beginPath();
+    ctx.moveTo(cx-S*0.22, OH*0.30);
+    ctx.lineTo(cx+S*0.22, OH*0.30);
+    ctx.lineTo(cx+S*0.18, OH*0.56);
+    ctx.lineTo(cx-S*0.18, OH*0.56);
+    ctx.closePath();
+    ctx.fill();
+
+    // ── Brazo izquierdo (diagonal bajando hacia rodilla) ──
+    ctx.save();
+    ctx.translate(cx-S*0.22, OH*0.32);
+    ctx.rotate(0.55);
+    ctx.beginPath();
+    ctx.ellipse(0, S*0.22, S*0.07, S*0.24, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+
+    // ── Brazo derecho ──
+    ctx.save();
+    ctx.translate(cx+S*0.22, OH*0.32);
+    ctx.rotate(-0.55);
+    ctx.beginPath();
+    ctx.ellipse(0, S*0.22, S*0.07, S*0.24, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+
+    // ── Mano izquierda (pequeño óvalo) ──
+    ctx.beginPath();
+    ctx.ellipse(cx-S*0.46, OH*0.56, S*0.09, S*0.07, -0.3, 0, Math.PI*2);
+    ctx.fill();
+
+    // ── Mano derecha ──
+    ctx.beginPath();
+    ctx.ellipse(cx+S*0.46, OH*0.56, S*0.09, S*0.07, 0.3, 0, Math.PI*2);
+    ctx.fill();
+
+    // ── Piernas en loto ──
+    // Muslo izquierdo (curva hacia afuera-abajo)
+    ctx.beginPath();
+    ctx.ellipse(cx-S*0.32, OH*0.68, S*0.30, S*0.13, -0.25, 0, Math.PI*2);
+    ctx.fill();
+    // Muslo derecho
+    ctx.beginPath();
+    ctx.ellipse(cx+S*0.32, OH*0.68, S*0.30, S*0.13, 0.25, 0, Math.PI*2);
+    ctx.fill();
+
+    // Zona cruce piernas (centro)
+    ctx.beginPath();
+    ctx.ellipse(cx, OH*0.70, S*0.20, S*0.14, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // Pie izq (apoyado en muslo derecho)
+    ctx.beginPath();
+    ctx.ellipse(cx+S*0.50, OH*0.62, S*0.13, S*0.08, 0.2, 0, Math.PI*2);
+    ctx.fill();
+
+    // Pie der (apoyado en muslo izquierdo)
+    ctx.beginPath();
+    ctx.ellipse(cx-S*0.50, OH*0.62, S*0.13, S*0.08, -0.2, 0, Math.PI*2);
+    ctx.fill();
+
+    // Samplear píxeles oscuros
+    const imgData=ctx.getImageData(0,0,OW,OH);
+    const bodyPts=[];
+    const stride=2;
+    for(let y=0;y<OH;y+=stride){
+      for(let x=0;x<OW;x+=stride){
+        const i=(y*OW+x)*4;
+        if(imgData.data[i]<100){
+          bodyPts.push({
+            // mapear a espacio 3D: x [-aspect,+aspect], y [-1,+1]
+            x:((x/OW)*2-1)*( W/H),
+            y:(1-(y/OH)*2)*1.05,
+            body:true
+          });
         }
-      });
-    });
-
-    // Aura / halo — círculo grande detrás
-    const HALO=800;
-    for(let i=0;i<HALO;i++){
-      const a=Math.random()*Math.PI*2;
-      const r=0.60+Math.random()*0.55;
-      allPts.push({x:Math.cos(a)*r*1.1, y:Math.sin(a)*r*0.85+0.22, halo:true});
+      }
     }
 
+    // Halo — anillo fino, más brillante cerca de la cabeza
+    const haloPts=[];
+    const haloR=1.05, headY=0.72;
+    for(let i=0;i<1200;i++){
+      const a=Math.random()*Math.PI*2;
+      const rr=haloR+(Math.random()-0.5)*0.22;
+      haloPts.push({
+        x:Math.cos(a)*rr*(W/H)*0.82,
+        y:Math.sin(a)*rr*0.82+headY*0.08,
+        halo:true,
+        top: Math.sin(a)>0.5  // más brillante arriba
+      });
+    }
+
+    const allPts=[...bodyPts,...haloPts];
     const CORE=allPts.length;
-    const DISP=Math.floor(CORE*0.5);
+    const DISP=Math.floor(CORE*0.45);
     const TOTAL=CORE+DISP;
+
     const pos=new Float32Array(TOTAL*3);
     const col=new Float32Array(TOTAL*3);
 
     for(let i=0;i<CORE;i++){
       const p=allPts[i];
-      pos[i*3]  =p.x+(Math.random()-0.5)*0.025;
-      pos[i*3+1]=p.y+(Math.random()-0.5)*0.025;
-      pos[i*3+2]=(Math.random()-0.5)*0.18;
+      pos[i*3]  =p.x+(Math.random()-0.5)*0.03;
+      pos[i*3+1]=p.y+(Math.random()-0.5)*0.03;
+      pos[i*3+2]=(Math.random()-0.5)*0.15;
       if(p.halo){
-        // aura: más tenue, tono cálido
-        const v=0.28+Math.random()*0.18;
-        col[i*3]=v*1.0; col[i*3+1]=v*0.95; col[i*3+2]=v*0.80;
+        const v=p.top?(0.30+Math.random()*0.20):(0.14+Math.random()*0.14);
+        col[i*3]=v*0.98; col[i*3+1]=v*0.90; col[i*3+2]=v*0.65; // cálido dorado
       } else {
-        // cuerpo: misma textura pesa — blanco brillante con ligero azul
-        const v=0.72+Math.random()*0.26;
-        col[i*3]=v*0.94; col[i*3+1]=v*0.96; col[i*3+2]=v;
+        const v=0.70+Math.random()*0.28;
+        col[i*3]=v*0.94; col[i*3+1]=v*0.96; col[i*3+2]=v; // blanco-azulado pesa
       }
     }
 
-    // Dispersión — igual que la pesa
     for(let i=0;i<DISP;i++){
       const idx=CORE+i;
       const src=allPts[Math.floor(Math.random()*CORE)];
-      const eD=Math.pow(Math.random(),0.38)*5.5;
+      const eD=Math.pow(Math.random(),0.40)*4.5;
       const ang=Math.random()*Math.PI*2;
-      pos[idx*3]  =src.x+Math.cos(ang)*eD*0.7;
+      pos[idx*3]  =src.x+Math.cos(ang)*eD*0.6;
       pos[idx*3+1]=src.y+Math.sin(ang)*eD*0.55;
-      pos[idx*3+2]=(Math.random()-0.5)*0.4;
-      const fadeT=eD/5.5;
-      const op=Math.max(0,1-fadeT*0.90);
+      pos[idx*3+2]=(Math.random()-0.5)*0.3;
+      const fadeT=eD/4.5;
+      const op=Math.max(0,1-fadeT*0.92);
       col[idx*3]=0.94*op+0.22*(1-op);
       col[idx*3+1]=0.96*op+0.243*(1-op);
       col[idx*3+2]=1.0*op+0.306*(1-op);
@@ -1461,18 +1489,16 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     const geo=new THREE.BufferGeometry();
     geo.setAttribute("position",new THREE.BufferAttribute(pos,3));
     geo.setAttribute("color",new THREE.BufferAttribute(col,3));
-    const mat=new THREE.PointsMaterial({size:0.032,vertexColors:true,transparent:true,opacity:0.85,sizeAttenuation:true});
+    const mat=new THREE.PointsMaterial({size:0.022,vertexColors:true,transparent:true,opacity:0.88,sizeAttenuation:true});
     const pts=new THREE.Points(geo,mat);
     scene.add(pts);
 
     let t=0,animId;
     function animate(){
       animId=requestAnimationFrame(animate);
-      t+=0.004;
-      // Respiración suave — levita ligeramente y pequeño balanceo
-      pts.position.y=Math.sin(t*0.5)*0.04;
-      pts.rotation.y=Math.sin(t*0.22)*0.06;
-      pts.rotation.z=Math.sin(t*0.18)*0.012;
+      t+=0.003;
+      pts.position.y=Math.sin(t*0.55)*0.05;   // respiración
+      pts.rotation.y=Math.sin(t*0.20)*0.055;  // leve balanceo
       renderer.render(scene,camera);
     }
     animate();
@@ -1484,8 +1510,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
   window.addEventListener("forja:mount", tryInit);
   window.addEventListener("load", tryInit);
-  const poll=setInterval(()=>{tryInit();if(started)clearInterval(poll);},200);
-  setTimeout(()=>clearInterval(poll),20000);
+  setInterval(tryInit, 200);
 })();
 </script>
 </body>
