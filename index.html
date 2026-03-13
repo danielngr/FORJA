@@ -9,14 +9,14 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-html,body{height:100%;background:#DDDBD7;}
+html,body{height:100%;background:#383e4e;}
 body{overscroll-behavior:none;}
 input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;}
 input[type=number]{-moz-appearance:textfield;}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes fu{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fogIn{from{opacity:0;filter:blur(6px)}to{opacity:1;filter:blur(0)}}
-::placeholder{color:#9A9894;}
+::placeholder{color:#606678;}
 </style>
 </head>
 <body>
@@ -25,11 +25,12 @@ input[type=number]{-moz-appearance:textfield;}
 const {useState,useEffect,useCallback,useRef}=React;
 
 const C={
-  bg:"#DDDBD7",bgDeep:"#C8C6C2",card:"#E8E6E2",cardDim:"#D0CEC9",
-  border:"#B8B6B2",borderL:"#CCCAC6",
-  tx:"#141414",tx2:"#4A4846",tx3:"#8A8886",
-  red:"#C0392B",green:"#1E6B47",blue:"#1A3A5C",purple:"#3D2B4A",yellow:"#7A5C28",
-  white:"#F5F3EF",
+  bg:"#383e4e",bgDeep:"#2c3040",card:"#424858",cardDim:"#3a4050",
+  border:"#525a6e",borderL:"#4a5264",
+  tx:"#b6bac5",tx2:"#9098aa",tx3:"#606678",
+  accent:"#b6bac5",
+  red:"#d96060",green:"#5faa88",blue:"#6a8fc0",purple:"#8878c0",yellow:"#c0a870",
+  white:"#d4d8e4",
 };
 const mono="'SF Mono','Fira Code','Courier New',monospace";
 const sans="-apple-system,'SF Pro Display','Helvetica Neue',sans-serif";
@@ -117,8 +118,8 @@ const getImg=name=>IMG[name.toLowerCase().trim()]||null;
 function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
   const exs=day.ex;
   const[idx,setIdx]=useState(0);
-  const[kg,setKg]=useState("");
-  const[rp,setRp]=useState("");
+  const[kg,setKg]=useState("10");
+  const[rp,setRp]=useState("8");
   const[showHist,setShowHist]=useState(false);
   const[imgErr,setImgErr]=useState({});
   const[sliding,setSliding]=useState(false);
@@ -150,18 +151,90 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
   const sp=e=>e.stopPropagation();
   const ty=sliding?slideDir*110:(isDrag.current?Math.min(Math.max(dragY*0.35,-70),70):0);
 
-  const NI=({val,set,label})=>(
-    <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:5}}>
-      <div style={{fontSize:9,color:C.tx3,fontFamily:mono,letterSpacing:2}}>{label}</div>
-      <input type="number" inputMode="decimal" value={val} onChange={e=>set(e.target.value)} placeholder="—"
-        onPointerDown={sp} onMouseDown={sp} onTouchStart={sp}
-        style={{width:"100%",padding:"14px 0",background:"transparent",border:"none",
-          borderBottom:`1.5px solid ${C.border}`,color:C.tx,fontSize:34,fontWeight:800,
-          fontFamily:sans,textAlign:"center",outline:"none",caretColor:C.tx}}
-        onFocus={e=>e.target.style.borderBottomColor=C.tx}
-        onBlur={e=>e.target.style.borderBottomColor=C.border}/>
-    </div>
-  );
+  // ScrollPicker — estilo X/dark
+  const ScrollPicker=({val,set,label,items})=>{
+    const iH=54;
+    const listRef=useRef(null);
+    const isDragging=useRef(false);
+    const startYRef=useRef(0);
+    const startScrollRef=useRef(0);
+
+    useEffect(()=>{
+      if(listRef.current&&val){
+        const i=items.indexOf(val);
+        if(i>=0) listRef.current.scrollTop=i*iH;
+      }
+    },[]);
+
+    const snap=()=>{
+      if(!listRef.current)return;
+      const i=Math.round(listRef.current.scrollTop/iH);
+      const clamped=Math.max(0,Math.min(i,items.length-1));
+      listRef.current.scrollTop=clamped*iH;
+      set(items[clamped]);
+    };
+
+    const onScroll=()=>{
+      if(!listRef.current)return;
+      const i=Math.round(listRef.current.scrollTop/iH);
+      set(items[Math.max(0,Math.min(i,items.length-1))]);
+    };
+
+    const pds=e=>{e.stopPropagation();isDragging.current=true;const y=e.clientY||(e.touches&&e.touches[0]?e.touches[0].clientY:0);startYRef.current=y;startScrollRef.current=listRef.current?.scrollTop||0;};
+    const pms=e=>{if(!isDragging.current)return;const y=e.clientY||(e.touches&&e.touches[0]?e.touches[0].clientY:0);if(listRef.current)listRef.current.scrollTop=startScrollRef.current-(y-startYRef.current);};
+    const pue=()=>{isDragging.current=false;snap();};
+
+    return(
+      <div onPointerDown={sp} onMouseDown={sp} onTouchStart={sp}
+        style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:8}}>
+        <div style={{fontSize:8,color:C.tx3,fontFamily:mono,letterSpacing:3,fontWeight:700}}>{label}</div>
+        <div style={{position:"relative",width:"100%",height:iH*3,overflow:"hidden",background:"transparent"}}>
+          {/* líneas de selección — estilo minimal */}
+          <div style={{position:"absolute",top:iH,left:0,right:0,height:iH,
+            borderTop:`1px solid ${C.border}`,borderBottom:`1px solid ${C.border}`,
+            zIndex:2,pointerEvents:"none"}}/>
+          {/* fade top */}
+          <div style={{position:"absolute",top:0,left:0,right:0,height:iH,
+            background:`linear-gradient(to bottom,${C.bg}FF,${C.bg}00)`,
+            zIndex:3,pointerEvents:"none"}}/>
+          {/* fade bottom */}
+          <div style={{position:"absolute",bottom:0,left:0,right:0,height:iH,
+            background:`linear-gradient(to top,${C.bg}FF,${C.bg}00)`,
+            zIndex:3,pointerEvents:"none"}}/>
+          <div ref={listRef} onScroll={onScroll}
+            onMouseDown={pds} onMouseMove={pms} onMouseUp={pue} onMouseLeave={pue}
+            onTouchStart={pds} onTouchMove={pms} onTouchEnd={pue}
+            style={{height:"100%",overflowY:"scroll",scrollSnapType:"y mandatory",
+              WebkitOverflowScrolling:"touch",scrollbarWidth:"none",cursor:"ns-resize",userSelect:"none"}}>
+            <style>{"[data-fpicker]::-webkit-scrollbar{display:none}"}</style>
+            <div style={{height:iH}}/>
+            {items.map((item,i)=>{
+              const isSel=item===val;
+              return(
+                <div key={i} data-fpicker
+                  onClick={()=>{set(item);if(listRef.current)listRef.current.scrollTop=i*iH;}}
+                  style={{height:iH,display:"flex",alignItems:"center",justifyContent:"center",
+                    scrollSnapAlign:"start",
+                    fontSize:isSel?30:16,
+                    fontWeight:isSel?800:300,
+                    fontFamily:isSel?sans:mono,
+                    color:isSel?C.tx:C.tx3,
+                    letterSpacing:isSel?-1:1,
+                    transition:"all 0.12s",cursor:"pointer"}}>
+                  {item}
+                </div>
+              );
+            })}
+            <div style={{height:iH}}/>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const kgItems=[...Array.from({length:21},(_,i)=>(i*0.5).toFixed(1).replace(".0","")),...Array.from({length:281},(_,i)=>((i+21)*0.5).toFixed(1).replace(".0",""))].map(String);
+  const kgAll=Array.from({length:301},(_,i)=>i===0?"0":(i*0.5%1===0?String(i*0.5):(i*0.5).toFixed(1)));
+  const rpItems=Array.from({length:50},(_,i)=>String(i+1));
 
   return(
     <div style={{position:"fixed",inset:0,background:C.bg,display:"flex",flexDirection:"column",overflow:"hidden",fontFamily:sans}}>
@@ -210,13 +283,13 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
 
         <div style={{margin:"0 14px",flex:1,minHeight:0}}>
           <div style={{width:"100%",height:"100%",borderRadius:20,overflow:"hidden",
-            background:"linear-gradient(145deg,#C8C6C2 0%,#B8B6B2 100%)",
+            background:"#424858",
             border:`1px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"center",
-            position:"relative",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.6),0 8px 40px rgba(0,0,0,0.12)"}}>
+            position:"relative",boxShadow:`inset 0 1px 0 rgba(255,255,255,0.5),0 8px 40px rgba(0,0,0,0.10)`}}>
 
             {imgUrl?(
               <img src={imgUrl} alt={ex.e} onError={()=>setImgErr(p=>({...p,[ex.id]:true}))}
-                style={{width:"100%",height:"100%",objectFit:"contain",mixBlendMode:"multiply"}}/>
+                style={{width:"100%",height:"100%",objectFit:"contain",filter:"brightness(0.95)"}}/>
             ):(
               <div style={{textAlign:"center",opacity:0.25}}>
                 <div style={{fontSize:52,color:C.tx2,marginBottom:6}}>◎</div>
@@ -234,7 +307,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
             <div style={{position:"absolute",top:"50%",left:"12%",width:"18%",height:"1px",background:`${C.tx2}30`}}/>
             <div style={{position:"absolute",top:"50%",right:"12%",width:"18%",height:"1px",background:`${C.tx2}30`}}/>
             {idx<exs.length-1&&(
-              <div style={{position:"absolute",bottom:10,right:10,background:"rgba(180,178,174,0.85)",backdropFilter:"blur(8px)",padding:"3px 10px",borderRadius:20,fontSize:9,fontFamily:mono,color:C.tx2,letterSpacing:1}}>
+              <div style={{position:"absolute",bottom:10,right:10,background:"rgba(200,198,194,0.85)",backdropFilter:"blur(8px)",padding:"3px 10px",borderRadius:20,fontSize:9,fontFamily:mono,color:C.tx2,letterSpacing:1}}>
                 {exs[idx+1]?.e?.toUpperCase().slice(0,16)} →
               </div>
             )}
@@ -243,9 +316,9 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
 
         <div onPointerDown={sp} onMouseDown={sp} onTouchStart={sp} style={{padding:"14px 20px 18px",flexShrink:0}}>
           <div style={{display:"flex",gap:16,alignItems:"flex-end",marginBottom:14}}>
-            <NI val={kg} set={setKg} label="KG"/>
+            <ScrollPicker val={kg||kgAll[20]} set={setKg} label="KG" items={kgAll}/>
             <div style={{color:C.tx3,fontSize:24,fontWeight:200,paddingBottom:14,flexShrink:0}}>×</div>
-            <NI val={rp} set={setRp} label="REPS"/>
+            <ScrollPicker val={rp||rpItems[7]} set={setRp} label="REPS" items={rpItems}/>
           </div>
           <div style={{display:"flex",gap:10}}>
             <button onClick={e=>{sp(e);handleSave();}} onMouseDown={sp}
@@ -476,7 +549,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   const Inp=({value,onChange,placeholder,type="text",style:s2={}})=>(
     <input type={type} value={value} onChange={onChange} placeholder={placeholder}
       style={{padding:"12px 14px",borderRadius:10,border:`1.5px solid ${C.borderL}`,
-        background:C.white,color:C.tx,fontSize:14,fontFamily:sans,outline:"none",width:"100%",...s2}}
+        background:C.card,color:C.tx,fontSize:14,fontFamily:sans,outline:"none",width:"100%",...s2}}
       onFocus={e=>e.target.style.borderColor=C.tx}
       onBlur={e=>e.target.style.borderColor=C.borderL}/>
   );
@@ -564,8 +637,8 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
             ):(
               <>
                 {/* HERO CARD — alma de la pantalla */}
-                <div onClick={()=>setInWorkout(true)} style={{
-                  width:"100%",borderRadius:22,background:C.tx,cursor:"pointer",
+                <div style={{
+                  width:"100%",borderRadius:22,background:"linear-gradient(135deg,#1A2540 0%,#0D1520 100%)",cursor:"default",
                   marginBottom:16,padding:"26px 22px 22px",
                   boxShadow:"0 16px 56px rgba(0,0,0,0.22)",
                   position:"relative",overflow:"hidden",userSelect:"none"}}>
@@ -600,27 +673,21 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                         transition:"background 0.3s"}}/>;
                     })}
                   </div>
-                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                    <div style={{fontSize:11,fontWeight:800,fontFamily:mono,letterSpacing:3,color:C.white}}>
-                      {pct===1?(lang==="es"?"COMPLETADO ✓":"COMPLETED ✓"):t.startWorkout}
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:4}}>
+                    <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,0.35)",letterSpacing:2}}>
+                      {pct===1?(lang==="es"?"COMPLETADO":"COMPLETED"):(lang==="es"?"SEMANA EN CURSO":"WEEK IN PROGRESS")}
                     </div>
-                    <div style={{width:46,height:46,borderRadius:"50%",
-                      background:"rgba(255,255,255,0.1)",border:"1.5px solid rgba(255,255,255,0.2)",
-                      display:"flex",alignItems:"center",justifyContent:"center",
-                      fontSize:15,color:C.white}}>▶</div>
+                    <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,0.35)",letterSpacing:1}}>
+                      {Math.round(pct*100)}%
+                    </div>
                   </div>
                 </div>
 
-                {/* ── PESA 3D ── */}
+                {/* ── PESA 3D — tap to start workout ── */}
                 <div id="forja-dumbbell-wrap" style={{width:"100%",height:260,marginTop:16,borderRadius:16,overflow:"hidden",position:"relative",background:C.bg,cursor:"pointer"}}
-                  onClick={()=>{const r=routine;if(r&&r[sel])setScreen("workout");}}
+                  onClick={()=>setInWorkout(true)}
                 >
                   <canvas id="forja-dumbbell-canvas" style={{width:"100%",height:"100%",display:"block"}}></canvas>
-                  <div style={{position:"absolute",bottom:16,left:"50%",transform:"translateX(-50%)",
-                    fontFamily:mono,fontSize:8,fontWeight:900,letterSpacing:"4px",
-                    color:C.tx,opacity:0.35,whiteSpace:"nowrap",pointerEvents:"none"}}>
-                    {t.startWorkout}
-                  </div>
                 </div>
 
                 {!addEx?(
@@ -799,8 +866,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       const radialT=Math.min(distR/1.20,1.0);
       const depthT=(zOff+0.13)/0.26;
       const t=radialT*0.40+depthT*0.20+Math.random()*0.08;
-      const v=0.08+t*0.58;
-      col[i*3]=v*0.95; col[i*3+1]=v*0.96; col[i*3+2]=v;
+      const v=0.55+t*0.42;
+      // #b6bac5 = rgb(0.71, 0.729, 0.773) — azul pizarra claro
+      col[i*3]=v*0.71; col[i*3+1]=v*0.729; col[i*3+2]=v*0.773;
     }
 
     for(let i=0;i<DISP;i++){
@@ -820,11 +888,12 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       pos[idx*3+1]=sy+(dy/dlen)*eD;
       pos[idx*3+2]=sz+(dz/dlen)*eD;
       const fadeT=eD/7.0;
-      const v=0.30+fadeT*0.52;
-      const op=Math.max(0,1.0-fadeT*0.85);
-      col[idx*3]=v*0.94*op+(1-op)*0.78;
-      col[idx*3+1]=v*0.96*op+(1-op)*0.79;
-      col[idx*3+2]=v*op+(1-op)*0.80;
+      const op=Math.max(0,1.0-fadeT*0.88);
+      // fade hacia #383e4e = rgb(0.22, 0.243, 0.306)
+      const br=0.71*op+0.22*(1-op);
+      const bg=0.729*op+0.243*(1-op);
+      const bb=0.773*op+0.306*(1-op);
+      col[idx*3]=br; col[idx*3+1]=bg; col[idx*3+2]=bb;
     }
 
     const geo=new THREE.BufferGeometry();
