@@ -1330,158 +1330,153 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     renderer.setClearColor(0x000000,0);
 
     const scene=new THREE.Scene();
-    const camera=new THREE.PerspectiveCamera(50,W/H,0.1,100);
-    camera.position.set(0,0,8.5);
+    const camera=new THREE.PerspectiveCamera(46,W/H,0.1,100);
+    camera.position.set(0,0,9.5);
 
-    // ── Dibujar silueta en canvas 2D oculto, samplear píxeles ──
-    const OW=320, OH=320;
-    const off=document.createElement("canvas");
-    off.width=OW; off.height=OH;
-    const ctx=off.getContext("2d");
-    ctx.fillStyle="#fff";
-    ctx.fillRect(0,0,OW,OH);
-    ctx.fillStyle="#000";
-    ctx.strokeStyle="#000";
+    // ── Figura en posición lotus — misma técnica que la pesa ──
+    // Cada parte: {cx,cy, rx,ry, type, weight}
+    // type: "sphere" (cx,cy,r) | "capsule" (cx,cy, rx=halfLen, ry=radius) | "disc" (cx,cy, rx,ry=thin)
+    // Coordenadas: X = izq/der, Y = abajo/arriba en espacio 3D
+    //   Y+ = arriba. Figura centrada en 0,0.
+    //   Cabeza en Y≈1.3, base piernas en Y≈-1.0
 
-    const cx=OW/2, S=OW*0.38; // centro y escala
+    const parts = [
+      // ── Cabeza
+      {cx:0,    cy: 1.22, rx:0.26, ry:0.26, type:"sphere"},
+      // ── Cuello
+      {cx:0,    cy: 0.92, rx:0.08, ry:0.12, type:"capsule_v"},
+      // ── Torso alto
+      {cx:0,    cy: 0.62, rx:0.26, ry:0.32, type:"sphere"},
+      // ── Torso bajo / abdomen
+      {cx:0,    cy: 0.28, rx:0.22, ry:0.22, type:"sphere"},
+      // ── Brazo izq: cae diagonal suave desde hombro a rodilla izq
+      {cx:-0.22, cy: 0.60, rx:0.07, ry:0.30, type:"capsule_diag_L"},
+      // ── Brazo der
+      {cx: 0.22, cy: 0.60, rx:0.07, ry:0.30, type:"capsule_diag_R"},
+      // ── Antebrazo izq: apoya en rodilla, casi horizontal con leve inclinación
+      {cx:-0.44, cy: 0.12, rx:0.18, ry:0.065, type:"capsule_h"},
+      // ── Antebrazo der
+      {cx: 0.44, cy: 0.12, rx:0.18, ry:0.065, type:"capsule_h"},
+      // ── Mano izq (mudra)
+      {cx:-0.58, cy: 0.12, rx:0.08, ry:0.08, type:"sphere"},
+      // ── Mano der
+      {cx: 0.58, cy: 0.12, rx:0.08, ry:0.08, type:"sphere"},
+      // ── Cadera / base: elipse ancha
+      {cx:0,    cy:-0.10, rx:0.44, ry:0.18, type:"sphere"},
+      // ── Muslo izq: sale horizontal desde cadera hacia afuera, luego curva — en loto real el muslo apunta hacia los lados
+      {cx:-0.36, cy:-0.18, rx:0.32, ry:0.12, type:"capsule_h"},
+      // ── Muslo der
+      {cx: 0.36, cy:-0.18, rx:0.32, ry:0.12, type:"capsule_h"},
+      // ── Rodilla izq (punta externa)
+      {cx:-0.64, cy:-0.16, rx:0.10, ry:0.10, type:"sphere"},
+      // ── Rodilla der
+      {cx: 0.64, cy:-0.16, rx:0.10, ry:0.10, type:"sphere"},
+      // ── Pantorrilla izq: desde rodilla izq va hacia centro-abajo (pie sobre muslo der)
+      {cx:-0.38, cy:-0.48, rx:0.32, ry:0.10, type:"capsule_diag45_R"},
+      // ── Pantorrilla der
+      {cx: 0.38, cy:-0.48, rx:0.32, ry:0.10, type:"capsule_diag45_L"},
+      // ── Pie izq encima muslo der (arriba del centro derecho)
+      {cx: 0.34, cy:-0.30, rx:0.13, ry:0.07, type:"sphere"},
+      // ── Pie der encima muslo izq
+      {cx:-0.34, cy:-0.30, rx:0.13, ry:0.07, type:"sphere"},
+    ];
 
-    // ── Cabeza ──
-    ctx.beginPath();
-    ctx.arc(cx, OH*0.14, S*0.16, 0, Math.PI*2);
-    ctx.fill();
+    // Asignar peso proporcional al volumen aproximado de cada parte
+    parts.forEach(p=>{
+      p.vol = p.rx * p.ry;
+    });
+    const totalVol = parts.reduce((s,p)=>s+p.vol,0);
+    let acc=0;
+    parts.forEach(p=>{ p.w=p.vol/totalVol; p.cumW=acc+p.w; acc=p.cumW; });
 
-    // ── Cuello ──
-    ctx.beginPath();
-    ctx.rect(cx-S*0.06, OH*0.14+S*0.16, S*0.12, S*0.12);
-    ctx.fill();
-
-    // ── Torso: trapecio redondeado ──
-    ctx.beginPath();
-    ctx.moveTo(cx-S*0.22, OH*0.30);
-    ctx.lineTo(cx+S*0.22, OH*0.30);
-    ctx.lineTo(cx+S*0.18, OH*0.56);
-    ctx.lineTo(cx-S*0.18, OH*0.56);
-    ctx.closePath();
-    ctx.fill();
-
-    // ── Brazo izquierdo (diagonal bajando hacia rodilla) ──
-    ctx.save();
-    ctx.translate(cx-S*0.22, OH*0.32);
-    ctx.rotate(0.55);
-    ctx.beginPath();
-    ctx.ellipse(0, S*0.22, S*0.07, S*0.24, 0, 0, Math.PI*2);
-    ctx.fill();
-    ctx.restore();
-
-    // ── Brazo derecho ──
-    ctx.save();
-    ctx.translate(cx+S*0.22, OH*0.32);
-    ctx.rotate(-0.55);
-    ctx.beginPath();
-    ctx.ellipse(0, S*0.22, S*0.07, S*0.24, 0, 0, Math.PI*2);
-    ctx.fill();
-    ctx.restore();
-
-    // ── Mano izquierda (pequeño óvalo) ──
-    ctx.beginPath();
-    ctx.ellipse(cx-S*0.46, OH*0.56, S*0.09, S*0.07, -0.3, 0, Math.PI*2);
-    ctx.fill();
-
-    // ── Mano derecha ──
-    ctx.beginPath();
-    ctx.ellipse(cx+S*0.46, OH*0.56, S*0.09, S*0.07, 0.3, 0, Math.PI*2);
-    ctx.fill();
-
-    // ── Piernas en loto ──
-    // Muslo izquierdo (curva hacia afuera-abajo)
-    ctx.beginPath();
-    ctx.ellipse(cx-S*0.32, OH*0.68, S*0.30, S*0.13, -0.25, 0, Math.PI*2);
-    ctx.fill();
-    // Muslo derecho
-    ctx.beginPath();
-    ctx.ellipse(cx+S*0.32, OH*0.68, S*0.30, S*0.13, 0.25, 0, Math.PI*2);
-    ctx.fill();
-
-    // Zona cruce piernas (centro)
-    ctx.beginPath();
-    ctx.ellipse(cx, OH*0.70, S*0.20, S*0.14, 0, 0, Math.PI*2);
-    ctx.fill();
-
-    // Pie izq (apoyado en muslo derecho)
-    ctx.beginPath();
-    ctx.ellipse(cx+S*0.50, OH*0.62, S*0.13, S*0.08, 0.2, 0, Math.PI*2);
-    ctx.fill();
-
-    // Pie der (apoyado en muslo izquierdo)
-    ctx.beginPath();
-    ctx.ellipse(cx-S*0.50, OH*0.62, S*0.13, S*0.08, -0.2, 0, Math.PI*2);
-    ctx.fill();
-
-    // Samplear píxeles oscuros
-    const imgData=ctx.getImageData(0,0,OW,OH);
-    const bodyPts=[];
-    const stride=2;
-    for(let y=0;y<OH;y+=stride){
-      for(let x=0;x<OW;x+=stride){
-        const i=(y*OW+x)*4;
-        if(imgData.data[i]<100){
-          bodyPts.push({
-            // mapear a espacio 3D: x [-aspect,+aspect], y [-1,+1]
-            x:((x/OW)*2-1)*( W/H),
-            y:(1-(y/OH)*2)*1.05,
-            body:true
-          });
-        }
-      }
-    }
-
-    // Halo — anillo fino, más brillante cerca de la cabeza
-    const haloPts=[];
-    const haloR=1.05, headY=0.72;
-    for(let i=0;i<1200;i++){
+    function samplePart(){
+      const rnd=Math.random();
+      const p=parts.find(p=>rnd<=p.cumW)||parts[parts.length-1];
       const a=Math.random()*Math.PI*2;
-      const rr=haloR+(Math.random()-0.5)*0.22;
-      haloPts.push({
-        x:Math.cos(a)*rr*(W/H)*0.82,
-        y:Math.sin(a)*rr*0.82+headY*0.08,
-        halo:true,
-        top: Math.sin(a)>0.5  // más brillante arriba
-      });
+      const u=Math.random(), v=Math.random();
+
+      if(p.type==="sphere"){
+        const r=Math.sqrt(u)*p.rx;
+        return {x: p.cx + Math.cos(a)*r, y: p.cy + Math.sin(a)*r*( p.ry/p.rx ), z:(Math.random()-0.5)*p.rx*0.8};
+      }
+      if(p.type==="capsule_v"){
+        // cápsula vertical: longitud en Y, radio en X/Z
+        const yOff=(u-0.5)*p.ry*2;
+        const r=Math.sqrt(v)*p.rx;
+        return {x: p.cx + Math.cos(a)*r, y: p.cy + yOff, z:(Math.random()-0.5)*p.rx*0.6};
+      }
+      if(p.type==="capsule_h"){
+        // cápsula horizontal: longitud en X, radio en Y/Z
+        const xOff=(u-0.5)*p.rx*2;
+        const r=Math.sqrt(v)*p.ry;
+        return {x: p.cx + xOff, y: p.cy + Math.cos(a)*r, z:(Math.random()-0.5)*p.ry*0.6};
+      }
+      if(p.type==="capsule_diag_L"){
+        // diagonal: baja hacia izquierda (hombro→rodilla izq, ángulo ~35°)
+        const t2=(u-0.5)*p.ry*2;
+        const r=Math.sqrt(v)*p.rx;
+        const ang=0.60; // radianes
+        return {x: p.cx + Math.sin(a)*r - t2*Math.sin(ang), y: p.cy + Math.cos(a)*r*0.3 - t2*Math.cos(ang), z:(Math.random()-0.5)*p.rx*0.6};
+      }
+      if(p.type==="capsule_diag_R"){
+        const t2=(u-0.5)*p.ry*2;
+        const r=Math.sqrt(v)*p.rx;
+        const ang=0.60;
+        return {x: p.cx + Math.sin(a)*r + t2*Math.sin(ang), y: p.cy + Math.cos(a)*r*0.3 - t2*Math.cos(ang), z:(Math.random()-0.5)*p.rx*0.6};
+      }
+      if(p.type==="capsule_diag45_L"){
+        // muslo: desde cadera afuera-abajo hacia izquierda (ángulo 45°)
+        const t2=(u-0.5)*p.rx*2;
+        const r=Math.sqrt(v)*p.ry;
+        return {x: p.cx + Math.sin(a)*r*0.5 - t2*0.65, y: p.cy + Math.cos(a)*r - t2*0.65, z:(Math.random()-0.5)*p.ry*0.7};
+      }
+      if(p.type==="capsule_diag45_R"){
+        const t2=(u-0.5)*p.rx*2;
+        const r=Math.sqrt(v)*p.ry;
+        return {x: p.cx + Math.sin(a)*r*0.5 + t2*0.65, y: p.cy + Math.cos(a)*r - t2*0.65, z:(Math.random()-0.5)*p.ry*0.7};
+      }
+      // fallback sphere
+      const r=Math.sqrt(u)*p.rx;
+      return {x: p.cx+Math.cos(a)*r, y: p.cy+Math.sin(a)*r, z:(Math.random()-0.5)*p.rx};
     }
 
-    const allPts=[...bodyPts,...haloPts];
-    const CORE=allPts.length;
-    const DISP=Math.floor(CORE*0.45);
-    const TOTAL=CORE+DISP;
-
-    const pos=new Float32Array(TOTAL*3);
-    const col=new Float32Array(TOTAL*3);
+    const CORE=46000, DISP=40000, TOTAL=CORE+DISP;
+    const pos=new Float32Array(TOTAL*3), col=new Float32Array(TOTAL*3);
 
     for(let i=0;i<CORE;i++){
-      const p=allPts[i];
-      pos[i*3]  =p.x+(Math.random()-0.5)*0.03;
-      pos[i*3+1]=p.y+(Math.random()-0.5)*0.03;
-      pos[i*3+2]=(Math.random()-0.5)*0.15;
-      if(p.halo){
-        const v=p.top?(0.30+Math.random()*0.20):(0.14+Math.random()*0.14);
-        col[i*3]=v*0.98; col[i*3+1]=v*0.90; col[i*3+2]=v*0.65; // cálido dorado
-      } else {
-        const v=0.70+Math.random()*0.28;
-        col[i*3]=v*0.94; col[i*3+1]=v*0.96; col[i*3+2]=v; // blanco-azulado pesa
-      }
+      const s=samplePart();
+      const zOff=(Math.random()-0.5)*0.22;
+      pos[i*3  ]=s.x+(Math.random()-0.5)*0.018;
+      pos[i*3+1]=s.y+(Math.random()-0.5)*0.018;
+      pos[i*3+2]=s.z+zOff;
+      // misma textura que la pesa: blanco brillante centro, azulado bordes
+      const distR=Math.sqrt(s.x*s.x);
+      const radialT=Math.min(distR/1.0,1.0);
+      const depthT=(zOff+0.11)/0.22;
+      const tv=radialT*0.35+depthT*0.20+Math.random()*0.08;
+      const v=0.70+tv*0.30;
+      col[i*3]=v*0.94; col[i*3+1]=v*0.96; col[i*3+2]=v;
     }
 
+    // dispersión — idéntica a la pesa
     for(let i=0;i<DISP;i++){
       const idx=CORE+i;
-      const src=allPts[Math.floor(Math.random()*CORE)];
-      const eD=Math.pow(Math.random(),0.40)*4.5;
-      const ang=Math.random()*Math.PI*2;
-      pos[idx*3]  =src.x+Math.cos(ang)*eD*0.6;
-      pos[idx*3+1]=src.y+Math.sin(ang)*eD*0.55;
-      pos[idx*3+2]=(Math.random()-0.5)*0.3;
-      const fadeT=eD/4.5;
-      const op=Math.max(0,1-fadeT*0.92);
-      col[idx*3]=0.94*op+0.22*(1-op);
+      const s=samplePart();
+      const sx=s.x, sy=s.y, sz=s.z;
+      const len=Math.sqrt(sx*sx+sy*sy)+0.001;
+      const nx=sx/len, ny=sy/len;
+      const eD=Math.pow(Math.random(),0.35)*7.0;
+      const spread=1.4;
+      const dx=nx+(Math.random()-0.5)*spread;
+      const dy=ny+(Math.random()-0.5)*spread;
+      const dz=(Math.random()-0.5)*spread;
+      const dlen=Math.sqrt(dx*dx+dy*dy+dz*dz)+0.001;
+      pos[idx*3  ]=sx+(dx/dlen)*eD;
+      pos[idx*3+1]=sy+(dy/dlen)*eD;
+      pos[idx*3+2]=sz+(dz/dlen)*eD;
+      const fadeT=eD/7.0;
+      const op=Math.max(0,1.0-fadeT*0.88);
+      col[idx*3  ]=0.94*op+0.22*(1-op);
       col[idx*3+1]=0.96*op+0.243*(1-op);
       col[idx*3+2]=1.0*op+0.306*(1-op);
     }
@@ -1489,16 +1484,19 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     const geo=new THREE.BufferGeometry();
     geo.setAttribute("position",new THREE.BufferAttribute(pos,3));
     geo.setAttribute("color",new THREE.BufferAttribute(col,3));
-    const mat=new THREE.PointsMaterial({size:0.022,vertexColors:true,transparent:true,opacity:0.88,sizeAttenuation:true});
+    const mat=new THREE.PointsMaterial({size:0.015,vertexColors:true,transparent:true,opacity:0.88,sizeAttenuation:true});
     const pts=new THREE.Points(geo,mat);
     scene.add(pts);
 
     let t=0,animId;
     function animate(){
       animId=requestAnimationFrame(animate);
-      t+=0.003;
-      pts.position.y=Math.sin(t*0.55)*0.05;   // respiración
-      pts.rotation.y=Math.sin(t*0.20)*0.055;  // leve balanceo
+      t+=0.004;
+      // respiración: levita suave en Y
+      pts.position.y=Math.sin(t*0.50)*0.04;
+      // leve rotación Y — como la pesa pero más suave
+      pts.rotation.y=Math.sin(t*0.30)*0.18;
+      pts.rotation.x=Math.sin(t*0.22)*0.03;
       renderer.render(scene,camera);
     }
     animate();
