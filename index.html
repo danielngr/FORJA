@@ -118,8 +118,8 @@ const getImg=name=>IMG[name.toLowerCase().trim()]||null;
 function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
   const exs=day.ex;
   const[idx,setIdx]=useState(0);
-  const[kg,setKg]=useState("10");
-  const[rp,setRp]=useState("8");
+  const[kg,setKg]=useState("");
+  const[rp,setRp]=useState("");
   const[showHist,setShowHist]=useState(false);
   const[imgErr,setImgErr]=useState({});
   const[sliding,setSliding]=useState(false);
@@ -135,9 +135,25 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
   const totalDone=exs.filter(x=>done[`${sel}-${x.id}`]).length;
   const imgUrl=ex&&!imgErr[ex.id]?getImg(ex.e):null;
 
+  // Cargar último peso/reps del ejercicio actual (historial > localStorage > default)
+  useEffect(()=>{
+    if(!ex) return;
+    if(hist.length>0){
+      setKg(String(hist[0].w||""));
+      setRp(String(hist[0].r||""));
+    } else {
+      try{
+        const saved=localStorage.getItem("fv9_last_"+ex.id);
+        if(saved){const p=JSON.parse(saved);setKg(p.w||"");setRp(p.r||"");}
+        else{setKg("");setRp("");}
+      }catch{setKg("");setRp("");}
+    }
+    setShowHist(false);
+  },[idx]);
+
   const goTo=ni=>{
     if(ni<0||ni>=exs.length||sliding)return;
-    setSlideDir(ni>idx?-1:1);setSliding(true);setKg("");setRp("");setShowHist(false);
+    setSlideDir(ni>idx?-1:1);setSliding(true);setShowHist(false);
     setTimeout(()=>{setIdx(ni);setSlideDir(0);setSliding(false);},260);
   };
 
@@ -147,7 +163,14 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
   const onMD=e=>{startY.current=e.clientY;isDrag.current=true;};
   const onMM=e=>{if(isDrag.current)setDragY(e.clientY-startY.current);};
   const onMU=()=>{if(dragY<-55)goTo(idx+1);else if(dragY>55)goTo(idx-1);setDragY(0);isDrag.current=false;};
-  const handleSave=()=>{if(kg||rp){onSaveLog(ex.id,kg,rp);if(!isDone)onToggle(ex.id);}setKg("");setRp("");};
+  const handleSave=()=>{
+    if(kg||rp){
+      onSaveLog(ex.id,kg,rp);
+      if(!isDone)onToggle(ex.id);
+      // persistir último peso/reps para este ejercicio
+      try{localStorage.setItem("fv9_last_"+ex.id,JSON.stringify({w:kg,r:rp}));}catch{}
+    }
+  };
   const sp=e=>e.stopPropagation();
   const ty=sliding?slideDir*110:(isDrag.current?Math.min(Math.max(dragY*0.35,-70),70):0);
 
