@@ -503,6 +503,8 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
   const[progKey,setProgKey]=useState("");   // "3int", "6adv", etc.
   const t=lang?L[lang]:L.en;
 
+  useEffect(()=>{ window.dispatchEvent(new CustomEvent("forja:mount")); });
+
   // Auto-set progKey recommendation when level/ndays change
   useEffect(()=>{
     if(level&&ndays)setProgKey(`${ndays}${level}`);
@@ -676,23 +678,25 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               {lang==="es"?`Selecciona ${ndays} días`:`Select ${ndays} days`}
               {" · "}<span style={{color:selDays.length===ndays?C.green:C.yellow}}>{selDays.length}/{ndays}</span>
             </div>
-            <div style={{display:"flex",gap:8,justifyContent:"center",marginBottom:32}}>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:6,marginBottom:32}}>
               {DN[lang||"es"].map((d,i)=>{
                 const active=selDays.includes(i);
                 const canAdd=selDays.length<ndays;
+                const splitIdx=selDays.indexOf(i);
+                const splitLabel=active&&RAW[progKey]&&RAW[progKey][splitIdx]?RAW[progKey][splitIdx].l.split(" ")[0]:"";
                 return(
                   <button key={i} onClick={()=>toggleDay(i)} style={{
-                    flex:1,paddingTop:12,paddingBottom:10,borderRadius:10,cursor:"pointer",
+                    padding:"10px 2px 8px",borderRadius:10,cursor:"pointer",
                     border:`1.5px solid ${active?C.tx:C.borderL}`,
                     background:active?C.tx:"transparent",
                     color:active?C.white:canAdd?C.tx2:C.tx3,
                     transition:"all 0.2s",textAlign:"center",
-                    opacity:(!active&&!canAdd)?0.35:1}}>
-                    <div style={{fontSize:9,fontWeight:800,fontFamily:mono,letterSpacing:1.5}}>{d}</div>
-                    {active&&<div style={{fontSize:6,fontFamily:mono,marginTop:4,opacity:0.7,letterSpacing:0.5}}>
-                      {(RAW[progKey]&&RAW[progKey][selDays.indexOf(i)]&&RAW[progKey][selDays.indexOf(i)].l)?RAW[progKey][selDays.indexOf(i)].l.split(" ")[0]:"●"}
-                    </div>}
-                    {!active&&<div style={{fontSize:8,marginTop:4,opacity:0.2}}>—</div>}
+                    opacity:(!active&&!canAdd)?0.35:1,minWidth:0}}>
+                    <div style={{fontSize:9,fontWeight:800,fontFamily:mono,letterSpacing:0.5}}>{d}</div>
+                    <div style={{fontSize:6,fontFamily:mono,marginTop:4,opacity:active?0.65:0.2,
+                      overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis",letterSpacing:0.3}}>
+                      {active?splitLabel:"—"}
+                    </div>
                   </button>
                 );
               })}
@@ -788,6 +792,11 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   const addFood=()=>{if(!fd.n||!fd.cal)return;const m={...macros};if(!m.entries)m.entries=[];m.entries.push({...fd,id:Date.now()});sm(m);setAddF(false);setFd({n:"",cal:"",prot:"",carbs:"",fat:"",m:"mid"});};
   const rmFood=id=>{const m={...macros};m.entries=(m.entries||[]).filter(x=>x.id!==id);sm(m);};
 
+  // Dispara evento custom cada vez que React renderiza — los scripts Three.js lo escuchan
+  useEffect(()=>{
+    window.dispatchEvent(new CustomEvent("forja:mount"));
+  });
+
   const Inp=({value,onChange,placeholder,type="text",style:s2={}})=>(
     <input type={type} value={value} onChange={onChange} placeholder={placeholder}
       style={{padding:"12px 14px",borderRadius:10,border:`1.5px solid ${C.borderL}`,
@@ -871,10 +880,13 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
         {tab==="train"&&(
           <div>
             {!day?(
-              <div style={{textAlign:"center",padding:"70px 20px"}}>
-                <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:3,marginBottom:14}}>// REST DAY</div>
+              <div style={{textAlign:"center",padding:"40px 20px 60px"}}>
+                <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:3,marginBottom:16}}>// REST DAY</div>
+                <div id="forja-meditation-wrap" style={{width:"100%",height:260,margin:"0 auto 16px",position:"relative"}}>
+                  <canvas id="forja-meditation-canvas" style={{width:"100%",height:"100%",display:"block"}}></canvas>
+                </div>
                 <div style={{fontSize:38,fontWeight:900,letterSpacing:-2,textTransform:"uppercase"}}>{t.rest}</div>
-                <div style={{fontSize:13,color:C.tx3,marginTop:10}}>{t.restSub}</div>
+                <div style={{fontSize:13,color:C.tx3,marginTop:8}}>{t.restSub}</div>
               </div>
             ):(
               <>
@@ -1164,16 +1176,13 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     });
   }
 
-  // MutationObserver — dispara tryInit cada vez que el DOM cambia (React renderiza)
-  const obs = new MutationObserver(()=>{ tryInit(); });
-  obs.observe(document.body, {childList:true, subtree:true});
-
-  // También intentar cuando THREE cargue y cuando la página esté lista
+  // forja:mount — React lo dispara en cada render, garantiza que el canvas existe
+  window.addEventListener("forja:mount", tryInit);
+  // fallbacks
   document.addEventListener("DOMContentLoaded", tryInit);
   window.addEventListener("load", tryInit);
-  // Fallback poll por si el observer falla en algún browser
-  const poll = setInterval(()=>{ tryInit(); if(started) clearInterval(poll); }, 300);
-  setTimeout(()=>clearInterval(poll), 15000); // max 15s de espera
+  const poll = setInterval(()=>{ tryInit(); if(started) clearInterval(poll); }, 200);
+  setTimeout(()=>clearInterval(poll), 20000);
 })();
 </script>
 
@@ -1308,11 +1317,175 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     });
   }
 
-  const obs=new MutationObserver(()=>tryInit());
-  obs.observe(document.body,{childList:true,subtree:true});
+  window.addEventListener("forja:mount", tryInit);
   window.addEventListener("load",tryInit);
-  const poll=setInterval(()=>{tryInit();if(started)clearInterval(poll);},300);
-  setTimeout(()=>clearInterval(poll),15000);
+  const poll=setInterval(()=>{tryInit();if(started)clearInterval(poll);},200);
+  setTimeout(()=>clearInterval(poll),20000);
+})();
+</script>
+<script>
+(function initMeditation(){
+  let started=false;
+  function tryInit(){
+    if(started) return;
+    const canvas=document.getElementById("forja-meditation-canvas");
+    if(!canvas||!window.THREE) return;
+    if(canvas.dataset.minit) return;
+    canvas.dataset.minit="1";
+    started=true;
+
+    const wrap=canvas.parentElement;
+    const W=wrap.offsetWidth||360;
+    const H=wrap.offsetHeight||260;
+
+    const renderer=new THREE.WebGLRenderer({canvas,antialias:false,alpha:true});
+    renderer.setSize(W,H);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+    renderer.setClearColor(0x000000,0);
+
+    const scene=new THREE.Scene();
+    const camera=new THREE.PerspectiveCamera(46,W/H,0.1,100);
+    camera.position.set(0,0,9);
+
+    // ── Silueta de figura en loto, coordenadas normalizadas ──
+    // Cada shape: {pts:[[x,y],...], r, fill}
+    // Escala: unidades ~aprox a rango [-1.8, 1.8] en X, [-2.2, 1.5] en Y
+    function circle(cx,cy,r,n){
+      const pts=[];
+      for(let i=0;i<n;i++){
+        const a=Math.PI*2*i/n;
+        pts.push([cx+Math.cos(a)*r, cy+Math.sin(a)*r]);
+      }
+      return pts;
+    }
+    function ellipse(cx,cy,rx,ry,n){
+      const pts=[];
+      for(let i=0;i<n;i++){
+        const a=Math.PI*2*i/n;
+        pts.push([cx+Math.cos(a)*rx, cy+Math.sin(a)*ry]);
+      }
+      return pts;
+    }
+
+    const shapes=[
+      // Cabeza
+      {pts:circle(0, 1.20, 0.30, 60), r:0.30},
+      // Cuello/torso superior
+      {pts:ellipse(0, 0.72, 0.14, 0.18, 40), r:0.14},
+      // Torso
+      {pts:ellipse(0, 0.22, 0.38, 0.46, 80), r:0.38},
+      // Hombro izquierdo / brazo
+      {pts:ellipse(-0.44, 0.50, 0.10, 0.28, 40), r:0.10},
+      // Hombro derecho / brazo
+      {pts:ellipse( 0.44, 0.50, 0.10, 0.28, 40), r:0.10},
+      // Mano izquierda sobre rodilla
+      {pts:circle(-0.72, 0.08, 0.11, 30), r:0.11},
+      // Mano derecha sobre rodilla
+      {pts:circle( 0.72, 0.08, 0.11, 30), r:0.11},
+      // Pierna izquierda en loto (diagonal)
+      {pts:ellipse(-0.55, -0.44, 0.44, 0.16, 60), r:0.16},
+      // Pierna derecha en loto
+      {pts:ellipse( 0.55, -0.44, 0.44, 0.16, 60), r:0.16},
+      // Cruce central piernas
+      {pts:ellipse(0, -0.52, 0.28, 0.20, 60), r:0.20},
+      // Pie izquierdo
+      {pts:ellipse(-0.94, -0.44, 0.18, 0.10, 30), r:0.12},
+      // Pie derecho
+      {pts:ellipse( 0.94, -0.44, 0.18, 0.10, 30), r:0.12},
+    ];
+
+    // Samplear puntos de los shapes
+    const allPts=[];
+    shapes.forEach(sh=>{
+      sh.pts.forEach(([px,py])=>{
+        // puntos sobre el contorno + relleno aleatorio
+        allPts.push({x:px, y:py});
+        // relleno interno
+        const nr=Math.floor(sh.r*180);
+        for(let k=0;k<nr;k++){
+          const a=Math.random()*Math.PI*2;
+          const d=Math.random()*sh.r;
+          const cx=sh.pts.reduce((s,p)=>s+p[0],0)/sh.pts.length;
+          const cy=sh.pts.reduce((s,p)=>s+p[1],0)/sh.pts.length;
+          allPts.push({x:cx+Math.cos(a)*d, y:cy+Math.sin(a)*d});
+        }
+      });
+    });
+
+    // Aura / halo — círculo grande detrás
+    const HALO=800;
+    for(let i=0;i<HALO;i++){
+      const a=Math.random()*Math.PI*2;
+      const r=0.60+Math.random()*0.55;
+      allPts.push({x:Math.cos(a)*r*1.1, y:Math.sin(a)*r*0.85+0.22, halo:true});
+    }
+
+    const CORE=allPts.length;
+    const DISP=Math.floor(CORE*0.5);
+    const TOTAL=CORE+DISP;
+    const pos=new Float32Array(TOTAL*3);
+    const col=new Float32Array(TOTAL*3);
+
+    for(let i=0;i<CORE;i++){
+      const p=allPts[i];
+      pos[i*3]  =p.x+(Math.random()-0.5)*0.025;
+      pos[i*3+1]=p.y+(Math.random()-0.5)*0.025;
+      pos[i*3+2]=(Math.random()-0.5)*0.18;
+      if(p.halo){
+        // aura: más tenue, tono cálido
+        const v=0.28+Math.random()*0.18;
+        col[i*3]=v*1.0; col[i*3+1]=v*0.95; col[i*3+2]=v*0.80;
+      } else {
+        // cuerpo: misma textura pesa — blanco brillante con ligero azul
+        const v=0.72+Math.random()*0.26;
+        col[i*3]=v*0.94; col[i*3+1]=v*0.96; col[i*3+2]=v;
+      }
+    }
+
+    // Dispersión — igual que la pesa
+    for(let i=0;i<DISP;i++){
+      const idx=CORE+i;
+      const src=allPts[Math.floor(Math.random()*CORE)];
+      const eD=Math.pow(Math.random(),0.38)*5.5;
+      const ang=Math.random()*Math.PI*2;
+      pos[idx*3]  =src.x+Math.cos(ang)*eD*0.7;
+      pos[idx*3+1]=src.y+Math.sin(ang)*eD*0.55;
+      pos[idx*3+2]=(Math.random()-0.5)*0.4;
+      const fadeT=eD/5.5;
+      const op=Math.max(0,1-fadeT*0.90);
+      col[idx*3]=0.94*op+0.22*(1-op);
+      col[idx*3+1]=0.96*op+0.243*(1-op);
+      col[idx*3+2]=1.0*op+0.306*(1-op);
+    }
+
+    const geo=new THREE.BufferGeometry();
+    geo.setAttribute("position",new THREE.BufferAttribute(pos,3));
+    geo.setAttribute("color",new THREE.BufferAttribute(col,3));
+    const mat=new THREE.PointsMaterial({size:0.032,vertexColors:true,transparent:true,opacity:0.85,sizeAttenuation:true});
+    const pts=new THREE.Points(geo,mat);
+    scene.add(pts);
+
+    let t=0,animId;
+    function animate(){
+      animId=requestAnimationFrame(animate);
+      t+=0.004;
+      // Respiración suave — levita ligeramente y pequeño balanceo
+      pts.position.y=Math.sin(t*0.5)*0.04;
+      pts.rotation.y=Math.sin(t*0.22)*0.06;
+      pts.rotation.z=Math.sin(t*0.18)*0.012;
+      renderer.render(scene,camera);
+    }
+    animate();
+
+    document.addEventListener("visibilitychange",()=>{
+      if(document.hidden){cancelAnimationFrame(animId);}else{animate();}
+    });
+  }
+
+  window.addEventListener("forja:mount", tryInit);
+  window.addEventListener("load", tryInit);
+  const poll=setInterval(()=>{tryInit();if(started)clearInterval(poll);},200);
+  setTimeout(()=>clearInterval(poll),20000);
 })();
 </script>
 </body>
