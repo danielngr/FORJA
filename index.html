@@ -810,9 +810,14 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 (function initDumbbell(){
+  let started=false;
   function tryInit(){
+    if(started) return;
     const canvas = document.getElementById("forja-dumbbell-canvas");
-    if(!canvas || !window.THREE){ setTimeout(tryInit,200); return; }
+    if(!canvas || !window.THREE) return;
+    if(canvas.dataset.forjaInit) return; // ya inicializado
+    canvas.dataset.forjaInit="1";
+    started=true;
     const wrap = canvas.parentElement;
     const W = wrap.offsetWidth||360;
     const H = wrap.offsetHeight||260;
@@ -916,7 +921,17 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       if(document.hidden){ cancelAnimationFrame(animId); } else { animate(); }
     });
   }
-  setTimeout(tryInit,400);
+
+  // MutationObserver — dispara tryInit cada vez que el DOM cambia (React renderiza)
+  const obs = new MutationObserver(()=>{ tryInit(); });
+  obs.observe(document.body, {childList:true, subtree:true});
+
+  // También intentar cuando THREE cargue y cuando la página esté lista
+  document.addEventListener("DOMContentLoaded", tryInit);
+  window.addEventListener("load", tryInit);
+  // Fallback poll por si el observer falla en algún browser
+  const poll = setInterval(()=>{ tryInit(); if(started) clearInterval(poll); }, 300);
+  setTimeout(()=>clearInterval(poll), 15000); // max 15s de espera
 })();
 </script>
 </body>
