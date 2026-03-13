@@ -439,11 +439,10 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
   return(
     <div style={{minHeight:"100vh",background:C.bg,color:C.tx,fontFamily:sans}}>
       {step===0&&(
-        <div style={{padding:"0 26px",paddingTop:"13vh",animation:"fogIn 0.8s ease"}}>
-          <div style={{marginBottom:56}}>
-            <div style={{fontSize:72,fontWeight:900,letterSpacing:-5,color:C.tx,lineHeight:0.88,fontFamily:sans,textTransform:"uppercase"}}>FOR</div>
-            <div style={{fontSize:72,fontWeight:900,letterSpacing:-5,lineHeight:0.88,fontFamily:sans,textTransform:"uppercase",WebkitTextStroke:`2px ${C.tx}`,WebkitTextFillColor:"transparent"}}>JA</div>
-            <div style={{marginTop:16,display:"flex",alignItems:"center",gap:12}}>
+        <div style={{padding:"0 26px",paddingTop:"8vh",animation:"fogIn 0.8s ease"}}>
+          <div style={{marginBottom:40}}>
+            <canvas id="forja-logo-canvas" style={{width:"100%",height:180,display:"block"}}></canvas>
+            <div style={{marginTop:8,display:"flex",alignItems:"center",gap:12}}>
               <div style={{height:1,background:C.border,width:40}}/>
               <div style={{fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:3}}>TRAIN · TRACK · EVOLVE</div>
             </div>
@@ -955,6 +954,145 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
   // Fallback poll por si el observer falla en algún browser
   const poll = setInterval(()=>{ tryInit(); if(started) clearInterval(poll); }, 300);
   setTimeout(()=>clearInterval(poll), 15000); // max 15s de espera
+})();
+</script>
+
+<script>
+(function initLogoParticles(){
+  let started=false;
+
+  function tryInit(){
+    if(started) return;
+    const canvas=document.getElementById("forja-logo-canvas");
+    if(!canvas||!window.THREE) return;
+    if(canvas.dataset.linit) return;
+    canvas.dataset.linit="1";
+    started=true;
+
+    const DPR=Math.min(window.devicePixelRatio||1,2);
+    const W=canvas.offsetWidth||320;
+    const H=canvas.offsetHeight||180;
+    canvas.width=W*DPR; canvas.height=H*DPR;
+
+    // 1. Renderizar "FORJA" en canvas 2D oculto para samplear píxeles
+    const off=document.createElement("canvas");
+    const OW=640, OH=180;
+    off.width=OW; off.height=OH;
+    const ctx=off.getContext("2d");
+    ctx.fillStyle="#ffffff";
+    ctx.fillRect(0,0,OW,OH);
+
+    // Dos líneas: FOR (solid) y JA (outline)
+    ctx.fillStyle="#000000";
+    ctx.font="900 108px Arial Black,Arial,sans-serif";
+    ctx.textBaseline="top";
+    ctx.letterSpacing="-4px";
+    ctx.fillText("FOR",8,4);
+
+    ctx.fillStyle="rgba(0,0,0,0)";
+    ctx.strokeStyle="#000000";
+    ctx.lineWidth=5;
+    ctx.strokeText("JA",8,90);
+
+    // Samplear píxeles oscuros
+    const imgData=ctx.getImageData(0,0,OW,OH);
+    const pts2d=[];
+    const stride=3; // cada N píxeles para no tener demasiados puntos
+    for(let y=0;y<OH;y+=stride){
+      for(let x=0;x<OW;x+=stride){
+        const i=(y*OW+x)*4;
+        const brightness=(imgData.data[i]+imgData.data[i+1]+imgData.data[i+2])/3;
+        if(brightness<160){
+          // normalizar a espacio 3D [-1,1]
+          pts2d.push({
+            x:(x/OW)*2-1,
+            y:1-(y/OH)*2,
+            outline: y>=90
+          });
+        }
+      }
+    }
+
+    // 2. Three.js
+    const renderer=new THREE.WebGLRenderer({canvas,antialias:false,alpha:true});
+    renderer.setSize(W,H);
+    renderer.setPixelRatio(DPR);
+    renderer.setClearColor(0x000000,0);
+
+    const scene=new THREE.Scene();
+    // Cámara ortográfica — top positivo arriba
+    const aspect=W/H;
+    const cam=new THREE.OrthographicCamera(-aspect,aspect,1,-1,0.1,100);
+    cam.position.set(0,0,10);
+
+    const TOTAL=pts2d.length;
+    const pos=new Float32Array(TOTAL*3);
+    const col=new Float32Array(TOTAL*3);
+    // partículas dispersas extra
+    const DISP=Math.floor(TOTAL*0.6);
+    const posD=new Float32Array(DISP*3);
+    const colD=new Float32Array(DISP*3);
+
+    const scaleX=aspect*1.08, scaleY=0.92;
+
+    for(let i=0;i<TOTAL;i++){
+      const p=pts2d[i];
+      pos[i*3]  =p.x*scaleX+(Math.random()-0.5)*0.015;
+      pos[i*3+1]=p.y*scaleY+(Math.random()-0.5)*0.015;
+      pos[i*3+2]=(Math.random()-0.5)*0.04;
+      const v=p.outline?(0.55+Math.random()*0.20):(0.80+Math.random()*0.18);
+      col[i*3]=v*0.94; col[i*3+1]=v*0.96; col[i*3+2]=v;
+    }
+
+    for(let i=0;i<DISP;i++){
+      const src=pts2d[Math.floor(Math.random()*TOTAL)];
+      const eD=Math.pow(Math.random(),0.4)*2.2;
+      const ang=Math.random()*Math.PI*2;
+      posD[i*3]  =src.x*scaleX+Math.cos(ang)*eD;
+      posD[i*3+1]=src.y*scaleY+Math.sin(ang)*eD;
+      posD[i*3+2]=(Math.random()-0.5)*0.3;
+      const fadeT=eD/2.2;
+      const op=Math.max(0,1-fadeT*0.92);
+      colD[i*3]=0.94*op+0.22*(1-op);
+      colD[i*3+1]=0.96*op+0.243*(1-op);
+      colD[i*3+2]=1.0*op+0.306*(1-op);
+    }
+
+    const geoC=new THREE.BufferGeometry();
+    geoC.setAttribute("position",new THREE.BufferAttribute(pos,3));
+    geoC.setAttribute("color",new THREE.BufferAttribute(col,3));
+    const matC=new THREE.PointsMaterial({size:0.022,vertexColors:true,transparent:true,opacity:0.90,sizeAttenuation:true});
+    scene.add(new THREE.Points(geoC,matC));
+
+    const geoD=new THREE.BufferGeometry();
+    geoD.setAttribute("position",new THREE.BufferAttribute(posD,3));
+    geoD.setAttribute("color",new THREE.BufferAttribute(colD,3));
+    const matD=new THREE.PointsMaterial({size:0.014,vertexColors:true,transparent:true,opacity:0.55,sizeAttenuation:true});
+    scene.add(new THREE.Points(geoD,matD));
+
+    let t=0,animId;
+    function animate(){
+      animId=requestAnimationFrame(animate);
+      t+=0.005;
+      // leve ondulación — más sutil que la pesa, solo en Y y Z
+      scene.children.forEach(obj=>{
+        obj.rotation.x=Math.sin(t*0.35)*0.04;
+        obj.rotation.z=Math.sin(t*0.22)*0.012;
+      });
+      renderer.render(scene,cam);
+    }
+    animate();
+
+    document.addEventListener("visibilitychange",()=>{
+      if(document.hidden){cancelAnimationFrame(animId);}else{animate();}
+    });
+  }
+
+  const obs=new MutationObserver(()=>tryInit());
+  obs.observe(document.body,{childList:true,subtree:true});
+  window.addEventListener("load",tryInit);
+  const poll=setInterval(()=>{tryInit();if(started)clearInterval(poll);},300);
+  setTimeout(()=>clearInterval(poll),15000);
 })();
 </script>
 </body>
