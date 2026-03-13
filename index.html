@@ -742,20 +742,68 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
   return(
     <div style={{minHeight:"100vh",background:C.bg,color:C.tx,fontFamily:sans}}>
       {step===0&&(
-        <div style={{padding:"0 26px",paddingTop:"8vh",animation:"fogIn 0.8s ease"}}>
-          <div style={{marginBottom:40}}>
-            <canvas id="forja-logo-canvas" style={{width:"100%",height:180,display:"block"}}></canvas>
-            <div style={{marginTop:8,display:"flex",alignItems:"center",gap:12}}>
-              <div style={{height:1,background:C.border,width:40}}/>
-              <div style={{fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:3}}>TRAIN · TRACK · EVOLVE</div>
+        <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",animation:"fogIn 0.8s ease"}}>
+
+          {/* ── LOGO ── */}
+          <div style={{padding:"0 26px",paddingTop:"6vh"}}>
+            <canvas id="forja-logo-canvas" style={{width:"100%",height:160,display:"block"}}></canvas>
+          </div>
+
+          {/* ── HERO VALUE PROP ── */}
+          <div style={{padding:"0 26px",marginTop:8,flex:1}}>
+
+            {/* Tagline — QUÉ ES */}
+            <div style={{marginBottom:28}}>
+              <div style={{fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:3,marginBottom:12}}>
+                // QUÉ ES FORJA
+              </div>
+              <div style={{fontSize:26,fontWeight:900,letterSpacing:-1,lineHeight:1.15,color:C.tx}}>
+                Tu entrenador de gym
+                <br/>
+                <span style={{color:C.tx2}}>sin gimnasio ni coach.</span>
+              </div>
+            </div>
+
+            {/* 3 pillars — PARA QUIÉN / POR QUÉ */}
+            <div style={{display:"flex",flexDirection:"column",gap:0,borderTop:`1px solid ${C.borderL}44`,marginBottom:32}}>
+              {[
+                {icon:"◎", text:"Rutina personalizada según tu cuerpo y objetivo"},
+                {icon:"◎", text:"Videos de cada ejercicio con músculos activados"},
+                {icon:"◎", text:"Registra tus pesos y evolución semana a semana"},
+              ].map((item,i)=>(
+                <div key={i} style={{display:"flex",alignItems:"flex-start",gap:14,
+                  padding:"14px 0",borderBottom:`1px solid ${C.borderL}33`}}>
+                  <div style={{fontSize:10,color:C.tx3,flexShrink:0,marginTop:2,fontFamily:mono}}>{item.icon}</div>
+                  <div style={{fontSize:13,color:C.tx2,lineHeight:1.5}}>{item.text}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Language selector */}
+            <div style={{fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:10}}>// IDIOMA / LANGUAGE</div>
+            <div style={{display:"flex",gap:10,marginBottom:28}}>
+              {[["es","Español"],["en","English"]].map(([code,label])=>(
+                <button key={code} onClick={()=>setLang(code)}
+                  style={{flex:1,padding:"14px 0",borderRadius:10,cursor:"pointer",fontFamily:mono,
+                    fontSize:11,letterSpacing:2,fontWeight:700,transition:"all 0.2s",
+                    background:lang===code?C.tx:"transparent",
+                    color:lang===code?C.bgDeep:C.tx3,
+                    border:`1.5px solid ${lang===code?C.tx:C.borderL}`}}>
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <Btn onClick={()=>setStep(1)} disabled={!lang}>
+              {lang==="en"?"START →":"EMPEZAR →"}
+            </Btn>
+
+            {/* Social proof / note */}
+            <div style={{textAlign:"center",marginTop:20,fontSize:10,fontFamily:mono,
+              color:C.tx3,letterSpacing:1,opacity:0.6}}>
+              {lang==="en"?"Free · No account needed · Works offline":"Gratis · Sin cuenta · Funciona sin internet"}
             </div>
           </div>
-          <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:10}}>// SELECT LANGUAGE</div>
-          <div style={{display:"flex",flexDirection:"column",marginBottom:36,borderTop:`1px solid ${C.borderL}55`}}>
-            <Opt active={lang==="es"} onClick={()=>setLang("es")}>Español</Opt>
-            <Opt active={lang==="en"} onClick={()=>setLang("en")}>English</Opt>
-          </div>
-          <Btn onClick={()=>setStep(1)} disabled={!lang}>{t.next}</Btn>
         </div>
       )}
       {step>=1&&step<=TOTAL_STEPS&&(
