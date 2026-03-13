@@ -1415,140 +1415,96 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
     const scene=new THREE.Scene();
     const camera=new THREE.PerspectiveCamera(46,W/H,0.1,100);
-    camera.position.set(0,0,9.5);
+    camera.position.set(0,0,4.0);
 
-    // ── Figura en posición lotus — misma técnica que la pesa ──
-    // Cada parte: {cx,cy, rx,ry, type, weight}
-    // type: "sphere" (cx,cy,r) | "capsule" (cx,cy, rx=halfLen, ry=radius) | "disc" (cx,cy, rx,ry=thin)
-    // Coordenadas: X = izq/der, Y = abajo/arriba en espacio 3D
-    //   Y+ = arriba. Figura centrada en 0,0.
-    //   Cabeza en Y≈1.3, base piernas en Y≈-1.0
-
-    const parts = [
-      // ── Cabeza
-      {cx:0,    cy: 1.22, rx:0.26, ry:0.26, type:"sphere"},
-      // ── Cuello
-      {cx:0,    cy: 0.92, rx:0.08, ry:0.12, type:"capsule_v"},
-      // ── Torso alto
-      {cx:0,    cy: 0.62, rx:0.26, ry:0.32, type:"sphere"},
-      // ── Torso bajo / abdomen
-      {cx:0,    cy: 0.28, rx:0.22, ry:0.22, type:"sphere"},
-      // ── Brazo izq: cae diagonal suave desde hombro a rodilla izq
-      {cx:-0.22, cy: 0.60, rx:0.07, ry:0.30, type:"capsule_diag_L"},
-      // ── Brazo der
-      {cx: 0.22, cy: 0.60, rx:0.07, ry:0.30, type:"capsule_diag_R"},
-      // ── Antebrazo izq: apoya en rodilla, casi horizontal con leve inclinación
-      {cx:-0.44, cy: 0.12, rx:0.18, ry:0.065, type:"capsule_h"},
-      // ── Antebrazo der
-      {cx: 0.44, cy: 0.12, rx:0.18, ry:0.065, type:"capsule_h"},
-      // ── Mano izq (mudra)
-      {cx:-0.58, cy: 0.12, rx:0.08, ry:0.08, type:"sphere"},
-      // ── Mano der
-      {cx: 0.58, cy: 0.12, rx:0.08, ry:0.08, type:"sphere"},
-      // ── Cadera / base: elipse ancha
-      {cx:0,    cy:-0.10, rx:0.44, ry:0.18, type:"sphere"},
-      // ── Muslo izq: sale horizontal desde cadera hacia afuera, luego curva — en loto real el muslo apunta hacia los lados
-      {cx:-0.36, cy:-0.18, rx:0.32, ry:0.12, type:"capsule_h"},
-      // ── Muslo der
-      {cx: 0.36, cy:-0.18, rx:0.32, ry:0.12, type:"capsule_h"},
-      // ── Rodilla izq (punta externa)
-      {cx:-0.64, cy:-0.16, rx:0.10, ry:0.10, type:"sphere"},
-      // ── Rodilla der
-      {cx: 0.64, cy:-0.16, rx:0.10, ry:0.10, type:"sphere"},
-      // ── Pantorrilla izq: desde rodilla izq va hacia centro-abajo (pie sobre muslo der)
-      {cx:-0.38, cy:-0.48, rx:0.32, ry:0.10, type:"capsule_diag45_R"},
-      // ── Pantorrilla der
-      {cx: 0.38, cy:-0.48, rx:0.32, ry:0.10, type:"capsule_diag45_L"},
-      // ── Pie izq encima muslo der (arriba del centro derecho)
-      {cx: 0.34, cy:-0.30, rx:0.13, ry:0.07, type:"sphere"},
-      // ── Pie der encima muslo izq
-      {cx:-0.34, cy:-0.30, rx:0.13, ry:0.07, type:"sphere"},
+    // ── Pose ÁRBOL (Vrksasana) ── misma técnica que la pesa
+    const parts=[
+      {cx: 0.000,cy: 1.48, rw:0.18,rh:0.18,type:"sphere"},
+      {cx: 0.000,cy: 1.22, rw:0.06,rh:0.09,type:"cyl_v"},
+      {cx: 0.000,cy: 0.72, rw:0.18,rh:0.36,type:"sphere"},
+      {cx:-0.15, cy: 1.05, rw:0.06,rh:0.36,type:"diag",a:-0.25},
+      {cx: 0.15, cy: 1.05, rw:0.06,rh:0.36,type:"diag",a: 0.25},
+      {cx:-0.06, cy: 1.42, rw:0.05,rh:0.26,type:"diag",a:-0.10},
+      {cx: 0.06, cy: 1.42, rw:0.05,rh:0.26,type:"diag",a: 0.10},
+      {cx: 0.000,cy: 1.68, rw:0.08,rh:0.08,type:"sphere"},
+      {cx: 0.000,cy: 0.20, rw:0.18,rh:0.14,type:"sphere"},
+      {cx: 0.06, cy:-0.28, rw:0.11,rh:0.40,type:"cyl_v"},
+      {cx: 0.06, cy:-0.82, rw:0.08,rh:0.38,type:"cyl_v"},
+      {cx: 0.06, cy:-1.22, rw:0.14,rh:0.07,type:"sphere"},
+      {cx:-0.30, cy:-0.10, rw:0.10,rh:0.36,type:"diag",a: 0.95},
+      {cx:-0.48, cy:-0.48, rw:0.08,rh:0.30,type:"diag",a:-0.65},
+      {cx:-0.14, cy:-0.58, rw:0.10,rh:0.06,type:"sphere"},
     ];
 
-    // Asignar peso proporcional al volumen aproximado de cada parte
-    parts.forEach(p=>{
-      p.vol = p.rx * p.ry;
-    });
-    const totalVol = parts.reduce((s,p)=>s+p.vol,0);
+    // Peso proporcional al volumen
+    parts.forEach(p=>{ p.vol=p.rw*p.rh; });
+    const totalVol=parts.reduce((s,p)=>s+p.vol,0);
     let acc=0;
     parts.forEach(p=>{ p.w=p.vol/totalVol; p.cumW=acc+p.w; acc=p.cumW; });
 
     function samplePart(){
       const rnd=Math.random();
       const p=parts.find(p=>rnd<=p.cumW)||parts[parts.length-1];
-      const a=Math.random()*Math.PI*2;
       const u=Math.random(), v=Math.random();
+      const ang=Math.random()*Math.PI*2;
 
       if(p.type==="sphere"){
-        const r=Math.sqrt(u)*p.rx;
-        return {x: p.cx + Math.cos(a)*r, y: p.cy + Math.sin(a)*r*( p.ry/p.rx ), z:(Math.random()-0.5)*p.rx*0.8};
+        const r=Math.sqrt(u)*p.rw;
+        return {x:p.cx+Math.cos(ang)*r, y:p.cy+Math.sin(ang)*r*(p.rh/p.rw), z:(Math.random()-0.5)*p.rw*0.85};
       }
-      if(p.type==="capsule_v"){
-        // cápsula vertical: longitud en Y, radio en X/Z
-        const yOff=(u-0.5)*p.ry*2;
-        const r=Math.sqrt(v)*p.rx;
-        return {x: p.cx + Math.cos(a)*r, y: p.cy + yOff, z:(Math.random()-0.5)*p.rx*0.6};
+      if(p.type==="cyl_v"){
+        // cápsula vertical
+        const yOff=(u-0.5)*p.rh*2;
+        const r=Math.sqrt(v)*p.rw;
+        return {x:p.cx+Math.cos(ang)*r, y:p.cy+yOff, z:(Math.random()-0.5)*p.rw*0.75};
       }
-      if(p.type==="capsule_h"){
-        // cápsula horizontal: longitud en X, radio en Y/Z
-        const xOff=(u-0.5)*p.rx*2;
-        const r=Math.sqrt(v)*p.ry;
-        return {x: p.cx + xOff, y: p.cy + Math.cos(a)*r, z:(Math.random()-0.5)*p.ry*0.6};
+      if(p.type==="cyl_h"){
+        const xOff=(u-0.5)*p.rw*2;
+        const r=Math.sqrt(v)*p.rh;
+        return {x:p.cx+xOff, y:p.cy+Math.cos(ang)*r, z:(Math.random()-0.5)*p.rh*0.75};
       }
-      if(p.type==="capsule_diag_L"){
-        // diagonal: baja hacia izquierda (hombro→rodilla izq, ángulo ~35°)
-        const t2=(u-0.5)*p.ry*2;
-        const r=Math.sqrt(v)*p.rx;
-        const ang=0.60; // radianes
-        return {x: p.cx + Math.sin(a)*r - t2*Math.sin(ang), y: p.cy + Math.cos(a)*r*0.3 - t2*Math.cos(ang), z:(Math.random()-0.5)*p.rx*0.6};
+      if(p.type==="diag"){
+        // cápsula diagonal: a = ángulo de inclinación desde vertical
+        const tOff=(u-0.5)*p.rh*2;
+        const r=Math.sqrt(v)*p.rw;
+        const sa=Math.sin(p.a), ca=Math.cos(p.a);
+        return {
+          x:p.cx + Math.cos(ang)*r*ca - tOff*sa,
+          y:p.cy + Math.cos(ang)*r*sa*0.2 + tOff*ca,
+          z:(Math.random()-0.5)*p.rw*0.75
+        };
       }
-      if(p.type==="capsule_diag_R"){
-        const t2=(u-0.5)*p.ry*2;
-        const r=Math.sqrt(v)*p.rx;
-        const ang=0.60;
-        return {x: p.cx + Math.sin(a)*r + t2*Math.sin(ang), y: p.cy + Math.cos(a)*r*0.3 - t2*Math.cos(ang), z:(Math.random()-0.5)*p.rx*0.6};
-      }
-      if(p.type==="capsule_diag45_L"){
-        // muslo: desde cadera afuera-abajo hacia izquierda (ángulo 45°)
-        const t2=(u-0.5)*p.rx*2;
-        const r=Math.sqrt(v)*p.ry;
-        return {x: p.cx + Math.sin(a)*r*0.5 - t2*0.65, y: p.cy + Math.cos(a)*r - t2*0.65, z:(Math.random()-0.5)*p.ry*0.7};
-      }
-      if(p.type==="capsule_diag45_R"){
-        const t2=(u-0.5)*p.rx*2;
-        const r=Math.sqrt(v)*p.ry;
-        return {x: p.cx + Math.sin(a)*r*0.5 + t2*0.65, y: p.cy + Math.cos(a)*r - t2*0.65, z:(Math.random()-0.5)*p.ry*0.7};
-      }
-      // fallback sphere
-      const r=Math.sqrt(u)*p.rx;
-      return {x: p.cx+Math.cos(a)*r, y: p.cy+Math.sin(a)*r, z:(Math.random()-0.5)*p.rx};
+      return {x:p.cx,y:p.cy,z:0};
     }
 
-    const CORE=46000, DISP=40000, TOTAL=CORE+DISP;
-    const pos=new Float32Array(TOTAL*3), col=new Float32Array(TOTAL*3);
+    // Mismos números que la pesa
+    const CORE=48000, DISP=42000, TOTAL=CORE+DISP;
+    const pos=new Float32Array(TOTAL*3);
+    const col=new Float32Array(TOTAL*3);
 
     for(let i=0;i<CORE;i++){
       const s=samplePart();
-      const zOff=(Math.random()-0.5)*0.22;
+      const zOff=(Math.random()-0.5)*0.26;
       pos[i*3  ]=s.x+(Math.random()-0.5)*0.018;
       pos[i*3+1]=s.y+(Math.random()-0.5)*0.018;
       pos[i*3+2]=s.z+zOff;
-      // misma textura que la pesa: blanco brillante centro, azulado bordes
-      const distR=Math.sqrt(s.x*s.x);
-      const radialT=Math.min(distR/1.0,1.0);
-      const depthT=(zOff+0.11)/0.22;
-      const tv=radialT*0.35+depthT*0.20+Math.random()*0.08;
+      // misma textura pesa: blanco brillante centro, azulado bordes
+      const distR=Math.sqrt(s.x*s.x+s.z*s.z);
+      const radialT=Math.min(distR/0.8,1.0);
+      const depthT=(zOff+0.13)/0.26;
+      const tv=radialT*0.40+depthT*0.20+Math.random()*0.08;
       const v=0.70+tv*0.30;
       col[i*3]=v*0.94; col[i*3+1]=v*0.96; col[i*3+2]=v;
     }
 
-    // dispersión — idéntica a la pesa
+    // Dispersión radial — idéntica a la pesa
     for(let i=0;i<DISP;i++){
       const idx=CORE+i;
       const s=samplePart();
       const sx=s.x, sy=s.y, sz=s.z;
       const len=Math.sqrt(sx*sx+sy*sy)+0.001;
       const nx=sx/len, ny=sy/len;
+      const nx2=(Math.abs(sx)<0.1&&Math.abs(sy)>0.8)?Math.sign(sy)*0.1:0;
       const eD=Math.pow(Math.random(),0.35)*7.0;
       const spread=1.4;
       const dx=nx+(Math.random()-0.5)*spread;
@@ -1568,19 +1524,20 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     const geo=new THREE.BufferGeometry();
     geo.setAttribute("position",new THREE.BufferAttribute(pos,3));
     geo.setAttribute("color",new THREE.BufferAttribute(col,3));
-    const mat=new THREE.PointsMaterial({size:0.015,vertexColors:true,transparent:true,opacity:0.88,sizeAttenuation:true});
+    // Mismo tamaño de punto que la pesa
+    const mat=new THREE.PointsMaterial({size:0.014,vertexColors:true,transparent:true,opacity:0.88,sizeAttenuation:true});
     const pts=new THREE.Points(geo,mat);
+    // figura: Y de -1.22 a +1.68, centro = +0.23 → bajar 0.23
+    pts.position.y=-0.40;
     scene.add(pts);
 
     let t=0,animId;
     function animate(){
       animId=requestAnimationFrame(animate);
       t+=0.004;
-      // respiración: levita suave en Y
-      pts.position.y=Math.sin(t*0.50)*0.04;
-      // leve rotación Y — como la pesa pero más suave
-      pts.rotation.y=Math.sin(t*0.30)*0.18;
-      pts.rotation.x=Math.sin(t*0.22)*0.03;
+      pts.position.y=-0.40+Math.sin(t*0.50)*0.04;
+      pts.rotation.y=Math.sin(t*0.28)*0.12;
+      pts.rotation.x=Math.sin(t*0.20)*0.025;
       renderer.render(scene,camera);
     }
     animate();
