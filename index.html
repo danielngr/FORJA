@@ -27,10 +27,10 @@ const {useState,useEffect,useCallback,useRef}=React;
 const C={
   bg:"#383e4e",bgDeep:"#2c3040",card:"#424858",cardDim:"#3a4050",
   border:"#525a6e",borderL:"#4a5264",
-  tx:"#b6bac5",tx2:"#9098aa",tx3:"#606678",
-  accent:"#b6bac5",
+  tx:"#F0F2F5",tx2:"#C8CDD8",tx3:"#7a8294",
+  accent:"#F0F2F5",
   red:"#d96060",green:"#5faa88",blue:"#6a8fc0",purple:"#8878c0",yellow:"#c0a870",
-  white:"#d4d8e4",
+  white:"#FFFFFF",
 };
 const mono="'SF Mono','Fira Code','Courier New',monospace";
 const sans="-apple-system,'SF Pro Display','Helvetica Neue',sans-serif";
@@ -866,9 +866,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       const radialT=Math.min(distR/1.20,1.0);
       const depthT=(zOff+0.13)/0.26;
       const t=radialT*0.40+depthT*0.20+Math.random()*0.08;
-      const v=0.55+t*0.42;
-      // #b6bac5 = rgb(0.71, 0.729, 0.773) — azul pizarra claro
-      col[i*3]=v*0.71; col[i*3+1]=v*0.729; col[i*3+2]=v*0.773;
+      const v=0.70+t*0.30;
+      // blanco puro en el centro, azulado en bordes
+      col[i*3]=v*0.94; col[i*3+1]=v*0.96; col[i*3+2]=v;
     }
 
     for(let i=0;i<DISP;i++){
@@ -889,11 +889,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       pos[idx*3+2]=sz+(dz/dlen)*eD;
       const fadeT=eD/7.0;
       const op=Math.max(0,1.0-fadeT*0.88);
-      // fade hacia #383e4e = rgb(0.22, 0.243, 0.306)
-      const br=0.71*op+0.22*(1-op);
-      const bg=0.729*op+0.243*(1-op);
-      const bb=0.773*op+0.306*(1-op);
-      col[idx*3]=br; col[idx*3+1]=bg; col[idx*3+2]=bb;
+      // fade de blanco (#F0F2F5) hacia bg (#383e4e)
+      col[idx*3]=0.94*op+0.22*(1-op);
+      col[idx*3+1]=0.96*op+0.243*(1-op);
+      col[idx*3+2]=1.0*op+0.306*(1-op);
     }
 
     const geo=new THREE.BufferGeometry();
