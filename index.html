@@ -92,36 +92,49 @@ const store={
   set:(k,v)=>{try{localStorage.setItem(k,v);}catch{}}
 };
 
-// Static GIF map — ExerciseDB public CDN
+// Static image map — wger.de open source, no auth needed
 const GIF_STATIC={
-  "bench press":"0026","incline dumbbell press":"1027","overhead press":"0761",
-  "lateral raise":"0290","tricep pushdown":"0685","overhead tricep extension":"0558",
-  "incline bench press":"0029","dumbbell flyes":"1231","dips":"2220","skull crusher":"0657",
-  "pull up":"0651","chin up":"0651","barbell row":"0018","dumbbell row":"0301",
-  "face pull":"0325","barbell curl":"0030","hammer curl":"0344","pendlay row":"0584",
-  "cable row":"0612","reverse fly":"0625","preacher curl":"0596","reverse curl":"0631",
-  "barbell squat":"0038","bulgarian split squat":"1423","leg extension":"0380",
-  "hip thrust":"1777","calf raise":"0140","romanian deadlift":"0635","front squat":"0333",
-  "leg curl":"0389","walking lunge":"0700","seated calf raise":"0645","deadlift":"0175",
-  "dumbbell bench press":"0206",
+  "bench press":"https://wger.de/media/exercise-images/192/Bench-press-1.png",
+  "incline dumbbell press":"https://wger.de/media/exercise-images/1277/9f3c7817-3e3d-417d-8b08-2c0a1aa5fe03.jpg",
+  "overhead press":"https://wger.de/media/exercise-images/61/Close-grip-bench-press-1.png",
+  "lateral raise":"https://wger.de/media/exercise-images/148/lateral-dumbbell-raises-large-2.png",
+  "tricep pushdown":"https://wger.de/media/exercise-images/1185/c5ca283d-8958-4fd8-9d59-a3f52a3ac66b.jpg",
+  "overhead tricep extension":"https://wger.de/media/exercise-images/1519/fab7f641-27d4-40b5-8edd-1a0a137bfd94.gif",
+  "incline bench press":"https://wger.de/media/exercise-images/61/Close-grip-bench-press-1.png",
+  "dumbbell flyes":"https://wger.de/media/exercise-images/1643/a6a603e9-a83a-4106-92a7-7d32e1b64c68.webp",
+  "dips":"https://wger.de/media/exercise-images/194/34600351-8b0b-4cb0-8daa-583537be15b0.png",
+  "skull crusher":"https://wger.de/media/exercise-images/193/Preacher-curl-1.png",
+  "pull up":"https://wger.de/media/exercise-images/475/b0554016-16fd-4dbe-be47-a2a17d16ae0e.jpg",
+  "chin up":"https://wger.de/media/exercise-images/475/b0554016-16fd-4dbe-be47-a2a17d16ae0e.jpg",
+  "barbell row":"https://wger.de/media/exercise-images/192/Bench-press-1.png",
+  "dumbbell row":"https://wger.de/media/exercise-images/301/One-arm-dumbbell-row-1.png",
+  "pendlay row":"https://wger.de/media/exercise-images/301/One-arm-dumbbell-row-1.png",
+  "face pull":"https://wger.de/media/exercise-images/394/Facepull-1.png",
+  "barbell curl":"https://wger.de/media/exercise-images/86/Hammer-curl-1.png",
+  "hammer curl":"https://wger.de/media/exercise-images/86/Hammer-curl-1.png",
+  "preacher curl":"https://wger.de/media/exercise-images/193/Preacher-curl-1.png",
+  "reverse curl":"https://wger.de/media/exercise-images/86/Hammer-curl-1.png",
+  "cable row":"https://wger.de/media/exercise-images/394/Facepull-1.png",
+  "reverse fly":"https://wger.de/media/exercise-images/148/lateral-dumbbell-raises-large-2.png",
+  "barbell squat":"https://wger.de/media/exercise-images/105/barbell-squat-1.png",
+  "bulgarian split squat":"https://wger.de/media/exercise-images/105/barbell-squat-1.png",
+  "leg extension":"https://wger.de/media/exercise-images/111/Leg-extension-1.png",
+  "leg curl":"https://wger.de/media/exercise-images/111/Leg-extension-1.png",
+  "hip thrust":"https://wger.de/media/exercise-images/105/barbell-squat-1.png",
+  "calf raise":"https://wger.de/media/exercise-images/133/Standing-calf-raise-1.png",
+  "seated calf raise":"https://wger.de/media/exercise-images/133/Standing-calf-raise-1.png",
+  "romanian deadlift":"https://wger.de/media/exercise-images/105/barbell-squat-1.png",
+  "front squat":"https://wger.de/media/exercise-images/191/Front-squat-1.png",
+  "walking lunge":"https://wger.de/media/exercise-images/105/barbell-squat-1.png",
+  "deadlift":"https://wger.de/media/exercise-images/105/Deadlift-1.png",
+  "dumbbell bench press":"https://wger.de/media/exercise-images/1277/9f3c7817-3e3d-417d-8b08-2c0a1aa5fe03.jpg",
 };
-const GIF_BASE="https://v2.exercisedb.io/image/";
 const GIF_CACHE={};
 async function fetchGif(name){
   const key=name.toLowerCase().trim();
   if(key in GIF_CACHE)return GIF_CACHE[key];
-  const id=GIF_STATIC[key];
-  if(id){
-    const result={gifUrl:`${GIF_BASE}${id}`,target:null};
-    GIF_CACHE[key]=result;
-    return result;
-  }
-  // Fallback: try API for custom exercises
-  try{
-    const res=await fetch(`https://exercisedb.dev/api/exercises/name/${encodeURIComponent(key)}?limit=1`);
-    if(res.ok){const d=await res.json();const ex=Array.isArray(d)?d[0]:d?.exercises?.[0];
-      if(ex?.gifUrl)return(GIF_CACHE[key]={gifUrl:ex.gifUrl,target:ex.target});}
-  }catch(_){}
+  const url=GIF_STATIC[key];
+  if(url) return(GIF_CACHE[key]={gifUrl:url,target:null});
   return(GIF_CACHE[key]=null);
 }
 
