@@ -209,6 +209,13 @@ const IMG={
 };
 const getImg=name=>IMG[name.toLowerCase().trim()]||null;
 
+const VID={
+  "pull up":   "https://danielngr.github.io/FORJA/pull-ups.mp4",
+  "chin up":   "https://danielngr.github.io/FORJA/pull-ups.mp4",
+  "dumbbell flyes": "https://danielngr.github.io/FORJA/dumbbell-chest-fly.mp4",
+};
+const getVid=name=>VID[name.toLowerCase().trim()]||null;
+
 function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
   const exs=day.ex;
   const[idx,setIdx]=useState(0);
@@ -228,6 +235,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
   const last=hist[0];
   const totalDone=exs.filter(x=>done[`${sel}-${x.id}`]).length;
   const imgUrl=ex&&!imgErr[ex.id]?getImg(ex.e):null;
+  const vidUrl=ex?getVid(ex.e):null;
 
   // Cargar último peso/reps del ejercicio actual (historial > localStorage > default)
   useEffect(()=>{
@@ -404,7 +412,10 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
             border:`1px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"center",
             position:"relative",boxShadow:`inset 0 1px 0 rgba(255,255,255,0.5),0 8px 40px rgba(0,0,0,0.10)`}}>
 
-            {imgUrl?(
+            {vidUrl?(
+              <video key={vidUrl} src={vidUrl} autoPlay loop muted playsInline
+                style={{width:"100%",height:"100%",objectFit:"contain"}}/>
+            ):imgUrl?(
               <img src={imgUrl} alt={ex.e} onError={()=>setImgErr(p=>({...p,[ex.id]:true}))}
                 style={{width:"100%",height:"100%",objectFit:"contain",filter:"brightness(0.95)"}}/>
             ):(
