@@ -11,12 +11,11 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html,body{height:100%;background:#DDDBD7;}
 body{overscroll-behavior:none;}
-input[type=number]::-webkit-inner-spin-button,
-input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;}
 input[type=number]{-moz-appearance:textfield;}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes fu{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-@keyframes fogIn{from{opacity:0;filter:blur(6px) brightness(1.1)}to{opacity:1;filter:blur(0) brightness(1)}}
+@keyframes fogIn{from{opacity:0;filter:blur(6px)}to{opacity:1;filter:blur(0)}}
 ::placeholder{color:#9A9894;}
 </style>
 </head>
@@ -25,28 +24,12 @@ input[type=number]{-moz-appearance:textfield;}
 <script type="text/babel">
 const {useState,useEffect,useCallback,useRef}=React;
 
-/* ─── PALETTE: cold mist, fog, silver ─────────────────────────
-   Inspired by: IGLOO website — grey haze, white condensed type,
-   clinical precision, architectural spacing
-──────────────────────────────────────────────────────────────── */
 const C={
-  bg:      "#DDDBD7",   // warm fog
-  bgDeep:  "#C8C6C2",   // deeper fog
-  card:    "#E8E6E2",   // card surface, slightly lighter
-  cardDim: "#D0CEC9",   // dimmed card
-  border:  "#B8B6B2",   // visible border
-  borderL: "#CCCAC6",   // light border
-  tx:      "#141414",   // near black
-  tx2:     "#4A4846",   // mid grey text
-  tx3:     "#8A8886",   // dim label
-  accent:  "#141414",   // BLACK accent — like IGLOO logotype
-  accentL: "#E0DED9",   // accent bg tint
-  red:     "#C0392B",   // only for alerts / PR
-  green:   "#1E6B47",
-  blue:    "#1A3A5C",
-  purple:  "#3D2B4A",
-  yellow:  "#7A5C28",
-  white:   "#F5F3EF",
+  bg:"#DDDBD7",bgDeep:"#C8C6C2",card:"#E8E6E2",cardDim:"#D0CEC9",
+  border:"#B8B6B2",borderL:"#CCCAC6",
+  tx:"#141414",tx2:"#4A4846",tx3:"#8A8886",
+  red:"#C0392B",green:"#1E6B47",blue:"#1A3A5C",purple:"#3D2B4A",yellow:"#7A5C28",
+  white:"#F5F3EF",
 };
 const mono="'SF Mono','Fira Code','Courier New',monospace";
 const sans="-apple-system,'SF Pro Display','Helvetica Neue',sans-serif";
@@ -60,28 +43,28 @@ const DF={es:["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Doming
 
 const TP={
   ppl6:{n:{es:"PPL × 6",en:"PPL × 6"},d:6,s:[
-    {l:"PUSH A",c:C.accent,ex:[{e:"Bench Press",s:4,r:"6–8"},{e:"Incline Dumbbell Press",s:3,r:"8–10"},{e:"Overhead Press",s:3,r:"8–10"},{e:"Lateral Raise",s:4,r:"12–15"},{e:"Tricep Pushdown",s:3,r:"10–12"},{e:"Overhead Tricep Extension",s:3,r:"10–12"}]},
-    {l:"PULL A",c:C.blue,ex:[{e:"Pull Up",s:4,r:"6–10"},{e:"Barbell Row",s:4,r:"8–10"},{e:"Dumbbell Row",s:3,r:"10–12"},{e:"Face Pull",s:3,r:"15–20"},{e:"Barbell Curl",s:3,r:"10–12"},{e:"Hammer Curl",s:3,r:"10–12"}]},
-    {l:"LEGS A",c:C.green,ex:[{e:"Barbell Squat",s:4,r:"6–8"},{e:"Bulgarian Split Squat",s:3,r:"10–12"},{e:"Leg Extension",s:3,r:"12–15"},{e:"Hip Thrust",s:3,r:"10–12"},{e:"Calf Raise",s:4,r:"15–20"}]},
-    {l:"PUSH B",c:C.accent,ex:[{e:"Overhead Press",s:4,r:"6–8"},{e:"Incline Bench Press",s:3,r:"8–10"},{e:"Dumbbell Flyes",s:3,r:"12–15"},{e:"Lateral Raise",s:4,r:"12–15"},{e:"Dips",s:3,r:"8–12"},{e:"Skull Crusher",s:3,r:"10–12"}]},
-    {l:"PULL B",c:C.blue,ex:[{e:"Pendlay Row",s:4,r:"6–8"},{e:"Chin Up",s:4,r:"8–12"},{e:"Cable Row",s:3,r:"10–12"},{e:"Reverse Fly",s:3,r:"15–20"},{e:"Preacher Curl",s:3,r:"10–12"},{e:"Reverse Curl",s:3,r:"12–15"}]},
-    {l:"LEGS B",c:C.green,ex:[{e:"Romanian Deadlift",s:4,r:"8–10"},{e:"Front Squat",s:3,r:"8–10"},{e:"Leg Curl",s:3,r:"12–15"},{e:"Walking Lunge",s:3,r:"12/leg"},{e:"Seated Calf Raise",s:4,r:"15–20"}]},
+    {l:"PUSH A",c:C.tx,ex:[{e:"Bench Press",s:4,r:"6-8"},{e:"Incline Dumbbell Press",s:3,r:"8-10"},{e:"Overhead Press",s:3,r:"8-10"},{e:"Lateral Raise",s:4,r:"12-15"},{e:"Tricep Pushdown",s:3,r:"10-12"},{e:"Overhead Tricep Extension",s:3,r:"10-12"}]},
+    {l:"PULL A",c:C.blue,ex:[{e:"Pull Up",s:4,r:"6-10"},{e:"Barbell Row",s:4,r:"8-10"},{e:"Dumbbell Row",s:3,r:"10-12"},{e:"Face Pull",s:3,r:"15-20"},{e:"Barbell Curl",s:3,r:"10-12"},{e:"Hammer Curl",s:3,r:"10-12"}]},
+    {l:"LEGS A",c:C.green,ex:[{e:"Barbell Squat",s:4,r:"6-8"},{e:"Bulgarian Split Squat",s:3,r:"10-12"},{e:"Leg Extension",s:3,r:"12-15"},{e:"Hip Thrust",s:3,r:"10-12"},{e:"Calf Raise",s:4,r:"15-20"}]},
+    {l:"PUSH B",c:C.tx,ex:[{e:"Overhead Press",s:4,r:"6-8"},{e:"Incline Bench Press",s:3,r:"8-10"},{e:"Dumbbell Flyes",s:3,r:"12-15"},{e:"Lateral Raise",s:4,r:"12-15"},{e:"Dips",s:3,r:"8-12"},{e:"Skull Crusher",s:3,r:"10-12"}]},
+    {l:"PULL B",c:C.blue,ex:[{e:"Pendlay Row",s:4,r:"6-8"},{e:"Chin Up",s:4,r:"8-12"},{e:"Cable Row",s:3,r:"10-12"},{e:"Reverse Fly",s:3,r:"15-20"},{e:"Preacher Curl",s:3,r:"10-12"},{e:"Reverse Curl",s:3,r:"12-15"}]},
+    {l:"LEGS B",c:C.green,ex:[{e:"Romanian Deadlift",s:4,r:"8-10"},{e:"Front Squat",s:3,r:"8-10"},{e:"Leg Curl",s:3,r:"12-15"},{e:"Walking Lunge",s:3,r:"12/leg"},{e:"Seated Calf Raise",s:4,r:"15-20"}]},
   ]},
   ppl3:{n:{es:"PPL × 3",en:"PPL × 3"},d:3,s:[
-    {l:"PUSH",c:C.accent,ex:[{e:"Bench Press",s:4,r:"6–8"},{e:"Overhead Press",s:3,r:"8–10"},{e:"Incline Dumbbell Press",s:3,r:"10–12"},{e:"Lateral Raise",s:4,r:"12–15"},{e:"Dips",s:3,r:"10–12"}]},
-    {l:"PULL",c:C.blue,ex:[{e:"Pull Up",s:4,r:"6–10"},{e:"Barbell Row",s:4,r:"8–10"},{e:"Face Pull",s:3,r:"15–20"},{e:"Barbell Curl",s:3,r:"10–12"},{e:"Hammer Curl",s:3,r:"10–12"}]},
-    {l:"LEGS",c:C.green,ex:[{e:"Barbell Squat",s:4,r:"6–8"},{e:"Romanian Deadlift",s:3,r:"8–10"},{e:"Leg Extension",s:3,r:"12–15"},{e:"Leg Curl",s:3,r:"12–15"},{e:"Calf Raise",s:4,r:"15–20"}]},
+    {l:"PUSH",c:C.tx,ex:[{e:"Bench Press",s:4,r:"6-8"},{e:"Overhead Press",s:3,r:"8-10"},{e:"Incline Dumbbell Press",s:3,r:"10-12"},{e:"Lateral Raise",s:4,r:"12-15"},{e:"Dips",s:3,r:"10-12"}]},
+    {l:"PULL",c:C.blue,ex:[{e:"Pull Up",s:4,r:"6-10"},{e:"Barbell Row",s:4,r:"8-10"},{e:"Face Pull",s:3,r:"15-20"},{e:"Barbell Curl",s:3,r:"10-12"},{e:"Hammer Curl",s:3,r:"10-12"}]},
+    {l:"LEGS",c:C.green,ex:[{e:"Barbell Squat",s:4,r:"6-8"},{e:"Romanian Deadlift",s:3,r:"8-10"},{e:"Leg Extension",s:3,r:"12-15"},{e:"Leg Curl",s:3,r:"12-15"},{e:"Calf Raise",s:4,r:"15-20"}]},
   ]},
   ul4:{n:{es:"Upper Lower × 4",en:"Upper Lower × 4"},d:4,s:[
-    {l:"UPPER A",c:C.accent,ex:[{e:"Bench Press",s:4,r:"6–8"},{e:"Barbell Row",s:4,r:"6–8"},{e:"Overhead Press",s:3,r:"8–10"},{e:"Pull Up",s:3,r:"8–12"},{e:"Lateral Raise",s:3,r:"12–15"},{e:"Barbell Curl",s:3,r:"10–12"}]},
-    {l:"LOWER A",c:C.green,ex:[{e:"Barbell Squat",s:4,r:"6–8"},{e:"Romanian Deadlift",s:3,r:"8–10"},{e:"Leg Extension",s:3,r:"12–15"},{e:"Leg Curl",s:3,r:"12–15"},{e:"Calf Raise",s:4,r:"15–20"}]},
-    {l:"UPPER B",c:C.blue,ex:[{e:"Overhead Press",s:4,r:"6–8"},{e:"Chin Up",s:4,r:"8–12"},{e:"Incline Dumbbell Press",s:3,r:"8–10"},{e:"Cable Row",s:3,r:"10–12"},{e:"Lateral Raise",s:3,r:"12–15"},{e:"Hammer Curl",s:3,r:"10–12"}]},
-    {l:"LOWER B",c:C.green,ex:[{e:"Deadlift",s:4,r:"5–6"},{e:"Front Squat",s:3,r:"8–10"},{e:"Bulgarian Split Squat",s:3,r:"10–12"},{e:"Leg Extension",s:3,r:"12–15"},{e:"Calf Raise",s:4,r:"15–20"}]},
+    {l:"UPPER A",c:C.tx,ex:[{e:"Bench Press",s:4,r:"6-8"},{e:"Barbell Row",s:4,r:"6-8"},{e:"Overhead Press",s:3,r:"8-10"},{e:"Pull Up",s:3,r:"8-12"},{e:"Lateral Raise",s:3,r:"12-15"},{e:"Barbell Curl",s:3,r:"10-12"}]},
+    {l:"LOWER A",c:C.green,ex:[{e:"Barbell Squat",s:4,r:"6-8"},{e:"Romanian Deadlift",s:3,r:"8-10"},{e:"Leg Extension",s:3,r:"12-15"},{e:"Leg Curl",s:3,r:"12-15"},{e:"Calf Raise",s:4,r:"15-20"}]},
+    {l:"UPPER B",c:C.blue,ex:[{e:"Overhead Press",s:4,r:"6-8"},{e:"Chin Up",s:4,r:"8-12"},{e:"Incline Dumbbell Press",s:3,r:"8-10"},{e:"Cable Row",s:3,r:"10-12"},{e:"Lateral Raise",s:3,r:"12-15"},{e:"Hammer Curl",s:3,r:"10-12"}]},
+    {l:"LOWER B",c:C.green,ex:[{e:"Deadlift",s:4,r:"5-6"},{e:"Front Squat",s:3,r:"8-10"},{e:"Bulgarian Split Squat",s:3,r:"10-12"},{e:"Leg Extension",s:3,r:"12-15"},{e:"Calf Raise",s:4,r:"15-20"}]},
   ]},
   fb3:{n:{es:"Full Body × 3",en:"Full Body × 3"},d:3,s:[
-    {l:"FULL BODY A",c:C.accent,ex:[{e:"Barbell Squat",s:4,r:"6–8"},{e:"Bench Press",s:4,r:"6–8"},{e:"Barbell Row",s:3,r:"8–10"},{e:"Overhead Press",s:3,r:"8–10"},{e:"Barbell Curl",s:2,r:"10–12"},{e:"Calf Raise",s:3,r:"15–20"}]},
-    {l:"FULL BODY B",c:C.blue,ex:[{e:"Deadlift",s:4,r:"5–6"},{e:"Incline Bench Press",s:3,r:"8–10"},{e:"Pull Up",s:3,r:"8–12"},{e:"Lateral Raise",s:3,r:"12–15"},{e:"Tricep Pushdown",s:2,r:"10–12"},{e:"Leg Curl",s:3,r:"12–15"}]},
-    {l:"FULL BODY C",c:C.green,ex:[{e:"Front Squat",s:3,r:"8–10"},{e:"Overhead Press",s:4,r:"6–8"},{e:"Chin Up",s:3,r:"8–12"},{e:"Dumbbell Bench Press",s:3,r:"10–12"},{e:"Romanian Deadlift",s:3,r:"10–12"},{e:"Calf Raise",s:3,r:"15–20"}]},
+    {l:"FULL BODY A",c:C.tx,ex:[{e:"Barbell Squat",s:4,r:"6-8"},{e:"Bench Press",s:4,r:"6-8"},{e:"Barbell Row",s:3,r:"8-10"},{e:"Overhead Press",s:3,r:"8-10"},{e:"Barbell Curl",s:2,r:"10-12"},{e:"Calf Raise",s:3,r:"15-20"}]},
+    {l:"FULL BODY B",c:C.blue,ex:[{e:"Deadlift",s:4,r:"5-6"},{e:"Incline Bench Press",s:3,r:"8-10"},{e:"Pull Up",s:3,r:"8-12"},{e:"Lateral Raise",s:3,r:"12-15"},{e:"Tricep Pushdown",s:2,r:"10-12"},{e:"Leg Curl",s:3,r:"12-15"}]},
+    {l:"FULL BODY C",c:C.green,ex:[{e:"Front Squat",s:3,r:"8-10"},{e:"Overhead Press",s:4,r:"6-8"},{e:"Chin Up",s:3,r:"8-12"},{e:"Dumbbell Bench Press",s:3,r:"10-12"},{e:"Romanian Deadlift",s:3,r:"10-12"},{e:"Calf Raise",s:3,r:"15-20"}]},
   ]},
 };
 
@@ -92,62 +75,52 @@ const store={
   set:(k,v)=>{try{localStorage.setItem(k,v);}catch{}}
 };
 
-// Static image map — wger.de open source, no auth needed
-const GIF_STATIC={
+// Static exercise image map — wger.de open source DB
+const IMG={
   "bench press":"https://wger.de/media/exercise-images/192/Bench-press-1.png",
-  "incline dumbbell press":"https://wger.de/media/exercise-images/1277/9f3c7817-3e3d-417d-8b08-2c0a1aa5fe03.jpg",
-  "overhead press":"https://wger.de/media/exercise-images/61/Close-grip-bench-press-1.png",
-  "lateral raise":"https://wger.de/media/exercise-images/148/lateral-dumbbell-raises-large-2.png",
-  "tricep pushdown":"https://wger.de/media/exercise-images/1185/c5ca283d-8958-4fd8-9d59-a3f52a3ac66b.jpg",
-  "overhead tricep extension":"https://wger.de/media/exercise-images/1519/fab7f641-27d4-40b5-8edd-1a0a137bfd94.gif",
-  "incline bench press":"https://wger.de/media/exercise-images/61/Close-grip-bench-press-1.png",
-  "dumbbell flyes":"https://wger.de/media/exercise-images/1643/a6a603e9-a83a-4106-92a7-7d32e1b64c68.webp",
-  "dips":"https://wger.de/media/exercise-images/194/34600351-8b0b-4cb0-8daa-583537be15b0.png",
-  "skull crusher":"https://wger.de/media/exercise-images/193/Preacher-curl-1.png",
-  "pull up":"https://wger.de/media/exercise-images/475/b0554016-16fd-4dbe-be47-a2a17d16ae0e.jpg",
-  "chin up":"https://wger.de/media/exercise-images/475/b0554016-16fd-4dbe-be47-a2a17d16ae0e.jpg",
-  "barbell row":"https://wger.de/media/exercise-images/192/Bench-press-1.png",
-  "dumbbell row":"https://wger.de/media/exercise-images/301/One-arm-dumbbell-row-1.png",
-  "pendlay row":"https://wger.de/media/exercise-images/301/One-arm-dumbbell-row-1.png",
+  "incline bench press":"https://wger.de/media/exercise-images/1049/Incline-Bench-Press-1.png",
+  "incline dumbbell press":"https://wger.de/media/exercise-images/2245/Incline-dumbbell-press-1.png",
+  "dumbbell bench press":"https://wger.de/media/exercise-images/2245/Incline-dumbbell-press-1.png",
+  "dumbbell flyes":"https://wger.de/media/exercise-images/2753/Dumbbell-Incline-Fly-1.png",
+  "dips":"https://wger.de/media/exercise-images/781/Dips-1.png",
+  "overhead press":"https://wger.de/media/exercise-images/1069/Overhead-Press-1.png",
+  "lateral raise":"https://wger.de/media/exercise-images/148/Lateral-Raises-1.png",
+  "tricep pushdown":"https://wger.de/media/exercise-images/2141/Triceps-Pushdown-1.png",
+  "overhead tricep extension":"https://wger.de/media/exercise-images/2141/Triceps-Pushdown-1.png",
+  "skull crusher":"https://wger.de/media/exercise-images/2431/Floor-Skull-Crusher-1.png",
+  "pull up":"https://wger.de/media/exercise-images/107/Pull-ups-1.png",
+  "chin up":"https://wger.de/media/exercise-images/803/Chin-Up-1.png",
+  "barbell row":"https://wger.de/media/exercise-images/2817/Barbell-Row-1.png",
+  "pendlay row":"https://wger.de/media/exercise-images/2817/Barbell-Row-1.png",
+  "dumbbell row":"https://wger.de/media/exercise-images/2192/Dumbbell-rear-delt-row-1.png",
+  "cable row":"https://wger.de/media/exercise-images/2086/Seated-Cable-Row-1.png",
+  "reverse fly":"https://wger.de/media/exercise-images/2832/Reverse-Fly-Standing-1.png",
   "face pull":"https://wger.de/media/exercise-images/394/Facepull-1.png",
-  "barbell curl":"https://wger.de/media/exercise-images/86/Hammer-curl-1.png",
-  "hammer curl":"https://wger.de/media/exercise-images/86/Hammer-curl-1.png",
-  "preacher curl":"https://wger.de/media/exercise-images/193/Preacher-curl-1.png",
-  "reverse curl":"https://wger.de/media/exercise-images/86/Hammer-curl-1.png",
-  "cable row":"https://wger.de/media/exercise-images/394/Facepull-1.png",
-  "reverse fly":"https://wger.de/media/exercise-images/148/lateral-dumbbell-raises-large-2.png",
-  "barbell squat":"https://wger.de/media/exercise-images/105/barbell-squat-1.png",
-  "bulgarian split squat":"https://wger.de/media/exercise-images/105/barbell-squat-1.png",
-  "leg extension":"https://wger.de/media/exercise-images/111/Leg-extension-1.png",
-  "leg curl":"https://wger.de/media/exercise-images/111/Leg-extension-1.png",
-  "hip thrust":"https://wger.de/media/exercise-images/105/barbell-squat-1.png",
-  "calf raise":"https://wger.de/media/exercise-images/133/Standing-calf-raise-1.png",
-  "seated calf raise":"https://wger.de/media/exercise-images/133/Standing-calf-raise-1.png",
-  "romanian deadlift":"https://wger.de/media/exercise-images/105/barbell-squat-1.png",
-  "front squat":"https://wger.de/media/exercise-images/191/Front-squat-1.png",
-  "walking lunge":"https://wger.de/media/exercise-images/105/barbell-squat-1.png",
-  "deadlift":"https://wger.de/media/exercise-images/105/Deadlift-1.png",
-  "dumbbell bench press":"https://wger.de/media/exercise-images/1277/9f3c7817-3e3d-417d-8b08-2c0a1aa5fe03.jpg",
+  "barbell curl":"https://wger.de/media/exercise-images/758/Barbell-Wrist-Curl-1.png",
+  "hammer curl":"https://wger.de/media/exercise-images/86/Hammer-Curls-1.png",
+  "preacher curl":"https://wger.de/media/exercise-images/193/Preacher-Curls-1.png",
+  "reverse curl":"https://wger.de/media/exercise-images/86/Hammer-Curls-1.png",
+  "barbell squat":"https://wger.de/media/exercise-images/2931/Barbell-Squat-1.png",
+  "front squat":"https://wger.de/media/exercise-images/191/Front-Squats-1.png",
+  "romanian deadlift":"https://wger.de/media/exercise-images/2886/Romanian-Deadlift-1.png",
+  "deadlift":"https://wger.de/media/exercise-images/105/Deadlifts-1.png",
+  "bulgarian split squat":"https://wger.de/media/exercise-images/1602/Bulgarian-split-squats-1.png",
+  "leg extension":"https://wger.de/media/exercise-images/804/Leg-Extension-1.png",
+  "leg curl":"https://wger.de/media/exercise-images/792/Leg-Curl-1.png",
+  "hip thrust":"https://wger.de/media/exercise-images/854/Hip-Thrust-1.png",
+  "walking lunge":"https://wger.de/media/exercise-images/3050/Walking-Lunges-1.png",
+  "calf raise":"https://wger.de/media/exercise-images/2162/Calf-raises-1.png",
+  "seated calf raise":"https://wger.de/media/exercise-images/2145/Seated-Calf-Raises-1.png",
 };
-const GIF_CACHE={};
-async function fetchGif(name){
-  const key=name.toLowerCase().trim();
-  if(key in GIF_CACHE)return GIF_CACHE[key];
-  const url=GIF_STATIC[key];
-  if(url) return(GIF_CACHE[key]={gifUrl:url,target:null});
-  return(GIF_CACHE[key]=null);
-}
+const getImg=name=>IMG[name.toLowerCase().trim()]||null;
 
-// ── WORKOUT SCREEN ──────────────────────────────────────────
 function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
-  const exs=day.ex,c=day.c;
+  const exs=day.ex;
   const[idx,setIdx]=useState(0);
   const[kg,setKg]=useState("");
   const[rp,setRp]=useState("");
   const[showHist,setShowHist]=useState(false);
-  const[gifData,setGifData]=useState({});
-  const[gifLoading,setGifLoading]=useState({});
-  const[gifErr,setGifErr]=useState({});
+  const[imgErr,setImgErr]=useState({});
   const[sliding,setSliding]=useState(false);
   const[slideDir,setSlideDir]=useState(0);
   const[dragY,setDragY]=useState(0);
@@ -159,14 +132,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
   const hist=ex?(logs[ex.id]||[]):[];
   const last=hist[0];
   const totalDone=exs.filter(x=>done[`${sel}-${x.id}`]).length;
-
-  useEffect(()=>{
-    [idx,idx+1].forEach(i=>{
-      const e=exs[i];if(!e||e.id in gifData||gifLoading[e.id])return;
-      setGifLoading(p=>({...p,[e.id]:true}));
-      fetchGif(e.e).then(d=>{setGifData(p=>({...p,[e.id]:d}));setGifLoading(p=>({...p,[e.id]:false}));});
-    });
-  },[idx]);
+  const imgUrl=ex&&!imgErr[ex.id]?getImg(ex.e):null;
 
   const goTo=ni=>{
     if(ni<0||ni>=exs.length||sliding)return;
@@ -181,12 +147,8 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
   const onMM=e=>{if(isDrag.current)setDragY(e.clientY-startY.current);};
   const onMU=()=>{if(dragY<-55)goTo(idx+1);else if(dragY>55)goTo(idx-1);setDragY(0);isDrag.current=false;};
   const handleSave=()=>{if(kg||rp){onSaveLog(ex.id,kg,rp);if(!isDone)onToggle(ex.id);}setKg("");setRp("");};
-
-  const gif=ex?gifData[ex.id]:null;
-  const loading=ex?!!gifLoading[ex.id]:false;
-  const hasGif=gif?.gifUrl&&!gifErr[ex?.id];
-  const ty=sliding?slideDir*110:(isDrag.current?Math.min(Math.max(dragY*0.35,-70),70):0);
   const sp=e=>e.stopPropagation();
+  const ty=sliding?slideDir*110:(isDrag.current?Math.min(Math.max(dragY*0.35,-70),70):0);
 
   const NI=({val,set,label})=>(
     <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:5}}>
@@ -195,7 +157,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
         onPointerDown={sp} onMouseDown={sp} onTouchStart={sp}
         style={{width:"100%",padding:"14px 0",background:"transparent",border:"none",
           borderBottom:`1.5px solid ${C.border}`,color:C.tx,fontSize:34,fontWeight:800,
-          fontFamily:sans,textAlign:"center",outline:"none",boxSizing:"border-box",caretColor:C.tx}}
+          fontFamily:sans,textAlign:"center",outline:"none",caretColor:C.tx}}
         onFocus={e=>e.target.style.borderBottomColor=C.tx}
         onBlur={e=>e.target.style.borderBottomColor=C.border}/>
     </div>
@@ -203,27 +165,19 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
 
   return(
     <div style={{position:"fixed",inset:0,background:C.bg,display:"flex",flexDirection:"column",overflow:"hidden",fontFamily:sans}}>
-
-      {/* TOP BAR */}
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
-        padding:"16px 20px 12px",borderBottom:`1px solid ${C.borderL}`,flexShrink:0,
-        background:C.bg}}>
-        <button onClick={onBack} style={{background:"none",border:"none",color:C.tx3,
-          fontSize:11,fontFamily:mono,letterSpacing:1.5,cursor:"pointer",padding:0}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px 20px 12px",borderBottom:`1px solid ${C.borderL}`,flexShrink:0,background:C.bg}}>
+        <button onClick={onBack} style={{background:"none",border:"none",color:C.tx3,fontSize:11,fontFamily:mono,letterSpacing:1.5,cursor:"pointer",padding:0}}>
           ← {lang==="es"?"VOLVER":"BACK"}
         </button>
         <div style={{fontSize:10,fontFamily:mono,color:C.tx2,letterSpacing:3,fontWeight:600}}>{day.l}</div>
         <div style={{display:"flex",gap:5,alignItems:"center"}}>
           {exs.map((_,i)=>(
-            <div key={i} onClick={()=>goTo(i)} style={{
-              width:i===idx?20:5,height:5,borderRadius:3,cursor:"pointer",
-              background:done[`${sel}-${exs[i].id}`]?C.tx:i===idx?C.tx:C.borderL,
-              transition:"all 0.3s"}}/>
+            <div key={i} onClick={()=>goTo(i)} style={{width:i===idx?20:5,height:5,borderRadius:3,cursor:"pointer",
+              background:done[`${sel}-${exs[i].id}`]?C.tx:i===idx?C.tx:C.borderL,transition:"all 0.3s"}}/>
           ))}
         </div>
       </div>
 
-      {/* SWIPEABLE BODY */}
       <div onTouchStart={onTS} onTouchMove={onTM} onTouchEnd={onTE}
         onMouseDown={onMD} onMouseMove={onMM} onMouseUp={onMU} onMouseLeave={onMU}
         style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",
@@ -232,7 +186,6 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
           opacity:Math.abs(ty)>30?Math.max(0.4,1-Math.abs(ty)/120):1,
           cursor:isDrag.current?"grabbing":"grab",userSelect:"none",minHeight:0}}>
 
-        {/* EXERCISE HEADER */}
         <div style={{padding:"18px 20px 10px",flexShrink:0}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
             <div style={{fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:2}}>
@@ -243,87 +196,52 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
               <div onPointerDown={sp} onMouseDown={sp} onTouchStart={sp}
                 onClick={e=>{sp(e);onToggle(ex.id);}}
                 style={{width:26,height:26,borderRadius:7,cursor:"pointer",
-                  background:isDone?C.tx:"transparent",
-                  border:`1.5px solid ${isDone?C.tx:C.border}`,
+                  background:isDone?C.tx:"transparent",border:`1.5px solid ${isDone?C.tx:C.border}`,
                   display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s"}}>
                 {isDone&&<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6.5L5 9.5L10 3" stroke={C.white} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
               </div>
             </div>
           </div>
-
-          {/* BIG NAME */}
-          <div style={{fontSize:32,fontWeight:900,color:C.tx,lineHeight:1,
-            letterSpacing:-1.5,textTransform:"uppercase",animation:"fu 0.3s ease",
-            fontFamily:sans}}>
-            {ex.e}
-          </div>
-          <div style={{display:"flex",gap:10,marginTop:7,alignItems:"center"}}>
+          <div style={{fontSize:32,fontWeight:900,color:C.tx,lineHeight:1,letterSpacing:-1.5,textTransform:"uppercase",animation:"fu 0.3s ease",fontFamily:sans}}>{ex.e}</div>
+          <div style={{marginTop:7}}>
             <span style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:1.5}}>{ex.s} × {ex.r}</span>
-            {gif?.target&&<span style={{fontSize:10,fontFamily:mono,color:C.tx2,letterSpacing:1}}>// {gif.target.toUpperCase()}</span>}
           </div>
         </div>
 
-        {/* GIF FRAME — fog frame, like IGLOO */}
         <div style={{margin:"0 14px",flex:1,minHeight:0}}>
-          <div style={{
-            width:"100%",height:"100%",borderRadius:20,overflow:"hidden",
-            background:"linear-gradient(145deg, #C8C6C2 0%, #B8B6B2 100%)",
-            border:`1px solid ${C.border}`,
-            display:"flex",alignItems:"center",justifyContent:"center",
-            position:"relative",
-            boxShadow:"inset 0 1px 0 rgba(255,255,255,0.6), 0 8px 40px rgba(0,0,0,0.12)"}}>
+          <div style={{width:"100%",height:"100%",borderRadius:20,overflow:"hidden",
+            background:"linear-gradient(145deg,#C8C6C2 0%,#B8B6B2 100%)",
+            border:`1px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"center",
+            position:"relative",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.6),0 8px 40px rgba(0,0,0,0.12)"}}>
 
-            {loading&&(
-              <div style={{textAlign:"center"}}>
-                <div style={{width:24,height:24,border:`2px solid ${C.border}`,borderTopColor:C.tx,
-                  borderRadius:"50%",animation:"spin 0.8s linear infinite",margin:"0 auto 8px"}}/>
-                <div style={{fontSize:9,color:C.tx3,fontFamily:mono,letterSpacing:2}}>LOADING</div>
-              </div>
-            )}
-            {!loading&&hasGif&&(
-              <img src={gif.gifUrl} alt={ex.e}
-                onError={()=>setGifErr(p=>({...p,[ex.id]:true}))}
+            {imgUrl?(
+              <img src={imgUrl} alt={ex.e} onError={()=>setImgErr(p=>({...p,[ex.id]:true}))}
                 style={{width:"100%",height:"100%",objectFit:"contain",mixBlendMode:"multiply"}}/>
-            )}
-            {!loading&&!hasGif&&(
-              <div style={{textAlign:"center",opacity:0.3}}>
-                <div style={{fontSize:56,marginBottom:6,color:C.tx2}}>◎</div>
-                <div style={{fontSize:9,color:C.tx3,fontFamily:mono,letterSpacing:2}}>NO ANIMATION</div>
+            ):(
+              <div style={{textAlign:"center",opacity:0.25}}>
+                <div style={{fontSize:52,color:C.tx2,marginBottom:6}}>◎</div>
+                <div style={{fontSize:9,color:C.tx3,fontFamily:mono,letterSpacing:2}}>NO IMAGE</div>
               </div>
             )}
 
-            {/* Corner crosshair marks — like IGLOO UI */}
-            {[
-              {top:10,left:10,borderTop:`1px solid ${C.tx2}`,borderLeft:`1px solid ${C.tx2}`},
+            {[{top:10,left:10,borderTop:`1px solid ${C.tx2}`,borderLeft:`1px solid ${C.tx2}`},
               {top:10,right:10,borderTop:`1px solid ${C.tx2}`,borderRight:`1px solid ${C.tx2}`},
               {bottom:10,left:10,borderBottom:`1px solid ${C.tx2}`,borderLeft:`1px solid ${C.tx2}`},
-              {bottom:10,right:10,borderBottom:`1px solid ${C.tx2}`,borderRight:`1px solid ${C.tx2}`},
-            ].map((s,i)=><div key={i} style={{position:"absolute",width:14,height:14,opacity:0.5,...s}}/>)}
+              {bottom:10,right:10,borderBottom:`1px solid ${C.tx2}`,borderRight:`1px solid ${C.tx2}`}
+            ].map((s,i)=><div key={i} style={{position:"absolute",width:14,height:14,opacity:0.4,...s}}/>)}
 
-            {/* Crosshair center lines — like IGLOO screenshot */}
-            <div style={{position:"absolute",top:"50%",left:"14%",width:"20%",height:"1px",background:`${C.tx2}40`}}/>
-            <div style={{position:"absolute",top:"50%",right:"14%",width:"20%",height:"1px",background:`${C.tx2}40`}}/>
-
-            {/* IGLOO-style label top left */}
-            <div style={{position:"absolute",top:10,left:10,fontSize:9,fontFamily:mono,
-              color:C.tx2,letterSpacing:1.5,fontWeight:600,padding:"3px 0 0 0"}}>
-              FORJA
-            </div>
-
+            <div style={{position:"absolute",top:10,left:14,fontSize:9,fontFamily:mono,color:C.tx2,letterSpacing:1.5,fontWeight:600}}>FORJA</div>
+            <div style={{position:"absolute",top:"50%",left:"12%",width:"18%",height:"1px",background:`${C.tx2}30`}}/>
+            <div style={{position:"absolute",top:"50%",right:"12%",width:"18%",height:"1px",background:`${C.tx2}30`}}/>
             {idx<exs.length-1&&(
-              <div style={{position:"absolute",bottom:10,right:10,
-                background:"rgba(180,178,174,0.85)",backdropFilter:"blur(8px)",
-                padding:"3px 10px",borderRadius:20,
-                fontSize:9,fontFamily:mono,color:C.tx2,letterSpacing:1}}>
-                {exs[idx+1]?.e?.toUpperCase().slice(0,14)} →
+              <div style={{position:"absolute",bottom:10,right:10,background:"rgba(180,178,174,0.85)",backdropFilter:"blur(8px)",padding:"3px 10px",borderRadius:20,fontSize:9,fontFamily:mono,color:C.tx2,letterSpacing:1}}>
+                {exs[idx+1]?.e?.toUpperCase().slice(0,16)} →
               </div>
             )}
           </div>
         </div>
 
-        {/* LOG SECTION */}
-        <div onPointerDown={sp} onMouseDown={sp} onTouchStart={sp}
-          style={{padding:"14px 20px 18px",flexShrink:0}}>
+        <div onPointerDown={sp} onMouseDown={sp} onTouchStart={sp} style={{padding:"14px 20px 18px",flexShrink:0}}>
           <div style={{display:"flex",gap:16,alignItems:"flex-end",marginBottom:14}}>
             <NI val={kg} set={setKg} label="KG"/>
             <div style={{color:C.tx3,fontSize:24,fontWeight:200,paddingBottom:14,flexShrink:0}}>×</div>
@@ -332,33 +250,25 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
           <div style={{display:"flex",gap:10}}>
             <button onClick={e=>{sp(e);handleSave();}} onMouseDown={sp}
               style={{flex:1,padding:"16px 0",borderRadius:12,border:`1.5px solid ${(kg||rp)?C.tx:C.border}`,
-                cursor:"pointer",fontFamily:sans,
-                background:(kg||rp)?C.tx:C.card,
-                color:(kg||rp)?C.white:C.tx3,
-                fontSize:12,fontWeight:800,letterSpacing:2,transition:"all 0.2s"}}>
+                cursor:"pointer",fontFamily:sans,background:(kg||rp)?C.tx:C.card,
+                color:(kg||rp)?C.white:C.tx3,fontSize:12,fontWeight:800,letterSpacing:2,transition:"all 0.2s"}}>
               {t.save}
             </button>
             {idx<exs.length-1&&(
               <button onClick={e=>{sp(e);goTo(idx+1);}} onMouseDown={sp}
-                style={{padding:"16px 18px",borderRadius:12,
-                  border:`1.5px solid ${C.border}`,background:C.card,
-                  color:C.tx3,fontSize:13,cursor:"pointer",flexShrink:0}}>
-                →
-              </button>
+                style={{padding:"16px 18px",borderRadius:12,border:`1.5px solid ${C.border}`,background:C.card,color:C.tx3,fontSize:13,cursor:"pointer",flexShrink:0}}>→</button>
             )}
           </div>
           {hist.length>0&&(
             <button onClick={e=>{sp(e);setShowHist(!showHist);}} onMouseDown={sp}
-              style={{background:"none",border:"none",color:C.tx3,fontSize:10,fontFamily:mono,
-                letterSpacing:1.5,cursor:"pointer",padding:"10px 0 0",width:"100%",textAlign:"center"}}>
+              style={{background:"none",border:"none",color:C.tx3,fontSize:10,fontFamily:mono,letterSpacing:1.5,cursor:"pointer",padding:"10px 0 0",width:"100%",textAlign:"center"}}>
               {showHist?t.hideHist:`${t.hist} (${hist.length})`}
             </button>
           )}
           {showHist&&(
             <div style={{marginTop:8,borderTop:`1px solid ${C.borderL}`}}>
               {hist.slice(0,5).map((h,j)=>(
-                <div key={j} style={{display:"flex",justifyContent:"space-between",
-                  padding:"7px 0",borderBottom:`1px solid ${C.borderL}`,fontSize:11,fontFamily:mono}}>
+                <div key={j} style={{display:"flex",justifyContent:"space-between",padding:"7px 0",borderBottom:`1px solid ${C.borderL}`,fontSize:11,fontFamily:mono}}>
                   <span style={{color:C.tx3}}>{h.d}</span>
                   <span style={{color:C.tx,fontWeight:700}}>{h.w}kg × {h.r}</span>
                 </div>
@@ -368,16 +278,13 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
         </div>
       </div>
 
-      {/* PROGRESS BAR */}
       <div style={{height:2,background:C.borderL,flexShrink:0}}>
-        <div style={{height:"100%",background:C.tx,
-          width:`${(totalDone/exs.length)*100}%`,transition:"width 0.5s ease"}}/>
+        <div style={{height:"100%",background:C.tx,width:`${(totalDone/exs.length)*100}%`,transition:"width 0.5s ease"}}/>
       </div>
     </div>
   );
 }
 
-// ── APP ROOT ────────────────────────────────────────────────
 function App(){
   const[lang,setLang]=useState(null);
   const[step,setStep]=useState(0);
@@ -386,23 +293,18 @@ function App(){
   const[ready,setReady]=useState(false);
 
   useEffect(()=>{
-    try{
-      const p=store.get("fv8p");
-      if(p){const d=JSON.parse(p.value);setProfile(d);setLang(d.lang);
-        const r=store.get("fv8r");if(r)setRoutine(JSON.parse(r.value));setStep(99);}
-    }catch(_){}
+    try{const p=store.get("fv8p");if(p){const d=JSON.parse(p.value);setProfile(d);setLang(d.lang);const r=store.get("fv8r");if(r)setRoutine(JSON.parse(r.value));setStep(99);}}catch(_){}
     setReady(true);
   },[]);
 
-  const sp=useCallback(p=>{setProfile(p);store.set("fv8p",JSON.stringify(p));}, []);
-  const sr=useCallback(r=>{setRoutine(r);store.set("fv8r",JSON.stringify(r));}, []);
+  const sp=useCallback(p=>{setProfile(p);store.set("fv8p",JSON.stringify(p));},[]);
+  const sr=useCallback(r=>{setRoutine(r);store.set("fv8r",JSON.stringify(r));},[]);
 
   if(!ready)return <div style={{minHeight:"100vh",background:C.bg}}/>;
   if(step<99)return <Onboard lang={lang} setLang={setLang} step={step} setStep={setStep} sp={sp} sr={sr}/>;
   return <Main lang={lang} setLang={setLang} profile={profile} routine={routine} sp={sp} sr={sr} setStep={setStep}/>;
 }
 
-// ── ONBOARD ─────────────────────────────────────────────────
 function Onboard({lang,setLang,step,setStep,sp,sr}){
   const[goal,setGoal]=useState("");
   const[level,setLevel]=useState("");
@@ -411,36 +313,27 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
   const t=lang?L[lang]:L.en;
 
   const finish=()=>{
-    const tm=TP[split];
-    sp({lang,goal,level,days});
+    const tm=TP[split];sp({lang,goal,level,days});
     const r=Array(7).fill(null);
     tm.s.forEach((s,i)=>{r[i]={...s,ex:s.ex.map((x,j)=>({...x,id:`${i}${j}`}))};});
     sr(r);setStep(99);
   };
 
   const Opt=({active,onClick,children})=>(
-    <button onClick={onClick} style={{
-      width:"100%",padding:"15px 18px",borderRadius:12,
-      border:`1.5px solid ${active?C.tx:C.borderL}`,
-      cursor:"pointer",
-      background:active?C.tx:C.card,
-      color:active?C.white:C.tx2,
-      fontSize:15,fontWeight:active?700:400,fontFamily:sans,
-      textAlign:"left",transition:"all 0.18s",
+    <button onClick={onClick} style={{width:"100%",padding:"15px 18px",borderRadius:12,
+      border:`1.5px solid ${active?C.tx:C.borderL}`,cursor:"pointer",
+      background:active?C.tx:C.card,color:active?C.white:C.tx2,
+      fontSize:15,fontWeight:active?700:400,fontFamily:sans,textAlign:"left",transition:"all 0.18s",
       display:"flex",alignItems:"center",justifyContent:"space-between",
       boxShadow:active?"0 4px 16px rgba(0,0,0,0.12)":"none"}}>
       <span>{children}</span>
       {active&&<div style={{width:7,height:7,borderRadius:"50%",background:C.white}}/>}
     </button>
   );
-
   const Btn=({onClick,disabled,children,ghost})=>(
-    <button onClick={onClick} disabled={disabled} style={{
-      width:"100%",padding:"17px",borderRadius:14,
-      border:`1.5px solid ${ghost?C.border:disabled?C.borderL:C.tx}`,
-      cursor:disabled?"default":"pointer",
-      background:ghost?C.card:disabled?C.cardDim:C.tx,
-      color:ghost?C.tx3:disabled?C.tx3:C.white,
+    <button onClick={onClick} disabled={disabled} style={{width:"100%",padding:"17px",borderRadius:14,
+      border:`1.5px solid ${ghost?C.border:disabled?C.borderL:C.tx}`,cursor:disabled?"default":"pointer",
+      background:ghost?C.card:disabled?C.cardDim:C.tx,color:ghost?C.tx3:disabled?C.tx3:C.white,
       fontSize:14,fontWeight:700,fontFamily:sans,letterSpacing:1.5,transition:"all 0.2s",
       boxShadow:!ghost&&!disabled?"0 6px 24px rgba(0,0,0,0.15)":"none"}}>
       {children}
@@ -451,27 +344,14 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
     <div style={{minHeight:"100vh",background:C.bg,color:C.tx,fontFamily:sans}}>
       {step===0&&(
         <div style={{padding:"0 26px",paddingTop:"13vh",animation:"fogIn 0.8s ease"}}>
-          {/* LOGO */}
           <div style={{marginBottom:56}}>
-            <div style={{
-              fontSize:72,fontWeight:900,letterSpacing:-5,
-              color:C.tx,lineHeight:0.88,fontFamily:sans,
-              textTransform:"uppercase"}}>
-              FOR
-            </div>
-            <div style={{
-              fontSize:72,fontWeight:900,letterSpacing:-5,lineHeight:0.88,
-              color:C.tx,fontFamily:sans,textTransform:"uppercase",
-              WebkitTextStroke:`2px ${C.tx}`,
-              WebkitTextFillColor:"transparent"}}>
-              JA
-            </div>
+            <div style={{fontSize:72,fontWeight:900,letterSpacing:-5,color:C.tx,lineHeight:0.88,fontFamily:sans,textTransform:"uppercase"}}>FOR</div>
+            <div style={{fontSize:72,fontWeight:900,letterSpacing:-5,lineHeight:0.88,fontFamily:sans,textTransform:"uppercase",WebkitTextStroke:`2px ${C.tx}`,WebkitTextFillColor:"transparent"}}>JA</div>
             <div style={{marginTop:16,display:"flex",alignItems:"center",gap:12}}>
               <div style={{height:1,background:C.border,width:40}}/>
               <div style={{fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:3}}>TRAIN · TRACK · EVOLVE</div>
             </div>
           </div>
-
           <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:10}}>// SELECT LANGUAGE</div>
           <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:36}}>
             <Opt active={lang==="es"} onClick={()=>setLang("es")}>Español</Opt>
@@ -480,22 +360,14 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
           <Btn onClick={()=>setStep(1)} disabled={!lang}>{t.next} →</Btn>
         </div>
       )}
-
       {step>=1&&step<=4&&(
         <div style={{padding:"0 26px",paddingTop:"7vh",paddingBottom:40,animation:"fu 0.4s ease"}}>
-          {/* Step bar */}
           <div style={{display:"flex",gap:6,marginBottom:36}}>
-            {[1,2,3,4].map(i=>(
-              <div key={i} style={{height:2,flex:1,borderRadius:1,
-                background:step>=i?C.tx:C.borderL,transition:"all 0.3s"}}/>
-            ))}
+            {[1,2,3,4].map(i=><div key={i} style={{height:2,flex:1,borderRadius:1,background:step>=i?C.tx:C.borderL,transition:"all 0.3s"}}/>)}
           </div>
-
           {step===1&&(<>
             <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{t.goal}</div>
-            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:24,lineHeight:1,textTransform:"uppercase"}}>
-              {lang==="es"?"¿Qué buscas?":"What's your goal?"}
-            </div>
+            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:24,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"¿Qué buscas?":"What's your goal?"}</div>
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
               {[["muscle",t.muscle],["strength",t.strength],["lose",t.lose],["recomp",t.recomp],["general",t.general]].map(([id,lb])=>(
                 <Opt key={id} active={goal===id} onClick={()=>setGoal(id)}>{lb}</Opt>
@@ -506,12 +378,9 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               <div style={{flex:2}}><Btn onClick={()=>setStep(2)} disabled={!goal}>{t.next} →</Btn></div>
             </div>
           </>)}
-
           {step===2&&(<>
             <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{t.level}</div>
-            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:24,lineHeight:1,textTransform:"uppercase"}}>
-              {lang==="es"?"Tu experiencia":"Your experience"}
-            </div>
+            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:24,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"Tu experiencia":"Your experience"}</div>
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
               {[["beg",t.beg],["int",t.int],["adv",t.adv]].map(([id,lb])=>(
                 <Opt key={id} active={level===id} onClick={()=>setLevel(id)}>{lb}</Opt>
@@ -522,23 +391,16 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               <div style={{flex:2}}><Btn onClick={()=>setStep(3)} disabled={!level}>{t.next} →</Btn></div>
             </div>
           </>)}
-
           {step===3&&(<>
             <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{t.days}</div>
-            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:32,lineHeight:1,textTransform:"uppercase"}}>
-              {lang==="es"?"¿Cuántos días?":"How many days?"}
-            </div>
+            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:32,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"¿Cuántos días?":"How many days?"}</div>
             <div style={{display:"flex",gap:10,justifyContent:"center"}}>
               {[3,4,5,6].map(n=>(
-                <button key={n} onClick={()=>setDays(n)} style={{
-                  width:68,height:84,borderRadius:14,
-                  border:`1.5px solid ${days===n?C.tx:C.borderL}`,
-                  cursor:"pointer",background:days===n?C.tx:C.card,
-                  color:days===n?C.white:C.tx2,
+                <button key={n} onClick={()=>setDays(n)} style={{width:68,height:84,borderRadius:14,
+                  border:`1.5px solid ${days===n?C.tx:C.borderL}`,cursor:"pointer",
+                  background:days===n?C.tx:C.card,color:days===n?C.white:C.tx2,
                   fontSize:32,fontWeight:900,fontFamily:sans,transition:"all 0.2s",
-                  boxShadow:days===n?"0 4px 16px rgba(0,0,0,0.15)":"none"}}>
-                  {n}
-                </button>
+                  boxShadow:days===n?"0 4px 16px rgba(0,0,0,0.15)":"none"}}>{n}</button>
               ))}
             </div>
             <div style={{display:"flex",gap:10,marginTop:32}}>
@@ -546,12 +408,9 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               <div style={{flex:2}}><Btn onClick={()=>setStep(4)}>{t.next} →</Btn></div>
             </div>
           </>)}
-
           {step===4&&(<>
             <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{t.split}</div>
-            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:24,lineHeight:1,textTransform:"uppercase"}}>
-              {lang==="es"?"Tu programa":"Your program"}
-            </div>
+            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:24,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"Tu programa":"Your program"}</div>
             <div style={{display:"flex",flexDirection:"column",gap:8}}>
               {Object.entries(TP).map(([k,v])=>(
                 <Opt key={k} active={split===k} onClick={()=>setSplit(k)}>
@@ -573,7 +432,6 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
   );
 }
 
-// ── MAIN ────────────────────────────────────────────────────
 function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   const t=L[lang];
   const[sel,setSel]=useState(()=>{const d=new Date().getDay();return d===0?6:d-1;});
@@ -583,7 +441,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   const[macros,setMacros]=useState({});
   const[inWorkout,setInWorkout]=useState(false);
   const[addEx,setAddEx]=useState(false);
-  const[nex,setNex]=useState({e:"",s:3,r:"8–12"});
+  const[nex,setNex]=useState({e:"",s:3,r:"8-12"});
   const[addF,setAddF]=useState(false);
   const[fd,setFd]=useState({n:"",cal:"",prot:"",carbs:"",fat:"",m:"mid"});
   const[showSet,setShowSet]=useState(false);
@@ -597,12 +455,11 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
     try{const r=store.get(`fv8m:${today}`);if(r)setMacros(JSON.parse(r.value));}catch(_){}
   },[]);
 
-  const sd=useCallback(n=>{setDone(n);store.set(`fv8d:${w}`,JSON.stringify(n));}, [w]);
-  const slg=useCallback(n=>{setLogs(n);store.set("fv8l",JSON.stringify(n));}, []);
-  const sm=useCallback(n=>{setMacros(n);store.set(`fv8m:${today}`,JSON.stringify(n));}, [today]);
+  const sd=useCallback(n=>{setDone(n);store.set(`fv8d:${w}`,JSON.stringify(n));},[w]);
+  const slg=useCallback(n=>{setLogs(n);store.set("fv8l",JSON.stringify(n));},[]);
+  const sm=useCallback(n=>{setMacros(n);store.set(`fv8m:${today}`,JSON.stringify(n));},[today]);
 
   const day=routine?routine[sel]:null;
-  const c=day?day.c:C.tx;
   const exs=day?day.ex:[];
   const dc=exs.filter(x=>done[`${sel}-${x.id}`]).length;
   const pct=exs.length?dc/exs.length:0;
@@ -611,7 +468,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
 
   const toggle=id=>{const k=`${sel}-${id}`;sd({...done,[k]:!done[k]});};
   const saveLog=(id,kg,rp)=>{if(!kg&&!rp)return;const nl={...logs};if(!nl[id])nl[id]=[];nl[id]=[{d:today,w:kg,r:rp},...nl[id]].slice(0,30);slg(nl);};
-  const addExFn=()=>{if(!nex.e||!day)return;const r=[...routine];r[sel].ex=[...r[sel].ex,{...nex,id:`${sel}${Date.now()}`}];sr(r);setAddEx(false);setNex({e:"",s:3,r:"8–12"});};
+  const addExFn=()=>{if(!nex.e||!day)return;const r=[...routine];r[sel].ex=[...r[sel].ex,{...nex,id:`${sel}${Date.now()}`}];sr(r);setAddEx(false);setNex({e:"",s:3,r:"8-12"});};
   const rmEx=id=>{const r=[...routine];r[sel].ex=r[sel].ex.filter(x=>x.id!==id);sr(r);};
   const addFood=()=>{if(!fd.n||!fd.cal)return;const m={...macros};if(!m.entries)m.entries=[];m.entries.push({...fd,id:Date.now()});sm(m);setAddF(false);setFd({n:"",cal:"",prot:"",carbs:"",fat:"",m:"mid"});};
   const rmFood=id=>{const m={...macros};m.entries=(m.entries||[]).filter(x=>x.id!==id);sm(m);};
@@ -619,14 +476,10 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   const Inp=({value,onChange,placeholder,type="text",style:s2={}})=>(
     <input type={type} value={value} onChange={onChange} placeholder={placeholder}
       style={{padding:"12px 14px",borderRadius:10,border:`1.5px solid ${C.borderL}`,
-        background:C.white,color:C.tx,fontSize:14,fontFamily:sans,
-        outline:"none",width:"100%",boxSizing:"border-box",...s2}}
+        background:C.white,color:C.tx,fontSize:14,fontFamily:sans,outline:"none",width:"100%",...s2}}
       onFocus={e=>e.target.style.borderColor=C.tx}
       onBlur={e=>e.target.style.borderColor=C.borderL}/>
   );
-
-  const mealC={am:C.yellow,mid:C.tx,snk:C.blue,pm:C.purple};
-  const macroC=[C.tx,C.green,C.blue,C.purple];
 
   if(inWorkout&&day){
     return <WorkoutScreen day={day} sel={sel} done={done} logs={logs}
@@ -635,21 +488,12 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
 
   return(
     <div style={{minHeight:"100vh",background:C.bg,color:C.tx,fontFamily:sans}}>
-
-      {/* HEADER */}
-      <div style={{background:C.bg,borderBottom:`1px solid ${C.borderL}`,
-        padding:"14px 18px 10px",position:"sticky",top:0,zIndex:10}}>
-
+      <div style={{background:C.bg,borderBottom:`1px solid ${C.borderL}`,padding:"14px 18px 10px",position:"sticky",top:0,zIndex:10}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
           <div>
-            {/* FORJA wordmark */}
             <div style={{fontSize:11,fontFamily:mono,color:C.tx3,letterSpacing:3,marginBottom:2,fontWeight:600}}>FORJA</div>
-            <div style={{fontSize:24,fontWeight:900,letterSpacing:-1,lineHeight:1,textTransform:"uppercase"}}>
-              {day?day.l:t.rest}
-            </div>
-            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:1.5,marginTop:2}}>
-              {DF[lang][sel].toUpperCase()}
-            </div>
+            <div style={{fontSize:24,fontWeight:900,letterSpacing:-1,lineHeight:1,textTransform:"uppercase"}}>{day?day.l:t.rest}</div>
+            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:1.5,marginTop:2}}>{DF[lang][sel].toUpperCase()}</div>
           </div>
           <div style={{display:"flex",alignItems:"flex-start",gap:10,paddingTop:2}}>
             {day&&exs.length>0&&(
@@ -660,68 +504,55 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                 </div>
               </div>
             )}
-            <button onClick={()=>setShowSet(!showSet)}
-              style={{width:30,height:30,borderRadius:8,border:`1.5px solid ${C.borderL}`,
-                background:C.card,cursor:"pointer",color:C.tx3,fontSize:13,
-                display:"flex",alignItems:"center",justifyContent:"center"}}>⚙</button>
+            <button onClick={()=>setShowSet(!showSet)} style={{width:30,height:30,borderRadius:8,border:`1.5px solid ${C.borderL}`,background:C.card,cursor:"pointer",color:C.tx3,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center"}}>⚙</button>
           </div>
         </div>
-
         {showSet&&(
           <div style={{display:"flex",gap:8,marginTop:10,paddingTop:10,borderTop:`1px solid ${C.borderL}`}}>
             <button onClick={()=>{const nl=lang==="es"?"en":"es";setLang(nl);sp({...profile,lang:nl});}}
-              style={{padding:"7px 12px",borderRadius:7,border:`1.5px solid ${C.borderL}`,
-                background:C.card,color:C.tx2,fontSize:10,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>
+              style={{padding:"7px 12px",borderRadius:7,border:`1.5px solid ${C.borderL}`,background:C.card,color:C.tx2,fontSize:10,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>
               {lang==="es"?"EN":"ES"}
             </button>
             <button onClick={()=>{setStep(0);setShowSet(false);}}
-              style={{padding:"7px 12px",borderRadius:7,border:`1.5px solid ${C.borderL}`,
-                background:C.card,color:C.tx2,fontSize:10,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>
+              style={{padding:"7px 12px",borderRadius:7,border:`1.5px solid ${C.borderL}`,background:C.card,color:C.tx2,fontSize:10,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>
               {t.reconfig.toUpperCase()}
             </button>
           </div>
         )}
-
-        {/* DAY PILLS */}
-        <div style={{display:"flex",gap:4,marginTop:10}}>
+        <div style={{display:"flex",gap:4,marginTop:12}}>
           {Array(7).fill(0).map((_,i)=>{
             const d=routine?routine[i]:null,de=d?d.ex:[],dd=de.filter(x=>done[`${i}-${x.id}`]).length;
-            const cp=de.length>0&&dd===de.length,isSel=sel===i;
+            const cp=de.length>0&&dd===de.length,isSel=sel===i,isRest=!d;
             return(
               <button key={i} onClick={()=>{setSel(i);setTab("train");setAddEx(false);setAddF(false);setInWorkout(false);}}
-                style={{flex:1,padding:"7px 0 5px",borderRadius:7,
-                  border:`1.5px solid ${isSel?C.tx:cp?"#1E6B4766":C.borderL}`,
-                  cursor:"pointer",
-                  background:isSel?C.tx:cp?"#1E6B4712":C.card,
-                  color:isSel?C.white:cp?C.green:C.tx3,
-                  fontSize:10,fontWeight:800,fontFamily:mono,letterSpacing:1,
-                  transition:"all 0.2s",textAlign:"center"}}>
-                {DN[lang][i]}
-                {cp&&!isSel&&<div style={{width:3,height:3,borderRadius:"50%",background:C.green,margin:"2px auto 0"}}/>}
+                style={{flex:1,padding:"10px 0 8px",borderRadius:10,
+                  border:`1.5px solid ${isSel?C.tx:cp?C.green+"44":C.borderL}`,cursor:"pointer",
+                  background:isSel?C.tx:cp?C.green+"0D":"transparent",
+                  color:isSel?C.white:cp?C.green:isRest?C.tx3:C.tx2,
+                  transition:"all 0.2s",textAlign:"center",position:"relative",overflow:"hidden"}}>
+                <div style={{fontSize:9,fontWeight:800,fontFamily:mono,letterSpacing:1.5,lineHeight:1}}>{DN[lang][i]}</div>
+                {d&&<div style={{fontSize:7,fontFamily:mono,marginTop:3,opacity:isSel?0.6:0.4,letterSpacing:0.5,padding:"0 2px",overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>{d.l.split(" ")[0]}</div>}
+                {!d&&<div style={{fontSize:7,fontFamily:mono,marginTop:3,opacity:0.3,letterSpacing:0.5}}>REST</div>}
+                {cp&&!isSel&&<div style={{position:"absolute",top:4,right:4,width:4,height:4,borderRadius:"50%",background:C.green}}/>}
+                {isSel&&<div style={{position:"absolute",bottom:0,left:"25%",right:"25%",height:2,background:C.white,borderRadius:1}}/>}
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* TABS */}
       <div style={{display:"flex",borderBottom:`1px solid ${C.borderL}`,padding:"0 18px",background:C.bg}}>
         {[{id:"train",l:t.train},{id:"macros",l:t.macros}].map(tb=>(
           <button key={tb.id} onClick={()=>{setTab(tb.id);setAddEx(false);setAddF(false);}}
             style={{padding:"13px 0",marginRight:22,border:"none",
-              borderBottom:`2px solid ${tab===tb.id?C.tx:"transparent"}`,
-              background:"transparent",
-              color:tab===tb.id?C.tx:C.tx3,
-              fontSize:10,fontWeight:700,fontFamily:mono,letterSpacing:2,
-              cursor:"pointer",transition:"all 0.2s"}}>
+              borderBottom:`2px solid ${tab===tb.id?C.tx:"transparent"}`,background:"transparent",
+              color:tab===tb.id?C.tx:C.tx3,fontSize:10,fontWeight:700,fontFamily:mono,letterSpacing:2,cursor:"pointer",transition:"all 0.2s"}}>
             {tb.l}
           </button>
         ))}
       </div>
 
       <div style={{padding:"14px 18px 90px"}}>
-
-        {/* TRAIN TAB */}
         {tab==="train"&&(
           <div>
             {!day?(
@@ -732,32 +563,58 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
               </div>
             ):(
               <>
-                <button onClick={()=>setInWorkout(true)} style={{
-                  width:"100%",padding:"18px 0",borderRadius:14,
-                  border:`1.5px solid ${C.tx}`,
-                  cursor:"pointer",background:C.tx,color:C.white,
-                  fontSize:12,fontWeight:800,fontFamily:mono,
-                  letterSpacing:2.5,marginBottom:18,
-                  boxShadow:"0 8px 32px rgba(0,0,0,0.18)",
-                  display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
-                  <span style={{fontSize:14}}>▶</span>{t.startWorkout}
-                </button>
-
-                {/* Exercise summary */}
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 0",borderTop:`1px solid ${C.borderL}`,borderBottom:`1px solid ${C.borderL}`}}>
-                  <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2}}>{exs.length} {lang==="es"?"EJERCICIOS":"EXERCISES"}</div>
-                  <div style={{display:"flex",gap:4}}>
-                    {exs.map((_,i)=>{const isDone=done[`${sel}-${exs[i].id}`];return <div key={i} style={{width:6,height:6,borderRadius:2,background:isDone?C.tx:C.borderL,transition:"background 0.2s"}}/>;} )}
+                {/* HERO CARD — alma de la pantalla */}
+                <div onClick={()=>setInWorkout(true)} style={{
+                  width:"100%",borderRadius:22,background:C.tx,cursor:"pointer",
+                  marginBottom:16,padding:"26px 22px 22px",
+                  boxShadow:"0 16px 56px rgba(0,0,0,0.22)",
+                  position:"relative",overflow:"hidden",userSelect:"none"}}>
+                  <div style={{position:"absolute",inset:0,opacity:0.04,
+                    backgroundImage:"url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")",
+                    backgroundSize:"150px"}}/>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:18}}>
+                    <div>
+                      <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,0.35)",letterSpacing:3,marginBottom:7,textTransform:"uppercase"}}>
+                        {DF[lang][sel]}
+                      </div>
+                      <div style={{fontSize:32,fontWeight:900,color:C.white,letterSpacing:-1.5,lineHeight:1,textTransform:"uppercase"}}>
+                        {day.l}
+                      </div>
+                      <div style={{fontSize:10,fontFamily:mono,color:"rgba(255,255,255,0.35)",marginTop:6,letterSpacing:1}}>
+                        {exs.length} {lang==="es"?"ejercicios":"exercises"}
+                      </div>
+                    </div>
+                    <div style={{textAlign:"right",paddingTop:2}}>
+                      <div style={{fontSize:36,fontWeight:900,lineHeight:1,
+                        color:pct===1?"#4ade80":pct>0?"rgba(255,255,255,0.9)":"rgba(255,255,255,0.2)"}}>
+                        {dc}
+                      </div>
+                      <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,0.3)",letterSpacing:1}}>
+                        / {exs.length}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{display:"flex",gap:3,marginBottom:22}}>
+                    {exs.map((ex,i)=>{
+                      const isDone=done[`${sel}-${ex.id}`];
+                      return <div key={i} style={{height:3,flex:1,borderRadius:2,
+                        background:isDone?"rgba(255,255,255,0.85)":"rgba(255,255,255,0.12)",
+                        transition:"background 0.3s"}}/>;
+                    })}
+                  </div>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                    <div style={{fontSize:11,fontWeight:800,fontFamily:mono,letterSpacing:3,color:C.white}}>
+                      {pct===1?(lang==="es"?"COMPLETADO ✓":"COMPLETED ✓"):t.startWorkout}
+                    </div>
+                    <div style={{width:46,height:46,borderRadius:"50%",
+                      background:"rgba(255,255,255,0.1)",border:"1.5px solid rgba(255,255,255,0.2)",
+                      display:"flex",alignItems:"center",justifyContent:"center",
+                      fontSize:15,color:C.white}}>▶</div>
                   </div>
                 </div>
 
                 {!addEx?(
-                  <button onClick={()=>setAddEx(true)} style={{
-                    width:"100%",padding:"13px 0",marginTop:12,borderRadius:10,
-                    border:`1.5px dashed ${C.border}`,background:"transparent",
-                    color:C.tx3,fontSize:10,fontFamily:mono,letterSpacing:2,cursor:"pointer"}}>
-                    {t.addEx}
-                  </button>
+                  <button onClick={()=>setAddEx(true)} style={{width:"100%",padding:"13px 0",marginTop:12,borderRadius:10,border:`1.5px dashed ${C.border}`,background:"transparent",color:C.tx3,fontSize:10,fontFamily:mono,letterSpacing:2,cursor:"pointer"}}>{t.addEx}</button>
                 ):(
                   <div style={{marginTop:12,padding:16,background:C.card,borderRadius:12,border:`1.5px solid ${C.borderL}`}}>
                     <Inp placeholder={t.exName} value={nex.e} onChange={e=>setNex({...nex,e:e.target.value})}/>
@@ -772,39 +629,19 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                       </div>
                     </div>
                     <div style={{display:"flex",gap:8,marginTop:12}}>
-                      <button onClick={()=>setAddEx(false)}
-                        style={{flex:1,padding:11,borderRadius:9,border:`1.5px solid ${C.borderL}`,
-                          background:"transparent",color:C.tx3,fontSize:12,cursor:"pointer",fontFamily:sans}}>
-                        {t.cancel}
-                      </button>
-                      <button onClick={addExFn}
-                        style={{flex:2,padding:11,borderRadius:9,border:"none",
-                          background:C.tx,color:C.white,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:sans}}>
-                        {lang==="es"?"AGREGAR":"ADD"}
-                      </button>
+                      <button onClick={()=>setAddEx(false)} style={{flex:1,padding:11,borderRadius:9,border:`1.5px solid ${C.borderL}`,background:"transparent",color:C.tx3,fontSize:12,cursor:"pointer",fontFamily:sans}}>{t.cancel}</button>
+                      <button onClick={addExFn} style={{flex:2,padding:11,borderRadius:9,border:"none",background:C.tx,color:C.white,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:sans}}>{lang==="es"?"AGREGAR":"ADD"}</button>
                     </div>
                   </div>
                 )}
 
                 <div style={{textAlign:"center",marginTop:22}}>
                   {!confirmR?(
-                    <button onClick={()=>setConfirmR(true)}
-                      style={{background:"none",border:`1px solid ${C.borderL}`,borderRadius:8,
-                        padding:"8px 18px",color:C.tx3,fontSize:9,fontFamily:mono,letterSpacing:2,cursor:"pointer"}}>
-                      {t.reset.toUpperCase()}
-                    </button>
+                    <button onClick={()=>setConfirmR(true)} style={{background:"none",border:`1px solid ${C.borderL}`,borderRadius:8,padding:"8px 18px",color:C.tx3,fontSize:9,fontFamily:mono,letterSpacing:2,cursor:"pointer"}}>{t.reset.toUpperCase()}</button>
                   ):(
                     <div style={{display:"flex",gap:8,justifyContent:"center"}}>
-                      <button onClick={()=>{sd({});setConfirmR(false);}}
-                        style={{padding:"8px 18px",borderRadius:8,border:"none",background:C.tx,
-                          color:C.white,fontSize:9,fontFamily:mono,letterSpacing:2,cursor:"pointer"}}>
-                        {t.yes.toUpperCase()}
-                      </button>
-                      <button onClick={()=>setConfirmR(false)}
-                        style={{padding:"8px 18px",borderRadius:8,border:`1px solid ${C.borderL}`,
-                          background:"transparent",color:C.tx3,fontSize:9,fontFamily:mono,letterSpacing:2,cursor:"pointer"}}>
-                        {t.cancel.toUpperCase()}
-                      </button>
+                      <button onClick={()=>{sd({});setConfirmR(false);}} style={{padding:"8px 18px",borderRadius:8,border:"none",background:C.tx,color:C.white,fontSize:9,fontFamily:mono,letterSpacing:2,cursor:"pointer"}}>{t.yes.toUpperCase()}</button>
+                      <button onClick={()=>setConfirmR(false)} style={{padding:"8px 18px",borderRadius:8,border:`1px solid ${C.borderL}`,background:"transparent",color:C.tx3,fontSize:9,fontFamily:mono,letterSpacing:2,cursor:"pointer"}}>{t.cancel.toUpperCase()}</button>
                     </div>
                   )}
                 </div>
@@ -813,15 +650,13 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
           </div>
         )}
 
-        {/* MACROS TAB */}
         {tab==="macros"&&(
           <div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
               {[{v:tot.cal,mx:mt.cal,c:C.tx,l:t.cal,u:"kcal"},{v:tot.prot,mx:mt.prot,c:C.green,l:t.prot,u:"g"},{v:tot.carbs,mx:mt.carbs,c:C.blue,l:t.carbs,u:"g"},{v:tot.fat,mx:mt.fat,c:C.purple,l:t.fat,u:"g"}].map((r,i)=>{
                 const left=r.mx-r.v,p2=Math.min(r.v/r.mx,1);
                 return(
-                  <div key={i} style={{padding:"14px",background:C.card,borderRadius:12,border:`1px solid ${C.borderL}`,
-                    boxShadow:"inset 0 1px 0 rgba(255,255,255,0.5)"}}>
+                  <div key={i} style={{padding:"14px",background:C.card,borderRadius:12,border:`1px solid ${C.borderL}`,boxShadow:"inset 0 1px 0 rgba(255,255,255,0.5)"}}>
                     <div style={{fontSize:9,fontFamily:mono,color:r.c,letterSpacing:2,marginBottom:6,fontWeight:600}}>{r.l}</div>
                     <div style={{fontSize:26,fontWeight:800,color:r.v>r.mx?C.red:C.tx}}>{r.v}</div>
                     <div style={{fontSize:9,fontFamily:mono,color:C.tx3,marginBottom:8}}>{r.u} / {r.mx}</div>
@@ -836,48 +671,37 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
               })}
             </div>
 
-            {entries.map(f=>(
-              <div key={f.id} style={{display:"flex",alignItems:"center",padding:"12px 0",
-                borderBottom:`1px solid ${C.borderL}`,gap:12}}>
-                <div style={{width:3,height:32,borderRadius:2,background:mealC[f.m]||C.tx3,flexShrink:0}}/>
-                <div style={{flex:1}}>
-                  <div style={{fontSize:14,fontWeight:600}}>{f.n}</div>
-                  <div style={{display:"flex",gap:8,marginTop:2}}>
-                    <span style={{fontSize:10,fontFamily:mono,color:C.tx2}}>{f.cal}kcal</span>
-                    <span style={{fontSize:10,fontFamily:mono,color:C.green}}>{f.prot}P</span>
-                    <span style={{fontSize:10,fontFamily:mono,color:C.blue}}>{f.carbs}C</span>
-                    <span style={{fontSize:10,fontFamily:mono,color:C.purple}}>{f.fat}F</span>
+            {entries.map(f=>{
+              const mc={am:C.yellow,mid:C.tx,snk:C.blue,pm:C.purple};
+              return(
+                <div key={f.id} style={{display:"flex",alignItems:"center",padding:"12px 0",borderBottom:`1px solid ${C.borderL}`,gap:12}}>
+                  <div style={{width:3,height:32,borderRadius:2,background:mc[f.m]||C.tx3,flexShrink:0}}/>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:14,fontWeight:600}}>{f.n}</div>
+                    <div style={{display:"flex",gap:8,marginTop:2}}>
+                      <span style={{fontSize:10,fontFamily:mono,color:C.tx2}}>{f.cal}kcal</span>
+                      <span style={{fontSize:10,fontFamily:mono,color:C.green}}>{f.prot}P</span>
+                      <span style={{fontSize:10,fontFamily:mono,color:C.blue}}>{f.carbs}C</span>
+                      <span style={{fontSize:10,fontFamily:mono,color:C.purple}}>{f.fat}F</span>
+                    </div>
                   </div>
+                  <button onClick={()=>rmFood(f.id)} style={{background:"none",border:"none",color:C.tx3,fontSize:16,cursor:"pointer"}}>×</button>
                 </div>
-                <button onClick={()=>rmFood(f.id)}
-                  style={{background:"none",border:"none",color:C.tx3,fontSize:16,cursor:"pointer"}}>×</button>
-              </div>
-            ))}
+              );
+            })}
 
             {entries.length===0&&!addF&&(
-              <div style={{textAlign:"center",padding:"40px 0",fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:2}}>
-                // 0 KCAL LOGGED
-              </div>
+              <div style={{textAlign:"center",padding:"40px 0",fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:2}}>// 0 KCAL LOGGED</div>
             )}
 
             {!addF?(
-              <button onClick={()=>setAddF(true)} style={{
-                width:"100%",padding:"13px 0",marginTop:10,borderRadius:10,
-                border:`1.5px dashed ${C.border}`,background:"transparent",
-                color:C.green,fontSize:10,fontFamily:mono,letterSpacing:2,cursor:"pointer"}}>
-                {t.addFood}
-              </button>
+              <button onClick={()=>setAddF(true)} style={{width:"100%",padding:"13px 0",marginTop:10,borderRadius:10,border:`1.5px dashed ${C.border}`,background:"transparent",color:C.green,fontSize:10,fontFamily:mono,letterSpacing:2,cursor:"pointer"}}>{t.addFood}</button>
             ):(
               <div style={{marginTop:12,padding:16,background:C.card,borderRadius:12,border:`1.5px solid ${C.borderL}`}}>
                 <Inp placeholder={t.what} value={fd.n} onChange={e=>setFd({...fd,n:e.target.value})}/>
                 <div style={{display:"flex",gap:5,marginTop:8}}>
                   {[["am",t.am],["mid",t.mid],["snk",t.snk],["pm",t.pm]].map(([k,lb])=>(
-                    <button key={k} onClick={()=>setFd({...fd,m:k})} style={{
-                      flex:1,padding:"8px 0",borderRadius:7,
-                      border:`1.5px solid ${fd.m===k?C.tx:C.borderL}`,
-                      background:fd.m===k?C.tx:"transparent",
-                      color:fd.m===k?C.white:C.tx3,
-                      fontSize:9,fontFamily:mono,cursor:"pointer",transition:"all 0.15s"}}>
+                    <button key={k} onClick={()=>setFd({...fd,m:k})} style={{flex:1,padding:"8px 0",borderRadius:7,border:`1.5px solid ${fd.m===k?C.tx:C.borderL}`,background:fd.m===k?C.tx:"transparent",color:fd.m===k?C.white:C.tx3,fontSize:9,fontFamily:mono,cursor:"pointer",transition:"all 0.15s"}}>
                       {lb.slice(0,3).toUpperCase()}
                     </button>
                   ))}
@@ -886,22 +710,13 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                   {[["cal","KCAL",C.tx],["prot","P",C.green],["carbs","C",C.blue],["fat","F",C.purple]].map(([k,lb,clr])=>(
                     <div key={k} style={{flex:1}}>
                       <div style={{fontSize:9,color:clr,fontFamily:mono,letterSpacing:1,textAlign:"center",marginBottom:3,fontWeight:600}}>{lb}</div>
-                      <Inp type="number" value={fd[k]} onChange={e=>setFd({...fd,[k]:e.target.value})}
-                        style={{textAlign:"center",fontSize:16,fontWeight:800,padding:9}}/>
+                      <Inp type="number" value={fd[k]} onChange={e=>setFd({...fd,[k]:e.target.value})} style={{textAlign:"center",fontSize:16,fontWeight:800,padding:9}}/>
                     </div>
                   ))}
                 </div>
                 <div style={{display:"flex",gap:8,marginTop:12}}>
-                  <button onClick={()=>setAddF(false)}
-                    style={{flex:1,padding:11,borderRadius:9,border:`1.5px solid ${C.borderL}`,
-                      background:"transparent",color:C.tx3,fontSize:10,fontFamily:mono,cursor:"pointer"}}>
-                    CANCEL
-                  </button>
-                  <button onClick={addFood}
-                    style={{flex:2,padding:11,borderRadius:9,border:"none",background:C.tx,
-                      color:C.white,fontSize:10,fontFamily:mono,fontWeight:700,cursor:"pointer",letterSpacing:1}}>
-                    {t.save}
-                  </button>
+                  <button onClick={()=>setAddF(false)} style={{flex:1,padding:11,borderRadius:9,border:`1.5px solid ${C.borderL}`,background:"transparent",color:C.tx3,fontSize:10,fontFamily:mono,cursor:"pointer"}}>CANCEL</button>
+                  <button onClick={addFood} style={{flex:2,padding:11,borderRadius:9,border:"none",background:C.tx,color:C.white,fontSize:10,fontFamily:mono,fontWeight:700,cursor:"pointer",letterSpacing:1}}>{t.save}</button>
                 </div>
               </div>
             )}
