@@ -330,6 +330,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
 
   // ── Session timer ──
   const[sessSecs,setSessSecs]=useState(0);
+  const[finalSecs,setFinalSecs]=useState(0);
   useEffect(()=>{const t=setInterval(()=>setSessSecs(s=>s+1),1000);return()=>clearInterval(t);},[]);
 
   // ── Rest countdown ──
@@ -399,7 +400,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
     }
     // Check all done
     const allDone=ns.every(e=>e.every(s=>s.done));
-    if(allDone) setTimeout(()=>setAllDone(true),700);
+    if(allDone) setTimeout(()=>{setFinalSecs(sessSecs);setAllDone(true);},700);
   }
 
   function addSet(ei){
@@ -459,7 +460,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
     ((sessSecs<3600)?((Math.floor(sessSecs/60)<10?'0':'')+Math.floor(sessSecs/60)+':'+(sessSecs%60<10?'0':'')+sessSecs%60):"59:59");
   const arcNumColor=restActive?(restSecs<=10?C2.red:restSecs<=30?C2.yellow:C2.tx):C2.tx3;
 
-  const fmtSess=()=>{const m=Math.floor(sessSecs/60),s=sessSecs%60;return(m<10?'0':'')+m+':'+(s<10?'0':'')+s;};
+  const fmtSess=()=>{const s=allDone?finalSecs:sessSecs;const m=Math.floor(s/60),sec=s%60;return(m<10?'0':'')+m+':'+(sec<10?'0':'')+sec;};
 
   // ── msgs must be outside conditional — React rules of hooks ──
   const celebMsgs=lang==="es"?["¡Lo aplastaste hoy!","¡Brutal, crack!","¡Sesión completada!"]:["You crushed it!","Absolutely brutal!","Session complete!"];
@@ -1576,13 +1577,11 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     cam.position.set(0,0,10);
 
     const TOTAL=pts2d.length;
-    const DISP=Math.floor(TOTAL*1.2);
+    const DISP=Math.floor(TOTAL*8); // explosión masiva
     const pos=new Float32Array(TOTAL*3);
     const col=new Float32Array(TOTAL*3);
     const posD=new Float32Array(DISP*3);
     const colD=new Float32Array(DISP*3);
-    // Per-dispersed particle: unique velocity direction + distance
-    const velD=new Float32Array(DISP*3);
 
     const scaleX=aspect*1.02, scaleY=0.92;
 
@@ -1597,23 +1596,17 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
     for(let i=0;i<DISP;i++){
       const src=pts2d[Math.floor(Math.random()*TOTAL)];
-      // Organic explosion: each particle goes in its own direction
-      // with strong upward bias so they reach the top
+      // Explosive organic spread — strong upward bias to reach top
       const baseAng=Math.random()*Math.PI*2;
-      // upward bias: pull angle toward top
-      const upBias=Math.PI*0.5; // straight up
-      const blend=Math.pow(Math.random(),0.6); // more particles upward
-      const ang=baseAng*(1-blend)+upBias*blend + (Math.random()-0.5)*1.2;
-      const eD=Math.pow(Math.random(),0.25)*3.5; // reach much further
+      const upBias=Math.PI*0.5;
+      const blend=Math.pow(Math.random(),0.5);
+      const ang=baseAng*(1-blend)+upBias*blend+(Math.random()-0.5)*1.8;
+      const eD=Math.pow(Math.random(),0.18)*7.0; // llega al tope y más allá
       posD[i*3  ]=src.x*scaleX+Math.cos(ang)*eD;
       posD[i*3+1]=src.y*scaleY+Math.sin(ang)*eD;
-      posD[i*3+2]=(Math.random()-0.5)*0.4;
-      // Store velocity for animation jitter
-      velD[i*3  ]=( Math.random()-0.5)*0.003;
-      velD[i*3+1]=(Math.random()-0.5)*0.003;
-      velD[i*3+2]=0;
-      const fadeT=eD/3.5;
-      const op=Math.max(0,1-fadeT*0.88);
+      posD[i*3+2]=(Math.random()-0.5)*0.5;
+      const fadeT=eD/7.0;
+      const op=Math.max(0,1-fadeT*0.78);
       colD[i*3  ]=0.94*op+0.22*(1-op);
       colD[i*3+1]=0.96*op+0.243*(1-op);
       colD[i*3+2]=1.0*op+0.306*(1-op);
@@ -1627,29 +1620,29 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     const geoD=new THREE.BufferGeometry();
     geoD.setAttribute("position",new THREE.BufferAttribute(posD,3));
     geoD.setAttribute("color",new THREE.BufferAttribute(colD,3));
-    const matD=new THREE.PointsMaterial({size:0.010,vertexColors:true,transparent:true,opacity:0.72,sizeAttenuation:true});
+    const matD=new THREE.PointsMaterial({size:0.018,vertexColors:true,transparent:true,opacity:0.90,sizeAttenuation:true});
     const ptsD=new THREE.Points(geoD,matD);
     scene.add(ptsD);
 
-    // Per-particle phase offsets for organic drift
-    const phases=new Float32Array(DISP).map(()=>Math.random()*Math.PI*2);
-    const speeds=new Float32Array(DISP).map(()=>0.3+Math.random()*0.7);
-    const amps  =new Float32Array(DISP).map(()=>0.008+Math.random()*0.018);
+    // Per-particle phase + speed para movimiento notorio e independiente
+    const phases=Array.from({length:DISP},()=>Math.random()*Math.PI*2);
+    const speeds=Array.from({length:DISP},()=>0.6+Math.random()*1.4); // más rápido
+    const amps  =Array.from({length:DISP},()=>0.04+Math.random()*0.08); // muy notorio
 
     let t=0,animId;
-    const posD0=new Float32Array(posD); // original positions
+    const posD0=new Float32Array(posD);
     function animate(){
       animId=requestAnimationFrame(animate);
-      t+=0.005;
-      // Core FORJA text: subtle wobble
+      t+=0.006;
+      // Texto FORJA: wobble sutil
       scene.children[0].rotation.x=Math.sin(t*0.35)*0.04;
       scene.children[0].rotation.z=Math.sin(t*0.22)*0.012;
-      // Dispersed: each particle drifts independently
+      // Partículas dispersas: drift independiente y notorio
       const arr=geoD.attributes.position.array;
       for(let i=0;i<DISP;i++){
         const ph=phases[i], sp=speeds[i], am=amps[i];
         arr[i*3  ]=posD0[i*3  ]+Math.sin(t*sp+ph)*am;
-        arr[i*3+1]=posD0[i*3+1]+Math.cos(t*sp*0.7+ph)*am*0.6;
+        arr[i*3+1]=posD0[i*3+1]+Math.cos(t*sp*0.7+ph)*am*0.7;
         arr[i*3+2]=posD0[i*3+2];
       }
       geoD.attributes.position.needsUpdate=true;
