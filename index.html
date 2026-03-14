@@ -1633,7 +1633,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     const scene=new THREE.Scene();
     const camera=new THREE.PerspectiveCamera(44,aspect,0.1,500);
     // Vista lateral baja — disco de canto como en la película
-    camera.position.set(0,0.2,7.0);
+    camera.position.set(0,0.05,7.2);
     camera.lookAt(0,-0.5,0);
 
     // ── Paleta Gargantua film-accurate ───────────────────────────────
@@ -1650,9 +1650,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       return[Math.min(1,r*boost*dim),Math.min(1,(g+blue*0.04)*boost*dim),Math.min(1,(b+blue)*boost*dim)];
     }
 
-    // Gargantua — disco queda por debajo de las piernas del mono
-    const G=1.00;
-    const BH_Y=-1.20; // bien abajo — disco a la altura de las piernas/base
+    // Gargantua — valores calibrados en prototipo interactivo
+    const G=1.10;
+    const BH_Y=-1.08;
 
     // ── DISCO PRINCIPAL ───────────────────────────────────────────────
     const DISC_N=80000;
@@ -1799,9 +1799,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       // Escala uniforme para no distorsionar
       // Con cámara z=6.5 FOV 44°, frustum ~±2.4 en Y
       // sX=sY=1.10 → figura ~2.2 units — ocupa bien el canvas
-      const sX=1.10, sY=1.10;
-      // Figura centrada — piernas justo sobre el disco
-      const FIG_Y=-0.10;
+      const sX=1.38, sY=1.38;
+      const FIG_Y=0.25;
       const CORE=Math.min(pts2d.length*4,80000);
       const DISP=Math.floor(CORE*0.35);
       const pos=new Float32Array((CORE+DISP)*3),col=new Float32Array((CORE+DISP)*3);
@@ -1865,7 +1864,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
         // Cámara: leve órbita
         camera.position.x=Math.sin(T*0.022)*0.4;
-        camera.position.y=0.2+Math.sin(T*0.035)*0.10;
+        camera.position.y=0.05+Math.sin(T*0.035)*0.10;
         camera.lookAt(0,-0.5,0);
 
         renderer.render(scene,camera);
