@@ -983,7 +983,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                 }}>
                   <canvas
                     id="forja-meditation-canvas"
-                    data-gender={profile&&profile.gender==="female"?"female":"male"}
+                    data-gender={(profile&&profile.gender==="female")?"female":(profile&&profile.gender==="nonbinary")?(Math.random()>.5?"male":"female"):"male"}
                     style={{
                       width:"100%",height:"100%",display:"block",
                       marginLeft:"-12%",width:"124%", // disco sobresale en los lados
@@ -1358,10 +1358,10 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>
               {lang==="es"?"GÉNERO":"GENDER"}
             </div>
-            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:32,lineHeight:1,textTransform:"uppercase"}}>
+            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:28,lineHeight:1,textTransform:"uppercase"}}>
               {lang==="es"?"Selecciona tu género":"Select your gender"}
             </div>
-            <div style={{display:"flex",gap:14,marginBottom:32}}>
+            <div style={{display:"flex",gap:12,marginBottom:12}}>
               {[
                 {key:"male",   label:lang==="es"?"Hombre":"Man",
                   img:"https://forjavideos.b-cdn.net/Firefly%20silver%20chrome%20muscular%20man%20sitting%20in%20lotus%20meditation%20pose%2C%20pure%20solid%20black%20background%2C%20no.jpg"},
@@ -1369,7 +1369,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                   img:"https://forjavideos.b-cdn.net/Firefly%20silver%20chrome%20athletic%20female%20figure%20sitting%20in%20lotus%20meditation%20pose%2C%20pure%20solid%20black%20back.jpg"},
               ].map(({key,label,img})=>(
                 <button key={key} onClick={()=>setGender(key)} style={{
-                  flex:1,borderRadius:16,overflow:"hidden",cursor:"pointer",padding:0,
+                  flex:1,borderRadius:14,overflow:"hidden",cursor:"pointer",padding:0,
                   border:`2px solid ${gender===key?C.tx:C.borderL}`,
                   background:"transparent",position:"relative",
                   transition:"border-color .2s",outline:"none",
@@ -1378,17 +1378,32 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                   <div style={{
                     position:"absolute",bottom:0,left:0,right:0,
                     background:"linear-gradient(transparent,rgba(20,24,36,.88))",
-                    padding:"20px 0 12px",
-                    fontSize:11,fontWeight:700,fontFamily:mono,letterSpacing:2,
+                    padding:"16px 0 10px",
+                    fontSize:10,fontWeight:700,fontFamily:mono,letterSpacing:2,
                     color:gender===key?C.tx:C.tx2,textTransform:"uppercase",
                     transition:"color .2s",
                   }}>{label}</div>
                   {gender===key&&(
-                    <div style={{position:"absolute",top:10,right:10,width:20,height:20,borderRadius:"50%",background:C.tx,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11}}>✓</div>
+                    <div style={{position:"absolute",top:8,right:8,width:18,height:18,borderRadius:"50%",background:C.tx,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10}}>✓</div>
                   )}
                 </button>
               ))}
             </div>
+            {/* Opción no-binaria — diseño de fila de texto */}
+            <button onClick={()=>setGender("nonbinary")} style={{
+              width:"100%",padding:"14px 18px",borderRadius:14,cursor:"pointer",
+              border:`2px solid ${gender==="nonbinary"?C.tx:C.borderL}`,
+              background:gender==="nonbinary"?"rgba(240,242,245,.06)":"transparent",
+              display:"flex",alignItems:"center",justifyContent:"space-between",
+              transition:"all .2s",outline:"none",marginBottom:28,
+            }}>
+              <span style={{fontSize:13,fontWeight:600,color:gender==="nonbinary"?C.tx:C.tx2,fontFamily:sans}}>
+                {lang==="es"?"Prefiero no definir":"Prefer not to say"}
+              </span>
+              {gender==="nonbinary"&&(
+                <div style={{width:18,height:18,borderRadius:"50%",background:C.tx,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10}}>✓</div>
+              )}
+            </button>
             <div style={{display:"flex",gap:10}}>
               <div style={{flex:1}}><Btn ghost onClick={()=>setStep(0)}>{t.back}</Btn></div>
               <div style={{flex:2}}><Btn onClick={()=>setStep(2)} disabled={!gender}>{t.next}</Btn></div>
