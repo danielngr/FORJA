@@ -1633,8 +1633,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     const scene=new THREE.Scene();
     const camera=new THREE.PerspectiveCamera(44,aspect,0.1,500);
     // Vista lateral baja — disco de canto como en la película
-    camera.position.set(0,0.4,6.5);
-    camera.lookAt(0,-0.2,0);
+    camera.position.set(0,0.2,7.0);
+    camera.lookAt(0,-0.5,0);
 
     // ── Paleta Gargantua film-accurate ───────────────────────────────
     function diskColor(norm,doppler){
@@ -1650,9 +1650,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       return[Math.min(1,r*boost*dim),Math.min(1,(g+blue*0.04)*boost*dim),Math.min(1,(b+blue)*boost*dim)];
     }
 
-    // Gargantua — grande, disco llega y sobrepasa los bordes del canvas
-    const G=1.20;
-    const BH_Y=-0.55;
+    // Gargantua — disco queda por debajo de las piernas del mono
+    const G=1.00;
+    const BH_Y=-1.20; // bien abajo — disco a la altura de las piernas/base
 
     // ── DISCO PRINCIPAL ───────────────────────────────────────────────
     const DISC_N=80000;
@@ -1800,8 +1800,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       // Con cámara z=6.5 FOV 44°, frustum ~±2.4 en Y
       // sX=sY=1.10 → figura ~2.2 units — ocupa bien el canvas
       const sX=1.10, sY=1.10;
-      // Figura centrada ligeramente arriba del agujero negro
-      const FIG_Y=0.15;
+      // Figura centrada — piernas justo sobre el disco
+      const FIG_Y=-0.10;
       const CORE=Math.min(pts2d.length*4,80000);
       const DISP=Math.floor(CORE*0.35);
       const pos=new Float32Array((CORE+DISP)*3),col=new Float32Array((CORE+DISP)*3);
@@ -1865,8 +1865,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
         // Cámara: leve órbita
         camera.position.x=Math.sin(T*0.022)*0.4;
-        camera.position.y=0.4+Math.sin(T*0.035)*0.10;
-        camera.lookAt(0,-0.2,0);
+        camera.position.y=0.2+Math.sin(T*0.035)*0.10;
+        camera.lookAt(0,-0.5,0);
 
         renderer.render(scene,camera);
       }
