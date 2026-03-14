@@ -1603,7 +1603,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
   const FEMALE_URL=BASE+"Firefly%20athletic%20man%20sitting%20in%20lotus%20meditation%20pose%2C%20smooth%20polished%20liquid%20silver%20mercury%20body%2C%20p.jpg";
   const MALE_FB="https://i.imgur.com/ldscGFx.jpeg";
   const FEMALE_FB="https://i.imgur.com/wd5KvKF.jpeg";
-  const BG={r:56/255,g:62/255,b:78/255}; // #383e4e FORJA bg
+  const BG={r:56/255,g:62/255,b:78/255};
 
   function tryInit(){
     const canvas=document.getElementById("forja-meditation-canvas");
@@ -1619,13 +1619,13 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
     renderer.setSize(W,H);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
-    renderer.setClearColor(0x000000,0); // fondo transparente = color de página
+    renderer.setClearColor(0x000000,0);
 
     const scene=new THREE.Scene();
     const camera=new THREE.PerspectiveCamera(52,aspect,0.1,100);
     camera.position.set(0,0,3.0);
 
-    // ── PARTÍCULAS FLOTANTES — plata/blanco cerca, dorado en bordes ──────
+    // ── PARTÍCULAS FLOTANTES — plata/blanco cerca, dorado suave lejos ────
     const FLOAT_N=4000;
     const fPos=new Float32Array(FLOAT_N*3);
     const fCol=new Float32Array(FLOAT_N*3);
@@ -1644,7 +1644,6 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       fPos[i*3  ]=Math.cos(fAng[i])*fRad[i];
       fPos[i*3+1]=fY0[i];
       fPos[i*3+2]=Math.sin(fAng[i])*fRad[i]*0.3;
-      // Plata pura cerca → dorado suave lejos
       const norm=Math.min(fRad[i]/1.6,1);
       const br=0.45+Math.random()*0.55;
       fCol[i*3  ]=(1.00          )*br;
@@ -1660,7 +1659,6 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     });
     scene.add(new THREE.Points(fGeo,fMat));
 
-    // ── FIGURA ────────────────────────────────────────────────────────────
     let figPts=null, t=0, animId=null;
 
     function loadImg(url,fb){
@@ -1688,56 +1686,65 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
           const i=(y*OW+x)*4;
           const r=data[i],g=data[i+1],b=data[i+2];
           const br=r*0.299+g*0.587+b*0.114;
-          if(br>90) pts2d.push({
-            nx:((x/OW)*2-1),
-            ny:(1-(y/OH)*2),
-            r:r/255, g:g/255, b:b/255,
-            br:br/255
-          });
+
+          // FILTRO PRECISO: solo píxeles plateados/neutros de la figura
+          // Excluir rayos dorados (R>>G>>B) y fondo oscuro
+          const isNeutral = Math.abs(r-g)<40 && Math.abs(g-b)<50; // gris neutro
+          const notGolden = r < g*1.35; // no es dorado (rayos tienen R>>G)
+          const bright    = br > 95;    // suficientemente brillante
+
+          if(isNeutral && notGolden && bright){
+            pts2d.push({
+              nx:((x/OW)*2-1),
+              ny:(1-(y/OH)*2),
+              r:r/255, g:g/255, b:b/255,
+              br:br/255
+            });
+          }
         }
       }
+
       if(!pts2d.length){startAnim();return;}
 
       const sX=aspect*0.86, sY=0.90;
-      const CORE=Math.min(pts2d.length*4,80000);
-      const DISP=Math.floor(CORE*0.45);
+      const CORE=Math.min(pts2d.length*5,90000);
+      const DISP=Math.floor(CORE*0.40);
       const TOTAL=CORE+DISP;
       const pos=new Float32Array(TOTAL*3);
       const col=new Float32Array(TOTAL*3);
 
-      // CORE — COLORES 100% ORIGINALES de la imagen, sin ningún tinte
+      // CORE: silueta plateada con colores 100% originales
       for(let i=0;i<CORE;i++){
         const p=pts2d[Math.floor(Math.random()*pts2d.length)];
         pos[i*3  ]=p.nx*sX+(Math.random()-0.5)*0.008;
         pos[i*3+1]=p.ny*sY+(Math.random()-0.5)*0.008;
         pos[i*3+2]=(Math.random()-0.5)*0.06;
-        // Sin modificación de color — exactamente como en la imagen
+        // Colores originales — plata brillante
         col[i*3  ]=p.r;
         col[i*3+1]=p.g;
         col[i*3+2]=p.b;
       }
 
-      // DISP — partículas que salen, fade al bg de FORJA
+      // DISP: chispas que salen, fade a bg FORJA
       for(let i=0;i<DISP;i++){
         const idx=CORE+i;
         const p=pts2d[Math.floor(Math.random()*pts2d.length)];
         const sx=p.nx*sX, sy=p.ny*sY;
         const len=Math.sqrt(sx*sx+sy*sy)+0.001;
         const eD=Math.pow(Math.random(),0.22)*3.5;
-        const spread=0.85;
-        const dx=(sx/len)+(Math.random()-0.5)*spread;
-        const dy=(sy/len)+(Math.random()-0.5)*spread;
+        const dx=(sx/len)+(Math.random()-0.5)*0.85;
+        const dy=(sy/len)+(Math.random()-0.5)*0.85;
         const dz=(Math.random()-0.5)*0.5;
         const dlen=Math.sqrt(dx*dx+dy*dy+dz*dz)+0.001;
         pos[idx*3  ]=sx+(dx/dlen)*eD;
         pos[idx*3+1]=sy+(dy/dlen)*eD;
         pos[idx*3+2]=(dz/dlen)*eD;
-        // Fade desde el color original → bg #383e4e
         const fade=Math.min(eD/3.5,1);
         const op=Math.pow(1-fade,2.0);
-        col[idx*3  ]=p.r*op+BG.r*(1-op);
-        col[idx*3+1]=p.g*op+BG.g*(1-op);
-        col[idx*3+2]=p.b*op+BG.b*(1-op);
+        // Chispas doradas que salen de la plata
+        col[idx*3  ]=0.95*op+BG.r*(1-op);
+        col[idx*3+1]=0.72*op+BG.g*(1-op);
+        col[idx*3+2]=0.18*op+BG.b*(1-op);
       }
 
       const geo=new THREE.BufferGeometry();
@@ -1761,7 +1768,6 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
           figPts.rotation.y=Math.sin(t*0.18)*0.05;
           figPts.rotation.x=Math.sin(t*0.13)*0.012;
         }
-        // Partículas flotantes: orbitan + bobble
         const arr=fGeo.attributes.position.array;
         for(let i=0;i<FLOAT_N;i++){
           fAng[i]+=fSp[i]*0.003;
@@ -1787,7 +1793,6 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
   setInterval(tryInit,300);
 })();
 </script>
-(function initLogoParticles(){
   function tryInit(){
     const canvas=document.getElementById("forja-logo-canvas");
     if(!canvas||!window.THREE) return;
