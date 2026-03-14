@@ -1962,6 +1962,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     const W=window.innerWidth||canvas.offsetWidth||360;
     const H=window.innerHeight||canvas.offsetHeight||640;
 
+    const OW=800,OH=200; // canvas offscreen para renderizar "FORJA"
     const off=document.createElement("canvas");
     off.width=OW; off.height=OH;
     const ctx=off.getContext("2d");
