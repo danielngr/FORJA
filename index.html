@@ -1616,143 +1616,191 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     const W=canvas.offsetWidth||340;
     const H=canvas.offsetHeight||300;
 
-    const renderer=new THREE.WebGLRenderer({canvas,antialias:false,alpha:true});
+    // Fondo sólido oscuro — NO alpha, así el renderer pinta el fondo espectral
+    const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false});
     renderer.setSize(W,H);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
-    renderer.setClearColor(0x000000,0);
+    renderer.setClearColor(0x05080f,1); // azul noche profundo
 
     const scene=new THREE.Scene();
-    const camera=new THREE.PerspectiveCamera(46,W/H,0.1,100);
-    camera.position.set(0,0,4.2);
+    const camera=new THREE.PerspectiveCamera(52,W/H,0.1,100);
+    camera.position.set(0,0,3.0);
 
-    function buildFromImage(url, fallback){
+    // ── FONDO ESPECTRAL: capas de partículas nebulosas ──────────────────
+    function addNebulaLayer(count,radiusMin,radiusMax,r,g,b,opacityBase,size){
+      const pos=new Float32Array(count*3);
+      const col=new Float32Array(count*3);
+      for(let i=0;i<count;i++){
+        const theta=Math.random()*Math.PI*2;
+        const phi=Math.acos(2*Math.random()-1);
+        const rad=radiusMin+Math.random()*(radiusMax-radiusMin);
+        pos[i*3  ]=rad*Math.sin(phi)*Math.cos(theta);
+        pos[i*3+1]=rad*Math.sin(phi)*Math.sin(theta)*0.6; // aplanar en Y
+        pos[i*3+2]=rad*Math.cos(phi)*0.3-1.5; // empujar atrás
+        const brightness=0.3+Math.random()*0.7;
+        col[i*3  ]=r*brightness;
+        col[i*3+1]=g*brightness;
+        col[i*3+2]=b*brightness;
+      }
+      const geo=new THREE.BufferGeometry();
+      geo.setAttribute("position",new THREE.BufferAttribute(pos,3));
+      geo.setAttribute("color",new THREE.BufferAttribute(col,3));
+      const mat=new THREE.PointsMaterial({size,vertexColors:true,transparent:true,opacity:opacityBase,sizeAttenuation:true,depthWrite:false});
+      scene.add(new THREE.Points(geo,mat));
+    }
+    // Capas nebulosas: profundo azul-púrpura → dorado central
+    addNebulaLayer(3000, 1.8, 4.0, 0.08, 0.05, 0.25, 0.55, 0.025); // nebulosa azul lejana
+    addNebulaLayer(2000, 1.2, 3.0, 0.15, 0.08, 0.35, 0.50, 0.020); // púrpura
+    addNebulaLayer(1500, 0.8, 2.0, 0.40, 0.20, 0.05, 0.60, 0.018); // naranja mediano
+    addNebulaLayer(1000, 0.4, 1.2, 0.70, 0.45, 0.08, 0.65, 0.016); // dorado cercano
+    addNebulaLayer(600,  0.1, 0.6, 0.95, 0.80, 0.30, 0.70, 0.014); // blanco dorado centro
+
+    // ── RAYOS DE LUZ desde el pecho: geometría de líneas ────────────────
+    const rayCount=18;
+    const rayPositions=new Float32Array(rayCount*2*3);
+    const rayColors=new Float32Array(rayCount*2*3);
+    for(let i=0;i<rayCount;i++){
+      const ang=(i/rayCount)*Math.PI*2 + (Math.random()-0.5)*0.3;
+      const len=0.8+Math.random()*1.6;
+      const ox=0.0, oy=0.05; // origen: pecho
+      // Start
+      rayPositions[i*6  ]=ox; rayPositions[i*6+1]=oy; rayPositions[i*6+2]=-0.05;
+      // End
+      rayPositions[i*6+3]=ox+Math.cos(ang)*len;
+      rayPositions[i*6+4]=oy+Math.sin(ang)*len*0.7;
+      rayPositions[i*6+5]=-0.1;
+      // Color: dorado brillante en origen, fade transparente
+      const intensity=0.4+Math.random()*0.4;
+      rayColors[i*6  ]=intensity*0.95; rayColors[i*6+1]=intensity*0.72; rayColors[i*6+2]=intensity*0.12;
+      rayColors[i*6+3]=0.05; rayColors[i*6+4]=0.03; rayColors[i*6+5]=0.01;
+    }
+    const rayGeo=new THREE.BufferGeometry();
+    rayGeo.setAttribute("position",new THREE.BufferAttribute(rayPositions,3));
+    rayGeo.setAttribute("color",new THREE.BufferAttribute(rayColors,3));
+    const rayMat=new THREE.LineBasicMaterial({vertexColors:true,transparent:true,opacity:0.45,linewidth:1});
+    scene.add(new THREE.LineSegments(rayGeo,rayMat));
+
+    // ── FIGURA: partículas sampledas de la imagen ────────────────────────
+    function buildFromImage(url,fallback){
       const img=new Image();
       img.crossOrigin="anonymous";
-      img.onload=()=>build(img);
+      img.onload=()=>buildFigure(img);
       img.onerror=()=>{
-        if(fallback){
-          const img2=new Image();
-          img2.crossOrigin="anonymous";
-          img2.onload=()=>build(img2);
-          img2.onerror=()=>buildFallback();
-          img2.src=fallback;
-        } else buildFallback();
+        if(fallback){const i2=new Image();i2.crossOrigin="anonymous";i2.onload=()=>buildFigure(i2);i2.onerror=()=>startAnim();i2.src=fallback;}
+        else startAnim();
       };
       img.src=url;
     }
 
-    function buildFallback(){
-      // Si no carga ninguna imagen, muestra solo partículas dispersas
-      buildParticles([],W,H);
-    }
+    let figPts=null, t=0, animId;
 
-    function build(img){
-      const OW=200, OH=200;
+    function buildFigure(img){
+      // Samplear a resolución más alta para mejor silueta
+      const OW=300, OH=300;
       const off=document.createElement("canvas");
       off.width=OW; off.height=OH;
       const ctx=off.getContext("2d");
       ctx.drawImage(img,0,0,OW,OH);
       const data=ctx.getImageData(0,0,OW,OH).data;
 
-      // Samplear píxeles brillantes (la figura es clara, fondo oscuro)
       const pts2d=[];
-      for(let y=0;y<OH;y+=2){
-        for(let x=0;x<OW;x+=2){
+      for(let y=0;y<OH;y+=1){ // paso 1 — captura cada píxel
+        for(let x=0;x<OW;x+=1){
           const i=(y*OW+x)*4;
           const r=data[i], g=data[i+1], b=data[i+2];
           const brightness=(r*0.299+g*0.587+b*0.114);
-          if(brightness>85){ // umbral: captura figura brillante
-            // Normalizar a [-1,1] × [-1,1]
-            const nx=((x/OW)*2-1);
-            const ny=(1-(y/OH)*2);
-            // Guardar color original normalizado
+          // Umbral: solo la figura brillante (>100), excluye fondo oscuro (<50)
+          if(brightness>100){
             pts2d.push({
-              nx, ny,
+              nx:((x/OW)*2-1),
+              ny:(1-(y/OH)*2),
               r:r/255, g:g/255, b:b/255,
-              bright:brightness/255
+              br:brightness/255
             });
           }
         }
       }
-      buildParticles(pts2d,W,H);
-    }
 
-    function buildParticles(pts2d,W,H){
-      if(pts2d.length===0){
-        // Fallback: esfera de partículas
-        for(let i=0;i<500;i++) pts2d.push({nx:(Math.random()-0.5)*2,ny:(Math.random()-0.5)*2,r:.8,g:.6,b:.2,bright:.7});
-      }
+      if(pts2d.length===0){ startAnim(); return; }
 
+      // Escala: llenar el canvas. aspect=W/H
       const aspect=W/H;
-      // Escalar X para aspect ratio del canvas
-      const scaleX=aspect*0.92, scaleY=0.92;
+      // La imagen es cuadrada, el canvas no — escalar proporcionalmente
+      const sX=aspect*0.88, sY=0.90;
 
-      const CORE=Math.min(pts2d.length*8, 55000);
-      const DISP=Math.floor(CORE*0.85);
+      const CORE=Math.min(pts2d.length*4, 70000);
+      const DISP=Math.floor(CORE*0.6);
       const TOTAL=CORE+DISP;
       const pos=new Float32Array(TOTAL*3);
       const col=new Float32Array(TOTAL*3);
 
-      // CORE — forma de la figura
+      // CORE: silueta densa
       for(let i=0;i<CORE;i++){
         const p=pts2d[Math.floor(Math.random()*pts2d.length)];
-        const jx=(Math.random()-0.5)*0.025;
-        const jy=(Math.random()-0.5)*0.025;
-        const jz=(Math.random()-0.5)*0.08;
-        pos[i*3  ]=p.nx*scaleX+jx;
-        pos[i*3+1]=p.ny*scaleY+jy;
+        const jx=(Math.random()-0.5)*0.018;
+        const jy=(Math.random()-0.5)*0.018;
+        const jz=(Math.random()-0.5)*0.12;
+        pos[i*3  ]=p.nx*sX+jx;
+        pos[i*3+1]=p.ny*sY+jy;
         pos[i*3+2]=jz;
-        // Color: usar el color original de la imagen, con boost de brillo
-        const boost=0.3+p.bright*0.7;
-        const depth=0.7+((jz+0.04)/0.08)*0.3;
-        col[i*3  ]=Math.min(1, p.r*boost*depth);
-        col[i*3+1]=Math.min(1, p.g*boost*depth*0.85); // leve tinte dorado
-        col[i*3+2]=Math.min(1, p.b*boost*depth*0.5);  // reducir azul → más dorado
+        // Preservar colores reales de la imagen con ligero boost dorado
+        const boost=0.5+p.br*0.6;
+        col[i*3  ]=Math.min(1,p.r*boost);
+        col[i*3+1]=Math.min(1,p.g*boost*0.88);
+        col[i*3+2]=Math.min(1,p.b*boost*0.55);
       }
 
-      // DISP — explosión radial desde la figura
+      // DISP: explosión orgánica hacia afuera
       for(let i=0;i<DISP;i++){
         const idx=CORE+i;
         const p=pts2d[Math.floor(Math.random()*pts2d.length)];
-        const sx=p.nx*scaleX, sy=p.ny*scaleY;
+        const sx=p.nx*sX, sy=p.ny*sY;
         const len=Math.sqrt(sx*sx+sy*sy)+0.001;
-        const nx=sx/len, ny=sy/len;
-        const eD=Math.pow(Math.random(),0.35)*6.5;
-        const spread=1.3;
-        const dx=nx+(Math.random()-0.5)*spread;
-        const dy=ny+(Math.random()-0.5)*spread;
-        const dz=(Math.random()-0.5)*spread;
+        const eD=Math.pow(Math.random(),0.3)*5.0;
+        const spread=1.2;
+        const dx=(sx/len)+(Math.random()-0.5)*spread;
+        const dy=(sy/len)+(Math.random()-0.5)*spread;
+        const dz=(Math.random()-0.5)*0.8;
         const dlen=Math.sqrt(dx*dx+dy*dy+dz*dz)+0.001;
         pos[idx*3  ]=sx+(dx/dlen)*eD;
         pos[idx*3+1]=sy+(dy/dlen)*eD;
         pos[idx*3+2]=(dz/dlen)*eD;
-        const fadeT=eD/6.5;
-        const op=Math.max(0,1.0-fadeT*0.88);
-        // Fade dorado → bg
-        col[idx*3  ]=0.85*op+0.22*(1-op);
-        col[idx*3+1]=0.62*op+0.24*(1-op); // dorado
-        col[idx*3+2]=0.10*op+0.31*(1-op);
+        const fadeT=eD/5.0;
+        const op=Math.max(0,1.0-fadeT*0.90);
+        col[idx*3  ]=0.90*op+0.03*(1-op);
+        col[idx*3+1]=0.65*op+0.04*(1-op);
+        col[idx*3+2]=0.10*op+0.12*(1-op);
       }
 
       const geo=new THREE.BufferGeometry();
       geo.setAttribute("position",new THREE.BufferAttribute(pos,3));
-      geo.setAttribute("color",   new THREE.BufferAttribute(col,3));
-      const mat=new THREE.PointsMaterial({size:0.016,vertexColors:true,transparent:true,opacity:0.90,sizeAttenuation:true});
-      const pts=new THREE.Points(geo,mat);
-      scene.add(pts);
+      geo.setAttribute("color",new THREE.BufferAttribute(col,3));
+      const mat=new THREE.PointsMaterial({
+        size:0.012, vertexColors:true,
+        transparent:true, opacity:0.92,
+        sizeAttenuation:true, depthWrite:false
+      });
+      figPts=new THREE.Points(geo,mat);
+      scene.add(figPts);
+      startAnim();
+    }
 
-      let t=0,animId;
+    function startAnim(){
       function animate(){
         animId=requestAnimationFrame(animate);
         t+=0.004;
-        pts.position.y=Math.sin(t*0.5)*0.04; // breathing
-        pts.rotation.y=Math.sin(t*0.25)*0.10;
-        pts.rotation.x=Math.sin(t*0.18)*0.02;
+        if(figPts){
+          figPts.position.y=Math.sin(t*0.45)*0.045; // breathing
+          figPts.rotation.y=Math.sin(t*0.22)*0.08;
+          figPts.rotation.x=Math.sin(t*0.15)*0.018;
+        }
+        // Rayos pulsantes
+        rayMat.opacity=0.30+Math.sin(t*0.8)*0.18;
         renderer.render(scene,camera);
       }
       animate();
       document.addEventListener("visibilitychange",()=>{
-        if(document.hidden) cancelAnimationFrame(animId); else animate();
+        if(document.hidden) cancelAnimationFrame(animId); else startAnim();
       });
     }
 
