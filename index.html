@@ -1879,6 +1879,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 <script>
 (function initLogoParticles(){
   function tryInit(){
+    const canvas=document.getElementById("forja-logo-canvas");
     if(!canvas||!window.THREE) return;
     if(canvas.dataset.linit) return;
     canvas.dataset.linit="1";
