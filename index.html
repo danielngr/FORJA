@@ -1629,9 +1629,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
     const scene=new THREE.Scene();
     const camera=new THREE.PerspectiveCamera(40,aspect,0.1,500);
-    // Vista: ligeramente elevada, como en la película
-    camera.position.set(0,1.8,11);
-    camera.lookAt(0,0,0);
+    // Vista lateral baja — se ve el disco de canto como en la película
+    camera.position.set(0,0.9,11);
+    camera.lookAt(0,-0.2,0);
 
     // Paleta film-accurate
     function diskColor(norm,doppler){
@@ -1667,7 +1667,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     // Escala del agujero negro — pequeño para que el mono sea protagonista
     // Radio base: 1.0 (horizonte), disco de 1.4 a 5.5
     // Posicionado ligeramente abajo para que el mono quede encima
-    const BH_Y=-0.4; // bajar el centro del agujero negro
+    const BH_Y=-0.65; // agujero negro más abajo — mono medita encima
 
     // ── DISCO PRINCIPAL — muy tenue, no compite con el mono ──────────
     const DISC_N=55000;
@@ -1774,7 +1774,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     const bSp=new Float32Array(BEAM_N);
     const bT0=new Float32Array(BEAM_N);
     const bOffset=new Float32Array(BEAM_N).map(()=>Math.random()*Math.PI*2);
-    const srcX=0, srcY=1.45;
+    const srcX=0, srcY=1.35;
     for(let r=0;r<RAY_COUNT;r++){
       const frac=(r/(RAY_COUNT-1))-0.5;
       const baseAng=-Math.PI*0.5+frac*Math.PI*1.22;
@@ -1934,10 +1934,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
         fGeo.attributes.position.needsUpdate=true;
         fMat.opacity=0.45+0.12*Math.sin(T*0.55);
 
-        // Cámara: leve órbita
+        // Cámara: leve órbita, mantiene vista lateral baja
         camera.position.x=Math.sin(T*0.025)*0.5;
-        camera.position.y=1.8+Math.sin(T*0.04)*0.20;
-        camera.lookAt(0,0,0);
+        camera.position.y=0.9+Math.sin(T*0.04)*0.15;
+        camera.lookAt(0,-0.2,0);
 
         renderer.render(scene,camera);
       }
