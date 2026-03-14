@@ -1609,7 +1609,6 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
   const FEMALE_URL=BASE+"Firefly%20silver%20chrome%20athletic%20female%20figure%20sitting%20in%20lotus%20meditation%20pose%2C%20pure%20solid%20black%20back.jpg";
   const MALE_FB="https://i.imgur.com/ldscGFx.jpeg";
   const FEMALE_FB="https://i.imgur.com/wd5KvKF.jpeg";
-  const BG={r:56/255,g:62/255,b:78/255};
 
   function tryInit(){
     const canvas=document.getElementById("forja-meditation-canvas");
@@ -1618,125 +1617,219 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     canvas.dataset.minit="1";
 
     const gender=canvas.dataset.gender||"male";
-    const W=canvas.offsetWidth||340;
-    const H=canvas.offsetHeight||300;
+    const W=canvas.offsetWidth||380;
+    const H=canvas.offsetHeight||400;
     const aspect=W/H;
 
-    const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+    // Fondo negro — Gargantua se ve sobre él, luego el mono encima
+    const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false});
     renderer.setSize(W,H);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
-    renderer.setClearColor(0x000000,0);
+    renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+    renderer.setClearColor(0x00000a,1);
 
     const scene=new THREE.Scene();
-    const camera=new THREE.PerspectiveCamera(52,aspect,0.1,100);
-    camera.position.set(0,0,3.0);
+    const camera=new THREE.PerspectiveCamera(40,aspect,0.1,500);
+    // Vista: ligeramente elevada, como en la película
+    camera.position.set(0,1.8,11);
+    camera.lookAt(0,0,0);
 
-    // ── PARTÍCULAS FLOTANTES — plata/blanco cerca, dorado suave lejos ────
-    const FLOAT_N=6000;
-    const fPos=new Float32Array(FLOAT_N*3);
-    const fCol=new Float32Array(FLOAT_N*3);
-    const fAng=new Float32Array(FLOAT_N);
-    const fRad=new Float32Array(FLOAT_N);
-    const fY0 =new Float32Array(FLOAT_N);
-    const fPh =new Float32Array(FLOAT_N);
-    const fSp =new Float32Array(FLOAT_N);
-
-    for(let i=0;i<FLOAT_N;i++){
-      fAng[i]=Math.random()*Math.PI*2;
-      fRad[i]=0.10+Math.pow(Math.random(),0.35)*2.4; // más espacio
-      fY0[i] =-1.4+Math.random()*2.8;
-      fPh[i] =Math.random()*Math.PI*2;
-      fSp[i] =0.10+Math.random()*0.50;
-      fPos[i*3  ]=Math.cos(fAng[i])*fRad[i];
-      fPos[i*3+1]=fY0[i];
-      fPos[i*3+2]=Math.sin(fAng[i])*fRad[i]*0.3;
-      const norm=Math.min(fRad[i]/2.4,1);
-      const br=0.40+Math.random()*0.60;
-      fCol[i*3  ]=(1.00          )*br;
-      fCol[i*3+1]=(1.00-norm*0.28)*br;
-      fCol[i*3+2]=(0.95-norm*0.72)*br;
+    // Paleta film-accurate
+    function diskColor(norm,doppler){
+      let r,g,b;
+      if(norm<0.05){r=1.00;g=0.97;b=0.90;}
+      else if(norm<0.18){r=1.00;g=0.95;b=0.80;}
+      else if(norm<0.35){r=1.00;g=0.88;b=0.65;}
+      else if(norm<0.55){r=0.98;g=0.78;b=0.45;}
+      else if(norm<0.75){r=0.82;g=0.52;b=0.22;}
+      else{r=0.52;g=0.25;b=0.08;}
+      const brightSide=Math.max(0,doppler);
+      const darkSide=Math.max(0,-doppler);
+      const boost=1.0+brightSide*1.8;
+      const dim=1.0-darkSide*0.72;
+      const blueShift=brightSide*0.10;
+      return[Math.min(1,r*boost*dim),Math.min(1,(g+blueShift*0.04)*boost*dim),Math.min(1,(b+blueShift)*boost*dim)];
     }
-    const fGeo=new THREE.BufferGeometry();
-    fGeo.setAttribute("position",new THREE.BufferAttribute(fPos,3));
-    fGeo.setAttribute("color",new THREE.BufferAttribute(fCol,3));
-    const fMat=new THREE.PointsMaterial({
-      size:0.019,vertexColors:true,transparent:true,
-      opacity:0.60,sizeAttenuation:true,depthWrite:false
-    });
-    scene.add(new THREE.Points(fGeo,fMat));
 
-    // ── LUZ DIVINA DESDE ARRIBA — haz de partículas que baja del cielo ──
-    // Columna de partículas concentrada que cae sobre el mono
-    // ── RAYOS DE SOL ORGÁNICOS — parten de un punto alto, se expanden ──
-    // No líneas rectas — distribución volumétrica por rayo, con jitter
-    const RAY_COUNT=14; // número de rayos
-    const PTS_PER_RAY=220; // partículas por rayo
-    const BEAM_N=RAY_COUNT*PTS_PER_RAY;
+    // ── ESTRELLAS tenues ─────────────────────────────────────────────
+    {
+      const N=1800,p=new Float32Array(N*3),c=new Float32Array(N*3);
+      for(let i=0;i<N;i++){
+        const th=Math.random()*Math.PI*2,ph=Math.acos(2*Math.random()-1),r=60+Math.random()*100;
+        p[i*3]=Math.sin(ph)*Math.cos(th)*r;p[i*3+1]=Math.sin(ph)*Math.sin(th)*r;p[i*3+2]=Math.cos(ph)*r;
+        const b=0.08+Math.random()*0.28;c[i*3]=b;c[i*3+1]=b;c[i*3+2]=b+(Math.random()-0.5)*0.08;
+      }
+      const g=new THREE.BufferGeometry();
+      g.setAttribute('position',new THREE.BufferAttribute(p,3));
+      g.setAttribute('color',new THREE.BufferAttribute(c,3));
+      scene.add(new THREE.Points(g,new THREE.PointsMaterial({size:0.14,vertexColors:true,transparent:true,opacity:0.55,sizeAttenuation:true})));
+    }
+
+    // Escala del agujero negro — pequeño para que el mono sea protagonista
+    // Radio base: 1.0 (horizonte), disco de 1.4 a 5.5
+    // Posicionado ligeramente abajo para que el mono quede encima
+    const BH_Y=-0.4; // bajar el centro del agujero negro
+
+    // ── DISCO PRINCIPAL — muy tenue, no compite con el mono ──────────
+    const DISC_N=55000;
+    const dPos=new Float32Array(DISC_N*3);
+    const dCol=new Float32Array(DISC_N*3);
+    const dAng=new Float32Array(DISC_N);
+    const dRad=new Float32Array(DISC_N);
+    for(let i=0;i<DISC_N;i++){
+      const r=1.4+Math.pow(Math.random(),0.38)*4.2;
+      const ang=Math.random()*Math.PI*2;
+      const thick=(Math.random()-0.5)*Math.exp(-(r-1.4)*1.5)*0.06;
+      dPos[i*3  ]=Math.cos(ang)*r;
+      dPos[i*3+1]=thick+BH_Y;
+      dPos[i*3+2]=Math.sin(ang)*r;
+      dAng[i]=ang; dRad[i]=r;
+      const norm=Math.min((r-1.4)/4.2,1);
+      const doppler=Math.sin(ang-Math.PI*0.55);
+      const[cr,cg,cb]=diskColor(norm,doppler);
+      const br=(0.25+Math.random()*0.55)*(1-norm*0.68); // más tenue
+      dCol[i*3]=cr*br; dCol[i*3+1]=cg*br; dCol[i*3+2]=cb*br;
+    }
+    const dGeo=new THREE.BufferGeometry();
+    dGeo.setAttribute('position',new THREE.BufferAttribute(dPos,3));
+    dGeo.setAttribute('color',new THREE.BufferAttribute(dCol,3));
+    const disc=new THREE.Points(dGeo,new THREE.PointsMaterial({size:0.038,vertexColors:true,transparent:true,opacity:0.82,sizeAttenuation:true,depthWrite:false}));
+    scene.add(disc);
+
+    // ── PHOTON RING ──────────────────────────────────────────────────
+    {
+      const N=6000,p=new Float32Array(N*3),c=new Float32Array(N*3);
+      for(let i=0;i<N;i++){
+        const ang=Math.random()*Math.PI*2;
+        const r=1.32+Math.random()*0.09;
+        p[i*3]=Math.cos(ang)*r; p[i*3+1]=(Math.random()-0.5)*0.016+BH_Y; p[i*3+2]=Math.sin(ang)*r;
+        const doppler=Math.sin(ang-Math.PI*0.55);
+        const boost=1.0+Math.max(0,doppler)*2.0;
+        const blueShift=Math.max(0,doppler)*0.15;
+        const br=Math.min(1,(0.55+Math.random()*0.45)*boost);
+        c[i*3]=br; c[i*3+1]=br*(0.93+blueShift*0.04); c[i*3+2]=br*(0.78+blueShift);
+      }
+      const g=new THREE.BufferGeometry();
+      g.setAttribute('position',new THREE.BufferAttribute(p,3));
+      g.setAttribute('color',new THREE.BufferAttribute(c,3));
+      scene.add(new THREE.Points(g,new THREE.PointsMaterial({size:0.085,vertexColors:true,transparent:true,opacity:0.95,sizeAttenuation:true,depthWrite:false})));
+    }
+
+    // ── ARCO SUPERIOR ────────────────────────────────────────────────
+    {
+      const N=22000,p=new Float32Array(N*3),c=new Float32Array(N*3);
+      for(let i=0;i<N;i++){
+        const r=1.45+Math.pow(Math.random(),0.44)*3.8;
+        const ang=Math.random()*Math.PI*2;
+        const norm=Math.min((r-1.45)/3.8,1);
+        const h=0.42+Math.exp(-(r-1.45)*0.72)*1.35+(Math.random()-0.5)*0.045;
+        p[i*3  ]=Math.cos(ang)*r*0.97;
+        p[i*3+1]=h+BH_Y;
+        p[i*3+2]=Math.sin(ang)*r*0.15;
+        const doppler=Math.sin(ang-Math.PI*0.55);
+        const[cr,cg,cb]=diskColor(norm*1.1,doppler*0.8);
+        const br=(0.18+Math.random()*0.38)*(1-norm*0.80);
+        c[i*3]=Math.min(1,cr*br); c[i*3+1]=Math.min(1,cg*br); c[i*3+2]=Math.min(1,cb*br);
+      }
+      const g=new THREE.BufferGeometry();
+      g.setAttribute('position',new THREE.BufferAttribute(p,3));
+      g.setAttribute('color',new THREE.BufferAttribute(c,3));
+      scene.add(new THREE.Points(g,new THREE.PointsMaterial({size:0.036,vertexColors:true,transparent:true,opacity:0.80,sizeAttenuation:true,depthWrite:false})));
+    }
+
+    // ── ARCO INFERIOR ────────────────────────────────────────────────
+    {
+      const N=9000,p=new Float32Array(N*3),c=new Float32Array(N*3);
+      for(let i=0;i<N;i++){
+        const r=1.5+Math.pow(Math.random(),0.5)*2.8;
+        const ang=Math.random()*Math.PI*2;
+        const norm=Math.min((r-1.5)/2.8,1);
+        const h=-(0.28+Math.exp(-(r-1.5)*0.9)*0.72+(Math.random()-0.5)*0.03);
+        p[i*3]=Math.cos(ang)*r*0.95; p[i*3+1]=h+BH_Y; p[i*3+2]=Math.sin(ang)*r*0.12;
+        const doppler=Math.sin(ang-Math.PI*0.55);
+        const[cr,cg,cb]=diskColor(norm*1.2,doppler*0.6);
+        const br=(0.10+Math.random()*0.25)*(1-norm*0.85);
+        c[i*3]=Math.min(1,cr*br); c[i*3+1]=Math.min(1,cg*br); c[i*3+2]=Math.min(1,cb*br);
+      }
+      const g=new THREE.BufferGeometry();
+      g.setAttribute('position',new THREE.BufferAttribute(p,3));
+      g.setAttribute('color',new THREE.BufferAttribute(c,3));
+      scene.add(new THREE.Points(g,new THREE.PointsMaterial({size:0.034,vertexColors:true,transparent:true,opacity:0.65,sizeAttenuation:true,depthWrite:false})));
+    }
+
+    // ── ESFERA NEGRA ─────────────────────────────────────────────────
+    const sphere=new THREE.Mesh(
+      new THREE.SphereGeometry(1.28,64,64),
+      new THREE.MeshBasicMaterial({color:0x000000})
+    );
+    sphere.position.y=BH_Y;
+    scene.add(sphere);
+
+    // ── FIGURA: partículas sampledas de la imagen ────────────────────
+    let figPts=null, T=0, animId=null;
+
+    // Rayos de sol orgánicos
+    const RAY_COUNT=14, PTS_PER_RAY=180, BEAM_N=RAY_COUNT*PTS_PER_RAY;
     const bPos=new Float32Array(BEAM_N*3);
     const bCol=new Float32Array(BEAM_N*3);
-    const bSp =new Float32Array(BEAM_N);
-    const bT0 =new Float32Array(BEAM_N); // posición en el rayo (0=origen, 1=punta)
-
-    // Punto de origen: encima de la cabeza
-    const srcX=0, srcY=1.55;
-
-    // Ángulos de los rayos: abanico desde -70° a +70° centrado hacia abajo
-    // Los rayos del centro son más verticales, los laterales más oblicuos
+    const bSp=new Float32Array(BEAM_N);
+    const bT0=new Float32Array(BEAM_N);
+    const bOffset=new Float32Array(BEAM_N).map(()=>Math.random()*Math.PI*2);
+    const srcX=0, srcY=1.45;
     for(let r=0;r<RAY_COUNT;r++){
-      const frac=(r/(RAY_COUNT-1))-0.5; // -0.5 a +0.5
-      // Ángulo: 0=abajo, ±PI/2=horizontal. Abanico de 140° total
-      const baseAng=-Math.PI*0.5 + frac*Math.PI*1.22; // -70° a +70° desde vertical
-      // Longitud varía: centro más largo, laterales más cortos
-      const rayLen=1.8 - Math.abs(frac)*0.9;
-
+      const frac=(r/(RAY_COUNT-1))-0.5;
+      const baseAng=-Math.PI*0.5+frac*Math.PI*1.22;
+      const rayLen=1.6-Math.abs(frac)*0.8;
       for(let p=0;p<PTS_PER_RAY;p++){
         const idx=r*PTS_PER_RAY+p;
-        // t: posición a lo largo del rayo (0=origen arriba, 1=punta)
-        const t=Math.pow(Math.random(),0.6); // más densidad cerca del origen
+        const t=Math.pow(Math.random(),0.6);
         bT0[idx]=t;
-
-        // Posición a lo largo del rayo con jitter orgánico
-        const jitterAng=baseAng+(Math.random()-0.5)*0.18; // variación angular
-        const jitterLen=rayLen*(0.85+Math.random()*0.30); // variación de longitud
-        const px=srcX+Math.sin(jitterAng)*t*jitterLen;
-        const py=srcY+Math.cos(jitterAng)*t*jitterLen; // cos para que 0°=abajo
-        const pz=(Math.random()-0.5)*0.08*(1+t); // más profundidad lejos
-
-        bPos[idx*3  ]=px;
-        bPos[idx*3+1]=py;
-        bPos[idx*3+2]=pz;
-        bSp[idx]=0.008+Math.random()*0.018; // velocidad de fade
-
-        // Color: blanco puro en origen → dorado suave → desvanece
-        const bright=(0.7+Math.random()*0.3)*(1-t*0.85);
-        const warm=t*0.45; // más cálido lejos del origen
-        bCol[idx*3  ]=bright;
-        bCol[idx*3+1]=bright*(1-warm*0.10);
-        bCol[idx*3+2]=bright*(1-warm*0.60);
+        const jitterAng=baseAng+(Math.random()-0.5)*0.18;
+        const jitterLen=rayLen*(0.85+Math.random()*0.30);
+        bPos[idx*3  ]=srcX+Math.sin(jitterAng)*t*jitterLen;
+        bPos[idx*3+1]=srcY+Math.cos(jitterAng)*t*jitterLen;
+        bPos[idx*3+2]=(Math.random()-0.5)*0.08*(1+t);
+        bSp[idx]=0.008+Math.random()*0.018;
+        const bright=(0.65+Math.random()*0.35)*(1-t*0.88);
+        const warm=t*0.38;
+        bCol[idx*3]=bright; bCol[idx*3+1]=bright*(1-warm*0.10); bCol[idx*3+2]=bright*(1-warm*0.58);
       }
     }
     const bGeo=new THREE.BufferGeometry();
-    bGeo.setAttribute("position",new THREE.BufferAttribute(bPos,3));
-    bGeo.setAttribute("color",new THREE.BufferAttribute(bCol,3));
-    const bMat=new THREE.PointsMaterial({
-      size:0.012,vertexColors:true,transparent:true,
-      opacity:0.55,sizeAttenuation:true,depthWrite:false
-    });
+    bGeo.setAttribute('position',new THREE.BufferAttribute(bPos,3));
+    bGeo.setAttribute('color',new THREE.BufferAttribute(bCol,3));
     const bPos0=new Float32Array(bPos);
-    // Offset inicial aleatorio por partícula para que no pulsen todas juntas
-    const bOffset=new Float32Array(BEAM_N).map(()=>Math.random()*Math.PI*2);
+    const bMat=new THREE.PointsMaterial({size:0.011,vertexColors:true,transparent:true,opacity:0.48,sizeAttenuation:true,depthWrite:false});
     scene.add(new THREE.Points(bGeo,bMat));
 
-    let figPts=null, t=0, animId=null;
+    // Partículas flotantes
+    const FLOAT_N=3500;
+    const fPos=new Float32Array(FLOAT_N*3),fCol=new Float32Array(FLOAT_N*3);
+    const fAng=new Float32Array(FLOAT_N),fRad=new Float32Array(FLOAT_N);
+    const fY0=new Float32Array(FLOAT_N),fPh=new Float32Array(FLOAT_N),fSp=new Float32Array(FLOAT_N);
+    for(let i=0;i<FLOAT_N;i++){
+      fAng[i]=Math.random()*Math.PI*2;
+      fRad[i]=0.10+Math.pow(Math.random(),0.35)*2.0;
+      fY0[i]=-1.2+Math.random()*2.6;
+      fPh[i]=Math.random()*Math.PI*2;
+      fSp[i]=0.10+Math.random()*0.50;
+      fPos[i*3]=Math.cos(fAng[i])*fRad[i];
+      fPos[i*3+1]=fY0[i];
+      fPos[i*3+2]=Math.sin(fAng[i])*fRad[i]*0.3;
+      const norm=Math.min(fRad[i]/2.0,1);
+      const br=0.38+Math.random()*0.52;
+      fCol[i*3]=(1.00)*br; fCol[i*3+1]=(1.00-norm*0.28)*br; fCol[i*3+2]=(0.95-norm*0.72)*br;
+    }
+    const fGeo=new THREE.BufferGeometry();
+    fGeo.setAttribute('position',new THREE.BufferAttribute(fPos,3));
+    fGeo.setAttribute('color',new THREE.BufferAttribute(fCol,3));
+    const fMat=new THREE.PointsMaterial({size:0.017,vertexColors:true,transparent:true,opacity:0.55,sizeAttenuation:true,depthWrite:false});
+    scene.add(new THREE.Points(fGeo,fMat));
 
     function loadImg(url,fb){
       const img=new Image();
       img.crossOrigin="anonymous";
       img.onload=()=>buildFigure(img);
-      img.onerror=()=>{
-        if(fb){const i2=new Image();i2.crossOrigin="anonymous";i2.onload=()=>buildFigure(i2);i2.onerror=()=>startAnim();i2.src=fb;}
-        else startAnim();
-      };
+      img.onerror=()=>{if(fb){const i2=new Image();i2.crossOrigin="anonymous";i2.onload=()=>buildFigure(i2);i2.onerror=()=>startAnim();i2.src=fb;}else startAnim();};
       img.src=url;
     }
 
@@ -1747,119 +1840,105 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       const ctx=off.getContext("2d");
       ctx.drawImage(img,0,0,OW,OH);
       const data=ctx.getImageData(0,0,OW,OH).data;
-
       const pts2d=[];
-      // Recortar: 8% superior (espacio vacío) y 14% inferior (reflejo del piso)
-      const yStart = Math.floor(OH * 0.08);
-      const yMax   = Math.floor(OH * 0.86);
-      const yRange = yMax - yStart;
+      const yStart=Math.floor(OH*0.08);
+      const yMax=Math.floor(OH*0.86);
+      const yRange=yMax-yStart;
       for(let y=yStart;y<yMax;y++){
         for(let x=0;x<OW;x++){
           const i=(y*OW+x)*4;
           const r=data[i],g=data[i+1],b=data[i+2];
           const br=r*0.299+g*0.587+b*0.114;
-          // Fondo negro puro → cualquier pixel >20 es la figura
-          if(br>20){
-            pts2d.push({
-              nx:((x/OW)*2-1),
-              ny:(1-((y-yStart)/yRange)*2), // normalizar al rango recortado
-              r:r/255, g:g/255, b:b/255,
-              br:br/255
-            });
-          }
+          if(br>20) pts2d.push({nx:((x/OW)*2-1),ny:(1-((y-yStart)/yRange)*2),r:r/255,g:g/255,b:b/255,br:br/255});
         }
       }
-
       if(!pts2d.length){startAnim();return;}
-
-      // Escala: la imagen es cuadrada, preservar proporciones
-      // aspect = W/H = 380/400 ≈ 0.95 → figura ligeramente más ancha que alta
-      // Para que no se alargue, igualar escala X e Y
-      const sX=aspect*0.88, sY=aspect*0.88; // mismo factor → sin distorsión
-      const CORE=Math.min(pts2d.length*5,90000);
+      const sX=aspect*0.88, sY=aspect*0.88;
+      const CORE=Math.min(pts2d.length*4,80000);
       const DISP=Math.floor(CORE*0.40);
       const TOTAL=CORE+DISP;
-      const pos=new Float32Array(TOTAL*3);
-      const col=new Float32Array(TOTAL*3);
-
-      // CORE: silueta plateada con colores 100% originales
+      const pos=new Float32Array(TOTAL*3),col=new Float32Array(TOTAL*3);
+      const BG={r:56/255,g:62/255,b:78/255};
       for(let i=0;i<CORE;i++){
         const p=pts2d[Math.floor(Math.random()*pts2d.length)];
-        pos[i*3  ]=p.nx*sX+(Math.random()-0.5)*0.008;
+        pos[i*3]=p.nx*sX+(Math.random()-0.5)*0.008;
         pos[i*3+1]=p.ny*sY+(Math.random()-0.5)*0.008;
         pos[i*3+2]=(Math.random()-0.5)*0.06;
-        // Colores originales — plata brillante
-        col[i*3  ]=p.r;
-        col[i*3+1]=p.g;
-        col[i*3+2]=p.b;
+        col[i*3]=p.r; col[i*3+1]=p.g; col[i*3+2]=p.b;
       }
-
-      // DISP: chispas que salen, fade a bg FORJA
       for(let i=0;i<DISP;i++){
         const idx=CORE+i;
         const p=pts2d[Math.floor(Math.random()*pts2d.length)];
-        const sx=p.nx*sX, sy=p.ny*sY;
+        const sx=p.nx*sX,sy=p.ny*sY;
         const len=Math.sqrt(sx*sx+sy*sy)+0.001;
         const eD=Math.pow(Math.random(),0.22)*3.5;
         const dx=(sx/len)+(Math.random()-0.5)*0.85;
         const dy=(sy/len)+(Math.random()-0.5)*0.85;
         const dz=(Math.random()-0.5)*0.5;
         const dlen=Math.sqrt(dx*dx+dy*dy+dz*dz)+0.001;
-        pos[idx*3  ]=sx+(dx/dlen)*eD;
-        pos[idx*3+1]=sy+(dy/dlen)*eD;
-        pos[idx*3+2]=(dz/dlen)*eD;
+        pos[idx*3]=sx+(dx/dlen)*eD; pos[idx*3+1]=sy+(dy/dlen)*eD; pos[idx*3+2]=(dz/dlen)*eD;
         const fade=Math.min(eD/3.5,1);
         const op=Math.pow(1-fade,2.0);
-        // Chispas doradas que salen de la plata
-        col[idx*3  ]=0.95*op+BG.r*(1-op);
-        col[idx*3+1]=0.72*op+BG.g*(1-op);
-        col[idx*3+2]=0.18*op+BG.b*(1-op);
+        col[idx*3]=p.r*op+BG.r*(1-op); col[idx*3+1]=p.g*op+BG.g*(1-op); col[idx*3+2]=p.b*op+BG.b*(1-op);
       }
-
       const geo=new THREE.BufferGeometry();
-      geo.setAttribute("position",new THREE.BufferAttribute(pos,3));
-      geo.setAttribute("color",new THREE.BufferAttribute(col,3));
-      figPts=new THREE.Points(geo,new THREE.PointsMaterial({
-        size:0.0095,vertexColors:true,transparent:true,
-        opacity:0.98,sizeAttenuation:true,depthWrite:false
-      }));
+      geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+      geo.setAttribute('color',new THREE.BufferAttribute(col,3));
+      figPts=new THREE.Points(geo,new THREE.PointsMaterial({size:0.0095,vertexColors:true,transparent:true,opacity:0.98,sizeAttenuation:true,depthWrite:false}));
       scene.add(figPts);
       startAnim();
     }
 
     function startAnim(){
       if(animId) cancelAnimationFrame(animId);
+      // Rotación kepleriana del disco
+      const dAngCopy=new Float32Array(dAng);
       function animate(){
         animId=requestAnimationFrame(animate);
-        t+=0.004;
-        if(figPts){
-          figPts.position.y=Math.sin(t*0.45)*0.038;
-          figPts.rotation.y=Math.sin(t*0.18)*0.05;
-          figPts.rotation.x=Math.sin(t*0.13)*0.012;
-        }
-        const arr=fGeo.attributes.position.array;
-        for(let i=0;i<FLOAT_N;i++){
-          fAng[i]+=fSp[i]*0.003;
-          arr[i*3  ]=Math.cos(fAng[i])*fRad[i];
-          arr[i*3+1]=fY0[i]+Math.sin(t*fSp[i]*0.8+fPh[i])*0.055;
-          arr[i*3+2]=Math.sin(fAng[i])*fRad[i]*0.3;
-        }
-        fGeo.attributes.position.needsUpdate=true;
-        fMat.opacity=0.50+0.12*Math.sin(t*0.55);
+        T+=0.003;
 
-        // Rayos de sol: shimmer suave, pulsan orgánicamente
+        // Disco kepleriano
+        const arr=dGeo.attributes.position.array;
+        for(let i=0;i<DISC_N;i++){
+          const r=dRad[i];
+          dAng[i]+=0.50/Math.pow(r,1.5)*0.003;
+          arr[i*3]=Math.cos(dAng[i])*r;
+          arr[i*3+2]=Math.sin(dAng[i])*r;
+        }
+        dGeo.attributes.position.needsUpdate=true;
+
+        // Figura: breathing
+        if(figPts){
+          figPts.position.y=Math.sin(T*0.45)*0.038;
+          figPts.rotation.y=Math.sin(T*0.18)*0.045;
+          figPts.rotation.x=Math.sin(T*0.13)*0.010;
+        }
+
+        // Rayos: shimmer
         const bArr=bGeo.attributes.position.array;
-        const bColArr=bGeo.attributes.color.array;
         for(let i=0;i<BEAM_N;i++){
-          // Opacidad pulsante por partícula — efecto luz que tiembla
-          const flicker=0.55+0.45*Math.sin(t*1.8+bOffset[i]);
-          // Leve movimiento transversal — como polvo en rayo de luz
-          const perp=Math.sin(t*bSp[i]*3+bOffset[i])*0.012*(1-bT0[i]);
-          bArr[i*3  ]=bPos0[i*3  ]+perp;
-          bArr[i*3+1]=bPos0[i*3+1]; // sin movimiento vertical
+          const perp=Math.sin(T*bSp[i]*3+bOffset[i])*0.010*(1-bT0[i]);
+          bArr[i*3]=bPos0[i*3]+perp;
         }
         bGeo.attributes.position.needsUpdate=true;
-        bMat.opacity=(0.42+0.16*Math.sin(t*0.7))*1.0;
+        bMat.opacity=0.38+0.14*Math.sin(T*0.7);
+
+        // Partículas flotantes
+        const fArr=fGeo.attributes.position.array;
+        for(let i=0;i<FLOAT_N;i++){
+          fAng[i]+=fSp[i]*0.003;
+          fArr[i*3]=Math.cos(fAng[i])*fRad[i];
+          fArr[i*3+1]=fY0[i]+Math.sin(T*fSp[i]*0.8+fPh[i])*0.050;
+          fArr[i*3+2]=Math.sin(fAng[i])*fRad[i]*0.3;
+        }
+        fGeo.attributes.position.needsUpdate=true;
+        fMat.opacity=0.45+0.12*Math.sin(T*0.55);
+
+        // Cámara: leve órbita
+        camera.position.x=Math.sin(T*0.025)*0.5;
+        camera.position.y=1.8+Math.sin(T*0.04)*0.20;
+        camera.lookAt(0,0,0);
+
         renderer.render(scene,camera);
       }
       animate();
@@ -1876,7 +1955,6 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
   setInterval(tryInit,300);
 })();
 </script>
-
 <script>
 (function initLogoParticles(){
   function tryInit(){
