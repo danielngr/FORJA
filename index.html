@@ -1749,9 +1749,11 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       const data=ctx.getImageData(0,0,OW,OH).data;
 
       const pts2d=[];
-      // Recortar 15% inferior donde está el reflejo del piso
-      const yMax = Math.floor(OH * 0.85);
-      for(let y=0;y<yMax;y++){
+      // Recortar: 8% superior (espacio vacío) y 14% inferior (reflejo del piso)
+      const yStart = Math.floor(OH * 0.08);
+      const yMax   = Math.floor(OH * 0.86);
+      const yRange = yMax - yStart;
+      for(let y=yStart;y<yMax;y++){
         for(let x=0;x<OW;x++){
           const i=(y*OW+x)*4;
           const r=data[i],g=data[i+1],b=data[i+2];
@@ -1760,7 +1762,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
           if(br>20){
             pts2d.push({
               nx:((x/OW)*2-1),
-              ny:(1-(y/yMax)*2), // normalizar a yMax no OH
+              ny:(1-((y-yStart)/yRange)*2), // normalizar al rango recortado
               r:r/255, g:g/255, b:b/255,
               br:br/255
             });
