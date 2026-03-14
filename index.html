@@ -464,16 +464,30 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
   // ── Completion screen ──
   if(allDone){
     const msgs=lang==="es"?["¡Lo aplastaste hoy!","¡Brutal, crack!","¡Sesión completada!"]:["You crushed it!","Absolutely brutal!","Session complete!"];
-    const msg=msgs[Math.floor(Math.random()*msgs.length)];
+    const[msg]=useState(()=>msgs[Math.floor(Math.random()*msgs.length)]);
+    const confettiColors=[C2.green,C2.blue,C2.yellow,C2.purple,"#F0F2F5","#d96060"];
     return(
       <div style={{position:"fixed",inset:0,background:C2.bgD,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:"sans-serif",overflow:"hidden"}}>
+        {/* Confetti — many more, varied shapes */}
         <div style={{position:"absolute",inset:0,pointerEvents:"none"}}>
-          {[...Array(22)].map((_,i)=>(
-            <div key={i} style={{position:"absolute",left:`${8+i*4.1}%`,top:`${25+Math.sin(i*1.3)*35}%`,
-              width:i%4===0?5:3,height:i%4===0?5:3,borderRadius:"50%",
-              background:[C2.green,C2.blue,C2.yellow,C2.purple][i%4],
-              animation:`floatUp ${1.8+i*0.15}s ease-out ${i*0.12}s infinite`,opacity:.75}}/>
-          ))}
+          {[...Array(60)].map((_,i)=>{
+            const sz=2+Math.random()*6;
+            const isRect=i%3===0;
+            return(
+              <div key={i} style={{
+                position:"absolute",
+                left:`${Math.random()*100}%`,
+                top:`${Math.random()*100}%`,
+                width:isRect?sz*2:sz,
+                height:sz,
+                borderRadius:isRect?2:"50%",
+                background:confettiColors[i%confettiColors.length],
+                transform:`rotate(${Math.random()*360}deg)`,
+                animation:`floatUp ${1.2+Math.random()*2}s ease-out ${Math.random()*1.5}s infinite`,
+                opacity:.85
+              }}/>
+            );
+          })}
         </div>
         <div style={{width:88,height:88,borderRadius:"50%",background:C2.green,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:`0 0 48px ${C2.green}55`,marginBottom:22,animation:"celebrate .6s cubic-bezier(.34,1.56,.64,1) both"}}>
           <svg width="40" height="40" viewBox="0 0 40 40" fill="none"><path d="M7 20L16 29L33 11" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -1177,7 +1191,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
 function Onboard({lang,setLang,step,setStep,sp,sr}){
   const[goal,setGoal]=useState("");
   const[level,setLevel]=useState("");
-  const[days,setDays]=useState(6);
+  const[days,setDays]=useState(0);
   const[split,setSplit]=useState("");
   const[selDays,setSelDays]=useState([]);
   const[age,setAge]=useState(25);
@@ -1230,12 +1244,12 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
   );
 
   const Num=({val,set,min=1,max=999,label})=>(
-    <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:6,flex:1}}>
+    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 0",borderBottom:`1px solid rgba(82,90,110,.25)`}}>
       <div style={{fontSize:11,fontFamily:mono,color:C.tx3,letterSpacing:2}}>{label}</div>
-      <div style={{display:"flex",alignItems:"center",gap:10}}>
-        <button onClick={()=>set(v=>Math.max(min,v-1))} style={{width:32,height:32,borderRadius:8,border:`1px solid ${C.borderL}`,background:"transparent",color:C.tx3,fontSize:18,cursor:"pointer"}}>−</button>
-        <div style={{fontSize:28,fontWeight:900,color:C.tx,minWidth:52,textAlign:"center"}}>{val}</div>
-        <button onClick={()=>set(v=>Math.min(max,v+1))} style={{width:32,height:32,borderRadius:8,border:`1px solid ${C.borderL}`,background:"transparent",color:C.tx3,fontSize:18,cursor:"pointer"}}>+</button>
+      <div style={{display:"flex",alignItems:"center",gap:14}}>
+        <button onClick={()=>set(v=>Math.max(min,v-1))} style={{width:34,height:34,borderRadius:8,border:`1px solid ${C.borderL}`,background:"transparent",color:C.tx3,fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
+        <div style={{fontSize:26,fontWeight:900,color:C.tx,minWidth:56,textAlign:"center"}}>{val}</div>
+        <button onClick={()=>set(v=>Math.min(max,v+1))} style={{width:34,height:34,borderRadius:8,border:`1px solid ${C.borderL}`,background:"transparent",color:C.tx3,fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
       </div>
     </div>
   );
@@ -1292,8 +1306,8 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
           </>)}
           {step===3&&(<>
             <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{lang==="es"?"DATOS FÍSICOS":"BODY DATA"}</div>
-            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:32,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"Tu cuerpo":"Your body"}</div>
-            <div style={{display:"flex",gap:16,justifyContent:"center",marginBottom:32}}>
+            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:28,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"Tu cuerpo":"Your body"}</div>
+            <div style={{display:"flex",flexDirection:"column",gap:20,marginBottom:32}}>
               <Num val={age} set={setAge} min={13} max={80} label={lang==="es"?"EDAD":"AGE"}/>
               <Num val={weight} set={setWeight} min={30} max={250} label={lang==="es"?"PESO (kg)":"WEIGHT (kg)"}/>
               <Num val={height} set={setHeight} min={120} max={220} label={lang==="es"?"ALTURA (cm)":"HEIGHT (cm)"}/>
@@ -1310,13 +1324,13 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               {[3,4,5,6].map(n=>(
                 <button key={n} onClick={()=>{setDays(n);setSelDays([]);}} style={{width:68,height:84,borderRadius:14,
                   border:`1.5px solid ${days===n?C.tx:C.borderL}`,cursor:"pointer",
-                  background:days===n?C.tx:C.card,color:days===n?C.white:C.tx2,
+                  background:days===n?C.tx:"transparent",color:days===n?C.white:C.tx3,
                   fontSize:32,fontWeight:900,fontFamily:sans,transition:"all 0.2s"}}>{n}</button>
               ))}
             </div>
             <div style={{display:"flex",gap:10,marginTop:32}}>
               <div style={{flex:1}}><Btn ghost onClick={()=>setStep(3)}>{t.back}</Btn></div>
-              <div style={{flex:2}}><Btn onClick={()=>setStep(5)}>{t.next}</Btn></div>
+              <div style={{flex:2}}><Btn onClick={()=>setStep(5)} disabled={!days}>{t.next}</Btn></div>
             </div>
           </>)}
           {step===5&&(<>
@@ -1544,32 +1558,44 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     cam.position.set(0,0,10);
 
     const TOTAL=pts2d.length;
-    const DISP=Math.floor(TOTAL*0.6);
+    const DISP=Math.floor(TOTAL*1.2);
     const pos=new Float32Array(TOTAL*3);
     const col=new Float32Array(TOTAL*3);
     const posD=new Float32Array(DISP*3);
     const colD=new Float32Array(DISP*3);
+    // Per-dispersed particle: unique velocity direction + distance
+    const velD=new Float32Array(DISP*3);
 
-    const scaleX=aspect*1.02, scaleY=0.88;
+    const scaleX=aspect*1.02, scaleY=0.92;
 
     for(let i=0;i<TOTAL;i++){
       const p=pts2d[i];
-      pos[i*3  ]=p.x*scaleX+(Math.random()-0.5)*0.015;
-      pos[i*3+1]=p.y*scaleY+(Math.random()-0.5)*0.015;
-      pos[i*3+2]=(Math.random()-0.5)*0.04;
+      pos[i*3  ]=p.x*scaleX+(Math.random()-0.5)*0.012;
+      pos[i*3+1]=p.y*scaleY+(Math.random()-0.5)*0.012;
+      pos[i*3+2]=(Math.random()-0.5)*0.03;
       const v=0.80+Math.random()*0.18;
       col[i*3]=v*0.94; col[i*3+1]=v*0.96; col[i*3+2]=v;
     }
 
     for(let i=0;i<DISP;i++){
       const src=pts2d[Math.floor(Math.random()*TOTAL)];
-      const eD=Math.pow(Math.random(),0.4)*2.2;
-      const ang=Math.random()*Math.PI*2;
+      // Organic explosion: each particle goes in its own direction
+      // with strong upward bias so they reach the top
+      const baseAng=Math.random()*Math.PI*2;
+      // upward bias: pull angle toward top
+      const upBias=Math.PI*0.5; // straight up
+      const blend=Math.pow(Math.random(),0.6); // more particles upward
+      const ang=baseAng*(1-blend)+upBias*blend + (Math.random()-0.5)*1.2;
+      const eD=Math.pow(Math.random(),0.25)*3.5; // reach much further
       posD[i*3  ]=src.x*scaleX+Math.cos(ang)*eD;
       posD[i*3+1]=src.y*scaleY+Math.sin(ang)*eD;
-      posD[i*3+2]=(Math.random()-0.5)*0.3;
-      const fadeT=eD/2.2;
-      const op=Math.max(0,1-fadeT*0.92);
+      posD[i*3+2]=(Math.random()-0.5)*0.4;
+      // Store velocity for animation jitter
+      velD[i*3  ]=( Math.random()-0.5)*0.003;
+      velD[i*3+1]=(Math.random()-0.5)*0.003;
+      velD[i*3+2]=0;
+      const fadeT=eD/3.5;
+      const op=Math.max(0,1-fadeT*0.88);
       colD[i*3  ]=0.94*op+0.22*(1-op);
       colD[i*3+1]=0.96*op+0.243*(1-op);
       colD[i*3+2]=1.0*op+0.306*(1-op);
@@ -1578,21 +1604,37 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     const geoC=new THREE.BufferGeometry();
     geoC.setAttribute("position",new THREE.BufferAttribute(pos,3));
     geoC.setAttribute("color",new THREE.BufferAttribute(col,3));
-    scene.add(new THREE.Points(geoC,new THREE.PointsMaterial({size:0.022,vertexColors:true,transparent:true,opacity:0.95,sizeAttenuation:true})));
+    scene.add(new THREE.Points(geoC,new THREE.PointsMaterial({size:0.020,vertexColors:true,transparent:true,opacity:0.95,sizeAttenuation:true})));
 
     const geoD=new THREE.BufferGeometry();
     geoD.setAttribute("position",new THREE.BufferAttribute(posD,3));
     geoD.setAttribute("color",new THREE.BufferAttribute(colD,3));
-    scene.add(new THREE.Points(geoD,new THREE.PointsMaterial({size:0.013,vertexColors:true,transparent:true,opacity:0.75,sizeAttenuation:true})));
+    const matD=new THREE.PointsMaterial({size:0.010,vertexColors:true,transparent:true,opacity:0.72,sizeAttenuation:true});
+    const ptsD=new THREE.Points(geoD,matD);
+    scene.add(ptsD);
+
+    // Per-particle phase offsets for organic drift
+    const phases=new Float32Array(DISP).map(()=>Math.random()*Math.PI*2);
+    const speeds=new Float32Array(DISP).map(()=>0.3+Math.random()*0.7);
+    const amps  =new Float32Array(DISP).map(()=>0.008+Math.random()*0.018);
 
     let t=0,animId;
+    const posD0=new Float32Array(posD); // original positions
     function animate(){
       animId=requestAnimationFrame(animate);
       t+=0.005;
-      scene.children.forEach(obj=>{
-        obj.rotation.x=Math.sin(t*0.35)*0.04;
-        obj.rotation.z=Math.sin(t*0.22)*0.012;
-      });
+      // Core FORJA text: subtle wobble
+      scene.children[0].rotation.x=Math.sin(t*0.35)*0.04;
+      scene.children[0].rotation.z=Math.sin(t*0.22)*0.012;
+      // Dispersed: each particle drifts independently
+      const arr=geoD.attributes.position.array;
+      for(let i=0;i<DISP;i++){
+        const ph=phases[i], sp=speeds[i], am=amps[i];
+        arr[i*3  ]=posD0[i*3  ]+Math.sin(t*sp+ph)*am;
+        arr[i*3+1]=posD0[i*3+1]+Math.cos(t*sp*0.7+ph)*am*0.6;
+        arr[i*3+2]=posD0[i*3+2];
+      }
+      geoD.attributes.position.needsUpdate=true;
       renderer.render(scene,cam);
     }
     animate();
