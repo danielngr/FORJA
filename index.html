@@ -1174,6 +1174,194 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   );
 }
 
+function Onboard({lang,setLang,step,setStep,sp,sr}){
+  const[goal,setGoal]=useState("");
+  const[level,setLevel]=useState("");
+  const[days,setDays]=useState(6);
+  const[split,setSplit]=useState("");
+  const[selDays,setSelDays]=useState([]);
+  const[age,setAge]=useState(25);
+  const[weight,setWeight]=useState(70);
+  const[height,setHeight]=useState(175);
+  const t=lang?L[lang]:L.en;
+  const TOTAL_STEPS=6;
+
+  const finish=()=>{
+    const tm=TP[split];
+    const adjustedProfile={lang,goal,level,days,age,weight,height};
+    sp(adjustedProfile);
+    const r=Array(7).fill(null);
+    tm.s.forEach((s,i)=>{r[i]={...s,ex:s.ex.map((x,j)=>({...x,id:`${i}${j}`}))};});
+    sr(r);setStep(99);
+  };
+
+  let _optIdx=0;
+  const Opt=({active,onClick,children})=>{
+    const n=String(++_optIdx).padStart(2,"0");
+    return(
+      <button onClick={onClick} style={{
+        width:"100%",padding:"14px 0",cursor:"pointer",background:"transparent",border:"none",
+        borderBottom:`1px solid ${active?C.border+"88":C.borderL+"55"}`,
+        display:"flex",alignItems:"center",gap:14,textAlign:"left",
+        transition:"all 0.15s",position:"relative",outline:"none"}}>
+        <div style={{width:2,height:active?"100%":"0%",background:C.tx,borderRadius:1,transition:"height 0.2s ease",position:"absolute",left:-14,top:0,bottom:0,margin:"auto"}}/>
+        <span style={{fontSize:9,fontFamily:mono,color:active?C.tx3:C.borderL,letterSpacing:1,minWidth:20,transition:"color 0.15s"}}>{n}</span>
+        <span style={{flex:1,fontSize:14,fontWeight:active?700:400,fontFamily:active?sans:mono,letterSpacing:active?-0.3:1.5,color:active?C.tx:C.tx3,textTransform:active?"none":"uppercase",transition:"all 0.15s"}}>{children}</span>
+        <span style={{fontSize:10,fontFamily:mono,color:active?C.tx:C.borderL,opacity:active?1:0,transition:"opacity 0.15s"}}>●</span>
+      </button>
+    );
+  };
+
+  const Btn=({onClick,disabled,children,ghost})=>(
+    <button onClick={onClick} disabled={disabled} style={{
+      width:"100%",padding:"16px 20px",cursor:disabled?"default":"pointer",
+      background:"transparent",border:"none",
+      borderTop:`1px solid ${disabled?C.borderL:ghost?C.borderL:C.tx}`,
+      borderBottom:`1px solid ${disabled?C.borderL:ghost?C.borderL:C.tx}`,
+      color:ghost?C.tx3:disabled?C.tx3:C.tx,
+      fontSize:11,fontWeight:700,fontFamily:mono,
+      letterSpacing:4,textTransform:"uppercase",
+      display:"flex",alignItems:"center",justifyContent:"space-between",
+      transition:"all 0.2s",opacity:disabled?0.3:1,outline:"none"}}>
+      <span>{children}</span>
+      {!ghost&&!disabled&&<span style={{fontSize:16,letterSpacing:0}}>→</span>}
+    </button>
+  );
+
+  const Num=({val,set,min=1,max=999,label})=>(
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:6,flex:1}}>
+      <div style={{fontSize:11,fontFamily:mono,color:C.tx3,letterSpacing:2}}>{label}</div>
+      <div style={{display:"flex",alignItems:"center",gap:10}}>
+        <button onClick={()=>set(v=>Math.max(min,v-1))} style={{width:32,height:32,borderRadius:8,border:`1px solid ${C.borderL}`,background:"transparent",color:C.tx3,fontSize:18,cursor:"pointer"}}>−</button>
+        <div style={{fontSize:28,fontWeight:900,color:C.tx,minWidth:52,textAlign:"center"}}>{val}</div>
+        <button onClick={()=>set(v=>Math.min(max,v+1))} style={{width:32,height:32,borderRadius:8,border:`1px solid ${C.borderL}`,background:"transparent",color:C.tx3,fontSize:18,cursor:"pointer"}}>+</button>
+      </div>
+    </div>
+  );
+
+  return(
+    <div style={{minHeight:"100vh",background:C.bg,color:C.tx,fontFamily:sans}}>
+      {step===0&&(
+        <div style={{padding:"0 26px",paddingTop:"8vh",animation:"fogIn 0.8s ease"}}>
+          <div style={{marginBottom:40}}>
+            <canvas id="forja-logo-canvas" style={{width:"100%",height:180,display:"block"}}></canvas>
+            <div style={{marginTop:8,display:"flex",alignItems:"center",gap:12}}>
+              <div style={{height:1,background:C.border,width:40}}/>
+              <div style={{fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:3}}>TRAIN · TRACK · EVOLVE</div>
+            </div>
+          </div>
+          <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:10}}>// SELECT LANGUAGE</div>
+          <div style={{display:"flex",flexDirection:"column",marginBottom:36,borderTop:`1px solid ${C.borderL}55`}}>
+            <Opt active={lang==="es"} onClick={()=>setLang("es")}>Español</Opt>
+            <Opt active={lang==="en"} onClick={()=>setLang("en")}>English</Opt>
+          </div>
+          <Btn onClick={()=>setStep(1)} disabled={!lang}>{t.next}</Btn>
+        </div>
+      )}
+      {step>=1&&step<=TOTAL_STEPS&&(
+        <div style={{padding:"0 26px",paddingTop:"7vh",paddingBottom:40,animation:"fu 0.4s ease"}}>
+          <div style={{display:"flex",gap:6,marginBottom:36}}>
+            {Array.from({length:TOTAL_STEPS},(_,i)=><div key={i} style={{height:2,flex:1,borderRadius:1,background:step>i?C.tx:C.borderL,transition:"all 0.3s"}}/>)}
+          </div>
+          {step===1&&(<>
+            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{t.goal}</div>
+            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:24,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"¿Qué buscas?":"What's your goal?"}</div>
+            <div style={{display:"flex",flexDirection:"column",borderTop:`1px solid ${C.borderL}55`}}>
+              {[["muscle",t.muscle],["strength",t.strength],["lose",t.lose],["recomp",t.recomp],["general",t.general]].map(([id,lb])=>(
+                <Opt key={id} active={goal===id} onClick={()=>setGoal(id)}>{lb}</Opt>
+              ))}
+            </div>
+            <div style={{display:"flex",gap:10,marginTop:28}}>
+              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(0)}>{t.back}</Btn></div>
+              <div style={{flex:2}}><Btn onClick={()=>setStep(2)} disabled={!goal}>{t.next}</Btn></div>
+            </div>
+          </>)}
+          {step===2&&(<>
+            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{t.level}</div>
+            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:24,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"Tu experiencia":"Your experience"}</div>
+            <div style={{display:"flex",flexDirection:"column",borderTop:`1px solid ${C.borderL}55`}}>
+              {[["beg",t.beg],["int",t.int],["adv",t.adv]].map(([id,lb])=>(
+                <Opt key={id} active={level===id} onClick={()=>setLevel(id)}>{lb}</Opt>
+              ))}
+            </div>
+            <div style={{display:"flex",gap:10,marginTop:28}}>
+              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(1)}>{t.back}</Btn></div>
+              <div style={{flex:2}}><Btn onClick={()=>setStep(3)} disabled={!level}>{t.next}</Btn></div>
+            </div>
+          </>)}
+          {step===3&&(<>
+            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{lang==="es"?"DATOS FÍSICOS":"BODY DATA"}</div>
+            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:32,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"Tu cuerpo":"Your body"}</div>
+            <div style={{display:"flex",gap:16,justifyContent:"center",marginBottom:32}}>
+              <Num val={age} set={setAge} min={13} max={80} label={lang==="es"?"EDAD":"AGE"}/>
+              <Num val={weight} set={setWeight} min={30} max={250} label={lang==="es"?"PESO (kg)":"WEIGHT (kg)"}/>
+              <Num val={height} set={setHeight} min={120} max={220} label={lang==="es"?"ALTURA (cm)":"HEIGHT (cm)"}/>
+            </div>
+            <div style={{display:"flex",gap:10,marginTop:8}}>
+              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(2)}>{t.back}</Btn></div>
+              <div style={{flex:2}}><Btn onClick={()=>setStep(4)}>{t.next}</Btn></div>
+            </div>
+          </>)}
+          {step===4&&(<>
+            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{t.days}</div>
+            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:32,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"¿Cuántos días?":"How many days?"}</div>
+            <div style={{display:"flex",gap:10,justifyContent:"center"}}>
+              {[3,4,5,6].map(n=>(
+                <button key={n} onClick={()=>{setDays(n);setSelDays([]);}} style={{width:68,height:84,borderRadius:14,
+                  border:`1.5px solid ${days===n?C.tx:C.borderL}`,cursor:"pointer",
+                  background:days===n?C.tx:C.card,color:days===n?C.white:C.tx2,
+                  fontSize:32,fontWeight:900,fontFamily:sans,transition:"all 0.2s"}}>{n}</button>
+              ))}
+            </div>
+            <div style={{display:"flex",gap:10,marginTop:32}}>
+              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(3)}>{t.back}</Btn></div>
+              <div style={{flex:2}}><Btn onClick={()=>setStep(5)}>{t.next}</Btn></div>
+            </div>
+          </>)}
+          {step===5&&(<>
+            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{t.split}</div>
+            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:24,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"Tu programa":"Your program"}</div>
+            <div style={{display:"flex",flexDirection:"column",borderTop:`1px solid ${C.borderL}55`}}>
+              {Object.entries(TP).map(([k,v])=>(
+                <Opt key={k} active={split===k} onClick={()=>setSplit(k)}>
+                  <div>
+                    <div style={{fontWeight:700,marginBottom:2}}>{v.n[lang||"es"]}</div>
+                    <div style={{fontSize:10,fontFamily:mono,opacity:0.6}}>{v.s.map(x=>x.l).join("  ·  ")}</div>
+                  </div>
+                </Opt>
+              ))}
+            </div>
+            <div style={{display:"flex",gap:10,marginTop:28}}>
+              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(4)}>{t.back}</Btn></div>
+              <div style={{flex:2}}><Btn onClick={finish} disabled={!split}>{t.go}</Btn></div>
+            </div>
+          </>)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function App(){
+  const[lang,setLang]=useState(null);
+  const[step,setStep]=useState(0);
+  const[profile,setProfile]=useState(null);
+  const[routine,setRoutine]=useState(null);
+  const[ready,setReady]=useState(false);
+
+  useEffect(()=>{
+    try{const p=store.get("fv8p");if(p){const d=JSON.parse(p.value);setProfile(d);setLang(d.lang);const r=store.get("fv8r");if(r)setRoutine(JSON.parse(r.value));setStep(99);}}catch(_){}
+    setReady(true);
+  },[]);
+
+  const sp=useCallback(p=>{setProfile(p);store.set("fv8p",JSON.stringify(p));},[]);
+  const sr=useCallback(r=>{setRoutine(r);store.set("fv8r",JSON.stringify(r));},[]);
+
+  if(!ready)return <div style={{minHeight:"100vh",background:"#383e4e"}}/>;
+  if(step<99)return <Onboard lang={lang} setLang={setLang} step={step} setStep={setStep} sp={sp} sr={sr}/>;
+  return <Main lang={lang} setLang={setLang} profile={profile} routine={routine} sp={sp} sr={sr} setStep={setStep}/>;
+}
+
 ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 </script>
 
