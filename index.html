@@ -1396,15 +1396,42 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
 
   // Equipo disponible — opciones con iconos
   const EQ_OPTIONS=[
-    {id:"barbell",     es:"Barra olímpica",  en:"Barbell",       icon:"🏋️"},
-    {id:"dumbbells",   es:"Mancuernas",      en:"Dumbbells",     icon:"💪"},
-    {id:"bench",       es:"Banco",           en:"Bench",         icon:"🪑"},
-    {id:"rack",        es:"Rack/Jaula",      en:"Rack/Cage",     icon:"🏗️"},
-    {id:"cable_machine",es:"Polea",          en:"Cable machine", icon:"🔄"},
-    {id:"machine",     es:"Máquinas",        en:"Machines",      icon:"⚙️"},
-    {id:"pull_up_bar", es:"Barra de dominadas",en:"Pull-up bar", icon:"📊"},
-    {id:"dip_bar",     es:"Barras paralelas",en:"Dip bars",      icon:"⚡"},
-    {id:"box",         es:"Cajón pliométrico",en:"Plyo box",     icon:"📦"},
+    // Pesas libres
+    {id:"barbell",        es:"Barra olímpica",        en:"Barbell",           icon:"🏋️", group:lang==="es"?"Pesas libres":"Free weights"},
+    {id:"dumbbells",      es:"Mancuernas",             en:"Dumbbells",         icon:"💪", group:lang==="es"?"Pesas libres":"Free weights"},
+    {id:"kettlebell",     es:"Kettlebell",             en:"Kettlebell",        icon:"🔔", group:lang==="es"?"Pesas libres":"Free weights"},
+    {id:"ez_bar",         es:"Barra EZ (curl)",        en:"EZ curl bar",       icon:"〰️", group:lang==="es"?"Pesas libres":"Free weights"},
+    {id:"trap_bar",       es:"Trap bar / Hex bar",     en:"Trap bar",          icon:"⬡",  group:lang==="es"?"Pesas libres":"Free weights"},
+    {id:"weight_plates",  es:"Discos sueltos",         en:"Weight plates",     icon:"⭕", group:lang==="es"?"Pesas libres":"Free weights"},
+    // Soportes y estructuras
+    {id:"rack",           es:"Rack / Jaula de potencia",en:"Power rack/cage",  icon:"🏗️", group:lang==="es"?"Soportes":"Racks & structures"},
+    {id:"bench",          es:"Banco plano",            en:"Flat bench",        icon:"🪑", group:lang==="es"?"Soportes":"Racks & structures"},
+    {id:"incline_bench",  es:"Banco ajustable/inclinado",en:"Adjustable bench",icon:"📐", group:lang==="es"?"Soportes":"Racks & structures"},
+    {id:"pull_up_bar",    es:"Barra de dominadas",     en:"Pull-up bar",       icon:"📊", group:lang==="es"?"Soportes":"Racks & structures"},
+    {id:"dip_bar",        es:"Barras paralelas",       en:"Dip bars",          icon:"⚡", group:lang==="es"?"Soportes":"Racks & structures"},
+    {id:"squat_stand",    es:"Soportes de sentadilla", en:"Squat stands",      icon:"🦵", group:lang==="es"?"Soportes":"Racks & structures"},
+    // Máquinas
+    {id:"machine",        es:"Máquinas de musculación",en:"Weight machines",   icon:"⚙️", group:lang==="es"?"Máquinas":"Machines"},
+    {id:"cable_machine",  es:"Polea / Cable",          en:"Cable machine",     icon:"🔄", group:lang==="es"?"Máquinas":"Machines"},
+    {id:"smith_machine",  es:"Máquina Smith",          en:"Smith machine",     icon:"🔩", group:lang==="es"?"Máquinas":"Machines"},
+    {id:"leg_press_machine",es:"Prensa de pierna",     en:"Leg press machine", icon:"🦿", group:lang==="es"?"Máquinas":"Machines"},
+    {id:"cardio_machine", es:"Máquinas de cardio",     en:"Cardio machines",   icon:"🏃", group:lang==="es"?"Máquinas":"Machines"},
+    // Accesorios / funcional
+    {id:"resistance_band",es:"Bandas elásticas",       en:"Resistance bands",  icon:"🪢", group:lang==="es"?"Accesorios":"Accessories"},
+    {id:"trx",            es:"TRX / Suspensión",       en:"TRX / Suspension",  icon:"🤸", group:lang==="es"?"Accesorios":"Accessories"},
+    {id:"ab_wheel",       es:"Rueda abdominal",        en:"Ab wheel",          icon:"⭕", group:lang==="es"?"Accesorios":"Accessories"},
+    {id:"foam_roller",    es:"Foam roller",            en:"Foam roller",       icon:"🪵", group:lang==="es"?"Accesorios":"Accessories"},
+    {id:"gymnastic_rings",es:"Anillas de gimnasia",    en:"Gymnastic rings",   icon:"⭕", group:lang==="es"?"Accesorios":"Accessories"},
+    {id:"parallettes",    es:"Paraletas (push-up bars)",en:"Parallettes",      icon:"🤲", group:lang==="es"?"Accesorios":"Accessories"},
+    // Crossfit / funcional
+    {id:"box",            es:"Cajón pliométrico",      en:"Plyo box",          icon:"📦", group:lang==="es"?"Funcional":"Functional"},
+    {id:"battle_ropes",   es:"Cuerdas de batalla",     en:"Battle ropes",      icon:"〰️", group:lang==="es"?"Funcional":"Functional"},
+    {id:"slam_ball",      es:"Balón medicinal / Slam ball",en:"Medicine/slam ball",icon:"🏀",group:lang==="es"?"Funcional":"Functional"},
+    {id:"sandbag",        es:"Saco de arena",          en:"Sandbag",           icon:"👝", group:lang==="es"?"Funcional":"Functional"},
+    {id:"jump_rope",      es:"Cuerda para saltar",     en:"Jump rope",         icon:"🪢", group:lang==="es"?"Funcional":"Functional"},
+    // Outdoor / mínimo
+    {id:"stairs",         es:"Escaleras",              en:"Stairs",            icon:"🪜", group:lang==="es"?"Exterior":"Outdoor"},
+    {id:"park_bars",      es:"Barras de parque",       en:"Park bars",         icon:"🌳", group:lang==="es"?"Exterior":"Outdoor"},
   ];
 
   // Filtrar ejercicio según equipo disponible
@@ -1810,24 +1837,30 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
           {step===22&&(<>
             <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{lang==="es"?"EQUIPAMIENTO":"EQUIPMENT"}</div>
             <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:8,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"¿Qué tienes?":"What do you have?"}</div>
-            <div style={{fontSize:12,color:C.tx3,marginBottom:24,fontFamily:mono}}>{lang==="es"?"Selecciona el equipo disponible. El catálogo se filtrará automáticamente.":"Select available equipment. The catalog will filter automatically."}</div>
-            <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:28}}>
-              {EQ_OPTIONS.map(({id,es,en,icon})=>{
-                const on=equipment.includes(id);
-                return(
-                  <button key={id} onClick={()=>setEquipment(on?equipment.filter(x=>x!==id):[...equipment,id])} style={{
-                    display:"flex",alignItems:"center",gap:14,padding:"13px 16px",borderRadius:12,cursor:"pointer",
-                    border:`1.5px solid ${on?C.tx:C.borderL}`,
-                    background:on?"rgba(240,242,245,.06)":"transparent",
-                    transition:"all .15s",outline:"none",
-                  }}>
-                    <span style={{fontSize:20}}>{icon}</span>
-                    <span style={{fontSize:14,fontWeight:on?600:400,color:on?C.tx:C.tx3,fontFamily:sans,flex:1,textAlign:"left"}}>{lang==="es"?es:en}</span>
-                    <div style={{width:20,height:20,borderRadius:"50%",border:`1.5px solid ${on?C.tx:C.borderL}`,background:on?C.tx:"transparent",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:on?C.bgDeep:"transparent",flexShrink:0,transition:"all .15s"}}>{on?"✓":""}</div>
-                  </button>
-                );
-              })}
-            </div>
+            <div style={{fontSize:12,color:C.tx3,marginBottom:20,fontFamily:mono}}>{lang==="es"?"Selecciona el equipo disponible. El catálogo se filtrará automáticamente.":"Select available equipment. The catalog will filter automatically."}</div>
+            {/* Agrupado por categoría */}
+            {[...new Set(EQ_OPTIONS.map(e=>e.group))].map(grp=>(
+              <div key={grp} style={{marginBottom:16}}>
+                <div style={{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:2,textTransform:"uppercase",marginBottom:8,paddingBottom:4,borderBottom:`1px solid ${C.borderL}33`}}>{grp}</div>
+                <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                  {EQ_OPTIONS.filter(e=>e.group===grp).map(({id,es,en,icon})=>{
+                    const on=equipment.includes(id);
+                    return(
+                      <button key={id} onClick={()=>setEquipment(on?equipment.filter(x=>x!==id):[...equipment,id])} style={{
+                        display:"flex",alignItems:"center",gap:12,padding:"11px 14px",borderRadius:10,cursor:"pointer",
+                        border:`1px solid ${on?C.tx:C.borderL}`,
+                        background:on?"rgba(240,242,245,.06)":"transparent",
+                        transition:"all .15s",outline:"none",
+                      }}>
+                        <span style={{fontSize:18,flexShrink:0,width:24,textAlign:"center"}}>{icon}</span>
+                        <span style={{fontSize:13,fontWeight:on?600:400,color:on?C.tx:C.tx3,fontFamily:sans,flex:1,textAlign:"left"}}>{lang==="es"?es:en}</span>
+                        <div style={{width:18,height:18,borderRadius:"50%",border:`1px solid ${on?C.tx:C.borderL}`,background:on?C.tx:"transparent",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:on?C.bgDeep:"transparent",flexShrink:0,transition:"all .15s"}}>{on?"✓":""}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
             {/* Preview de ejercicios disponibles */}
             <div style={{fontFamily:mono,fontSize:9,color:C.tx3,letterSpacing:1,marginBottom:24}}>
               {(()=>{
