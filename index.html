@@ -1230,13 +1230,27 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   );
 }
 
-// Captura el primer frame de un video mp4 como imagen estática
+// Thumbnail lazy — solo carga cuando entra al viewport
 function VideoThumb({src,size=56}){
   const[thumb,setThumb]=useState(null);
   const[playing,setPlaying]=useState(false);
+  const[visible,setVisible]=useState(false);
+  const wrapRef=React.useRef(null);
   const vidRef=React.useRef(null);
+
+  // IntersectionObserver — dispara carga solo cuando el elemento es visible
   useEffect(()=>{
-    if(!src) return;
+    if(!wrapRef.current) return;
+    const obs=new IntersectionObserver(([e])=>{
+      if(e.isIntersecting){setVisible(true);obs.disconnect();}
+    },{rootMargin:"80px"});
+    obs.observe(wrapRef.current);
+    return()=>obs.disconnect();
+  },[]);
+
+  // Capturar primer frame solo cuando visible y aún no hay thumb
+  useEffect(()=>{
+    if(!visible||!src||thumb) return;
     const v=document.createElement("video");
     v.crossOrigin="anonymous";
     v.muted=true;
@@ -1248,20 +1262,20 @@ function VideoThumb({src,size=56}){
         const c=document.createElement("canvas");
         c.width=v.videoWidth||160; c.height=v.videoHeight||160;
         c.getContext("2d").drawImage(v,0,0);
-        setThumb(c.toDataURL("image/jpeg",0.7));
+        setThumb(c.toDataURL("image/jpeg",0.65));
       }catch(e){}
     },{once:true});
     v.load();
-  },[src]);
-  const s=size;
+  },[visible,src]);
+
   return(
-    <div style={{width:s,height:s,borderRadius:10,overflow:"hidden",background:"#2c3040",flexShrink:0,position:"relative",cursor:"pointer"}}
+    <div ref={wrapRef} style={{width:size,height:size,borderRadius:10,overflow:"hidden",background:"#2c3040",flexShrink:0,position:"relative"}}
       onMouseEnter={()=>{setPlaying(true);vidRef.current?.play();}}
       onMouseLeave={()=>{setPlaying(false);if(vidRef.current){vidRef.current.pause();vidRef.current.currentTime=0;}}}>
-      {thumb&&!playing&&<img src={thumb} style={{width:"100%",height:"100%",objectFit:"cover",position:"absolute",inset:0}}/>}
-      {src&&<video ref={vidRef} src={src} muted loop playsInline preload="none"
-        style={{width:"100%",height:"100%",objectFit:"cover",opacity:playing?1:0,transition:"opacity .2s"}}/>}
-      {!thumb&&!playing&&<div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,opacity:.3}}>▶</div>}
+      {thumb&&<img src={thumb} style={{width:"100%",height:"100%",objectFit:"cover",position:"absolute",inset:0,opacity:playing?0:1,transition:"opacity .2s"}}/>}
+      {src&&playing&&<video ref={vidRef} src={src} muted loop playsInline preload="none" autoPlay
+        style={{width:"100%",height:"100%",objectFit:"cover",position:"absolute",inset:0}}/>}
+      {!thumb&&!playing&&<div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",opacity:.25,fontSize:18}}>▶</div>}
     </div>
   );
 }
