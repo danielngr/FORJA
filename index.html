@@ -1661,37 +1661,65 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
     // ── LUZ DIVINA DESDE ARRIBA — haz de partículas que baja del cielo ──
     // Columna de partículas concentrada que cae sobre el mono
-    const BEAM_N=2500;
+    // ── RAYOS DE SOL ORGÁNICOS — parten de un punto alto, se expanden ──
+    // No líneas rectas — distribución volumétrica por rayo, con jitter
+    const RAY_COUNT=14; // número de rayos
+    const PTS_PER_RAY=220; // partículas por rayo
+    const BEAM_N=RAY_COUNT*PTS_PER_RAY;
     const bPos=new Float32Array(BEAM_N*3);
     const bCol=new Float32Array(BEAM_N*3);
-    const bPh =new Float32Array(BEAM_N);
     const bSp =new Float32Array(BEAM_N);
-    for(let i=0;i<BEAM_N;i++){
-      // Distribución en cono desde arriba hacia el centro
-      const t=Math.random(); // 0=arriba, 1=abajo
-      const rad=(1-t)*0.8+t*0.08; // se estrecha al bajar
-      const ang=Math.random()*Math.PI*2;
-      bPos[i*3  ]=Math.cos(ang)*rad*(Math.random()*0.7);
-      bPos[i*3+1]=1.6-t*2.8; // de y=1.6 (cielo) a y=-1.2 (figura)
-      bPos[i*3+2]=(Math.random()-0.5)*0.2;
-      bPh[i]=Math.random()*Math.PI*2;
-      bSp[i]=0.3+Math.random()*0.7;
-      // Color: blanco puro arriba, dorado-plata al llegar al mono
-      const bright=0.5+Math.random()*0.5;
-      const warm=t*0.35; // más cálido cerca de la figura
-      bCol[i*3  ]=bright*(1.0);
-      bCol[i*3+1]=bright*(1.0-warm*0.15);
-      bCol[i*3+2]=bright*(1.0-warm*0.55);
+    const bT0 =new Float32Array(BEAM_N); // posición en el rayo (0=origen, 1=punta)
+
+    // Punto de origen: encima de la cabeza
+    const srcX=0, srcY=1.55;
+
+    // Ángulos de los rayos: abanico desde -70° a +70° centrado hacia abajo
+    // Los rayos del centro son más verticales, los laterales más oblicuos
+    for(let r=0;r<RAY_COUNT;r++){
+      const frac=(r/(RAY_COUNT-1))-0.5; // -0.5 a +0.5
+      // Ángulo: 0=abajo, ±PI/2=horizontal. Abanico de 140° total
+      const baseAng=-Math.PI*0.5 + frac*Math.PI*1.22; // -70° a +70° desde vertical
+      // Longitud varía: centro más largo, laterales más cortos
+      const rayLen=1.8 - Math.abs(frac)*0.9;
+
+      for(let p=0;p<PTS_PER_RAY;p++){
+        const idx=r*PTS_PER_RAY+p;
+        // t: posición a lo largo del rayo (0=origen arriba, 1=punta)
+        const t=Math.pow(Math.random(),0.6); // más densidad cerca del origen
+        bT0[idx]=t;
+
+        // Posición a lo largo del rayo con jitter orgánico
+        const jitterAng=baseAng+(Math.random()-0.5)*0.18; // variación angular
+        const jitterLen=rayLen*(0.85+Math.random()*0.30); // variación de longitud
+        const px=srcX+Math.sin(jitterAng)*t*jitterLen;
+        const py=srcY+Math.cos(jitterAng)*t*jitterLen; // cos para que 0°=abajo
+        const pz=(Math.random()-0.5)*0.08*(1+t); // más profundidad lejos
+
+        bPos[idx*3  ]=px;
+        bPos[idx*3+1]=py;
+        bPos[idx*3+2]=pz;
+        bSp[idx]=0.008+Math.random()*0.018; // velocidad de fade
+
+        // Color: blanco puro en origen → dorado suave → desvanece
+        const bright=(0.7+Math.random()*0.3)*(1-t*0.85);
+        const warm=t*0.45; // más cálido lejos del origen
+        bCol[idx*3  ]=bright;
+        bCol[idx*3+1]=bright*(1-warm*0.10);
+        bCol[idx*3+2]=bright*(1-warm*0.60);
+      }
     }
     const bGeo=new THREE.BufferGeometry();
     bGeo.setAttribute("position",new THREE.BufferAttribute(bPos,3));
     bGeo.setAttribute("color",new THREE.BufferAttribute(bCol,3));
     const bMat=new THREE.PointsMaterial({
-      size:0.014,vertexColors:true,transparent:true,
+      size:0.012,vertexColors:true,transparent:true,
       opacity:0.55,sizeAttenuation:true,depthWrite:false
     });
-    const beamMesh=new THREE.Points(bGeo,bMat);
-    scene.add(beamMesh);
+    const bPos0=new Float32Array(bPos);
+    // Offset inicial aleatorio por partícula para que no pulsen todas juntas
+    const bOffset=new Float32Array(BEAM_N).map(()=>Math.random()*Math.PI*2);
+    scene.add(new THREE.Points(bGeo,bMat));
 
     let figPts=null, t=0, animId=null;
 
@@ -1736,7 +1764,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
       if(!pts2d.length){startAnim();return;}
 
-      const sX=aspect*0.86, sY=0.90;
+      // Escala: la imagen es cuadrada, preservar proporciones
+      // aspect = W/H = 380/400 ≈ 0.95 → figura ligeramente más ancha que alta
+      // Para que no se alargue, igualar escala X e Y
+      const sX=aspect*0.88, sY=aspect*0.88; // mismo factor → sin distorsión
       const CORE=Math.min(pts2d.length*5,90000);
       const DISP=Math.floor(CORE*0.40);
       const TOTAL=CORE+DISP;
@@ -1808,22 +1839,19 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
         fGeo.attributes.position.needsUpdate=true;
         fMat.opacity=0.50+0.12*Math.sin(t*0.55);
 
-        // Haz de luz: partículas caen desde arriba en loop
+        // Rayos de sol: shimmer suave, pulsan orgánicamente
         const bArr=bGeo.attributes.position.array;
+        const bColArr=bGeo.attributes.color.array;
         for(let i=0;i<BEAM_N;i++){
-          // Caída suave — cada partícula a su propia velocidad
-          bArr[i*3+1]-=bSp[i]*0.006;
-          // Si llega abajo de la figura, resetea arriba con leve drift
-          if(bArr[i*3+1]<-1.2){
-            bArr[i*3+1]=1.6+Math.random()*0.4;
-            const rad=(Math.random()*0.8);
-            const ang=Math.random()*Math.PI*2;
-            bArr[i*3  ]=Math.cos(ang)*rad*0.6;
-            bArr[i*3+2]=(Math.random()-0.5)*0.2;
-          }
+          // Opacidad pulsante por partícula — efecto luz que tiembla
+          const flicker=0.55+0.45*Math.sin(t*1.8+bOffset[i]);
+          // Leve movimiento transversal — como polvo en rayo de luz
+          const perp=Math.sin(t*bSp[i]*3+bOffset[i])*0.012*(1-bT0[i]);
+          bArr[i*3  ]=bPos0[i*3  ]+perp;
+          bArr[i*3+1]=bPos0[i*3+1]; // sin movimiento vertical
         }
         bGeo.attributes.position.needsUpdate=true;
-        bMat.opacity=0.40+0.18*Math.sin(t*0.8);
+        bMat.opacity=(0.42+0.16*Math.sin(t*0.7))*1.0;
         renderer.render(scene,camera);
       }
       animate();
@@ -1840,8 +1868,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
   setInterval(tryInit,300);
 })();
 </script>
+
+<script>
+(function initLogoParticles(){
   function tryInit(){
-    const canvas=document.getElementById("forja-logo-canvas");
     if(!canvas||!window.THREE) return;
     if(canvas.dataset.linit) return;
     canvas.dataset.linit="1";
