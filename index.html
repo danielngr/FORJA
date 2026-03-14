@@ -346,6 +346,19 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
       restRef.current=setTimeout(()=>setRestSecs(s=>s-1),1000);
     } else if(restActive&&restSecs===0){
       setRestActive(false);
+      // Vibrar al terminar (mobile)
+      if(navigator.vibrate) navigator.vibrate([100,50,100]);
+      // Beep de audio
+      try{
+        const ac=new(window.AudioContext||window.webkitAudioContext)();
+        [0,0.15,0.30].forEach(t=>{
+          const o=ac.createOscillator(),g=ac.createGain();
+          o.connect(g);g.connect(ac.destination);
+          o.frequency.value=880;g.gain.setValueAtTime(.3,ac.currentTime+t);
+          g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+t+.12);
+          o.start(ac.currentTime+t);o.stop(ac.currentTime+t+.12);
+        });
+      }catch(e){}
       try{navigator.vibrate&&navigator.vibrate([200,100,200]);}catch{}
       if(restCtx) highlightNext(restCtx.ei,restCtx.si);
     }
@@ -549,7 +562,75 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
   return(
     <div style={{position:"fixed",inset:0,background:C2.bg,display:"flex",flexDirection:"column",fontFamily:sans,overflow:"hidden"}}>
 
-      {/* ── HEADER ── */}
+      {/* ── REST OVERLAY ── */}
+      {restActive&&(
+        <div style={{
+          position:"fixed",inset:0,zIndex:200,
+          background:"rgba(12,15,24,0.97)",
+          display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+          animation:"fogIn .2s ease",
+        }}>
+          {/* Contexto de qué ejercicio/serie */}
+          {restCtx&&(
+            <div style={{fontFamily:mono,fontSize:9,color:C2.tx3,letterSpacing:3,textTransform:"uppercase",marginBottom:20}}>
+              {sets[restCtx.ei]&&exs[restCtx.ei]?.e} — {lang==="es"?"SERIE":"SET"} {restCtx.si+1}
+            </div>
+          )}
+
+          {/* Círculo grande con countdown */}
+          <div style={{position:"relative",width:220,height:220,marginBottom:32}}>
+            <svg viewBox="0 0 220 220" width="220" height="220" style={{position:"absolute",inset:0,transform:"rotate(-90deg)"}}>
+              <circle cx="110" cy="110" r="95" fill="none" stroke="rgba(82,90,110,.2)" strokeWidth="6"/>
+              <circle cx="110" cy="110" r="95" fill="none"
+                stroke={restSecs<=10?C2.red:restSecs<=30?C2.yellow:C2.blue}
+                strokeWidth="6" strokeLinecap="round"
+                strokeDasharray={2*Math.PI*95}
+                strokeDashoffset={2*Math.PI*95*(1-restSecs/restDur)}
+                style={{transition:"stroke .5s, stroke-dashoffset .9s linear"}}/>
+            </svg>
+            <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4}}>
+              <div style={{
+                fontSize:restSecs>=60?52:64,fontWeight:900,fontFamily:mono,
+                color:restSecs<=10?C2.red:restSecs<=30?C2.yellow:C2.tx,
+                lineHeight:1,letterSpacing:-2,transition:"color .5s",
+              }}>
+                {Math.floor(restSecs/60)>0?
+                  (Math.floor(restSecs/60)+':'+(restSecs%60<10?'0':'')+restSecs%60):
+                  restSecs
+                }
+              </div>
+              <div style={{fontFamily:mono,fontSize:9,color:C2.tx3,letterSpacing:3}}>
+                {lang==="es"?"DESCANSO":"REST"}
+              </div>
+            </div>
+          </div>
+
+          {/* Selector de duración rápida */}
+          <div style={{display:"flex",gap:8,marginBottom:32}}>
+            {[30,60,90,120,180].map(s=>(
+              <button key={s} onClick={()=>{setRestDur(s);setRestSecs(s);}} style={{
+                padding:"7px 12px",borderRadius:20,fontFamily:mono,fontSize:10,letterSpacing:1,cursor:"pointer",
+                border:`1px solid ${restDur===s?"rgba(106,143,192,.6)":"rgba(82,90,110,.4)"}`,
+                background:restDur===s?"rgba(106,143,192,.12)":"transparent",
+                color:restDur===s?C2.blue:C2.tx3,transition:"all .15s",
+              }}>{s<60?s+"s":s/60+"m"}</button>
+            ))}
+          </div>
+
+          {/* Botones de acción */}
+          <div style={{display:"flex",gap:12}}>
+            <button onClick={()=>{setRestSecs(r=>Math.min(r+15,restDur));}} style={{
+              padding:"12px 20px",borderRadius:12,border:"1px solid rgba(82,90,110,.4)",
+              background:"transparent",color:C2.tx3,fontFamily:mono,fontSize:11,letterSpacing:1,cursor:"pointer",
+            }}>+15s</button>
+            <button onClick={skipRest} style={{
+              padding:"12px 28px",borderRadius:12,border:"none",
+              background:C2.tx,color:C2.bgD,fontFamily:mono,fontSize:12,letterSpacing:2,
+              fontWeight:700,cursor:"pointer",
+            }}>{lang==="es"?"SALTAR":"SKIP"}</button>
+          </div>
+        </div>
+      )}
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 20px 12px",flexShrink:0}}>
         <button onClick={onBack} style={{background:"none",border:"none",color:C2.tx3,fontFamily:mono,fontSize:11,letterSpacing:1.5,cursor:"pointer",padding:0}}>
           ← {lang==="es"?"VOLVER":"BACK"}
