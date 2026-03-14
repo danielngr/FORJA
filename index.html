@@ -1673,7 +1673,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               {(lang==="es"?["L","M","X","J","V","S","D"]:["M","T","W","T","F","S","S"]).map((d,i)=>(
                 <button key={i} onClick={()=>{
                   const ns=manualSelDays.includes(i)?manualSelDays.filter(x=>x!==i):[...manualSelDays,i].slice(0,manualDays);
-                  setManualSelDays(ns);
+                  setManualSelDays([...ns].sort((a,b)=>a-b));
                 }} style={{
                   width:42,height:52,borderRadius:10,
                   border:`1.5px solid ${manualSelDays.includes(i)?C.tx:C.borderL}`,
