@@ -18,7 +18,7 @@ input[type=number]{-moz-appearance:textfield;}
 @keyframes fogIn{from{opacity:0;filter:blur(6px)}to{opacity:1;filter:blur(0)}}
 @keyframes pulse{0%,100%{opacity:0.6;transform:translateX(-50%) scale(1)}50%{opacity:1;transform:translateX(-50%) scale(1.04)}}
 @keyframes celebrate{0%{transform:scale(0.5);opacity:0}60%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
-@keyframes floatUp{0%{transform:translateY(0);opacity:1}100%{transform:translateY(-60px);opacity:0}}
+@keyframes floatUp{0%{opacity:1;transform:translateY(0) rotate(0deg);}100%{opacity:0;transform:translateY(-100vh) rotate(180deg);}}
 @keyframes checkBounce{0%{transform:scale(1)}30%{transform:scale(1.35)}60%{transform:scale(.9)}100%{transform:scale(1)}}
 @keyframes nextPulse{0%,100%{background:transparent}50%{background:rgba(106,143,192,.15)}}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
@@ -461,38 +461,56 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
 
   const fmtSess=()=>{const m=Math.floor(sessSecs/60),s=sessSecs%60;return(m<10?'0':'')+m+':'+(s<10?'0':'')+s;};
 
+  // ── msgs must be outside conditional — React rules of hooks ──
+  const celebMsgs=lang==="es"?["¡Lo aplastaste hoy!","¡Brutal, crack!","¡Sesión completada!"]:["You crushed it!","Absolutely brutal!","Session complete!"];
+  const[celebMsg]=useState(()=>celebMsgs[Math.floor(Math.random()*celebMsgs.length)]);
+
+  // Pre-generate confetti so it's stable
+  const[confettiPieces]=useState(()=>{
+    const colors=["#5faa88","#6a8fc0","#c0a870","#8878c0","#F0F2F5","#d96060","#f0c040","#60d0d9"];
+    return Array.from({length:80},(_,i)=>{
+      const sz=3+Math.random()*7;
+      const isRect=i%3===0;
+      return{
+        left:Math.random()*100,
+        // Start spread across full screen height, animation moves up
+        top:10+Math.random()*90,
+        w:isRect?sz*1.8:sz, h:sz,
+        br:isRect?2:sz/2,
+        bg:colors[Math.floor(Math.random()*colors.length)],
+        rot:Math.random()*360,
+        dur:1.0+Math.random()*1.8,
+        delay:Math.random()*2.0,
+        op:0.7+Math.random()*0.3,
+      };
+    });
+  });
+
   // ── Completion screen ──
   if(allDone){
-    const msgs=lang==="es"?["¡Lo aplastaste hoy!","¡Brutal, crack!","¡Sesión completada!"]:["You crushed it!","Absolutely brutal!","Session complete!"];
-    const[msg]=useState(()=>msgs[Math.floor(Math.random()*msgs.length)]);
-    const confettiColors=[C2.green,C2.blue,C2.yellow,C2.purple,"#F0F2F5","#d96060"];
+    const confettiColors=["#5faa88","#6a8fc0","#c0a870","#8878c0","#F0F2F5","#d96060"];
     return(
       <div style={{position:"fixed",inset:0,background:C2.bgD,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:"sans-serif",overflow:"hidden"}}>
-        {/* Confetti — many more, varied shapes */}
-        <div style={{position:"absolute",inset:0,pointerEvents:"none"}}>
-          {[...Array(60)].map((_,i)=>{
-            const sz=2+Math.random()*6;
-            const isRect=i%3===0;
-            return(
-              <div key={i} style={{
-                position:"absolute",
-                left:`${Math.random()*100}%`,
-                top:`${Math.random()*100}%`,
-                width:isRect?sz*2:sz,
-                height:sz,
-                borderRadius:isRect?2:"50%",
-                background:confettiColors[i%confettiColors.length],
-                transform:`rotate(${Math.random()*360}deg)`,
-                animation:`floatUp ${1.2+Math.random()*2}s ease-out ${Math.random()*1.5}s infinite`,
-                opacity:.85
-              }}/>
-            );
-          })}
+        {/* Confetti — 80 pieces, full screen */}
+        <div style={{position:"absolute",inset:0,pointerEvents:"none",overflow:"hidden"}}>
+          {confettiPieces.map((p,i)=>(
+            <div key={i} style={{
+              position:"absolute",
+              left:`${p.left}%`,
+              top:`${p.top}%`,
+              width:p.w, height:p.h,
+              borderRadius:p.br,
+              background:p.bg,
+              transform:`rotate(${p.rot}deg)`,
+              animation:`floatUp ${p.dur}s ease-out ${p.delay}s infinite`,
+              opacity:p.op,
+            }}/>
+          ))}
         </div>
         <div style={{width:88,height:88,borderRadius:"50%",background:C2.green,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:`0 0 48px ${C2.green}55`,marginBottom:22,animation:"celebrate .6s cubic-bezier(.34,1.56,.64,1) both"}}>
           <svg width="40" height="40" viewBox="0 0 40 40" fill="none"><path d="M7 20L16 29L33 11" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
         </div>
-        <div style={{fontSize:28,fontWeight:900,letterSpacing:-1,color:C2.tx,textAlign:"center",padding:"0 32px",animation:"fu .5s .25s both"}}>{msg}</div>
+        <div style={{fontSize:28,fontWeight:900,letterSpacing:-1,color:C2.tx,textAlign:"center",padding:"0 32px",animation:"fu .5s .25s both"}}>{celebMsg}</div>
         <div style={{fontFamily:"'SF Mono','Courier New',monospace",fontSize:9,color:C2.tx3,letterSpacing:2,marginTop:8,animation:"fu .5s .4s both"}}>
           {lang==="es"?"EL TRABAJO DE HOY FORJA EL ATLETA DE MAÑANA":"TODAY'S WORK BUILDS TOMORROW'S ATHLETE"}
         </div>
