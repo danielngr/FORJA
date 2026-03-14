@@ -1381,6 +1381,39 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
   const[catalogMuscle,setCatalogMuscle]=useState(""); // filtro músculo activo
 
   // Catálogo de ejercicios agrupado por músculo
+  const[equipment,setEquipment]=useState([]); // equipo disponible
+
+  // Mapa equipo por ejercicio
+  const EQ_MAP={
+    "bench press":["barbell","bench"],"incline bench press":["barbell","bench"],"dumbbell bench press":["dumbbells","bench"],"incline dumbbell press":["dumbbells","bench"],"dumbbell chest fly":["dumbbells","bench"],"cable fly":["cable_machine"],"machine chest press":["machine"],"machine pec fly":["machine"],"push up":[],"decline push up":[],"dips":["dip_bar"],
+    "pull up":["pull_up_bar"],"chin up":["pull_up_bar"],"barbell row":["barbell"],"pendlay row":["barbell"],"dumbbell row":["dumbbells","bench"],"cable row":["cable_machine"],"machine neutral row":["machine"],"lat pulldown":["cable_machine"],"machine pulldown":["machine"],"barbell pullover":["barbell","bench"],"barbell rack pull":["barbell","rack"],"supermans":[],
+    "overhead press":["barbell"],"dumbbell shoulder press":["dumbbells"],"seated overhead press":["dumbbells","bench"],"lateral raise":["dumbbells"],"dumbbell front raise":["dumbbells"],"face pull":["cable_machine"],"cable face pull":["cable_machine"],"machine face pulls":["machine"],"barbell upright row":["barbell"],"barbell shrug":["barbell"],"dumbbell shrug":["dumbbells"],"reverse fly":["dumbbells"],"dumbbell rear delt fly":["dumbbells"],"dumbbell laying reverse fly":["dumbbells","bench"],
+    "squat":["barbell","rack"],"front squat":["barbell","rack"],"goblet squat":["dumbbells"],"leg press":["machine"],"deadlift":["barbell"],"romanian deadlift":["barbell"],"bulgarian split squat":["dumbbells","bench"],"dumbbell bulgarian split squat":["dumbbells","bench"],"leg curl":["machine"],"leg extension":["machine"],"calf raise":[],"seated calf raise":["machine"],"hip thrust":["barbell","bench"],"box jump":["box"],"barbell thruster":["barbell"],
+    "barbell curl":["barbell"],"dumbbell curl":["dumbbells"],"hammer curl":["dumbbells"],"concentration curl":["dumbbells"],"preacher curl":["barbell","bench"],"reverse curl":["barbell"],
+    "tricep pushdown":["cable_machine"],"overhead tricep extension":["dumbbells"],"skull crusher":["barbell","bench"],"bench dips":["bench"],"close grip bench press":["barbell","bench"],"diamond push ups":[],
+    "plank":[],"hanging knee raises":["pull_up_bar"],"machine crunch":["machine"],"mountain climber":[],
+  };
+
+  // Equipo disponible — opciones con iconos
+  const EQ_OPTIONS=[
+    {id:"barbell",     es:"Barra olímpica",  en:"Barbell",       icon:"🏋️"},
+    {id:"dumbbells",   es:"Mancuernas",      en:"Dumbbells",     icon:"💪"},
+    {id:"bench",       es:"Banco",           en:"Bench",         icon:"🪑"},
+    {id:"rack",        es:"Rack/Jaula",      en:"Rack/Cage",     icon:"🏗️"},
+    {id:"cable_machine",es:"Polea",          en:"Cable machine", icon:"🔄"},
+    {id:"machine",     es:"Máquinas",        en:"Machines",      icon:"⚙️"},
+    {id:"pull_up_bar", es:"Barra de dominadas",en:"Pull-up bar", icon:"📊"},
+    {id:"dip_bar",     es:"Barras paralelas",en:"Dip bars",      icon:"⚡"},
+    {id:"box",         es:"Cajón pliométrico",en:"Plyo box",     icon:"📦"},
+  ];
+
+  // Filtrar ejercicio según equipo disponible
+  const hasEquip=(ex)=>{
+    const needed=EQ_MAP[ex]||[];
+    if(needed.length===0) return true; // bodyweight siempre disponible
+    return needed.every(e=>equipment.includes(e));
+  };
+
   const CATALOG=[
     {muscle:lang==="es"?"Pecho":"Chest",      color:"#6a8fc0", exs:["bench press","incline bench press","dumbbell bench press","incline dumbbell press","dumbbell chest fly","cable fly","machine chest press","machine pec fly","push up","decline push up","dips"]},
     {muscle:lang==="es"?"Espalda":"Back",     color:"#5faa88", exs:["pull up","chin up","barbell row","pendlay row","dumbbell row","cable row","machine neutral row","lat pulldown","machine pulldown","barbell pullover","barbell rack pull","supermans"]},
@@ -1725,7 +1758,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
       )}
 
       {/* ── FLUJO MANUAL ── */}
-      {(step===20||step===21||step===22)&&(
+      {(step===20||step===21||step===22||step===23)&&(
         <div style={{padding:"0 26px",paddingTop:"7vh",paddingBottom:40,animation:"fu 0.4s ease"}}>
           {/* Step 20 — cuántos días manual */}
           {step===20&&(<>
@@ -1769,12 +1802,47 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             </div>
             <div style={{display:"flex",gap:10,marginTop:8}}>
               <div style={{flex:1}}><Btn ghost onClick={()=>setStep(20)}>{t.back}</Btn></div>
-              <div style={{flex:2}}><Btn onClick={()=>{setCatalogDay(0);setCatalogMuscle("");setStep(22);}} disabled={manualSelDays.length!==manualDays}>{t.next}</Btn></div>
+              <div style={{flex:2}}><Btn onClick={()=>{setStep(22);}} disabled={manualSelDays.length!==manualDays}>{t.next}</Btn></div>
             </div>
           </>)}
 
-          {/* Step 22 — catálogo de ejercicios por día */}
+          {/* Step 22 — equipo disponible */}
           {step===22&&(<>
+            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{lang==="es"?"EQUIPAMIENTO":"EQUIPMENT"}</div>
+            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:8,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"¿Qué tienes?":"What do you have?"}</div>
+            <div style={{fontSize:12,color:C.tx3,marginBottom:24,fontFamily:mono}}>{lang==="es"?"Selecciona el equipo disponible. El catálogo se filtrará automáticamente.":"Select available equipment. The catalog will filter automatically."}</div>
+            <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:28}}>
+              {EQ_OPTIONS.map(({id,es,en,icon})=>{
+                const on=equipment.includes(id);
+                return(
+                  <button key={id} onClick={()=>setEquipment(on?equipment.filter(x=>x!==id):[...equipment,id])} style={{
+                    display:"flex",alignItems:"center",gap:14,padding:"13px 16px",borderRadius:12,cursor:"pointer",
+                    border:`1.5px solid ${on?C.tx:C.borderL}`,
+                    background:on?"rgba(240,242,245,.06)":"transparent",
+                    transition:"all .15s",outline:"none",
+                  }}>
+                    <span style={{fontSize:20}}>{icon}</span>
+                    <span style={{fontSize:14,fontWeight:on?600:400,color:on?C.tx:C.tx3,fontFamily:sans,flex:1,textAlign:"left"}}>{lang==="es"?es:en}</span>
+                    <div style={{width:20,height:20,borderRadius:"50%",border:`1.5px solid ${on?C.tx:C.borderL}`,background:on?C.tx:"transparent",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:on?C.bgDeep:"transparent",flexShrink:0,transition:"all .15s"}}>{on?"✓":""}</div>
+                  </button>
+                );
+              })}
+            </div>
+            {/* Preview de ejercicios disponibles */}
+            <div style={{fontFamily:mono,fontSize:9,color:C.tx3,letterSpacing:1,marginBottom:24}}>
+              {(()=>{
+                const avail=Object.keys(EQ_MAP).filter(ex=>hasEquip(ex)).length;
+                return lang==="es"?`${avail} ejercicios disponibles con tu equipo`:`${avail} exercises available with your equipment`;
+              })()}
+            </div>
+            <div style={{display:"flex",gap:10}}>
+              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(21)}>{t.back}</Btn></div>
+              <div style={{flex:2}}><Btn onClick={()=>{setCatalogDay(0);setCatalogMuscle("");setStep(23);}}>{lang==="es"?"IR AL CATÁLOGO":"GO TO CATALOG"}</Btn></div>
+            </div>
+          </>)}
+
+          {/* Step 23 — catálogo de ejercicios por día */}
+          {step===23&&(<>
             {/* Header: tabs de días */}
             <div style={{marginBottom:16}}>
               <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:10}}>{lang==="es"?"CATÁLOGO":"CATALOG"}</div>
@@ -1831,10 +1899,13 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
 
             {/* Lista de ejercicios */}
             <div style={{maxHeight:380,overflowY:"auto",display:"flex",flexDirection:"column",gap:6,marginBottom:16}}>
-              {CATALOG.filter(g=>!catalogMuscle||g.muscle===catalogMuscle).map(group=>(
+              {CATALOG.filter(g=>!catalogMuscle||g.muscle===catalogMuscle).map(group=>{
+                const filtered=group.exs.filter(ex=>hasEquip(ex));
+                if(filtered.length===0) return null;
+                return(
                 <React.Fragment key={group.muscle}>
                   {(!catalogMuscle)&&<div style={{fontSize:8,fontFamily:mono,color:group.color,letterSpacing:2,padding:"8px 0 4px",textTransform:"uppercase"}}>{group.muscle}</div>}
-                  {group.exs.map(ex=>{
+                  {filtered.map(ex=>{
                     const added=(manualRoutine[catalogDay]||[]).includes(ex);
                     return(
                       <button key={ex} onClick={()=>{
@@ -1864,11 +1935,12 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                     );
                   })}
                 </React.Fragment>
-              ))}
+                );
+              })}
             </div>
 
             <div style={{display:"flex",gap:10}}>
-              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(21)}>{t.back}</Btn></div>
+              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(22)}>{t.back}</Btn></div>
               <div style={{flex:2}}><Btn onClick={finishManual} disabled={manualSelDays.some((_,i)=>(manualRoutine[i]||[]).length===0)}>{t.go}</Btn></div>
             </div>
           </>)}
