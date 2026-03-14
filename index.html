@@ -1238,10 +1238,33 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
   const[selDays,setSelDays]=useState([]);
   const[gender,setGender]=useState("");
   const[age,setAge]=useState(25);
-  const[weight,setWeight]=useState(70);
-  const[height,setHeight]=useState(175);
+  const[weight,setWeight]=useState(70);   // siempre en kg internamente
+  const[height,setHeight]=useState(175);  // siempre en cm internamente
+  const[units,setUnits]=useState("metric"); // "metric" | "imperial"
   const t=lang?L[lang]:L.en;
-  const TOTAL_STEPS=6;
+  const TOTAL_STEPS=7;
+
+  // helpers de conversión
+  const toDisp=(valKg,type)=>{
+    if(units==="imperial"){
+      if(type==="weight") return Math.round(valKg*2.2046);
+      if(type==="height") return Math.round(valKg/2.54); // cm → inches
+    }
+    return valKg;
+  };
+  const toMetric=(val,type)=>{
+    if(units==="imperial"){
+      if(type==="weight") return Math.round(val/2.2046);
+      if(type==="height") return Math.round(val*2.54); // inches → cm
+    }
+    return val;
+  };
+  const wLabel=units==="imperial"?"lb":"kg";
+  const hLabel=units==="imperial"?"in":"cm";
+  const wMin=units==="imperial"?66:30;
+  const wMax=units==="imperial"?550:250;
+  const hMin=units==="imperial"?47:120;
+  const hMax=units==="imperial"?87:220;
 
   // Dispara evento para que Three.js inicialice el canvas del logo
   useEffect(()=>{
@@ -1253,7 +1276,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
     const splits=RAW[key]||RAW[`${days}beg`]||Object.values(RAW)[0];
     const sd=selDays.length===days?selDays:[0,1,2,3,4,5].slice(0,days);
     const r=buildRoutine7(splits,sd,goal);
-    sp({lang,goal,level,days,age,weight,height,selDays:sd,gender});
+    sp({lang,goal,level,days,age,weight,height,units,selDays:sd,gender});
     sr(r);setStep(99);
   };
 
@@ -1398,12 +1421,27 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             </div>
           </>)}
           {step===4&&(<>
-            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{lang==="es"?"DATOS FÍSICOS":"BODY DATA"}</div>
-            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:28,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"Tu cuerpo":"Your body"}</div>
-            <div style={{display:"flex",flexDirection:"column",gap:20,marginBottom:32}}>
-              <Num val={age} set={setAge} min={13} max={80} label={lang==="es"?"EDAD":"AGE"}/>
-              <Num val={weight} set={setWeight} min={30} max={250} label={lang==="es"?"PESO (kg)":"WEIGHT (kg)"}/>
-              <Num val={height} set={setHeight} min={120} max={220} label={lang==="es"?"ALTURA (cm)":"HEIGHT (cm)"}/>
+            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{lang==="es"?"UNIDADES":"UNITS"}</div>
+            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:32,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"Sistema de medida":"Measurement"}</div>
+            <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:32}}>
+              {[
+                {key:"metric",  es:"Métrico",   en:"Metric",   sub:"kg · cm"},
+                {key:"imperial",es:"Imperial",  en:"Imperial", sub:"lb · in"},
+              ].map(({key,es,en,sub})=>(
+                <button key={key} onClick={()=>setUnits(key)} style={{
+                  display:"flex",alignItems:"center",justifyContent:"space-between",
+                  padding:"16px 18px",borderRadius:14,cursor:"pointer",
+                  border:`1.5px solid ${units===key?C.tx:C.borderL}`,
+                  background:units===key?"rgba(240,242,245,.06)":"transparent",
+                  transition:"all 0.2s",outline:"none",
+                }}>
+                  <div style={{textAlign:"left"}}>
+                    <div style={{fontSize:16,fontWeight:700,color:C.tx}}>{lang==="es"?es:en}</div>
+                    <div style={{fontSize:11,fontFamily:mono,color:C.tx3,marginTop:2,letterSpacing:1}}>{sub}</div>
+                  </div>
+                  {units===key&&<div style={{width:20,height:20,borderRadius:"50%",background:C.tx,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11}}>✓</div>}
+                </button>
+              ))}
             </div>
             <div style={{display:"flex",gap:10,marginTop:8}}>
               <div style={{flex:1}}><Btn ghost onClick={()=>setStep(3)}>{t.back}</Btn></div>
@@ -1411,6 +1449,29 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             </div>
           </>)}
           {step===5&&(<>
+            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{lang==="es"?"DATOS FÍSICOS":"BODY DATA"}</div>
+            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:28,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"Tu cuerpo":"Your body"}</div>
+            <div style={{display:"flex",flexDirection:"column",gap:20,marginBottom:32}}>
+              <Num val={age} set={setAge} min={13} max={80} label={lang==="es"?"EDAD":"AGE"}/>
+              <Num
+                val={toDisp(weight,"weight")}
+                set={v=>setWeight(toMetric(v,"weight"))}
+                min={wMin} max={wMax}
+                label={lang==="es"?`PESO (${wLabel})`:`WEIGHT (${wLabel})`}
+              />
+              <Num
+                val={toDisp(height,"height")}
+                set={v=>setHeight(toMetric(v,"height"))}
+                min={hMin} max={hMax}
+                label={lang==="es"?`ALTURA (${hLabel})`:`HEIGHT (${hLabel})`}
+              />
+            </div>
+            <div style={{display:"flex",gap:10,marginTop:8}}>
+              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(4)}>{t.back}</Btn></div>
+              <div style={{flex:2}}><Btn onClick={()=>setStep(6)}>{t.next}</Btn></div>
+            </div>
+          </>)}
+          {step===6&&(<>
             <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{t.days}</div>
             <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:32,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"¿Cuántos días?":"How many days?"}</div>
             <div style={{display:"flex",gap:10,justifyContent:"center"}}>
@@ -1422,11 +1483,11 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               ))}
             </div>
             <div style={{display:"flex",gap:10,marginTop:32}}>
-              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(4)}>{t.back}</Btn></div>
-              <div style={{flex:2}}><Btn onClick={()=>setStep(6)} disabled={!days}>{t.next}</Btn></div>
+              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(5)}>{t.back}</Btn></div>
+              <div style={{flex:2}}><Btn onClick={()=>setStep(7)} disabled={!days}>{t.next}</Btn></div>
             </div>
           </>)}
-          {step===6&&(<>
+          {step===7&&(<>
             <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>
               {lang==="es"?"QUÉ DÍAS":"WHICH DAYS"}
             </div>
@@ -1452,7 +1513,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               {selDays.length}/{days} {lang==="es"?"días seleccionados":"days selected"}
             </div>
             <div style={{display:"flex",gap:10,marginTop:8}}>
-              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(5)}>{t.back}</Btn></div>
+              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(6)}>{t.back}</Btn></div>
               <div style={{flex:2}}><Btn onClick={finish} disabled={selDays.length!==days}>{t.go}</Btn></div>
             </div>
           </>)}
