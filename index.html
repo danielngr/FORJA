@@ -1240,6 +1240,11 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
   const t=lang?L[lang]:L.en;
   const TOTAL_STEPS=6;
 
+  // Dispara evento para que Three.js inicialice el canvas del logo
+  useEffect(()=>{
+    window.dispatchEvent(new CustomEvent("forja:mount"));
+  });
+
   const finish=()=>{
     const key=`${days}${level}`;
     const splits=RAW[key]||RAW[`${days}beg`]||Object.values(RAW)[0];
@@ -1326,15 +1331,17 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
           </div>
           {step===1&&(<>
             <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>
-              {lang==="es"?"ERES":"YOU ARE"}
+              {lang==="es"?"GÉNERO":"GENDER"}
             </div>
             <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:32,lineHeight:1,textTransform:"uppercase"}}>
-              {lang==="es"?"¿Hombre o mujer?":"Man or woman?"}
+              {lang==="es"?"Selecciona tu género":"Select your gender"}
             </div>
             <div style={{display:"flex",gap:14,marginBottom:32}}>
               {[
-                {key:"male",   label:lang==="es"?"Hombre":"Man",   img:"https://i.imgur.com/ldscGFx.jpeg"},
-                {key:"female", label:lang==="es"?"Mujer":"Woman",  img:"https://i.imgur.com/wd5KvKF.jpeg"},
+                {key:"male",   label:lang==="es"?"Hombre":"Man",
+                  img:"https://forjavideos.b-cdn.net/Firefly%20silver%20chrome%20muscular%20man%20sitting%20in%20lotus%20meditation%20pose%2C%20pure%20solid%20black%20background%2C%20no.jpg"},
+                {key:"female", label:lang==="es"?"Mujer":"Woman",
+                  img:"https://forjavideos.b-cdn.net/Firefly%20silver%20chrome%20athletic%20female%20figure%20sitting%20in%20lotus%20meditation%20pose%2C%20pure%20solid%20black%20back.jpg"},
               ].map(({key,label,img})=>(
                 <button key={key} onClick={()=>setGender(key)} style={{
                   flex:1,borderRadius:16,overflow:"hidden",cursor:"pointer",padding:0,
@@ -1342,10 +1349,10 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                   background:"transparent",position:"relative",
                   transition:"border-color .2s",outline:"none",
                 }}>
-                  <img src={img} alt={label} style={{width:"100%",aspectRatio:"1/1",objectFit:"cover",display:"block"}}/>
+                  <img src={img} alt={label} style={{width:"100%",aspectRatio:"1/1",objectFit:"cover",objectPosition:"center top",display:"block"}}/>
                   <div style={{
                     position:"absolute",bottom:0,left:0,right:0,
-                    background:"linear-gradient(transparent,rgba(20,24,36,.85))",
+                    background:"linear-gradient(transparent,rgba(20,24,36,.88))",
                     padding:"20px 0 12px",
                     fontSize:11,fontWeight:700,fontFamily:mono,letterSpacing:2,
                     color:gender===key?C.tx:C.tx2,textTransform:"uppercase",
