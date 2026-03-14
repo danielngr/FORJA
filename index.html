@@ -1678,10 +1678,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     const dGeo=new THREE.BufferGeometry();
     dGeo.setAttribute('position',new THREE.BufferAttribute(dPos,3));
     dGeo.setAttribute('color',new THREE.BufferAttribute(dCol,3));
-    scene.add(new THREE.Points(dGeo,new THREE.PointsMaterial({
+    {const pts=new THREE.Points(dGeo,new THREE.PointsMaterial({
       size:0.018,vertexColors:true,transparent:true,
       opacity:0.92,sizeAttenuation:true,depthWrite:false
-    })));
+    }));pts.renderOrder=1;scene.add(pts);}
 
     // ── PHOTON RING ───────────────────────────────────────────────────
     {
@@ -1697,10 +1697,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       const g=new THREE.BufferGeometry();
       g.setAttribute('position',new THREE.BufferAttribute(p,3));
       g.setAttribute('color',new THREE.BufferAttribute(c,3));
-      scene.add(new THREE.Points(g,new THREE.PointsMaterial({
+      {const pts=new THREE.Points(g,new THREE.PointsMaterial({
         size:0.040,vertexColors:true,transparent:true,
         opacity:0.96,sizeAttenuation:true,depthWrite:false
-      })));
+      }));pts.renderOrder=1;scene.add(pts);}
     }
 
     // ── ARCO SUPERIOR (lente gravitacional) ───────────────────────────
@@ -1725,10 +1725,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       const g=new THREE.BufferGeometry();
       g.setAttribute('position',new THREE.BufferAttribute(p,3));
       g.setAttribute('color',new THREE.BufferAttribute(c,3));
-      scene.add(new THREE.Points(g,new THREE.PointsMaterial({
-        size:0.018,vertexColors:true,transparent:true, // más pequeño → no cuadradas
+      {const pts=new THREE.Points(g,new THREE.PointsMaterial({
+        size:0.018,vertexColors:true,transparent:true,
         opacity:0.82,sizeAttenuation:true,depthWrite:false
-      })));
+      }));pts.renderOrder=1;scene.add(pts);}
     }
 
     // ── ARCO INFERIOR ─────────────────────────────────────────────────
@@ -1748,10 +1748,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       const g=new THREE.BufferGeometry();
       g.setAttribute('position',new THREE.BufferAttribute(p,3));
       g.setAttribute('color',new THREE.BufferAttribute(c,3));
-      scene.add(new THREE.Points(g,new THREE.PointsMaterial({
+      {const pts=new THREE.Points(g,new THREE.PointsMaterial({
         size:0.016,vertexColors:true,transparent:true,
         opacity:0.62,sizeAttenuation:true,depthWrite:false
-      })));
+      }));pts.renderOrder=1;scene.add(pts);}
     }
 
     // ── ESFERA NEGRA — tapa el disco pero el mono se agrega después ───
@@ -1796,47 +1796,47 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       }
       if(!pts2d.length){startAnim();return;}
 
-      // Escala uniforme para no distorsionar
-      // Con cámara z=6.5 FOV 44°, frustum ~±2.4 en Y
-      // sX=sY=1.10 → figura ~2.2 units — ocupa bien el canvas
       const sX=1.38, sY=1.38;
       const FIG_Y=-0.20;
-      const CORE=Math.min(pts2d.length*4,80000);
-      const DISP=Math.floor(CORE*0.35);
-      const pos=new Float32Array((CORE+DISP)*3),col=new Float32Array((CORE+DISP)*3);
 
-      for(let i=0;i<CORE;i++){
-        const p=pts2d[Math.floor(Math.random()*pts2d.length)];
-        pos[i*3  ]=p.nx*sX+(Math.random()-0.5)*0.008;
-        pos[i*3+1]=p.ny*sY+FIG_Y+(Math.random()-0.5)*0.008;
-        pos[i*3+2]=(Math.random()-0.5)*0.06;
-        col[i*3]=p.r; col[i*3+1]=p.g; col[i*3+2]=p.b;
-      }
-      // Partículas dispersas que salen del mono — desvanecen al color de fondo
-      const BG={r:56/255,g:62/255,b:78/255};
-      for(let i=0;i<DISP;i++){
-        const idx=CORE+i;
-        const p=pts2d[Math.floor(Math.random()*pts2d.length)];
-        const sx=p.nx*sX,sy=p.ny*sY+FIG_Y;
-        const len=Math.sqrt(sx*sx+sy*sy)+0.001;
-        const eD=Math.pow(Math.random(),0.22)*3.0;
-        const dx=(sx/len)+(Math.random()-0.5)*0.85,dy=(sy/len)+(Math.random()-0.5)*0.85,dz=(Math.random()-0.5)*0.5;
-        const dlen=Math.sqrt(dx*dx+dy*dy+dz*dz)+0.001;
-        pos[idx*3]=sx+(dx/dlen)*eD; pos[idx*3+1]=sy+(dy/dlen)*eD; pos[idx*3+2]=(dz/dlen)*eD;
-        const fade=Math.min(eD/3.0,1),op=Math.pow(1-fade,2);
-        col[idx*3]=p.r*op+BG.r*(1-op); col[idx*3+1]=p.g*op+BG.g*(1-op); col[idx*3+2]=p.b*op+BG.b*(1-op);
+      // SPLIT_NY: puntos por debajo de esta línea van detrás del disco,
+      // por encima van delante. ny=0 = centro del cuerpo.
+      // Calibrado en prototipo: split en ny=0.00 (50% del cuerpo)
+      const SPLIT_NY=0.0;
+
+      const ptBottom=pts2d.filter(p=>p.ny<=SPLIT_NY);
+      const ptTop   =pts2d.filter(p=>p.ny> SPLIT_NY);
+
+      function makeLayer(pts,renderOrder){
+        if(!pts.length) return null;
+        const CORE=Math.min(pts.length*4,50000);
+        const pos=new Float32Array(CORE*3),col=new Float32Array(CORE*3);
+        for(let i=0;i<CORE;i++){
+          const p=pts[Math.floor(Math.random()*pts.length)];
+          pos[i*3  ]=p.nx*sX+(Math.random()-0.5)*0.008;
+          pos[i*3+1]=p.ny*sY+FIG_Y+(Math.random()-0.5)*0.008;
+          pos[i*3+2]=(Math.random()-0.5)*0.06;
+          col[i*3]=p.r; col[i*3+1]=p.g; col[i*3+2]=p.b;
+        }
+        const geo=new THREE.BufferGeometry();
+        geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+        geo.setAttribute('color',new THREE.BufferAttribute(col,3));
+        const mesh=new THREE.Points(geo,new THREE.PointsMaterial({
+          size:0.0095,vertexColors:true,transparent:true,
+          opacity:0.98,sizeAttenuation:true,depthWrite:false,depthTest:false
+        }));
+        mesh.renderOrder=renderOrder;
+        scene.add(mesh);
+        return mesh;
       }
 
-      const geo=new THREE.BufferGeometry();
-      geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
-      geo.setAttribute('color',new THREE.BufferAttribute(col,3));
-      figPts=new THREE.Points(geo,new THREE.PointsMaterial({
-        size:0.0095,vertexColors:true,transparent:true,
-        opacity:0.98,sizeAttenuation:true,depthWrite:false,
-        depthTest:false  // ignora depth — siempre encima
-      }));
-      figPts.renderOrder=2; // se renderiza después de todo
-      scene.add(figPts);
+      // Bottom (piernas/cintura) → renderOrder 0 → detrás del disco (renderOrder 1)
+      // Top (torso/cabeza)       → renderOrder 2 → delante del disco
+      figPts = makeLayer(ptBottom, 0);
+      const figTop = makeLayer(ptTop, 2);
+      // Guardar ambos para la animación breathing
+      figPts._top = figTop;
+
       startAnim();
     }
 
@@ -1855,11 +1855,17 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
         }
         dGeo.attributes.position.needsUpdate=true;
 
-        // Figura: breathing
+        // Figura: breathing — animar ambas capas juntas
         if(figPts){
-          figPts.position.y=Math.sin(T*0.45)*0.038;
-          figPts.rotation.y=Math.sin(T*0.18)*0.045;
-          figPts.rotation.x=Math.sin(T*0.13)*0.010;
+          const by=Math.sin(T*0.45)*0.038;
+          const bry=Math.sin(T*0.18)*0.045;
+          const brx=Math.sin(T*0.13)*0.010;
+          figPts.position.y=by; figPts.rotation.y=bry; figPts.rotation.x=brx;
+          if(figPts._top){
+            figPts._top.position.y=by;
+            figPts._top.rotation.y=bry;
+            figPts._top.rotation.x=brx;
+          }
         }
 
         // Cámara: leve órbita
