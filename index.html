@@ -1238,11 +1238,42 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
   const[selDays,setSelDays]=useState([]);
   const[gender,setGender]=useState("");
   const[age,setAge]=useState(25);
-  const[weight,setWeight]=useState(70);   // siempre en kg internamente
-  const[height,setHeight]=useState(175);  // siempre en cm internamente
-  const[units,setUnits]=useState("metric"); // "metric" | "imperial"
+  const[weight,setWeight]=useState(70);
+  const[height,setHeight]=useState(175);
+  const[units,setUnits]=useState("metric");
+  const[mode,setMode]=useState(""); // "auto" | "manual"
+  // Estado rutina manual: array de 7 días, cada uno array de ejercicios
+  const[manualDays,setManualDays]=useState(0);
+  const[manualSelDays,setManualSelDays]=useState([]);
+  const[manualRoutine,setManualRoutine]=useState(Array(7).fill(null).map(()=>[]));
+  const[catalogDay,setCatalogDay]=useState(0); // qué día se está editando en catálogo
+  const[catalogMuscle,setCatalogMuscle]=useState(""); // filtro músculo activo
+
+  // Catálogo de ejercicios agrupado por músculo
+  const CATALOG=[
+    {muscle:lang==="es"?"Pecho":"Chest",    color:"#6a8fc0", exs:["bench press","incline bench press","dumbbell bench press","incline dumbbell press","dumbbell chest fly","cable fly","machine chest press","machine pec fly","dips","push up","decline push up","diamond push ups","close grip bench press","dumbbell flyes"]},
+    {muscle:lang==="es"?"Espalda":"Back",   color:"#5faa88", exs:["pull up","weighted pull up","chin up","barbell row","pendlay row","dumbbell row","cable row","machine neutral row","lat pulldown","machine pulldown","barbell pullover","barbell rack pull","supermans"]},
+    {muscle:lang==="es"?"Hombros":"Shoulders",color:"#c0a870",exs:["overhead press","barbell overhead press","dumbbell shoulder press","seated overhead press","lateral raise","dumbbell front raise","face pull","cable face pull","machine face pulls","barbell upright row","barbell shrug","dumbbell shrug","reverse fly","dumbbell rear delt fly","dumbbell laying reverse fly"]},
+    {muscle:lang==="es"?"Piernas":"Legs",   color:"#d96060", exs:["squat","barbell squat","front squat","goblet squat","bodyweight squat","leg press","romanian deadlift","deadlift","bulgarian split squat","dumbbell bulgarian split squat","leg curl","leg extension","calf raise","seated calf raise","hip thrust","box jump","barbell thruster"]},
+    {muscle:lang==="es"?"Bíceps":"Biceps",  color:"#8878c0", exs:["barbell curl","dumbbell curl","hammer curl","concentration curl","preacher curl","reverse curl","chin up"]},
+    {muscle:lang==="es"?"Tríceps":"Triceps",color:"#c07060", exs:["tricep pushdown","overhead tricep extension","skull crusher","bench dips","dips","close grip bench press","diamond push ups"]},
+    {muscle:lang==="es"?"Core":"Core",      color:"#70a0c0", exs:["plank","hanging knee raises","machine crunch","mountain climber"]},
+  ];
   const t=lang?L[lang]:L.en;
-  const TOTAL_STEPS=7;
+  const TOTAL_STEPS=mode==="manual"?4:7; // manual: género+modo+días+catálogo
+
+  const finishManual=()=>{
+    const sd=manualSelDays.length===manualDays?manualSelDays:[0,1,2,3,4,5].slice(0,manualDays);
+    // Construir rutina 7 días desde selección manual
+    const r=Array(7).fill(null).map((_,i)=>{
+      const idx=sd.indexOf(i);
+      if(idx===-1) return {l:"REST",ex:[]};
+      const exs=manualRoutine[idx]||[];
+      return {l:`DÍA ${idx+1}`,ex:exs.map(e=>({e,s:3,r:"8-12",id:`m${idx}${e}`}))};
+    });
+    sp({lang,goal:"general",level:"int",days:manualDays,age,weight,height,units,selDays:sd,gender,mode:"manual"});
+    sr(r);setStep(99);
+  };
 
   // helpers de conversión
   const toDisp=(valKg,type)=>{
@@ -1410,6 +1441,33 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             </div>
           </>)}
           {step===2&&(<>
+            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{lang==="es"?"RUTINA":"ROUTINE"}</div>
+            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:28,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"¿Cómo la quieres?":"How do you want it?"}</div>
+            <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:32}}>
+              <button onClick={()=>{setMode("auto");setStep(3);}} style={{
+                padding:"20px 18px",borderRadius:14,cursor:"pointer",border:`1.5px solid ${C.borderL}`,
+                background:"transparent",display:"flex",alignItems:"center",gap:16,outline:"none",transition:"all .2s",
+              }}>
+                <div style={{width:42,height:42,borderRadius:12,background:"rgba(106,143,192,.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>⚡</div>
+                <div style={{textAlign:"left"}}>
+                  <div style={{fontSize:15,fontWeight:700,color:C.tx,marginBottom:3}}>{lang==="es"?"El sistema la genera":"System generates it"}</div>
+                  <div style={{fontSize:11,color:C.tx3,fontFamily:mono}}>{lang==="es"?"Rutina optimizada según tu objetivo y nivel":"Optimized for your goal and level"}</div>
+                </div>
+              </button>
+              <button onClick={()=>{setMode("manual");setStep(20);}} style={{
+                padding:"20px 18px",borderRadius:14,cursor:"pointer",border:`1.5px solid ${C.borderL}`,
+                background:"transparent",display:"flex",alignItems:"center",gap:16,outline:"none",transition:"all .2s",
+              }}>
+                <div style={{width:42,height:42,borderRadius:12,background:"rgba(95,170,136,.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>✏️</div>
+                <div style={{textAlign:"left"}}>
+                  <div style={{fontSize:15,fontWeight:700,color:C.tx,marginBottom:3}}>{lang==="es"?"Yo la creo":"I'll build it"}</div>
+                  <div style={{fontSize:11,color:C.tx3,fontFamily:mono}}>{lang==="es"?"Elige ejercicios por día desde el catálogo":"Pick exercises per day from the catalog"}</div>
+                </div>
+              </button>
+            </div>
+            <div style={{flex:1}}><Btn ghost onClick={()=>setStep(1)}>{t.back}</Btn></div>
+          </>)}
+          {step===3&&(<>
             <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{t.goal}</div>
             <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:24,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"¿Qué buscas?":"What's your goal?"}</div>
             <div style={{display:"flex",flexDirection:"column",borderTop:`1px solid ${C.borderL}55`}}>
@@ -1418,11 +1476,11 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               ))}
             </div>
             <div style={{display:"flex",gap:10,marginTop:28}}>
-              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(1)}>{t.back}</Btn></div>
-              <div style={{flex:2}}><Btn onClick={()=>setStep(3)} disabled={!goal}>{t.next}</Btn></div>
+              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(2)}>{t.back}</Btn></div>
+              <div style={{flex:2}}><Btn onClick={()=>setStep(4)} disabled={!goal}>{t.next}</Btn></div>
             </div>
           </>)}
-          {step===3&&(<>
+          {step===4&&mode==="auto"&&(<>
             <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{t.level}</div>
             <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:24,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"Tu experiencia":"Your experience"}</div>
             <div style={{display:"flex",flexDirection:"column",borderTop:`1px solid ${C.borderL}55`}}>
@@ -1431,8 +1489,8 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               ))}
             </div>
             <div style={{display:"flex",gap:10,marginTop:28}}>
-              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(2)}>{t.back}</Btn></div>
-              <div style={{flex:2}}><Btn onClick={()=>setStep(4)} disabled={!level}>{t.next}</Btn></div>
+              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(3)}>{t.back}</Btn></div>
+              <div style={{flex:2}}><Btn onClick={()=>setStep(5)} disabled={!level}>{t.next}</Btn></div>
             </div>
           </>)}
           {step===4&&(<>
@@ -1530,6 +1588,162 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             <div style={{display:"flex",gap:10,marginTop:8}}>
               <div style={{flex:1}}><Btn ghost onClick={()=>setStep(6)}>{t.back}</Btn></div>
               <div style={{flex:2}}><Btn onClick={finish} disabled={selDays.length!==days}>{t.go}</Btn></div>
+            </div>
+          </>)}
+        </div>
+      )}
+
+      {/* ── FLUJO MANUAL ── */}
+      {(step===20||step===21||step===22)&&(
+        <div style={{padding:"0 26px",paddingTop:"7vh",paddingBottom:40,animation:"fu 0.4s ease"}}>
+          {/* Step 20 — cuántos días manual */}
+          {step===20&&(<>
+            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{lang==="es"?"DÍAS / SEMANA":"DAYS / WEEK"}</div>
+            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:32,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"¿Cuántos días?":"How many days?"}</div>
+            <div style={{display:"flex",gap:10,justifyContent:"center"}}>
+              {[3,4,5,6].map(n=>(
+                <button key={n} onClick={()=>{setManualDays(n);setManualSelDays([]);setManualRoutine(Array(7).fill(null).map(()=>[]));}} style={{
+                  width:68,height:84,borderRadius:14,
+                  border:`1.5px solid ${manualDays===n?C.tx:C.borderL}`,cursor:"pointer",
+                  background:manualDays===n?C.tx:"transparent",color:manualDays===n?C.white:C.tx3,
+                  fontSize:32,fontWeight:900,fontFamily:sans,transition:"all 0.2s"}}>{n}</button>
+              ))}
+            </div>
+            <div style={{display:"flex",gap:10,marginTop:32}}>
+              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(2)}>{t.back}</Btn></div>
+              <div style={{flex:2}}><Btn onClick={()=>setStep(21)} disabled={!manualDays}>{t.next}</Btn></div>
+            </div>
+          </>)}
+
+          {/* Step 21 — qué días manual */}
+          {step===21&&(<>
+            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{lang==="es"?"QUÉ DÍAS":"WHICH DAYS"}</div>
+            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:28,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"¿Qué días?":"Which days?"}</div>
+            <div style={{display:"flex",gap:8,justifyContent:"center",marginBottom:8}}>
+              {(lang==="es"?["L","M","X","J","V","S","D"]:["M","T","W","T","F","S","S"]).map((d,i)=>(
+                <button key={i} onClick={()=>{
+                  const ns=manualSelDays.includes(i)?manualSelDays.filter(x=>x!==i):[...manualSelDays,i].slice(0,manualDays);
+                  setManualSelDays(ns);
+                }} style={{
+                  width:42,height:52,borderRadius:10,
+                  border:`1.5px solid ${manualSelDays.includes(i)?C.tx:C.borderL}`,
+                  background:manualSelDays.includes(i)?C.tx:"transparent",
+                  color:manualSelDays.includes(i)?C.bgDeep:C.tx3,
+                  fontSize:13,fontWeight:700,fontFamily:mono,cursor:"pointer",transition:"all .15s"
+                }}>{d}</button>
+              ))}
+            </div>
+            <div style={{fontFamily:mono,fontSize:9,color:C.tx3,letterSpacing:1.5,textAlign:"center",marginBottom:28}}>
+              {manualSelDays.length}/{manualDays} {lang==="es"?"días seleccionados":"days selected"}
+            </div>
+            <div style={{display:"flex",gap:10,marginTop:8}}>
+              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(20)}>{t.back}</Btn></div>
+              <div style={{flex:2}}><Btn onClick={()=>{setCatalogDay(0);setCatalogMuscle("");setStep(22);}} disabled={manualSelDays.length!==manualDays}>{t.next}</Btn></div>
+            </div>
+          </>)}
+
+          {/* Step 22 — catálogo de ejercicios por día */}
+          {step===22&&(<>
+            {/* Header: tabs de días */}
+            <div style={{marginBottom:16}}>
+              <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:10}}>{lang==="es"?"CATÁLOGO":"CATALOG"}</div>
+              <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:4}}>
+                {manualSelDays.map((dayIdx,i)=>{
+                  const dayNames=lang==="es"?["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"]:["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+                  const exCount=(manualRoutine[i]||[]).length;
+                  return(
+                    <button key={i} onClick={()=>{setCatalogDay(i);setCatalogMuscle("");}} style={{
+                      padding:"6px 12px",borderRadius:20,fontSize:10,fontFamily:mono,letterSpacing:1,
+                      border:`1.5px solid ${catalogDay===i?C.tx:C.borderL}`,
+                      background:catalogDay===i?C.tx:"transparent",
+                      color:catalogDay===i?C.bgDeep:C.tx3,cursor:"pointer",
+                      whiteSpace:"nowrap",flexShrink:0,transition:"all .15s",
+                    }}>{dayNames[dayIdx]}{exCount>0?` · ${exCount}`:""}</button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Ejercicios agregados al día actual */}
+            {(manualRoutine[catalogDay]||[]).length>0&&(
+              <div style={{marginBottom:12}}>
+                <div style={{fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:1.5,marginBottom:6}}>{lang==="es"?"AGREGADOS":"ADDED"}</div>
+                <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                  {(manualRoutine[catalogDay]||[]).map(ex=>(
+                    <div key={ex} style={{
+                      display:"flex",alignItems:"center",gap:4,padding:"4px 10px",
+                      borderRadius:20,background:"rgba(95,170,136,.15)",
+                      border:"1px solid rgba(95,170,136,.3)",fontSize:10,fontFamily:mono,color:C.green,
+                    }}>
+                      {ex}
+                      <button onClick={()=>{
+                        const r=[...manualRoutine];r[catalogDay]=(r[catalogDay]||[]).filter(x=>x!==ex);setManualRoutine(r);
+                      }} style={{background:"none",border:"none",color:C.green,cursor:"pointer",fontSize:12,lineHeight:1,padding:0}}>×</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Filtros por músculo */}
+            <div style={{display:"flex",gap:5,overflowX:"auto",paddingBottom:6,marginBottom:10}}>
+              {[{muscle:lang==="es"?"Todos":"All",color:C.tx3},...CATALOG].map(({muscle,color})=>(
+                <button key={muscle} onClick={()=>setCatalogMuscle(muscle===(lang==="es"?"Todos":"All")?"":muscle)} style={{
+                  padding:"5px 10px",borderRadius:16,fontSize:9,fontFamily:mono,letterSpacing:1,
+                  border:`1px solid ${(catalogMuscle===muscle||(catalogMuscle===""&&muscle===(lang==="es"?"Todos":"All")))?color:C.borderL}`,
+                  background:(catalogMuscle===muscle||(catalogMuscle===""&&muscle===(lang==="es"?"Todos":"All")))?"rgba(255,255,255,.06)":"transparent",
+                  color:(catalogMuscle===muscle||(catalogMuscle===""&&muscle===(lang==="es"?"Todos":"All")))?color:C.tx3,
+                  cursor:"pointer",whiteSpace:"nowrap",flexShrink:0,transition:"all .15s",
+                }}>{muscle}</button>
+              ))}
+            </div>
+
+            {/* Lista de ejercicios */}
+            <div style={{maxHeight:280,overflowY:"auto",display:"flex",flexDirection:"column",gap:4,marginBottom:16}}>
+              {CATALOG.filter(g=>!catalogMuscle||g.muscle===catalogMuscle).map(group=>(
+                <React.Fragment key={group.muscle}>
+                  {(!catalogMuscle)&&<div style={{fontSize:8,fontFamily:mono,color:group.color,letterSpacing:2,padding:"8px 0 4px",textTransform:"uppercase"}}>{group.muscle}</div>}
+                  {group.exs.map(ex=>{
+                    const added=(manualRoutine[catalogDay]||[]).includes(ex);
+                    return(
+                      <button key={ex} onClick={()=>{
+                        const r=[...manualRoutine];
+                        const cur=r[catalogDay]||[];
+                        r[catalogDay]=added?cur.filter(x=>x!==ex):[...cur,ex];
+                        setManualRoutine(r);
+                      }} style={{
+                        display:"flex",alignItems:"center",justifyContent:"space-between",
+                        padding:"10px 12px",borderRadius:10,cursor:"pointer",
+                        border:`1px solid ${added?"rgba(95,170,136,.4)":C.borderL+"55"}`,
+                        background:added?"rgba(95,170,136,.08)":"transparent",
+                        transition:"all .15s",outline:"none",
+                      }}>
+                        <div style={{display:"flex",alignItems:"center",gap:10}}>
+                          {/* Thumbnail de video */}
+                          <div style={{width:36,height:36,borderRadius:8,overflow:"hidden",background:C.bgDeep,flexShrink:0}}>
+                            {VID[ex]&&<video src={VID[ex]} muted loop playsInline preload="none"
+                              onMouseEnter={e=>e.target.play()} onMouseLeave={e=>{e.target.pause();e.target.currentTime=0;}}
+                              style={{width:"100%",height:"100%",objectFit:"cover"}}/>}
+                          </div>
+                          <span style={{fontSize:12,color:added?C.green:C.tx,fontFamily:sans,textAlign:"left",textTransform:"capitalize"}}>{ex}</span>
+                        </div>
+                        <div style={{
+                          width:22,height:22,borderRadius:"50%",flexShrink:0,
+                          border:`1.5px solid ${added?C.green:C.borderL}`,
+                          background:added?C.green:"transparent",
+                          display:"flex",alignItems:"center",justifyContent:"center",
+                          fontSize:12,color:added?C.white:"transparent",transition:"all .15s",
+                        }}>{added?"✓":""}</div>
+                      </button>
+                    );
+                  })}
+                </React.Fragment>
+              ))}
+            </div>
+
+            <div style={{display:"flex",gap:10}}>
+              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(21)}>{t.back}</Btn></div>
+              <div style={{flex:2}}><Btn onClick={finishManual} disabled={manualSelDays.some((_,i)=>(manualRoutine[i]||[]).length===0)}>{t.go}</Btn></div>
             </div>
           </>)}
         </div>
