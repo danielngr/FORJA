@@ -1754,12 +1754,14 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       })));
     }
 
-    // ── ESFERA NEGRA ──────────────────────────────────────────────────
+    // ── ESFERA NEGRA — tapa el disco pero el mono se agrega después ───
+    // renderOrder negativo para que se dibuje antes que las partículas
     const sphere=new THREE.Mesh(
       new THREE.SphereGeometry(G*0.94,64,64),
-      new THREE.MeshBasicMaterial({color:0x383e4e}) // mismo color que fondo página
+      new THREE.MeshBasicMaterial({color:0x383e4e})
     );
     sphere.position.y=BH_Y;
+    sphere.renderOrder=0;
     scene.add(sphere);
 
     // ── FIGURA PLATEADA ───────────────────────────────────────────────
@@ -1794,10 +1796,12 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       }
       if(!pts2d.length){startAnim();return;}
 
-      // Figura grande — protagonista. Con cámara en z=6.5 y FOV 44°
-      // el frustum es ~±2.6 en Y. sY=1.4 → figura mide ~2.8 units = pantalla completa
-      const sX=aspect*1.15, sY=1.30;
-      const FIG_Y=0.30; // desplazar figura hacia arriba sobre el agujero negro
+      // Escala uniforme para no distorsionar
+      // Con cámara z=6.5 FOV 44°, frustum ~±2.4 en Y
+      // sX=sY=1.10 → figura ~2.2 units — ocupa bien el canvas
+      const sX=1.10, sY=1.10;
+      // Figura centrada ligeramente arriba del agujero negro
+      const FIG_Y=0.15;
       const CORE=Math.min(pts2d.length*4,80000);
       const DISP=Math.floor(CORE*0.35);
       const pos=new Float32Array((CORE+DISP)*3),col=new Float32Array((CORE+DISP)*3);
@@ -1829,8 +1833,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       geo.setAttribute('color',new THREE.BufferAttribute(col,3));
       figPts=new THREE.Points(geo,new THREE.PointsMaterial({
         size:0.0095,vertexColors:true,transparent:true,
-        opacity:0.98,sizeAttenuation:true,depthWrite:false
+        opacity:0.98,sizeAttenuation:true,depthWrite:false,
+        depthTest:false  // ignora depth — siempre encima
       }));
+      figPts.renderOrder=2; // se renderiza después de todo
       scene.add(figPts);
       startAnim();
     }
