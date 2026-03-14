@@ -1276,20 +1276,27 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
   return(
     <div style={{minHeight:"100vh",background:C.bg,color:C.tx,fontFamily:sans}}>
       {step===0&&(
-        <div style={{padding:"0 26px",paddingTop:"8vh",animation:"fogIn 0.8s ease"}}>
-          <div style={{marginBottom:40}}>
-            <canvas id="forja-logo-canvas" style={{width:"100%",height:180,display:"block"}}></canvas>
-            <div style={{marginTop:8,display:"flex",alignItems:"center",gap:12}}>
+        <div style={{padding:"0 26px",paddingTop:"8vh",animation:"fogIn 0.8s ease",position:"relative",zIndex:1}}>
+          {/* Canvas full viewport — partículas llegan al tope */}
+          <canvas id="forja-logo-canvas" style={{
+            position:"fixed",top:0,left:0,
+            width:"100%",height:"100vh",
+            display:"block",pointerEvents:"none",
+            zIndex:0
+          }}></canvas>
+          <div style={{marginBottom:40,height:200}}/>
+            <div style={{marginTop:8,display:"flex",alignItems:"center",gap:12,position:"relative",zIndex:1}}>
               <div style={{height:1,background:C.border,width:40}}/>
               <div style={{fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:3}}>TRAIN · TRACK · EVOLVE</div>
             </div>
-          </div>
-          <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:10}}>// SELECT LANGUAGE</div>
-          <div style={{display:"flex",flexDirection:"column",marginBottom:36,borderTop:`1px solid ${C.borderL}55`}}>
+          <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:10,position:"relative",zIndex:1}}>// SELECT LANGUAGE</div>
+          <div style={{display:"flex",flexDirection:"column",marginBottom:36,borderTop:`1px solid ${C.borderL}55`,position:"relative",zIndex:1}}>
             <Opt active={lang==="es"} onClick={()=>setLang("es")}>Español</Opt>
             <Opt active={lang==="en"} onClick={()=>setLang("en")}>English</Opt>
           </div>
-          <Btn onClick={()=>setStep(1)} disabled={!lang}>{t.next}</Btn>
+          <div style={{position:"relative",zIndex:1}}>
+            <Btn onClick={()=>setStep(1)} disabled={!lang}>{t.next}</Btn>
+          </div>
         </div>
       )}
       {step>=1&&step<=TOTAL_STEPS&&(
@@ -1538,8 +1545,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     if(canvas.dataset.linit) return;
     canvas.dataset.linit="1";
 
-    const W=canvas.offsetWidth||320;
-    const H=canvas.offsetHeight||160;
+    const W=window.innerWidth||canvas.offsetWidth||360;
+    const H=window.innerHeight||canvas.offsetHeight||640;
 
     // Renderizar "FORJA" en canvas 2D — una línea, mismo tamaño, centrado
     const OW=800, OH=200;
@@ -1554,15 +1561,26 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     ctx.textAlign="center";
     ctx.fillText("FORJA",OW/2,OH/2);
 
-    // Samplear píxeles oscuros
+    // Samplear píxeles del texto
     const imgData=ctx.getImageData(0,0,OW,OH);
-    const pts2d=[];
+    const pts2d=[];    // todos los píxeles del texto (para el logo estático)
+    const edge2d=[];   // solo bordes (para la explosión)
+
     for(let y=0;y<OH;y+=2){
       for(let x=0;x<OW;x+=2){
         const i=(y*OW+x)*4;
-        if(imgData.data[i]<140){
-          pts2d.push({x:((x/OW)*2-1), y:(1-(y/OH)*2)});
-        }
+        const isDark=imgData.data[i]<140;
+        if(!isDark) continue;
+        pts2d.push({x:((x/OW)*2-1), y:(1-(y/OH)*2)});
+
+        // Borde: al menos un vecino es blanco (fuera de la letra)
+        const isEdge=(
+          imgData.data[((y-2)*OW+x)*4]>140 ||
+          imgData.data[((y+2)*OW+x)*4]>140 ||
+          imgData.data[(y*OW+(x-2))*4]>140 ||
+          imgData.data[(y*OW+(x+2))*4]>140
+        );
+        if(isEdge) edge2d.push({x:((x/OW)*2-1), y:(1-(y/OH)*2)});
       }
     }
 
@@ -1573,40 +1591,52 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
     const scene=new THREE.Scene();
     const aspect=W/H;
-    const cam=new THREE.OrthographicCamera(-aspect,aspect,1,-1,0.1,100);
+    // Canvas es ahora full viewport — frustum cubre todo
+    const vRange=1.0;
+    const cam=new THREE.OrthographicCamera(-aspect,aspect,vRange,-vRange,0.1,100);
     cam.position.set(0,0,10);
 
     const TOTAL=pts2d.length;
-    const DISP=Math.floor(TOTAL*8); // explosión masiva
+    const DISP=Math.floor(TOTAL*8);
     const pos=new Float32Array(TOTAL*3);
     const col=new Float32Array(TOTAL*3);
     const posD=new Float32Array(DISP*3);
     const colD=new Float32Array(DISP*3);
 
-    const scaleX=aspect*1.02, scaleY=0.92;
+    // Texto en el tercio superior — partículas explotan hacia toda la pantalla
+    const scaleX=aspect*0.90, scaleY=vRange*0.28;
+    const textOffsetY=0.52; // offset hacia arriba
+    const edgeSrc=edge2d.length>0?edge2d:pts2d;
 
     for(let i=0;i<TOTAL;i++){
       const p=pts2d[i];
       pos[i*3  ]=p.x*scaleX+(Math.random()-0.5)*0.012;
-      pos[i*3+1]=p.y*scaleY+(Math.random()-0.5)*0.012;
+      pos[i*3+1]=p.y*scaleY+textOffsetY+(Math.random()-0.5)*0.012;
       pos[i*3+2]=(Math.random()-0.5)*0.03;
       const v=0.80+Math.random()*0.18;
       col[i*3]=v*0.94; col[i*3+1]=v*0.96; col[i*3+2]=v;
     }
 
     for(let i=0;i<DISP;i++){
-      const src=pts2d[Math.floor(Math.random()*TOTAL)];
-      // Explosive organic spread — strong upward bias to reach top
-      const baseAng=Math.random()*Math.PI*2;
-      const upBias=Math.PI*0.5;
-      const blend=Math.pow(Math.random(),0.5);
-      const ang=baseAng*(1-blend)+upBias*blend+(Math.random()-0.5)*1.8;
-      const eD=Math.pow(Math.random(),0.18)*7.0; // llega al tope y más allá
-      posD[i*3  ]=src.x*scaleX+Math.cos(ang)*eD;
-      posD[i*3+1]=src.y*scaleY+Math.sin(ang)*eD;
-      posD[i*3+2]=(Math.random()-0.5)*0.5;
-      const fadeT=eD/7.0;
-      const op=Math.max(0,1-fadeT*0.78);
+      const src=edgeSrc[Math.floor(Math.random()*edgeSrc.length)];
+      const cx=src.x, cy=src.y;
+      const len=Math.sqrt(cx*cx+cy*cy)+0.001;
+      const baseAngX=cx/len, baseAngY=cy/len;
+      const deviation=(Math.random()-0.5)*Math.PI*1.2;
+      const cosD=Math.cos(deviation), sinD=Math.sin(deviation);
+      const dirX=baseAngX*cosD-baseAngY*sinD;
+      const dirY=baseAngX*sinD+baseAngY*cosD;
+
+      const u=Math.random();
+      const eD=-Math.log(1-u*0.98)*0.55*aspect;
+      const jitterD=(Math.random()-0.5)*0.3*aspect;
+      const finalD=Math.max(0.1, eD+jitterD);
+
+      posD[i*3  ]=src.x*scaleX+dirX*finalD;
+      posD[i*3+1]=src.y*scaleY+textOffsetY+dirY*finalD; // Y sin compresión — pantalla completa
+      posD[i*3+2]=(Math.random()-0.5)*0.6;
+
+      const op=Math.max(0, Math.exp(-finalD/(aspect*0.5))*0.85*(0.5+Math.random()*0.5));
       colD[i*3  ]=0.94*op+0.22*(1-op);
       colD[i*3+1]=0.96*op+0.243*(1-op);
       colD[i*3+2]=1.0*op+0.306*(1-op);
