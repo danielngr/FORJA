@@ -1599,8 +1599,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 <script>
 (function initMeditation(){
   const BASE="https://forjavideos.b-cdn.net/";
-  const MALE_URL  =BASE+"Firefly%20silver%20chrome%20human%20figure%20sitting%20in%20lotus%20meditation%20pose%2C%20divine%20godlike%20energy%2C%20warm%20gol.jpg";
-  const FEMALE_URL=BASE+"Firefly%20athletic%20man%20sitting%20in%20lotus%20meditation%20pose%2C%20smooth%20polished%20liquid%20silver%20mercury%20body%2C%20p.jpg";
+  const MALE_URL  =BASE+"Firefly%20silver%20chrome%20muscular%20man%20sitting%20in%20lotus%20meditation%20pose%2C%20pure%20solid%20black%20background%2C%20no.jpg";
+  const FEMALE_URL=BASE+"Firefly%20silver%20chrome%20athletic%20female%20figure%20sitting%20in%20lotus%20meditation%20pose%2C%20pure%20solid%20black%20back.jpg";
   const MALE_FB="https://i.imgur.com/ldscGFx.jpeg";
   const FEMALE_FB="https://i.imgur.com/wd5KvKF.jpeg";
   const BG={r:56/255,g:62/255,b:78/255};
@@ -1686,14 +1686,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
           const i=(y*OW+x)*4;
           const r=data[i],g=data[i+1],b=data[i+2];
           const br=r*0.299+g*0.587+b*0.114;
-
-          // FILTRO PRECISO: solo píxeles plateados/neutros de la figura
-          // Excluir rayos dorados (R>>G>>B) y fondo oscuro
-          const isNeutral = Math.abs(r-g)<40 && Math.abs(g-b)<50; // gris neutro
-          const notGolden = r < g*1.35; // no es dorado (rayos tienen R>>G)
-          const bright    = br > 95;    // suficientemente brillante
-
-          if(isNeutral && notGolden && bright){
+          // Fondo negro puro → cualquier pixel >20 es la figura
+          if(br>20){
             pts2d.push({
               nx:((x/OW)*2-1),
               ny:(1-(y/OH)*2),
