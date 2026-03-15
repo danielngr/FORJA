@@ -2190,130 +2190,125 @@ function MuscleHeatmap({muscleVol,lang}){
 
   // Smooth gaussian heatmap using world-space normalized coordinates
   function applyHeatmap(obj, muscleVol){
-    const maxV=Math.max(...Object.values(muscleVol||{}),1);
-    // Si no hay datos reales esta semana, dejar todo chrome plateado
     const totalVol=Object.values(muscleVol||{}).reduce((a,b)=>a+b,0);
     if(!muscleVol||totalVol===0){
       obj.traverse(function(c){
-        if(c.isMesh){
-          c.material=new THREE.MeshStandardMaterial({
-            color:0xffffff,metalness:1.0,roughness:0.03,envMapIntensity:2.5,vertexColors:false
-          });
-        }
+        if(c.isMesh) c.material=new THREE.MeshStandardMaterial({
+          color:0xffffff,metalness:1.0,roughness:0.03,envMapIntensity:2.5,vertexColors:false
+        });
       });
       return;
     }
 
-    // Normalize volumes 0-1
-    const v={};
+    const maxV=Math.max(...Object.values(muscleVol),1);
     const KEYS=["pectoral mayor","deltoides anterior","deltoides posterior",
       "bíceps braquial","tríceps braquial","core (transverso abdominal)",
       "dorsal ancho","trapecio superior","cuádriceps","isquiotibiales",
       "glúteo mayor","gastrocnemio","braquial","braquiorradial"];
+    const v={};
     KEYS.forEach(k=>{ v[k]=Math.min(1,(muscleVol[k]||0)/maxV); });
 
-    // World bounds
-    const wb=new THREE.Box3().setFromObject(obj);
-    const yMin=wb.min.y, yMax=wb.max.y, yH=(yMax-yMin)||1;
-    const xMax=Math.max(Math.abs(wb.min.x),Math.abs(wb.max.x))||1;
+    // Threshold: muscles below 30% of max don't show. Core needs 70%.
+    const THR=0.30;
+    const vt=k=>(v[k]||0)>=THR?v[k]:0;
+    const vCore=(v["core (transverso abdominal)"]||0)>=0.70?v["core (transverso abdominal)"]:0;
+    const vForearm=Math.max(vt("braquiorradial"),vt("braquial"));
 
-    function gauss(yn,center,sigma){ return Math.exp(-Math.pow(yn-center,2)/(2*sigma*sigma)); }
-    function gaussX(xn,center,sigma){ return Math.exp(-Math.pow(xn-center,2)/(2*sigma*sigma)); }
+    const wb=new THREE.Box3().setFromObject(obj);
+    const yMin=wb.min.y, yH=(wb.max.y-wb.min.y)||1;
+    const xMaxAbs=Math.max(Math.abs(wb.min.x),Math.abs(wb.max.x))||1;
+    const zMaxAbs=Math.max(Math.abs(wb.min.z),Math.abs(wb.max.z),0.01);
+
+    function G(x,c,s){ return Math.exp(-Math.pow(x-c,2)/(2*s*s)); }
 
     obj.traverse(function(c){
       if(!c.isMesh) return;
-      const geo=c.geometry;
-      const pos=geo.attributes.position;
+      const geo=c.geometry, pos=geo.attributes.position;
       if(!pos) return;
-
       const col=new Float32Array(pos.count*3);
+
       for(let i=0;i<pos.count;i++){
-        // World position
         const wy=pos.getY(i)*obj.scale.y+obj.position.y;
         const wx=pos.getX(i)*obj.scale.x;
-        const wz=pos.getZ(i)*obj.scale.z;
-        const yn=(wy-yMin)/yH;  // 0=pies, 1=cabeza
-        const xn=Math.abs(wx)/xMax;
+        const wz=pos.getZ(i); // local Z for arm detection
+        const wzS=wz*obj.scale.z;
+        const yn=(wy-yMin)/yH;
+        const xn=Math.abs(wx)/xMaxAbs;
+        const zn=wzS/zMaxAbs;
 
-        // SMOOTH front/back blend using sigmoid on Z — elimina la línea vertical
-        // Usamos Z local (sin escalar) para consistencia con wb
-        const zRaw=pos.getZ(i);
-        const zMax=Math.max(Math.abs(wb.min.z),Math.abs(wb.max.z),0.01);
-        const zn=zRaw/zMax; // -1=atrás puro, +1=frente puro
-        // Sigmoide suave: transición gradual en vez de corte abrupto
-        const fB=1/(1+Math.exp(-zn*8)); // 0.0=atrás, 1.0=frente, 0.5=centro
+        // Torso sigmoid: front=1, back=0
+        const fB=1/(1+Math.exp(-zn*8));
         const bB=1-fB;
 
-        // Per-muscle gaussian blobs — CALIBRADOS con debug visual real del modelo
-        // yn: 0=pies, 1=cabeza | xn: 0=centro, 1=borde
-        // THRESHOLD: solo mostrar músculos con volumen ≥ 30% del máximo
-        // Esto evita que músculo con 10-20% (secundario menor) se coloree
-        const THR=0.30;
-        const vt=(key)=>((v[key]||0)>=THR?v[key]:0);
+        // ── ZONE BOUNDARIES (read from diagnostic visualization) ────
+        // Measured: ARM xn 0.38-1.0, yn 0.38-0.84
+        // Measured: LEG yn 0.00-0.44, xn 0.00-0.55
+        // Measured: TORSO yn 0.44-1.0, xn 0.00-0.38
+        const isArm  = xn>=0.38 && yn>=0.50 && yn<=0.84;  // yn>=0.50: arms start at shoulder height
+        const isLeg  = yn<0.44  && !isArm;
+        const isTorso= !isArm   && !isLeg && yn>=0.44;
 
-        // Antebrazos SOLO de braquial/braquiorradial directos, no de bíceps/tríceps
-        const vForearm=Math.max(vt("braquiorradial"),vt("braquial"));
+        // Arm front/back from local Z
+        const armZMax=0.10;
+        const fBarm=isArm?Math.min(1,Math.max(0,wz/armZMax)):0;
+        const bBarm=isArm?Math.min(1,Math.max(0,-wz/armZMax)):0;
 
-        // Pecho: yn 0.65-0.74 → centro 0.69, SOLO frontal
-        const w_chest    =vt("pectoral mayor")    *fB*gauss(yn,0.70,0.06)*gaussX(xn,0.15,0.22);
-        // Hombros: yn 0.74-0.82 → centro 0.78, laterales, sigma Y MUY estrecho
-        const w_shlF     =vt("deltoides anterior")   *(gauss(yn,0.71,0.05)*gaussX(xn,0.46,0.08));
-        const w_shlB     =vt("deltoides posterior")  *(gauss(yn,0.78,0.05)*gaussX(xn,0.46,0.08));
-        // BRAZOS: en T-Pose los brazos están en z<0 (azul en debug), fB≈0.1 en toda la zona
-        // No podemos separar bíceps/tríceps con Z → separar por yn dentro del brazo
-        // yn_arm: posición vertical dentro del brazo (0=hombro, 1=muñeca)
-        // Bíceps: cara inferior del brazo → usar zn NEGADO dentro de la zona del brazo
-        // Pero la forma más robusta: usar el eje Z relativo al brazo
-        // Como el brazo está extendido horizontalmente en T-pose,
-        // el Z del vértice nos da frente/atrás del brazo mismo
-        // El bíceps está en la cara ANTERIOR del brazo (z más positivo dentro del brazo)
-        // El tríceps está en la cara POSTERIOR (z más negativo)
-        // Usamos zRaw directamente (no normalizado al torso) para los brazos
-        const isArm = xn > 0.38 && yn > 0.42 && yn < 0.80; // zona del brazo superior
-        const isForearmZone = xn > 0.42 && yn > 0.36 && yn < 0.58; // zona antebrazo
-        // Para brazos: zRaw positivo = parte anterior del brazo (bíceps visible de frente)
-        // zRaw negativo = parte posterior (tríceps visible de atrás)
-        const armZ = isArm ? zRaw : 0;
-        const armZMax = 0.08; // profundidad típica del brazo
-        const fBarm = isArm ? Math.max(0, armZ / armZMax) : 0; // 0-1 dentro del brazo
-        const bBarm = isArm ? Math.max(0, -armZ / armZMax) : 0;
-        const w_biceps   =vt("bíceps braquial")   *fBarm*gauss(yn,0.62,0.10)*gaussX(xn,0.52,0.10);
-        const w_triceps  =vt("tríceps braquial")  *bBarm*gauss(yn,0.57,0.07)*gaussX(xn,0.52,0.09)*Math.max(0,Math.min(1,(yn-0.47)/0.04));
-        // Antebrazos
-        const fBforearm = isForearmZone ? Math.max(0, zRaw / armZMax) : 0;
-        const w_forearms =vForearm * gauss(yn,0.47,0.08)*gaussX(xn,0.56,0.12);
-        // Core/abs: threshold más alto (50%) + sigma MUY estrecho — solo se activa en días de core real
-        const coreTHR=0.50;
-        const vCore=(v["core (transverso abdominal)"]||0)>=coreTHR?v["core (transverso abdominal)"]:0;
-        const w_core     =vCore*fB*gauss(yn,0.52,0.06)*gaussX(xn,0.08,0.09);
-        // Dorsal: trasero, ancho
-        const w_back     =vt("dorsal ancho")      *bB*gauss(yn,0.62,0.09)*gaussX(xn,0.25,0.17);
-        // Trapecio: trasero, alta
-        const w_traps    =vt("trapecio superior") *bB*gauss(yn,0.81,0.06)*gaussX(xn,0.17,0.15);
-        // Glúteo: trasero
-        const w_glutes   =vt("glúteo mayor")      *bB*gauss(yn,0.36,0.07)*gaussX(xn,0.18,0.14)*Math.max(0,Math.min(1,(yn-0.27)/0.04));
-        // Cuádriceps: mayormente frontal
-        const w_quads    =vt("cuádriceps")        *(fB*0.75+0.25)*gauss(yn,0.22,0.13)*gaussX(xn,0.16,0.14);
-        // Isquiotibiales: mayormente trasero
-        const w_hams     =vt("isquiotibiales")    *(bB*0.75+0.25)*gauss(yn,0.22,0.13)*gaussX(xn,0.16,0.14);
-        // Gemelos: yn estrecho, floor para no tocar pies
-        const w_calves   =vt("gastrocnemio")      *gauss(yn,0.10,0.04)*gaussX(xn,0.14,0.11)*Math.max(0,Math.min(1,(yn-0.06)/0.03));
+        let h=0;
 
-        const heat=Math.min(1,w_chest+w_shlF+w_shlB+w_biceps+w_triceps+
-          w_forearms+w_core+w_back+w_traps+w_quads+w_hams+w_glutes+w_calves);
+        if(isTorso){
+          // PECTO: yn 0.64-0.78, front only, xn<0.35
+          // Calibrated center: yn=0.71, sY=0.06
+          if(xn<0.35) h+=vt("pectoral mayor")*fB*G(yn,0.71,0.06)*G(xn,0.14,0.18);
+          // CORE: yn 0.44-0.64, front only, very narrow xn
+          if(xn<0.18) h+=vCore*fB*G(yn,0.54,0.07)*G(xn,0.09,0.09);
+          // DORSAL: yn 0.55-0.78, back, floor at yn=0.55
+          if(xn<0.32) h+=vt("dorsal ancho")*bB*G(yn,0.66,0.07)*G(xn,0.18,0.14)*Math.max(0,Math.min(1,(yn-0.55)/0.03));
+          // TRAPS: yn 0.78-0.84, back, narrow
+          if(xn<0.26) h+=vt("trapecio superior")*bB*G(yn,0.81,0.03)*G(xn,0.14,0.13);
+          // GLUTE (torso zone): yn 0.26-0.44, back
+          if(xn<0.28) h+=vt("glúteo mayor")*bB*G(yn,0.35,0.07)*G(xn,0.16,0.16)*Math.max(0,Math.min(1,(yn-0.26)/0.03));
+        }
 
-        // Chrome silver → naranja → rojo brillante
-        // Curva de potencia: empuja valores medios hacia el rojo
+        if(isArm){
+          // DELTOIDES: yn 0.68-0.84, shoulder cap
+          h+=vt("deltoides anterior") *G(yn,0.76,0.05)*G(xn,0.46,0.08);
+          h+=vt("deltoides posterior")*G(yn,0.76,0.05)*G(xn,0.46,0.08);
+          // BICEPS: front of arm, yn 0.54-0.70
+          // biFloor ensures min visibility even on arm sides
+          const biFloor=Math.max(fBarm, 0.20*G(xn,0.53,0.10));
+          h+=vt("bíceps braquial")  *biFloor*G(yn,0.62,0.07)*G(xn,0.53,0.09);
+          // TRICEPS: back of arm, yn 0.52-0.70, floor at yn=0.52
+          const tiFloor=Math.max(bBarm, 0.15*G(xn,0.52,0.09));
+          h+=vt("tríceps braquial") *tiFloor*G(yn,0.61,0.07)*G(xn,0.52,0.09)*Math.max(0,Math.min(1,(yn-0.52)/0.03));
+          // FOREARM: lower arm yn 0.38-0.54
+          h+=vForearm*G(yn,0.46,0.06)*G(xn,0.57,0.09);
+        }
+
+        if(isLeg){
+          // QUADS: yn 0.10-0.34, front bias, wide
+          h+=vt("cuádriceps")     *(fB*0.7+0.3)*G(yn,0.22,0.10)*G(xn,0.22,0.22);
+          // HAMS: same range, back bias
+          h+=vt("isquiotibiales") *(bB*0.7+0.3)*G(yn,0.22,0.10)*G(xn,0.22,0.22);
+          // GLUTES: yn 0.26-0.44, back, in leg zone
+          h+=vt("glúteo mayor")   *bB*G(yn,0.35,0.07)*G(xn,0.16,0.16)*Math.max(0,Math.min(1,(yn-0.26)/0.03));
+          // CALVES: yn 0.03-0.12, narrow, floor above ankle
+          h+=vt("gastrocnemio")   *G(yn,0.07,0.03)*G(xn,0.13,0.12)*Math.max(0,Math.min(1,(yn-0.03)/0.02));
+        }
+
+        h=Math.min(1,h);
+
+        // Chrome silver → orange → red, power curve
         let r,g,b;
-        if(heat<0.015){r=0.87;g=0.89;b=0.91;}  // chrome puro
+        if(h<0.02){ r=0.87;g=0.89;b=0.91; }
         else{
-          const t=Math.min(1,Math.pow(heat,0.65)); // curva potencia < 1 → amplifica medios
+          const t=Math.min(1,Math.pow(h,0.60));
           r=0.87+(1.0-0.87)*t;
           g=0.89*(1-t*0.93);
           b=0.91*(1-t*0.96);
         }
-        col[i*3]=r;col[i*3+1]=g;col[i*3+2]=b;
+        col[i*3]=r; col[i*3+1]=g; col[i*3+2]=b;
       }
+
       geo.setAttribute('color',new THREE.BufferAttribute(col,3));
       c.material=new THREE.MeshStandardMaterial({
         metalness:1.0,roughness:0.03,envMapIntensity:2.5,vertexColors:true
