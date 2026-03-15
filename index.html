@@ -2246,34 +2246,41 @@ function MuscleHeatmap({muscleVol,lang}){
 
         // Per-muscle gaussian blobs — CALIBRADOS con debug visual real del modelo
         // yn: 0=pies, 1=cabeza | xn: 0=centro, 1=borde
-        const vForearm=Math.max(v["braquiorradial"]||0, v["braquial"]||0,
-          (v["bíceps braquial"]||0)*0.3, (v["tríceps braquial"]||0)*0.3);
+        // THRESHOLD: solo mostrar músculos con volumen ≥ 30% del máximo
+        // Esto evita que músculo con 10-20% (secundario menor) se coloree
+        const THR=0.30;
+        const vt=(key)=>((v[key]||0)>=THR?v[key]:0);
 
-        // Pecho: yn 0.65-0.74 → centro 0.69, SOLO frontal, xn bajo (centro del torso)
-        const w_chest    =v["pectoral mayor"]    *fB*gauss(yn,0.69,0.08)*gaussX(xn,0.15,0.22);
-        // Hombros: yn 0.74-0.82 → centro 0.78, laterales
-        const w_shlF     =v["deltoides anterior"]   *(gauss(yn,0.78,0.06)*gaussX(xn,0.45,0.10));
-        const w_shlB     =v["deltoides posterior"]  *(gauss(yn,0.78,0.06)*gaussX(xn,0.45,0.10));
-        // Bíceps: yn 0.58-0.74 → centro 0.66, frontal, borde
-        const w_biceps   =v["bíceps braquial"]   *fB*gauss(yn,0.66,0.09)*gaussX(xn,0.52,0.09);
-        // Tríceps: mismo rango, trasero
-        const w_triceps  =v["tríceps braquial"]  *bB*gauss(yn,0.66,0.09)*gaussX(xn,0.52,0.09);
-        // Antebrazos: yn 0.43-0.58 → centro 0.50, muy lateral
-        const w_forearms =vForearm                  *gauss(yn,0.50,0.09)*gaussX(xn,0.55,0.09);
-        // Core/abs: yn 0.43-0.65 → centro 0.54, centro del torso, SOLO frontal
-        const w_core     =v["core (transverso abdominal)"]*fB*gauss(yn,0.54,0.11)*gaussX(xn,0.12,0.13);
-        // Dorsal: yn 0.50-0.74 → centro 0.62, trasero, ancho
-        const w_back     =v["dorsal ancho"]      *bB*gauss(yn,0.62,0.13)*gaussX(xn,0.25,0.18);
-        // Trapecio: yn 0.74-0.88 → centro 0.81, trasero, cerca del centro
-        const w_traps    =v["trapecio superior"] *bB*gauss(yn,0.81,0.07)*gaussX(xn,0.18,0.16);
-        // Glúteo: yn 0.28-0.43 → centro 0.35, trasero
-        const w_glutes   =v["glúteo mayor"]      *bB*gauss(yn,0.35,0.08)*gaussX(xn,0.18,0.15);
-        // Cuádriceps: yn 0.13-0.28 → centro 0.21, mayormente frontal
-        const w_quads    =v["cuádriceps"]        *(fB*0.75+0.25)*gauss(yn,0.21,0.09)*gaussX(xn,0.16,0.14);
-        // Isquiotibiales: mismo rango, mayormente trasero
-        const w_hams     =v["isquiotibiales"]    *(bB*0.75+0.25)*gauss(yn,0.21,0.09)*gaussX(xn,0.16,0.14);
-        // Gemelos: yn 0.08-0.13 → centro 0.10, con floor para no tocar pies
-        const w_calves   =v["gastrocnemio"]      *gauss(yn,0.10,0.04)*gaussX(xn,0.14,0.12)*Math.max(0,Math.min(1,(yn-0.06)/0.03));
+        // Antebrazos SOLO de braquial/braquiorradial directos, no de bíceps/tríceps
+        const vForearm=Math.max(vt("braquiorradial"),vt("braquial"));
+
+        // Pecho: yn 0.65-0.74 → centro 0.69, SOLO frontal
+        const w_chest    =vt("pectoral mayor")    *fB*gauss(yn,0.69,0.08)*gaussX(xn,0.15,0.22);
+        // Hombros: yn 0.74-0.82 → centro 0.78, laterales, sigma Y MUY estrecho
+        const w_shlF     =vt("deltoides anterior")   *(gauss(yn,0.78,0.05)*gaussX(xn,0.46,0.08));
+        const w_shlB     =vt("deltoides posterior")  *(gauss(yn,0.78,0.05)*gaussX(xn,0.46,0.08));
+        // Bíceps: frontal, borde exterior — sigma X muy estrecho para no tocar torso
+        const w_biceps   =vt("bíceps braquial")   *fB*gauss(yn,0.65,0.08)*gaussX(xn,0.53,0.07);
+        // Tríceps: trasero, mismo rango
+        const w_triceps  =vt("tríceps braquial")  *bB*gauss(yn,0.65,0.08)*gaussX(xn,0.53,0.07);
+        // Antebrazos: más bajo, muy lateral
+        const w_forearms =vForearm                  *gauss(yn,0.50,0.08)*gaussX(xn,0.56,0.08);
+        // Core/abs: threshold más alto (50%) + sigma MUY estrecho — solo se activa en días de core real
+        const coreTHR=0.50;
+        const vCore=(v["core (transverso abdominal)"]||0)>=coreTHR?v["core (transverso abdominal)"]:0;
+        const w_core     =vCore*fB*gauss(yn,0.52,0.07)*gaussX(xn,0.09,0.09);
+        // Dorsal: trasero, ancho
+        const w_back     =vt("dorsal ancho")      *bB*gauss(yn,0.62,0.12)*gaussX(xn,0.25,0.17);
+        // Trapecio: trasero, alta
+        const w_traps    =vt("trapecio superior") *bB*gauss(yn,0.81,0.06)*gaussX(xn,0.17,0.15);
+        // Glúteo: trasero
+        const w_glutes   =vt("glúteo mayor")      *bB*gauss(yn,0.35,0.08)*gaussX(xn,0.18,0.14);
+        // Cuádriceps: mayormente frontal
+        const w_quads    =vt("cuádriceps")        *(fB*0.75+0.25)*gauss(yn,0.21,0.09)*gaussX(xn,0.16,0.13);
+        // Isquiotibiales: mayormente trasero
+        const w_hams     =vt("isquiotibiales")    *(bB*0.75+0.25)*gauss(yn,0.21,0.09)*gaussX(xn,0.16,0.13);
+        // Gemelos: yn estrecho, floor para no tocar pies
+        const w_calves   =vt("gastrocnemio")      *gauss(yn,0.10,0.04)*gaussX(xn,0.14,0.11)*Math.max(0,Math.min(1,(yn-0.06)/0.03));
 
         const heat=Math.min(1,w_chest+w_shlF+w_shlB+w_biceps+w_triceps+
           w_forearms+w_core+w_back+w_traps+w_quads+w_hams+w_glutes+w_calves);
