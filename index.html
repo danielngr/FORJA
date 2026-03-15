@@ -2250,7 +2250,7 @@ function MuscleHeatmap({muscleVol,lang}){
           (v["bíceps braquial"]||0)*0.3, (v["tríceps braquial"]||0)*0.3);
 
         // Pecho: yn 0.65-0.74 → centro 0.69, SOLO frontal, xn bajo (centro del torso)
-        const w_chest    =v["pectoral mayor"]    *fB*gauss(yn,0.69,0.07)*gaussX(xn,0.15,0.16);
+        const w_chest    =v["pectoral mayor"]    *fB*gauss(yn,0.69,0.08)*gaussX(xn,0.15,0.22);
         // Hombros: yn 0.74-0.82 → centro 0.78, laterales
         const w_shlF     =v["deltoides anterior"]   *(gauss(yn,0.78,0.06)*gaussX(xn,0.45,0.10));
         const w_shlB     =v["deltoides posterior"]  *(gauss(yn,0.78,0.06)*gaussX(xn,0.45,0.10));
@@ -2278,13 +2278,15 @@ function MuscleHeatmap({muscleVol,lang}){
         const heat=Math.min(1,w_chest+w_shlF+w_shlB+w_biceps+w_triceps+
           w_forearms+w_core+w_back+w_traps+w_quads+w_hams+w_glutes+w_calves);
 
-        // Chrome silver (inactive) → orange (low) → red (high)
+        // Chrome silver → naranja → rojo brillante
+        // Curva de potencia: empuja valores medios hacia el rojo
         let r,g,b;
-        if(heat<0.01){r=0.87;g=0.89;b=0.91;}  // chrome
+        if(heat<0.015){r=0.87;g=0.89;b=0.91;}  // chrome puro
         else{
-          r=0.87+(1.0-0.87)*Math.min(1,heat*1.2);
-          g=0.89*(1-heat*0.90);
-          b=0.91*(1-heat*0.94);
+          const t=Math.min(1,Math.pow(heat,0.65)); // curva potencia < 1 → amplifica medios
+          r=0.87+(1.0-0.87)*t;
+          g=0.89*(1-t*0.93);
+          b=0.91*(1-t*0.96);
         }
         col[i*3]=r;col[i*3+1]=g;col[i*3+2]=b;
       }
