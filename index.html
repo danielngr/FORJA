@@ -2234,28 +2234,35 @@ function MuscleHeatmap({muscleVol,lang}){
         const wz=pos.getZ(i)*obj.scale.z;
         const yn=(wy-yMin)/yH;  // 0=pies, 1=cabeza
         const xn=Math.abs(wx)/xMax;
-        const isFront=wz>0;
-        const fB=isFront?1:0;
-        const bB=isFront?0:1;
+
+        // SMOOTH front/back blend using sigmoid on Z — elimina la línea vertical
+        // Usamos Z local (sin escalar) para consistencia con wb
+        const zRaw=pos.getZ(i);
+        const zMax=Math.max(Math.abs(wb.min.z),Math.abs(wb.max.z),0.01);
+        const zn=zRaw/zMax; // -1=atrás puro, +1=frente puro
+        // Sigmoide suave: transición gradual en vez de corte abrupto
+        const fB=1/(1+Math.exp(-zn*8)); // 0.0=atrás, 1.0=frente, 0.5=centro
+        const bB=1-fB;
 
         // Per-muscle gaussian blobs — yn: 0=pies, 1=cabeza | xn: 0=centro, 1=borde
         // Forearm volume = braquiorradial + braquial combined
         const vForearm=Math.max(v["braquiorradial"]||0, v["braquial"]||0,
           (v["bíceps braquial"]||0)*0.3, (v["tríceps braquial"]||0)*0.3);
 
-        const w_chest    =v["pectoral mayor"]    *fB*gauss(yn,0.58,0.08)*gaussX(xn,0.20,0.14); // pecho: más arriba, sigma más estrecho
+        const w_chest    =v["pectoral mayor"]    *fB*gauss(yn,0.58,0.08)*gaussX(xn,0.20,0.14);
         const w_shlF     =v["deltoides anterior"]   *(gauss(yn,0.74,0.07)*gaussX(xn,0.46,0.11));
         const w_shlB     =v["deltoides posterior"]  *(gauss(yn,0.74,0.07)*gaussX(xn,0.46,0.11));
         const w_biceps   =v["bíceps braquial"]   *fB*gauss(yn,0.57,0.10)*gaussX(xn,0.50,0.09);
         const w_triceps  =v["tríceps braquial"]  *bB*gauss(yn,0.57,0.10)*gaussX(xn,0.50,0.09);
-        const w_forearms =vForearm               *   gauss(yn,0.45,0.09)*gaussX(xn,0.52,0.10); // antebrazos: más abajo que bíceps
+        const w_forearms =vForearm               *   gauss(yn,0.45,0.09)*gaussX(xn,0.52,0.10);
         const w_core     =v["core (transverso abdominal)"]*fB*gauss(yn,0.43,0.11)*gaussX(xn,0.13,0.13);
         const w_back     =v["dorsal ancho"]      *bB*gauss(yn,0.58,0.16)*gaussX(xn,0.27,0.18);
         const w_traps    =v["trapecio superior"] *bB*gauss(yn,0.80,0.06)*gaussX(xn,0.19,0.14);
         const w_quads    =v["cuádriceps"]        *(fB*0.8+0.2)*gauss(yn,0.22,0.12)*gaussX(xn,0.17,0.13);
         const w_hams     =v["isquiotibiales"]    *(bB*0.8+0.2)*gauss(yn,0.22,0.12)*gaussX(xn,0.17,0.13);
         const w_glutes   =v["glúteo mayor"]      *bB*gauss(yn,0.33,0.09)*gaussX(xn,0.21,0.13);
-        const w_calves   =v["gastrocnemio"]      *gauss(yn,0.12,0.07)*gaussX(xn,0.15,0.12); // subido de 0.06→0.12, alejado de pies
+        // calves: solo la parte media-baja de la pantorrilla, excluye talón y pie (yn<0.08)
+        const w_calves   =v["gastrocnemio"]      *gauss(yn,0.13,0.06)*gaussX(xn,0.15,0.12)*Math.max(0,(yn-0.07)/0.05);
 
         const heat=Math.min(1,w_chest+w_shlF+w_shlB+w_biceps+w_triceps+
           w_forearms+w_core+w_back+w_traps+w_quads+w_hams+w_glutes+w_calves);
@@ -2459,7 +2466,10 @@ function StatsScreen({logs,routine,lang,profile}){
   // Semana actual
   const today=new Date();
   const weekStart=new Date(today);
-  weekStart.setDate(today.getDate()-today.getDay());
+  // Semana empieza el lunes (getDay: 0=dom,1=lun,...6=sab)
+  const dow=today.getDay();
+  const daysToMon=dow===0?6:dow-1; // días desde el lunes anterior
+  weekStart.setDate(today.getDate()-daysToMon);
   weekStart.setHours(0,0,0,0);
   const weekStr=weekStart.toISOString().slice(0,10);
   let weekVol=0,weekSets=0;
@@ -2472,7 +2482,8 @@ function StatsScreen({logs,routine,lang,profile}){
   const grid=Array.from({length:WEEKS},(_,wi)=>{
     return Array.from({length:7},(_,di)=>{
       const d=new Date(today);
-      d.setDate(today.getDate()-((WEEKS-1-wi)*7)-(today.getDay()-di));
+      // di=0=lun, di=6=dom (consistente con lunes como inicio de semana)
+      d.setDate(today.getDate()-daysToMon-((WEEKS-1-wi)*7)+di);
       d.setHours(0,0,0,0);
       const ds=d.toISOString().slice(0,10);
       let vol=0;
