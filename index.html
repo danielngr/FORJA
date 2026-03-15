@@ -323,6 +323,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
   }));
   const[notes,setNotes]=useState({});
   const[noteOpen,setNoteOpen]=useState(null); // ei
+  const[techOpen,setTechOpen]=useState(null); // ei para panel de técnica
   const[noteText,setNoteText]=useState("");
   const[npOpen,setNpOpen]=useState(null); // {ei,si,field}
   const[npVal,setNpVal]=useState("0");
@@ -757,7 +758,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
                   <div style={{display:"flex",gap:6,alignItems:"center",flexShrink:0,marginLeft:8}}>
                     {/* Botón TÉCNICA */}
                     {EX_META[ex.e?.toLowerCase()]&&(
-                      <button onClick={()=>setNoteOpen(noteOpen===`tech_${ei}`?null:`tech_${ei}`)}
+                      <button onClick={()=>setTechOpen(techOpen===ei?null:ei)}
                         style={{padding:"4px 8px",borderRadius:7,border:"1px solid rgba(106,143,192,.3)",background:"rgba(106,143,192,.08)",color:C2.blue,fontSize:8,fontFamily:mono,letterSpacing:.5,cursor:"pointer",whiteSpace:"nowrap"}}>
                         TÉCNICA
                       </button>
@@ -772,7 +773,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
                   </div>
                 </div>
                 {/* Panel de técnica expandible */}
-                {noteOpen===`tech_${ei}`&&EX_META[ex.e?.toLowerCase()]&&(
+                {techOpen===ei&&EX_META[ex.e?.toLowerCase()]&&(
                   <div style={{background:C2.bgD,borderRadius:10,padding:12,marginTop:10,animation:"fu .2s ease"}}>
                     <div style={{display:"flex",flexDirection:"column",gap:8}}>
                       {EX_META[ex.e?.toLowerCase()].steps.map((s,si)=>(
@@ -2506,7 +2507,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       }
       if(!pts2d.length){startAnim();return;}
 
-      const sX=1.38, sY=1.38;
+      // sX se multiplica por aspect para compensar que la cámara
+      // es más angosta en X (aspect=0.95) — así el mono no se estira
+      const sY=1.38;
+      const sX=sY*aspect; // ~1.31 — mantiene proporciones reales
       const FIG_Y=-0.20;
 
       // SPLIT_NY: puntos por debajo de esta línea van detrás del disco,
