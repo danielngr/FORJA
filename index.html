@@ -2191,6 +2191,18 @@ function MuscleHeatmap({muscleVol,lang}){
   // Smooth gaussian heatmap using world-space normalized coordinates
   function applyHeatmap(obj, muscleVol){
     const maxV=Math.max(...Object.values(muscleVol||{}),1);
+    // Si no hay datos reales esta semana, dejar todo chrome plateado
+    const totalVol=Object.values(muscleVol||{}).reduce((a,b)=>a+b,0);
+    if(!muscleVol||totalVol===0){
+      obj.traverse(function(c){
+        if(c.isMesh){
+          c.material=new THREE.MeshStandardMaterial({
+            color:0xffffff,metalness:1.0,roughness:0.03,envMapIntensity:2.5,vertexColors:false
+          });
+        }
+      });
+      return;
+    }
 
     // Normalize volumes 0-1
     const v={};
@@ -2477,7 +2489,15 @@ function StatsScreen({logs,routine,lang,profile}){
         let exName=id;
         if(routine) routine.forEach(d=>{if(!d)return;d.ex&&d.ex.forEach(ex=>{if(ex.id===id)exName=ex.e;})});
         const meta=EX_META[exName?.toLowerCase()];
-        if(meta){const m=meta.p[0];muscleVol[m]=(muscleVol[m]||0)+(+e.w||0)*(+e.r||0);}
+        if(meta){
+          const m=meta.p[0];
+          muscleVol[m]=(muscleVol[m]||0)+(+e.w||0)*(+e.r||0);
+          // Secundarios relevantes para antebrazos
+          meta.s.forEach(sec=>{
+            if(sec==="braquial"||sec==="braquiorradial")
+              muscleVol[sec]=(muscleVol[sec]||0)+(+e.w||0)*(+e.r||0)*0.4;
+          });
+        }
       }
     });
   });
