@@ -2188,92 +2188,89 @@ function MuscleHeatmap({muscleVol,lang}){
   const mono="'SF Mono','Courier New',monospace";
   const es=lang==="es";
 
-  // Map muscle keys → vertex Y/X ranges on the model
-  // Model is roughly -1 to 1 normalized after scale
-  const MUSCLE_ZONES={
-    "pectoral mayor":      {yMin:0.25, yMax:0.65, xAbs:null, front:true},
-    "deltoides anterior":  {yMin:0.55, yMax:0.80, xAbs:[0.18,0.55], front:true},
-    "deltoides posterior": {yMin:0.55, yMax:0.80, xAbs:[0.18,0.55], front:false},
-    "bíceps braquial":     {yMin:0.15, yMax:0.55, xAbs:[0.22,0.60], front:true},
-    "tríceps braquial":    {yMin:0.15, yMax:0.55, xAbs:[0.22,0.60], front:false},
-    "core (transverso abdominal)":{yMin:-0.05,yMax:0.30,xAbs:[0,0.22],front:true},
-    "dorsal ancho":        {yMin:0.00, yMax:0.60, xAbs:[0.05,0.45], front:false},
-    "trapecio superior":   {yMin:0.65, yMax:0.90, xAbs:null, front:false},
-    "cuádriceps":          {yMin:-0.75,yMax:-0.05,xAbs:[0,0.25], front:true},
-    "isquiotibiales":      {yMin:-0.75,yMax:-0.05,xAbs:[0,0.25], front:false},
-    "glúteo mayor":        {yMin:-0.55,yMax:-0.10,xAbs:[0.02,0.28],front:false},
-    "gastrocnemio":        {yMin:-1.00,yMax:-0.70,xAbs:null, front:null},
-  };
-
-  function getHeatColor(vol,maxV){
-    if(!vol||vol===0) return null;
-    const p=vol/maxV;
-    if(p<0.30) return {r:1.0,g:0.45,b:0.1};
-    if(p<0.65) return {r:1.0,g:0.15,b:0.1};
-    return {r:1.0,g:0.02,b:0.02};
-  }
-
+  // Smooth gaussian heatmap using world-space normalized coordinates
   function applyHeatmap(obj, muscleVol){
     const maxV=Math.max(...Object.values(muscleVol||{}),1);
+
+    // Normalize volumes 0-1
+    const v={};
+    const KEYS=["pectoral mayor","deltoides anterior","deltoides posterior",
+      "bíceps braquial","tríceps braquial","core (transverso abdominal)",
+      "dorsal ancho","trapecio superior","cuádriceps","isquiotibiales",
+      "glúteo mayor","gastrocnemio","braquial","braquiorradial"];
+    KEYS.forEach(k=>{ v[k]=Math.min(1,(muscleVol[k]||0)/maxV); });
+
+    // World bounds
+    const wb=new THREE.Box3().setFromObject(obj);
+    const yMin=wb.min.y, yMax=wb.max.y, yH=(yMax-yMin)||1;
+    const xMax=Math.max(Math.abs(wb.min.x),Math.abs(wb.max.x))||1;
+
+    function gauss(yn,center,sigma){ return Math.exp(-Math.pow(yn-center,2)/(2*sigma*sigma)); }
+    function gaussX(xn,center,sigma){ return Math.exp(-Math.pow(xn-center,2)/(2*sigma*sigma)); }
+
     obj.traverse(function(c){
       if(!c.isMesh) return;
       const geo=c.geometry;
       const pos=geo.attributes.position;
       if(!pos) return;
 
-      // Get bounding box of this mesh for normalization
-      if(!geo.boundingBox) geo.computeBoundingBox();
-      const box=geo.boundingBox;
-      const h=box.max.y-box.min.y||1;
-      const w=box.max.x-box.min.x||1;
-
-      // Build per-vertex color array
-      const colors=new Float32Array(pos.count*3);
+      const col=new Float32Array(pos.count*3);
       for(let i=0;i<pos.count;i++){
-        const vy=pos.getY(i);
-        const vx=pos.getX(i);
-        const vz=pos.getZ(i);
-        // Normalize Y to [-1,1] relative to full model
-        const yn=(vy-box.min.y)/h*2-1;
-        const xn=Math.abs(vx)/(w/2);
-        const isFront=vz>=0;
+        // World position
+        const wy=pos.getY(i)*obj.scale.y+obj.position.y;
+        const wx=pos.getX(i)*obj.scale.x;
+        const wz=pos.getZ(i)*obj.scale.z;
+        const yn=(wy-yMin)/yH;  // 0=pies, 1=cabeza
+        const xn=Math.abs(wx)/xMax;
+        const isFront=wz>0;
+        const fB=isFront?1:0;
+        const bB=isFront?0:1;
 
-        // Default chrome: near white
-        let r=0.88,g=0.90,b=0.92;
+        // Per-muscle gaussian blobs — yn: 0=pies, 1=cabeza | xn: 0=centro, 1=borde
+        // Forearm volume = braquiorradial + braquial combined
+        const vForearm=Math.max(v["braquiorradial"]||0, v["braquial"]||0,
+          (v["bíceps braquial"]||0)*0.3, (v["tríceps braquial"]||0)*0.3);
 
-        // Check each muscle zone
-        for(const [muscle,zone] of Object.entries(MUSCLE_ZONES)){
-          const vol=muscleVol[muscle]||0;
-          if(vol===0) continue;
-          const hc=getHeatColor(vol,maxV);
-          if(!hc) continue;
+        const w_chest    =v["pectoral mayor"]    *fB*gauss(yn,0.58,0.08)*gaussX(xn,0.20,0.14); // pecho: más arriba, sigma más estrecho
+        const w_shlF     =v["deltoides anterior"]   *(gauss(yn,0.74,0.07)*gaussX(xn,0.46,0.11));
+        const w_shlB     =v["deltoides posterior"]  *(gauss(yn,0.74,0.07)*gaussX(xn,0.46,0.11));
+        const w_biceps   =v["bíceps braquial"]   *fB*gauss(yn,0.57,0.10)*gaussX(xn,0.50,0.09);
+        const w_triceps  =v["tríceps braquial"]  *bB*gauss(yn,0.57,0.10)*gaussX(xn,0.50,0.09);
+        const w_forearms =vForearm               *   gauss(yn,0.45,0.09)*gaussX(xn,0.52,0.10); // antebrazos: más abajo que bíceps
+        const w_core     =v["core (transverso abdominal)"]*fB*gauss(yn,0.43,0.11)*gaussX(xn,0.13,0.13);
+        const w_back     =v["dorsal ancho"]      *bB*gauss(yn,0.58,0.16)*gaussX(xn,0.27,0.18);
+        const w_traps    =v["trapecio superior"] *bB*gauss(yn,0.80,0.06)*gaussX(xn,0.19,0.14);
+        const w_quads    =v["cuádriceps"]        *(fB*0.8+0.2)*gauss(yn,0.22,0.12)*gaussX(xn,0.17,0.13);
+        const w_hams     =v["isquiotibiales"]    *(bB*0.8+0.2)*gauss(yn,0.22,0.12)*gaussX(xn,0.17,0.13);
+        const w_glutes   =v["glúteo mayor"]      *bB*gauss(yn,0.33,0.09)*gaussX(xn,0.21,0.13);
+        const w_calves   =v["gastrocnemio"]      *gauss(yn,0.12,0.07)*gaussX(xn,0.15,0.12); // subido de 0.06→0.12, alejado de pies
 
-          const inY=yn>=zone.yMin&&yn<=zone.yMax;
-          const inX=zone.xAbs?xn>=zone.xAbs[0]&&xn<=zone.xAbs[1]:true;
-          const inFront=zone.front===null?true:(zone.front===isFront);
+        const heat=Math.min(1,w_chest+w_shlF+w_shlB+w_biceps+w_triceps+
+          w_forearms+w_core+w_back+w_traps+w_quads+w_hams+w_glutes+w_calves);
 
-          if(inY&&inX&&inFront){
-            r=hc.r;g=hc.g;b=hc.b;break;
-          }
+        // Chrome silver (inactive) → orange (low) → red (high)
+        let r,g,b;
+        if(heat<0.01){r=0.87;g=0.89;b=0.91;}  // chrome
+        else{
+          r=0.87+(1.0-0.87)*Math.min(1,heat*1.2);
+          g=0.89*(1-heat*0.90);
+          b=0.91*(1-heat*0.94);
         }
-        colors[i*3]=r;colors[i*3+1]=g;colors[i*3+2]=b;
+        col[i*3]=r;col[i*3+1]=g;col[i*3+2]=b;
       }
-      geo.setAttribute('color',new THREE.BufferAttribute(colors,3));
-      c.material.vertexColors=true;
-      c.material.color.setRGB(1,1,1);
-      c.material.needsUpdate=true;
+      geo.setAttribute('color',new THREE.BufferAttribute(col,3));
+      c.material=new THREE.MeshStandardMaterial({
+        metalness:1.0,roughness:0.03,envMapIntensity:2.5,vertexColors:true
+      });
     });
   }
 
   React.useEffect(()=>{
     const cv=cRef.current;
     if(!cv) return;
-    const W=cv.clientWidth||260,H=cv.clientHeight||340;
-    cv.width=W*Math.min(devicePixelRatio,2);
-    cv.height=H*Math.min(devicePixelRatio,2);
 
-    const ren=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});
-    ren.setSize(W,H);
+    const ren=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:false});
+    ren.setSize(240,380,false);
     ren.setPixelRatio(Math.min(devicePixelRatio,2));
     ren.setClearColor(0x383e4e,1);
     ren.toneMapping=THREE.ACESFilmicToneMapping;
@@ -2283,88 +2280,74 @@ function MuscleHeatmap({muscleVol,lang}){
     renRef.current=ren;
 
     const sc=new THREE.Scene();
-    const cam=new THREE.PerspectiveCamera(38,W/H,0.1,200);
-    cam.position.set(0,0,6.5);
+    // FOV 32 + camera pulled back → full body fits with no cropping
+    const cam=new THREE.PerspectiveCamera(32,240/380,0.1,200);
+    cam.position.set(0,-0.1,7.8);
+    cam.lookAt(0,-0.1,0);
 
     const pmrem=new THREE.PMREMGenerator(ren);
     pmrem.compileEquirectangularShader();
-
     sc.add(new THREE.AmbientLight(0xffffff,0.4));
     const kl=new THREE.DirectionalLight(0xffffff,1.5);kl.position.set(3,5,4);sc.add(kl);
     const fl=new THREE.DirectionalLight(0x8899ff,0.5);fl.position.set(-4,1,-3);sc.add(fl);
 
     setStatus(es?"CARGANDO ENTORNO...":"LOADING ENV...");
 
-    new THREE.RGBELoader().load(
-      'https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/studio_small_08_1k.hdr',
-      function(hdr){
-        const envMap=pmrem.fromEquirectangular(hdr).texture;
-        hdr.dispose();pmrem.dispose();
-        sc.environment=envMap;
-
-        setStatus(es?"CARGANDO MODELO 3D...":"LOADING 3D MODEL...");
-
-        new THREE.OBJLoader().load(
-          'https://forjavideos.b-cdn.net/cuerpo.obj',
-          function(obj){
-            const box=new THREE.Box3().setFromObject(obj);
-            const sz=box.getSize(new THREE.Vector3());
-            const ct=box.getCenter(new THREE.Vector3());
-            const s=4.2/Math.max(sz.x,sz.y,sz.z);
-            obj.scale.setScalar(s);
-            obj.position.sub(ct.multiplyScalar(s));
-            obj.position.y+=0.3;
-
-            obj.traverse(function(c){
-              if(c.isMesh){
-                c.material=new THREE.MeshStandardMaterial({
-                  color:0xffffff,metalness:1.0,roughness:0.03,
-                  envMapIntensity:2.5,vertexColors:false
-                });
-              }
-            });
-
-            sc.add(obj);
-            mdlRef.current=obj;
-            if(muscleVol&&Object.keys(muscleVol).length>0) applyHeatmap(obj,muscleVol);
-            setStatus("");
-          },
-          function(x){setStatus("OBJ "+(x.loaded/1048576).toFixed(1)+"MB / 25MB");},
-          function(e){setStatus("ERROR: "+e);}
-        );
-      },
-      undefined,
-      function(){
-        // HDR failed — use point lights fallback
-        sc.environment=null;
-        [[0xffffff,8,4,6,5],[0xaaddff,4,-5,3,-3],[0xffffff,5,0,-5,-4],[0xffffff,3,0,8,0]].forEach(function(p){
-          var l=new THREE.PointLight(p[0],p[1],35);l.position.set(p[2],p[3],p[4]);sc.add(l);
-        });
-        setStatus(es?"CARGANDO MODELO...":"LOADING MODEL...");
-        new THREE.OBJLoader().load('https://forjavideos.b-cdn.net/cuerpo.obj',function(obj){
+    function loadModel(envReady){
+      setStatus(es?"CARGANDO MODELO...":"LOADING MODEL...");
+      new THREE.OBJLoader().load(
+        'https://forjavideos.b-cdn.net/cuerpo.obj',
+        function(obj){
           const box=new THREE.Box3().setFromObject(obj);
           const sz=box.getSize(new THREE.Vector3());
           const ct=box.getCenter(new THREE.Vector3());
-          const s=4.2/Math.max(sz.x,sz.y,sz.z);
-          obj.scale.setScalar(s);obj.position.sub(ct.multiplyScalar(s));obj.position.y+=0.3;
-          obj.traverse(function(c){if(c.isMesh)c.material=new THREE.MeshStandardMaterial({color:0xffffff,metalness:1.0,roughness:0.03});});
-          sc.add(obj);mdlRef.current=obj;
+          const s=3.6/Math.max(sz.x,sz.y,sz.z);
+          obj.scale.setScalar(s);
+          obj.position.sub(ct.multiplyScalar(s));
+          // No Y offset — perfectly centered
+
+          // Apply chrome material first
+          obj.traverse(function(c){
+            if(c.isMesh) c.material=new THREE.MeshStandardMaterial({
+              color:0xffffff,metalness:1.0,roughness:0.03,envMapIntensity:2.5
+            });
+          });
+          sc.add(obj);
+          mdlRef.current=obj;
           if(muscleVol&&Object.keys(muscleVol).length>0) applyHeatmap(obj,muscleVol);
           setStatus("");
-        },function(x){setStatus("OBJ "+(x.loaded/1048576).toFixed(1)+"MB");},function(){setStatus("ERROR");});
+        },
+        function(x){setStatus("OBJ "+(x.loaded/1048576).toFixed(1)+"MB / 25MB");},
+        function(e){setStatus("ERROR: "+e);}
+      );
+    }
+
+    new THREE.RGBELoader().load(
+      'https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/studio_small_08_1k.hdr',
+      function(hdr){
+        sc.environment=pmrem.fromEquirectangular(hdr).texture;
+        hdr.dispose();pmrem.dispose();
+        loadModel(true);
+      },
+      undefined,
+      function(){
+        [[0xffffff,8,4,6,5],[0xaaddff,4,-5,3,-3],[0xffffff,5,0,-5,-4],[0xffffff,3,0,8,0]].forEach(function(p){
+          const l=new THREE.PointLight(p[0],p[1],35);l.position.set(p[2],p[3],p[4]);sc.add(l);
+        });
+        loadModel(false);
       }
     );
 
     let drg=false,px=0,ry=0,vl=0;
-    const onDown=function(e){drg=true;px=e.clientX;cv.style.cursor='grabbing';};
-    const onUp=function(){drg=false;cv.style.cursor='grab';};
-    const onMove=function(e){if(!drg||!mdlRef.current)return;const dx=e.clientX-px;ry+=dx*0.012;vl=dx*0.012;px=e.clientX;};
+    const onD=function(e){drg=true;px=e.clientX;cv.style.cursor='grabbing';};
+    const onU=function(){drg=false;cv.style.cursor='grab';};
+    const onM=function(e){if(!drg||!mdlRef.current)return;const dx=e.clientX-px;ry+=dx*0.012;vl=dx*0.012;px=e.clientX;};
     const onTD=function(e){drg=true;px=e.touches[0].clientX;};
     const onTU=function(){drg=false;};
     const onTM=function(e){if(!drg||!mdlRef.current)return;const dx=e.touches[0].clientX-px;ry+=dx*0.012;vl=dx*0.012;px=e.touches[0].clientX;};
-    cv.addEventListener('mousedown',onDown);
-    window.addEventListener('mouseup',onUp);
-    window.addEventListener('mousemove',onMove);
+    cv.addEventListener('mousedown',onD);
+    window.addEventListener('mouseup',onU);
+    window.addEventListener('mousemove',onM);
     cv.addEventListener('touchstart',onTD,{passive:true});
     window.addEventListener('touchend',onTU);
     window.addEventListener('touchmove',onTM,{passive:true});
@@ -2379,9 +2362,9 @@ function MuscleHeatmap({muscleVol,lang}){
 
     return function(){
       cancelAnimationFrame(frameRef.current);
-      cv.removeEventListener('mousedown',onDown);
-      window.removeEventListener('mouseup',onUp);
-      window.removeEventListener('mousemove',onMove);
+      cv.removeEventListener('mousedown',onD);
+      window.removeEventListener('mouseup',onU);
+      window.removeEventListener('mousemove',onM);
       cv.removeEventListener('touchstart',onTD);
       window.removeEventListener('touchend',onTU);
       window.removeEventListener('touchmove',onTM);
@@ -2389,7 +2372,6 @@ function MuscleHeatmap({muscleVol,lang}){
     };
   },[]);
 
-  // Re-apply heatmap when muscleVol changes
   React.useEffect(()=>{
     if(mdlRef.current&&muscleVol) applyHeatmap(mdlRef.current,muscleVol);
   },[JSON.stringify(muscleVol)]);
@@ -2400,24 +2382,22 @@ function MuscleHeatmap({muscleVol,lang}){
 
   return(
     <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:10}}>
-      {/* 3D Canvas */}
-      <div style={{position:"relative",width:"100%",maxWidth:280}}>
-        <canvas ref={cRef} style={{width:"100%",height:340,borderRadius:12,display:"block"}}/>
+      <div style={{position:"relative",width:240}}>
+        <canvas ref={cRef} style={{width:240,height:380,borderRadius:12,display:"block"}}/>
         {status&&(
           <div style={{position:"absolute",bottom:8,left:"50%",transform:"translateX(-50%)",
-            background:"rgba(44,48,64,.85)",borderRadius:8,padding:"4px 10px",
+            background:"rgba(44,48,64,.88)",borderRadius:8,padding:"4px 10px",
             fontSize:9,fontFamily:mono,color:"#6a8fc0",letterSpacing:1.5,whiteSpace:"nowrap"
           }}>{status}</div>
         )}
-        <div style={{position:"absolute",bottom:8,right:8,
+        <div style={{position:"absolute",top:8,right:8,
           background:"rgba(44,48,64,.7)",borderRadius:6,padding:"3px 7px",
           fontSize:8,fontFamily:mono,color:"#7a8294",letterSpacing:1
         }}>↔ {es?"GIRA":"DRAG"}</div>
       </div>
 
-      {/* Active muscle legend */}
       {activeMuscles.length>0&&(
-        <div style={{display:"flex",flexWrap:"wrap",gap:5,justifyContent:"center",maxWidth:280}}>
+        <div style={{display:"flex",flexWrap:"wrap",gap:5,justifyContent:"center",maxWidth:260}}>
           {activeMuscles.map(function([k,v]){
             const p=v/maxV;
             const col=p<0.30?"#ff8c3c":p<0.65?"#ff3c3c":"#ff1010";
@@ -2434,7 +2414,6 @@ function MuscleHeatmap({muscleVol,lang}){
           })}
         </div>
       )}
-
       {activeMuscles.length===0&&(
         <div style={{fontSize:10,fontFamily:mono,color:"#525a6e",letterSpacing:1}}>
           {es?"entrena para ver el mapa activo":"train to activate the map"}
