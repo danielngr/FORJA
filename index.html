@@ -2514,12 +2514,35 @@ function StatsScreen({logs,routine,lang,profile}){
         if(routine) routine.forEach(d=>{if(!d)return;d.ex&&d.ex.forEach(ex=>{if(ex.id===id)exName=ex.e;})});
         const meta=EX_META[exName?.toLowerCase()];
         if(meta){
-          const m=meta.p[0];
-          muscleVol[m]=(muscleVol[m]||0)+(+e.w||0)*(+e.r||0);
-          // Secundarios relevantes para antebrazos
+          const vol=(+e.w||0)*(+e.r||0);
+          // Normalizar nombre del músculo primario
+          const normalizeMuscle=(m)=>{
+            if(!m) return m;
+            if(m.includes('pectoral mayor')) return 'pectoral mayor';
+            if(m.includes('bíceps braquial')||m==='bíceps') return 'bíceps braquial';
+            if(m.includes('tríceps braquial')||m==='tríceps') return 'tríceps braquial';
+            if(m.includes('deltoides anterior')||m==='deltoides') return 'deltoides anterior';
+            if(m.includes('deltoides posterior')) return 'deltoides posterior';
+            if(m.includes('trapecio')) return 'trapecio superior';
+            if(m.includes('core')||m.includes('recto abdominal')||m.includes('oblicuos')) return 'core (transverso abdominal)';
+            if(m.includes('glúteo')) return 'glúteo mayor';
+            if(m.includes('gastrocnemio')||m==='gemelos') return 'gastrocnemio';
+            if(m.includes('cuádriceps')||m==='recto femoral') return 'cuádriceps';
+            if(m.includes('isquiotibiales')) return 'isquiotibiales';
+            if(m.includes('dorsal')) return 'dorsal ancho';
+            return m;
+          };
+          const primary=normalizeMuscle(meta.p[0]);
+          muscleVol[primary]=(muscleVol[primary]||0)+vol;
+          // Solo acumular secundarios directamente relevantes al heatmap (no anconeo, romboides, etc.)
+          const HEATMAP_KEYS=new Set(['bíceps braquial','tríceps braquial','deltoides anterior',
+            'deltoides posterior','trapecio superior','core (transverso abdominal)',
+            'dorsal ancho','glúteo mayor','cuádriceps','isquiotibiales','gastrocnemio',
+            'braquial','braquiorradial']);
           meta.s.forEach(sec=>{
-            if(sec==="braquial"||sec==="braquiorradial")
-              muscleVol[sec]=(muscleVol[sec]||0)+(+e.w||0)*(+e.r||0)*0.4;
+            const ns=normalizeMuscle(sec);
+            if(ns && HEATMAP_KEYS.has(ns) && ns!==primary)
+              muscleVol[ns]=(muscleVol[ns]||0)+vol*0.20; // 20% para secundarios, no 40%
           });
         }
       }
