@@ -2509,6 +2509,49 @@ function StatsScreen({logs,routine,lang,profile}){
   const trainedDays=new Set();
   Object.values(logs).forEach(entries=>entries.forEach(e=>{if(e.d&&e.d.startsWith(monthStr))trainedDays.add(e.d);}));
 
+  // ── STREAK — días consecutivos entrenados ────────────────────────
+  // Collect ALL trained days across all time
+  const allTrainedDays=new Set();
+  Object.values(logs).forEach(entries=>entries.forEach(e=>{if(e.d)allTrainedDays.add(e.d);}));
+
+  // Current streak: count back from today (or yesterday if today not trained)
+  const todayStr=today.toISOString().slice(0,10);
+  let streakCurrent=0;
+  let streakCheck=new Date(today);
+  // If today not trained yet, start counting from yesterday
+  if(!allTrainedDays.has(todayStr)) streakCheck.setDate(streakCheck.getDate()-1);
+  while(true){
+    const ds=streakCheck.toISOString().slice(0,10);
+    if(!allTrainedDays.has(ds)) break;
+    streakCurrent++;
+    streakCheck.setDate(streakCheck.getDate()-1);
+    if(streakCurrent>365) break; // safety
+  }
+
+  // Best streak ever
+  const sortedDays=[...allTrainedDays].sort();
+  let streakBest=0,streakTemp=0;
+  for(let i=0;i<sortedDays.length;i++){
+    if(i===0){streakTemp=1;}
+    else{
+      const prev=new Date(sortedDays[i-1]);
+      const curr=new Date(sortedDays[i]);
+      const diff=(curr-prev)/(1000*60*60*24);
+      if(diff===1){streakTemp++;}
+      else{streakTemp=1;}
+    }
+    if(streakTemp>streakBest) streakBest=streakTemp;
+  }
+  if(streakCurrent>streakBest) streakBest=streakCurrent;
+
+  // This week's training days (Mon–Sun)
+  const weekDaysTrained=Array.from({length:7},(_,i)=>{
+    const d=new Date(weekStart);
+    d.setDate(weekStart.getDate()+i);
+    const ds=d.toISOString().slice(0,10);
+    return{ds,trained:allTrainedDays.has(ds),isToday:ds===todayStr,isFuture:ds>todayStr};
+  });
+
   // PR seleccionado para el sparkline
   const prView=selPR!==null?prs[selPR]:prs[0];
 
@@ -2629,6 +2672,106 @@ function StatsScreen({logs,routine,lang,profile}){
         {totalMV===0&&(
           <div style={{fontSize:10,fontFamily:mono,color:C.tx3,marginTop:8,letterSpacing:1}}>
             {es?"entrena para ver el mapa activo":"train to see the active map"}
+          </div>
+        )}
+      </div>
+
+      {/* ── STREAK ──────────────────────────────────────────────────── */}
+      <div style={{
+        background:streakCurrent>=3
+          ?`linear-gradient(135deg,rgba(192,112,40,.18) 0%,rgba(217,96,60,.08) 100%)`
+          :C.card,
+        borderRadius:16,padding:"16px 18px",marginBottom:12,
+        border:`1px solid ${streakCurrent>=3?"rgba(217,140,60,.35)":C.borderL}`,
+        position:"relative",overflow:"hidden",
+      }}>
+        {/* Glow fondo si racha activa */}
+        {streakCurrent>=3&&<div style={{position:"absolute",top:-30,right:-20,width:120,height:120,
+          borderRadius:"50%",background:"rgba(217,120,40,.15)",filter:"blur(30px)",pointerEvents:"none"}}/>}
+
+        <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:14}}>
+          <div>
+            <div style={{fontSize:8,fontFamily:mono,color:streakCurrent>=3?C.yellow:C.tx3,
+              letterSpacing:2,marginBottom:4,textTransform:"uppercase"}}>
+              {es?"RACHA ACTUAL":"CURRENT STREAK"}
+            </div>
+            <div style={{display:"flex",alignItems:"baseline",gap:6}}>
+              <div style={{fontSize:48,fontWeight:900,letterSpacing:-2,
+                color:streakCurrent>=7?C.yellow:streakCurrent>=3?"#ff8c3c":C.tx,
+                lineHeight:1,fontFamily:sans,
+              }}>{streakCurrent}</div>
+              <div style={{fontSize:13,fontFamily:mono,color:C.tx3,fontWeight:400}}>
+                {es?"días":"days"}
+              </div>
+              {streakCurrent>=3&&<div style={{fontSize:24}}>{streakCurrent>=7?"🔥":"⚡"}</div>}
+            </div>
+            {streakCurrent===0&&(
+              <div style={{fontSize:10,fontFamily:mono,color:C.tx3,marginTop:4}}>
+                {es?"entrena hoy para empezar":"train today to start"}
+              </div>
+            )}
+          </div>
+          {streakBest>0&&(
+            <div style={{textAlign:"right"}}>
+              <div style={{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:1.5,marginBottom:3,textTransform:"uppercase"}}>
+                {es?"mejor racha":"best streak"}
+              </div>
+              <div style={{fontSize:22,fontWeight:900,color:C.tx3,letterSpacing:-1,fontFamily:sans}}>
+                {streakBest}
+                <span style={{fontSize:10,fontWeight:400,color:C.tx3,marginLeft:3}}>{es?"días":"d"}</span>
+              </div>
+              {streakCurrent===streakBest&&streakBest>1&&(
+                <div style={{fontSize:8,fontFamily:mono,color:C.yellow,letterSpacing:1}}>RÉCORD 🏆</div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Dots de la semana — L M X J V S D */}
+        <div>
+          <div style={{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:1.5,marginBottom:8,textTransform:"uppercase"}}>
+            {es?"esta semana":"this week"}
+          </div>
+          <div style={{display:"flex",gap:6,alignItems:"center"}}>
+            {weekDaysTrained.map(({ds,trained,isToday,isFuture},i)=>{
+              const labels=es?["L","M","X","J","V","S","D"]:["M","T","W","T","F","S","S"];
+              const col=trained?C.green:isToday?"rgba(95,170,136,.3)":C.border;
+              const borderCol=isToday?C.green:trained?C.green:C.borderL;
+              return(
+                <div key={ds} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
+                  <div style={{
+                    width:"100%",aspectRatio:"1",borderRadius:"50%",
+                    background:isFuture?"transparent":col,
+                    border:`1.5px solid ${isFuture?C.borderL+"44":borderCol}`,
+                    display:"flex",alignItems:"center",justifyContent:"center",
+                    fontSize:8,color:trained?C.white:isToday?C.green:C.tx3,
+                    fontFamily:mono,fontWeight:trained?700:400,
+                    boxShadow:trained?`0 0 8px rgba(95,170,136,.4)`:"none",
+                    transition:"all .2s",
+                  }}>
+                    {trained?"✓":isToday?"·":""}
+                  </div>
+                  <div style={{fontSize:8,fontFamily:mono,
+                    color:isToday?C.green:trained?C.tx2:C.tx3,
+                    fontWeight:isToday?700:400,
+                  }}>{labels[i]}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Mensaje motivacional según racha */}
+        {streakCurrent>0&&(
+          <div style={{marginTop:12,padding:"8px 12px",borderRadius:10,
+            background:"rgba(255,255,255,.04)",border:`1px solid ${C.borderL}33`,
+          }}>
+            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:.5}}>
+              {streakCurrent>=14?es?"🔥 Imparable. Sigue así.":"🔥 Unstoppable. Keep going."
+              :streakCurrent>=7 ?es?"⚡ Una semana seguida. Eres consistente.":"⚡ A full week. You're consistent."
+              :streakCurrent>=3 ?es?"💪 Buen ritmo. No pares ahora.":"💪 Good rhythm. Don't stop now."
+              :                   es?"✓ Empezando la racha. Mañana es clave.":"✓ Streak started. Tomorrow is key."}
+            </div>
           </div>
         )}
       </div>
