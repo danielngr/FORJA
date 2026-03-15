@@ -733,17 +733,57 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
               <div style={{padding:"14px 20px 0"}}>
                 <div style={{fontFamily:mono,fontSize:9,color:C2.tx3,letterSpacing:2,marginBottom:4}}>
                   {String(ei+1).padStart(2,'0')} / {String(exs.length).padStart(2,'0')}
+                  {EX_META[ex.e?.toLowerCase()]?.mec&&(
+                    <span style={{marginLeft:8,color:EX_META[ex.e?.toLowerCase()]?.mec==="compound"?C2.blue:C2.purple}}>
+                      · {lang==="es"?EX_META[ex.e?.toLowerCase()]?.mec==="compound"?"COMPUESTO":"AISLAMIENTO":EX_META[ex.e?.toLowerCase()]?.mec?.toUpperCase()}
+                    </span>
+                  )}
                 </div>
                 <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between"}}>
-                  <div style={{fontSize:24,fontWeight:900,letterSpacing:-1,textTransform:"uppercase",color:C2.tx,lineHeight:1}}>{ex.e}</div>
-                  {/* Note button */}
-                  <button onClick={()=>{setNoteText(notes[ei]||"");setNoteOpen(ei);}}
-                    style={{background:"none",border:"none",cursor:"pointer",padding:4,color:notes[ei]?C2.yellow:C2.tx3,opacity:notes[ei]?1:.5,flexShrink:0,marginTop:2}}>
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                      <path d="M2 10.5V12h1.5l5.5-5.5-1.5-1.5L2 10.5zM11.7 3.3a1 1 0 000-1.4l-.6-.6a1 1 0 00-1.4 0L8.5 2.5 10 4l1.7-1.7z" fill="currentColor"/>
-                    </svg>
-                  </button>
+                  <div>
+                    <div style={{fontSize:24,fontWeight:900,letterSpacing:-1,textTransform:"uppercase",color:C2.tx,lineHeight:1}}>{ex.e}</div>
+                    {/* Músculos debajo del nombre */}
+                    {EX_META[ex.e?.toLowerCase()]&&(
+                      <div style={{display:"flex",gap:5,flexWrap:"wrap",marginTop:5}}>
+                        {EX_META[ex.e?.toLowerCase()].p.map(m=>(
+                          <span key={m} style={{padding:"2px 7px",borderRadius:8,fontSize:8,fontFamily:mono,background:"rgba(95,170,136,.12)",color:C2.green,border:"1px solid rgba(95,170,136,.25)"}}>{m}</span>
+                        ))}
+                        {EX_META[ex.e?.toLowerCase()].s.slice(0,2).map(m=>(
+                          <span key={m} style={{padding:"2px 7px",borderRadius:8,fontSize:8,fontFamily:mono,background:"rgba(136,120,192,.08)",color:C2.purple,border:"1px solid rgba(136,120,192,.2)"}}>{m}</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{display:"flex",gap:6,alignItems:"center",flexShrink:0,marginLeft:8}}>
+                    {/* Botón TÉCNICA */}
+                    {EX_META[ex.e?.toLowerCase()]&&(
+                      <button onClick={()=>setNoteOpen(noteOpen===`tech_${ei}`?null:`tech_${ei}`)}
+                        style={{padding:"4px 8px",borderRadius:7,border:"1px solid rgba(106,143,192,.3)",background:"rgba(106,143,192,.08)",color:C2.blue,fontSize:8,fontFamily:mono,letterSpacing:.5,cursor:"pointer",whiteSpace:"nowrap"}}>
+                        TÉCNICA
+                      </button>
+                    )}
+                    {/* Note button */}
+                    <button onClick={()=>{setNoteText(notes[ei]||"");setNoteOpen(ei);}}
+                      style={{background:"none",border:"none",cursor:"pointer",padding:4,color:notes[ei]?C2.yellow:C2.tx3,opacity:notes[ei]?1:.5,flexShrink:0}}>
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                        <path d="M2 10.5V12h1.5l5.5-5.5-1.5-1.5L2 10.5zM11.7 3.3a1 1 0 000-1.4l-.6-.6a1 1 0 00-1.4 0L8.5 2.5 10 4l1.7-1.7z" fill="currentColor"/>
+                      </svg>
+                    </button>
+                  </div>
                 </div>
+                {/* Panel de técnica expandible */}
+                {noteOpen===`tech_${ei}`&&EX_META[ex.e?.toLowerCase()]&&(
+                  <div style={{background:C2.bgD,borderRadius:10,padding:12,marginTop:10,animation:"fu .2s ease"}}>
+                    <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                      {EX_META[ex.e?.toLowerCase()].steps.map((s,si)=>(
+                        <div key={si} style={{display:"flex",gap:8,alignItems:"flex-start"}}>
+                          <div style={{width:18,height:18,borderRadius:"50%",background:"#424858",display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,color:C2.tx3,flexShrink:0,fontFamily:mono}}>{si+1}</div>
+                          <div style={{fontSize:11,color:C2.tx2,lineHeight:1.5}}>{s}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <div style={{display:"flex",alignItems:"center",gap:12,marginTop:5}}>
                   <span style={{fontFamily:mono,fontSize:9,color:C2.tx3,letterSpacing:1.5}}>{ex.r}</span>
                   {prevKg&&<span style={{fontFamily:mono,fontSize:9,color:C2.tx3}}>ant: <span style={{color:C2.tx2}}>{prevKg}kg × {prevRp}</span></span>}
@@ -1377,11 +1417,87 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
   const[manualDays,setManualDays]=useState(0);
   const[manualSelDays,setManualSelDays]=useState([]);
   const[manualRoutine,setManualRoutine]=useState(Array(7).fill(null).map(()=>[]));
-  const[catalogDay,setCatalogDay]=useState(0); // qué día se está editando en catálogo
-  const[catalogMuscle,setCatalogMuscle]=useState(""); // filtro músculo activo
+  const[catalogDay,setCatalogDay]=useState(0);
+  const[catalogMuscle,setCatalogMuscle]=useState("");
+  const[catalogMec,setCatalogMec]=useState("");    // "compound"|"isolation"|""
+  const[catalogForce,setCatalogForce]=useState(""); // "push"|"pull"|"static"|""
+  const[catalogDiff,setCatalogDiff]=useState("");   // "beginner"|"intermediate"|"advanced"|""
+  const[drawerEx,setDrawerEx]=useState(null);       // ejercicio con drawer abierto
 
   // Catálogo de ejercicios agrupado por músculo
   const[equipment,setEquipment]=useState([]); // equipo disponible
+
+  // Metadata de ejercicios — músculos, dificultad, técnica
+  const EX_META={
+    "bench press":{"p":["pectoral mayor"],"s":["tríceps", "deltoides anterior"],"diff":"intermediate","mec":"compound","force":"push","steps":["Acuéstate en el banco, pies planos en el suelo. Agarra la barra a poco más del ancho de hombros.", "Baja la barra de forma controlada hasta rozar el pecho medio.", "Empuja explosivamente hasta extender los codos sin bloquearlos."]},
+    "incline bench press":{"p":["pectoral mayor (superior)"],"s":["tríceps", "deltoides anterior"],"diff":"intermediate","mec":"compound","force":"push","steps":["Ajusta el banco a 30-45°. Agarra la barra ligeramente más ancha que los hombros.", "Baja la barra hacia la parte superior del pecho de forma controlada.", "Empuja hasta extender los brazos manteniendo los omóplatos retraídos."]},
+    "dumbbell bench press":{"p":["pectoral mayor"],"s":["tríceps", "deltoides anterior"],"diff":"beginner","mec":"compound","force":"push","steps":["Acuéstate con una mancuerna en cada mano a la altura del pecho.", "Baja las mancuernas controladamente hasta que los codos queden a 90°.", "Empuja hacia arriba y junta ligeramente las mancuernas en la parte superior."]},
+    "incline dumbbell press":{"p":["pectoral mayor (superior)"],"s":["tríceps", "deltoides anterior"],"diff":"beginner","mec":"compound","force":"push","steps":["Banco a 30-45°. Sujeta las mancuernas a la altura del pecho.", "Baja de forma controlada con los codos a unos 75° del torso.", "Empuja hasta extender los codos, sin llegar al bloqueo total."]},
+    "dumbbell chest fly":{"p":["pectoral mayor"],"s":["deltoides anterior", "bíceps braquial"],"diff":"intermediate","mec":"isolation","force":"push","steps":["Acuéstate en banco plano con mancuernas sobre el pecho, palmas enfrentadas.", "Abre los brazos en arco amplio manteniendo una leve flexión en los codos.", "Vuelve al punto de partida apretando el pecho al final del movimiento."]},
+    "cable fly":{"p":["pectoral mayor"],"s":["deltoides anterior", "bíceps braquial"],"diff":"intermediate","mec":"isolation","force":"push","steps":["Coloca las poleas altas. Agarra una manija en cada mano y da un paso adelante.", "Lleva ambas manijas hacia el centro del cuerpo en un arco controlado.", "Regresa lentamente resistiendo el peso en cada repetición."]},
+    "machine chest press":{"p":["pectoral mayor"],"s":["tríceps", "deltoides anterior"],"diff":"beginner","mec":"compound","force":"push","steps":["Ajusta el asiento para que los mangos queden a la altura del pecho.", "Empuja los mangos hacia adelante hasta extender casi por completo los codos.", "Regresa lentamente sin que el peso toque los discos."]},
+    "machine pec fly":{"p":["pectoral mayor"],"s":["deltoides anterior"],"diff":"beginner","mec":"isolation","force":"push","steps":["Ajusta los brazos de la máquina a la altura de los hombros.", "Cierra los brazos en arco frente al pecho apretando el pectoral.", "Regresa de forma controlada sin dejar que los codos vayan más atrás que los hombros."]},
+    "push up":{"p":["pectoral mayor"],"s":["tríceps", "deltoides anterior", "core"],"diff":"beginner","mec":"compound","force":"push","steps":["Manos a la anchura de los hombros, cuerpo en línea recta desde cabeza a talones.", "Baja el pecho hasta casi tocar el suelo manteniendo los codos a 45°.", "Empuja hasta extender los codos completamente."]},
+    "decline push up":{"p":["pectoral mayor (inferior)"],"s":["tríceps", "deltoides anterior"],"diff":"intermediate","mec":"compound","force":"push","steps":["Coloca los pies sobre una superficie elevada (silla, cajón).", "Baja el pecho hacia el suelo con los codos a 45° del torso.", "Empuja hasta extender completamente los codos."]},
+    "dips":{"p":["pectoral mayor"],"s":["tríceps", "deltoides anterior"],"diff":"intermediate","mec":"compound","force":"push","steps":["Agarra las barras paralelas con los brazos extendidos. Inclínate hacia adelante.", "Baja flexionando los codos hasta que los hombros queden por debajo de los codos.", "Empuja hacia arriba hasta extender los brazos."]},
+    "pull up":{"p":["dorsal ancho"],"s":["bíceps", "romboides", "trapecio inferior"],"diff":"advanced","mec":"compound","force":"pull","steps":["Agarra la barra con palmas hacia afuera, separación mayor al ancho de hombros.", "Activa el core y lleva los omóplatos hacia abajo antes de jalar.", "Jala hasta que la barbilla supere la barra. Baja de forma controlada."]},
+    "chin up":{"p":["dorsal ancho"],"s":["bíceps", "romboides"],"diff":"intermediate","mec":"compound","force":"pull","steps":["Agarra la barra con palmas hacia ti, separación al ancho de hombros.", "Jala activando el dorsal hasta que la barbilla supere la barra.", "Baja de forma controlada hasta extender completamente los codos."]},
+    "barbell row":{"p":["dorsal ancho"],"s":["romboides", "trapecio", "bíceps"],"diff":"intermediate","mec":"compound","force":"pull","steps":["Agarra la barra con palmas abajo, espalda paralela al suelo, rodillas ligeramente flexionadas.", "Jala la barra hacia el abdomen bajo apretando los omóplatos.", "Baja de forma controlada manteniendo la espalda recta."]},
+    "pendlay row":{"p":["dorsal ancho"],"s":["romboides", "trapecio", "bíceps"],"diff":"advanced","mec":"compound","force":"pull","steps":["Barra en el suelo, espalda completamente paralela al suelo.", "Jala explosivamente la barra al pecho y vuelve al suelo en cada repetición.", "El torso no debe moverse — solo los brazos y omóplatos trabajan."]},
+    "dumbbell row":{"p":["dorsal ancho"],"s":["romboides", "bíceps", "trapecio medio"],"diff":"beginner","mec":"compound","force":"pull","steps":["Apoya una rodilla y mano en el banco. La espalda paralela al suelo.", "Jala la mancuerna hacia la cadera llevando el codo hacia el techo.", "Baja de forma controlada hasta extender el brazo."]},
+    "cable row":{"p":["dorsal ancho"],"s":["romboides", "trapecio medio", "bíceps"],"diff":"beginner","mec":"compound","force":"pull","steps":["Siéntate frente a la polea baja, pies apoyados, espalda erguida.", "Jala el maneral hacia el abdomen medio apretando los omóplatos.", "Regresa controlando el peso sin redondear la espalda."]},
+    "machine neutral row":{"p":["dorsal ancho"],"s":["romboides", "trapecio", "bíceps"],"diff":"beginner","mec":"compound","force":"pull","steps":["Ajusta el pecho al soporte de la máquina. Agarra los mangos en agarre neutro.", "Jala los mangos hacia el cuerpo apretando los omóplatos al final.", "Regresa lentamente sin que el peso descanse entre repeticiones."]},
+    "lat pulldown":{"p":["dorsal ancho"],"s":["bíceps", "romboides", "trapecio inferior"],"diff":"beginner","mec":"compound","force":"pull","steps":["Siéntate, muslos fijados bajo el pad. Agarra la barra ancha con palmas abajo.", "Jala la barra hacia la parte superior del pecho inclinándote ligeramente atrás.", "Regresa lentamente controlando el peso."]},
+    "machine pulldown":{"p":["dorsal ancho"],"s":["bíceps", "romboides"],"diff":"beginner","mec":"compound","force":"pull","steps":["Ajusta el asiento y los pads. Agarra los mangos por encima de la cabeza.", "Jala los mangos hacia los hombros apretando el dorsal.", "Regresa de forma controlada."]},
+    "barbell pullover":{"p":["dorsal ancho"],"s":["pectoral mayor", "tríceps", "serrato"],"diff":"intermediate","mec":"isolation","force":"pull","steps":["Acuéstate transversal en el banco, solo los hombros en contacto. Sujeta la barra sobre el pecho.", "Baja la barra en arco por encima de la cabeza manteniendo los codos ligeramente flexionados.", "Vuelve al inicio apretando el dorsal al final del movimiento."]},
+    "barbell rack pull":{"p":["dorsal ancho"],"s":["glúteo", "isquiotibiales", "trapecio superior"],"diff":"advanced","mec":"compound","force":"pull","steps":["Coloca la barra en el rack a la altura de las rodillas o encima.", "Agarra la barra con agarre doble pronado, espalda recta, pecho arriba.", "Jala la barra hasta la extensión completa de caderas y rodillas."]},
+    "supermans":{"p":["erector espinal"],"s":["glúteo", "isquiotibiales"],"diff":"beginner","mec":"isolation","force":"pull","steps":["Acuéstate boca abajo con brazos extendidos sobre la cabeza.", "Levanta simultáneamente brazos y piernas del suelo contrayendo la zona lumbar.", "Mantén 2-3 segundos en la posición alta y baja de forma controlada."]},
+    "overhead press":{"p":["deltoides anterior"],"s":["tríceps", "deltoides lateral", "trapecio"],"diff":"intermediate","mec":"compound","force":"push","steps":["De pie, barra a la altura del pecho con agarre al ancho de hombros.", "Empuja la barra verticalmente por encima de la cabeza, llevando el torso hacia adelante bajo la barra.", "Baja la barra de forma controlada hasta el pecho."]},
+    "dumbbell shoulder press":{"p":["deltoides anterior"],"s":["tríceps", "deltoides lateral"],"diff":"beginner","mec":"compound","force":"push","steps":["Sentado o de pie, mancuernas a la altura de los hombros con codos a 90°.", "Empuja ambas mancuernas hacia arriba hasta casi extender los codos.", "Baja de forma controlada hasta la posición inicial."]},
+    "seated overhead press":{"p":["deltoides anterior"],"s":["tríceps", "deltoides lateral", "core"],"diff":"beginner","mec":"compound","force":"push","steps":["Sentado en banco con respaldo. Mancuernas a la altura de los hombros.", "Empuja hacia arriba hasta extender casi completamente los codos.", "Baja de forma controlada, codos ligeramente por delante del torso."]},
+    "lateral raise":{"p":["deltoides lateral"],"s":["deltoides anterior", "trapecio"],"diff":"beginner","mec":"isolation","force":"push","steps":["De pie, mancuernas a los lados con leve flexión en los codos.", "Eleva los brazos hasta la horizontal manteniendo los pulgares ligeramente bajos.", "Baja de forma controlada sin balancear el torso."]},
+    "dumbbell front raise":{"p":["deltoides anterior"],"s":["pectoral mayor (clavicular)", "trapecio"],"diff":"beginner","mec":"isolation","force":"push","steps":["De pie, mancuernas frente a los muslos con palmas hacia atrás.", "Eleva un brazo a la vez (o ambos) hasta la horizontal.", "Baja de forma controlada sin usar el impulso del torso."]},
+    "face pull":{"p":["deltoides posterior"],"s":["romboides", "trapecio medio", "manguito rotador"],"diff":"beginner","mec":"isolation","force":"pull","steps":["Polea alta con cuerda. Agarra la cuerda con palmas abajo a la altura de los ojos.", "Jala la cuerda hacia la cara separando las manos al final del movimiento.", "Regresa lentamente manteniendo los codos por encima de los hombros."]},
+    "cable face pull":{"p":["deltoides posterior"],"s":["romboides", "trapecio medio"],"diff":"beginner","mec":"isolation","force":"pull","steps":["Misma ejecución que el face pull con cuerda en polea alta.", "Jala hacia la cara separando las manos y llevando los codos hacia afuera y atrás.", "Mantén la tensión al final y regresa de forma controlada."]},
+    "machine face pulls":{"p":["deltoides posterior"],"s":["romboides", "trapecio medio"],"diff":"beginner","mec":"isolation","force":"pull","steps":["Ajusta la máquina a la altura de los ojos. Agarra los mangos.", "Jala hacia la cara llevando los codos hacia afuera.", "Regresa lentamente sin soltar la tensión muscular."]},
+    "barbell upright row":{"p":["deltoides lateral"],"s":["trapecio", "bíceps"],"diff":"intermediate","mec":"compound","force":"pull","steps":["Agarra la barra con agarre cerrado frente a los muslos.", "Jala la barra hacia el mentón manteniendo los codos por encima de las muñecas.", "Baja de forma controlada — evita el movimiento si hay molestia en el hombro."]},
+    "barbell shrug":{"p":["trapecio superior"],"s":["elevador de la escápula"],"diff":"beginner","mec":"isolation","force":"static","steps":["De pie con la barra frente a los muslos, agarre al ancho de hombros.", "Eleva los hombros directamente hacia las orejas sin girar.", "Mantén 1 segundo arriba y baja de forma controlada."]},
+    "dumbbell shrug":{"p":["trapecio superior"],"s":["elevador de la escápula"],"diff":"beginner","mec":"isolation","force":"static","steps":["De pie con mancuernas a los lados.", "Eleva los hombros directamente hacia las orejas.", "Mantén 1 segundo en la cima y baja de forma controlada."]},
+    "reverse fly":{"p":["deltoides posterior"],"s":["romboides", "trapecio medio"],"diff":"beginner","mec":"isolation","force":"pull","steps":["Inclinado hacia adelante, mancuernas colgando con palmas enfrentadas.", "Abre los brazos en arco lateral hasta la horizontal apretando los omóplatos.", "Baja de forma controlada."]},
+    "dumbbell rear delt fly":{"p":["deltoides posterior"],"s":["romboides", "infraespinoso"],"diff":"beginner","mec":"isolation","force":"pull","steps":["Sentado, inclinado hacia adelante con el torso sobre los muslos.", "Eleva las mancuernas en arco lateral sin girar los codos.", "Baja de forma controlada."]},
+    "dumbbell laying reverse fly":{"p":["deltoides posterior"],"s":["romboides", "trapecio medio"],"diff":"beginner","mec":"isolation","force":"pull","steps":["Acostado boca abajo en banco inclinado a 30°. Mancuernas colgando.", "Abre los brazos en arco hasta la horizontal apretando omóplatos.", "Baja de forma controlada."]},
+    "squat":{"p":["cuádriceps"],"s":["glúteo mayor", "isquiotibiales", "core"],"diff":"intermediate","mec":"compound","force":"push","steps":["Barra sobre los trapecios (sentadilla alta) o deltoides posteriores (baja). Pies al ancho de hombros.", "Baja controladamente hasta que los muslos queden paralelos o más abajo, rodillas sobre los pies.", "Empuja desde los talones hasta la extensión completa."]},
+    "front squat":{"p":["cuádriceps"],"s":["glúteo mayor", "core", "erectores espinales"],"diff":"advanced","mec":"compound","force":"push","steps":["Barra sobre los deltoides anteriores, codos arriba. Pies al ancho de hombros.", "Baja manteniendo el torso vertical y los codos apuntando al frente.", "Empuja hacia arriba sin dejar caer los codos."]},
+    "goblet squat":{"p":["cuádriceps"],"s":["glúteo mayor", "core", "aductores"],"diff":"beginner","mec":"compound","force":"push","steps":["Sujeta una mancuerna o kettlebell frente al pecho con ambas manos.", "Baja manteniendo el pecho arriba y los codos dentro de las rodillas.", "Empuja desde los talones hasta la extensión completa."]},
+    "leg press":{"p":["cuádriceps"],"s":["glúteo mayor", "isquiotibiales"],"diff":"beginner","mec":"compound","force":"push","steps":["Ajusta el asiento. Pies al ancho de hombros en la plataforma.", "Baja la plataforma de forma controlada hasta que las rodillas lleguen a 90°.", "Empuja hasta extender las piernas sin bloquear las rodillas."]},
+    "deadlift":{"p":["isquiotibiales"],"s":["glúteo mayor", "dorsal ancho", "trapecio", "cuádriceps"],"diff":"advanced","mec":"compound","force":"pull","steps":["Barra sobre el empeine, agarre al ancho de hombros. Espalda recta, pecho arriba.", "Empuja el suelo con los pies mientras la barra sube rozando las piernas.", "Extiende caderas y rodillas simultáneamente hasta la posición vertical."]},
+    "romanian deadlift":{"p":["isquiotibiales"],"s":["glúteo mayor", "dorsal ancho", "erector espinal"],"diff":"intermediate","mec":"compound","force":"pull","steps":["De pie con la barra frente a los muslos. Rodillas ligeramente flexionadas.", "Baja la barra rozando las piernas con la espalda recta hasta sentir tensión en isquiotibiales.", "Vuelve a la posición inicial empujando las caderas hacia adelante."]},
+    "bulgarian split squat":{"p":["cuádriceps"],"s":["glúteo mayor", "isquiotibiales", "core"],"diff":"intermediate","mec":"compound","force":"push","steps":["Pie trasero sobre un banco, pie delantero adelantado. Barra en los trapecios.", "Baja hasta que la rodilla trasera casi toque el suelo manteniendo el torso erguido.", "Empuja con el pie delantero para volver a la posición inicial."]},
+    "dumbbell bulgarian split squat":{"p":["cuádriceps"],"s":["glúteo mayor", "isquiotibiales"],"diff":"intermediate","mec":"compound","force":"push","steps":["Pie trasero sobre banco, mancuernas en cada mano.", "Baja controladamente hasta que la rodilla trasera casi toque el suelo.", "Empuja con el talón delantero para volver al inicio."]},
+    "leg curl":{"p":["isquiotibiales"],"s":["gastrocnemio", "poplíteo"],"diff":"beginner","mec":"isolation","force":"pull","steps":["Acostado boca abajo en la máquina, pad sobre los tobillos.", "Flexiona las rodillas jalando el pad hacia los glúteos.", "Baja de forma controlada sin que el peso descanse."]},
+    "leg extension":{"p":["cuádriceps"],"s":["recto femoral"],"diff":"beginner","mec":"isolation","force":"push","steps":["Sentado en la máquina, pad sobre los tobillos, rodillas a 90°.", "Extiende las rodillas hasta casi la posición completamente recta.", "Baja de forma controlada."]},
+    "calf raise":{"p":["gastrocnemio"],"s":["sóleo"],"diff":"beginner","mec":"isolation","force":"push","steps":["De pie en el borde de un escalón o plataforma, talones colgando.", "Eleva los talones lo más alto posible apretando los gemelos.", "Baja de forma controlada hasta sentir estiramiento."]},
+    "seated calf raise":{"p":["sóleo"],"s":["gastrocnemio"],"diff":"beginner","mec":"isolation","force":"push","steps":["Sentado en la máquina con el pad sobre los muslos, punta de pies en la plataforma.", "Eleva los talones lo más alto posible.", "Baja de forma controlada hasta el rango completo."]},
+    "hip thrust":{"p":["glúteo mayor"],"s":["isquiotibiales", "cuádriceps", "core"],"diff":"intermediate","mec":"compound","force":"push","steps":["Espalda alta apoyada en el banco. Barra sobre las caderas con protección.", "Empuja las caderas hacia arriba hasta la extensión total apretando glúteos.", "Baja de forma controlada hasta casi tocar el suelo."]},
+    "box jump":{"p":["cuádriceps"],"s":["glúteo mayor", "isquiotibiales", "gemelos"],"diff":"intermediate","mec":"compound","force":"push","steps":["De pie frente al cajón con pies al ancho de hombros.", "Flexiona ligeramente las rodillas, balancea los brazos y salta sobre el cajón.", "Aterriza suavemente con ambos pies y baja controladamente."]},
+    "barbell thruster":{"p":["cuádriceps"],"s":["glúteo mayor", "deltoides anterior", "tríceps"],"diff":"advanced","mec":"compound","force":"push","steps":["Barra a la altura del pecho, agarre al ancho de hombros.", "Baja en sentadilla completa y al subir usa el impulso para empujar la barra sobre la cabeza.", "Regresa la barra al pecho de forma controlada."]},
+    "barbell curl":{"p":["bíceps braquial"],"s":["braquial", "braquiorradial"],"diff":"beginner","mec":"isolation","force":"pull","steps":["De pie, barra con agarre supinado al ancho de hombros.", "Flexiona los codos subiendo la barra hacia los hombros. Codos fijos al costado.", "Baja de forma controlada hasta extender completamente."]},
+    "dumbbell curl":{"p":["bíceps braquial"],"s":["braquial", "braquiorradial"],"diff":"beginner","mec":"isolation","force":"pull","steps":["De pie, mancuernas a los lados con palmas hacia adelante.", "Flexiona los codos subiendo las mancuernas hacia los hombros alternando o juntas.", "Baja de forma controlada."]},
+    "hammer curl":{"p":["braquial"],"s":["bíceps braquial", "braquiorradial"],"diff":"beginner","mec":"isolation","force":"pull","steps":["De pie, mancuernas en agarre neutro (pulgares arriba).", "Flexiona los codos subiendo las mancuernas sin rotar las muñecas.", "Baja de forma controlada."]},
+    "concentration curl":{"p":["bíceps braquial (cabeza larga)"],"s":["braquial"],"diff":"beginner","mec":"isolation","force":"pull","steps":["Sentado, codo apoyado en el interior del muslo.", "Flexiona el codo subiendo la mancuerna hacia el hombro sin mover el brazo.", "Baja de forma controlada."]},
+    "preacher curl":{"p":["bíceps braquial (cabeza corta)"],"s":["braquial"],"diff":"beginner","mec":"isolation","force":"pull","steps":["Brazos apoyados en el pad inclinado, agarre supinado.", "Flexiona los codos llevando la barra hacia los hombros.", "Baja de forma controlada sin llegar a la extensión total para mantener tensión."]},
+    "reverse curl":{"p":["braquiorradial"],"s":["bíceps braquial", "braquial"],"diff":"beginner","mec":"isolation","force":"pull","steps":["Agarre pronado (palmas abajo) en barra o mancuernas.", "Flexiona los codos subiendo la barra manteniendo las muñecas rectas.", "Baja de forma controlada."]},
+    "tricep pushdown":{"p":["tríceps braquial"],"s":["anconeo"],"diff":"beginner","mec":"isolation","force":"push","steps":["Polea alta con barra recta o en V. Codos fijos al costado.", "Extiende los codos hacia abajo hasta la posición completamente recta.", "Regresa controladamente sin que los codos se alejen del cuerpo."]},
+    "overhead tricep extension":{"p":["tríceps braquial (cabeza larga)"],"s":["anconeo"],"diff":"beginner","mec":"isolation","force":"push","steps":["De pie o sentado. Mancuerna o barra sobre la cabeza con codos apuntando al techo.", "Baja el peso detrás de la cabeza flexionando solo los codos.", "Extiende hasta la posición inicial sin mover los codos."]},
+    "skull crusher":{"p":["tríceps braquial"],"s":["anconeo"],"diff":"intermediate","mec":"isolation","force":"push","steps":["Acostado en banco. Barra sobre el pecho con agarre cerrado.", "Baja la barra hacia la frente flexionando solo los codos.", "Extiende los codos volviendo a la posición inicial."]},
+    "bench dips":{"p":["tríceps braquial"],"s":["deltoides anterior", "pectoral"],"diff":"beginner","mec":"compound","force":"push","steps":["Manos en el borde del banco, pies en el suelo o en otro banco.", "Baja flexionando los codos hasta 90°, torso erguido.", "Empuja hasta extender los codos."]},
+    "close grip bench press":{"p":["tríceps braquial"],"s":["pectoral mayor", "deltoides anterior"],"diff":"intermediate","mec":"compound","force":"push","steps":["Barra con agarre cerrado (ancho de hombros). Acostado en banco plano.", "Baja la barra al pecho bajo manteniendo los codos cerca del cuerpo.", "Empuja hasta la extensión completa."]},
+    "diamond push ups":{"p":["tríceps braquial"],"s":["pectoral mayor", "deltoides anterior"],"diff":"intermediate","mec":"compound","force":"push","steps":["Manos en posición de diamante debajo del pecho.", "Baja manteniendo los codos apuntando hacia atrás.", "Empuja hasta extender completamente."]},
+    "plank":{"p":["core (transverso abdominal)"],"s":["recto abdominal", "glúteo", "erectores espinales"],"diff":"beginner","mec":"isolation","force":"static","steps":["Posición de flexión en antebrazos. Cuerpo en línea recta de cabeza a talones.", "Aprieta el abdomen y glúteos. No dejes caer las caderas ni elevarlas.", "Mantén la posición el tiempo indicado respirando de forma constante."]},
+    "hanging knee raises":{"p":["recto abdominal (inferior)"],"s":["flexores de cadera", "oblicuos"],"diff":"intermediate","mec":"isolation","force":"pull","steps":["Cuelga de una barra con agarre al ancho de hombros.", "Flexiona las caderas y rodillas subiendo las rodillas hacia el pecho.", "Baja de forma controlada sin balancearte."]},
+    "machine crunch":{"p":["recto abdominal"],"s":["oblicuos"],"diff":"beginner","mec":"isolation","force":"pull","steps":["Ajusta el pad sobre los hombros o pecho. Pies planos en el suelo.", "Flexiona el torso hacia adelante apretando el abdomen.", "Regresa controladamente sin perder la tensión."]},
+    "mountain climber":{"p":["core"],"s":["deltoides", "flexores de cadera", "cuádriceps"],"diff":"beginner","mec":"compound","force":"static","steps":["Posición de plancha alta con brazos extendidos.", "Lleva una rodilla al pecho de forma explosiva alternando piernas.", "Mantén las caderas niveladas y el core apretado durante todo el movimiento."]},
+  };
 
   // Mapa equipo por ejercicio
   const EQ_MAP={
@@ -1400,35 +1516,35 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
     {id:"barbell",        es:"Barra olímpica",        en:"Barbell",           icon:"🏋️", group:lang==="es"?"Pesas libres":"Free weights"},
     {id:"dumbbells",      es:"Mancuernas",             en:"Dumbbells",         icon:"💪", group:lang==="es"?"Pesas libres":"Free weights"},
     {id:"kettlebell",     es:"Kettlebell",             en:"Kettlebell",        icon:"🔔", group:lang==="es"?"Pesas libres":"Free weights"},
-    {id:"ez_bar",         es:"Barra EZ (curl)",        en:"EZ curl bar",       icon:"〰️", group:lang==="es"?"Pesas libres":"Free weights"},
-    {id:"trap_bar",       es:"Trap bar / Hex bar",     en:"Trap bar",          icon:"⬡",  group:lang==="es"?"Pesas libres":"Free weights"},
-    {id:"weight_plates",  es:"Discos sueltos",         en:"Weight plates",     icon:"⭕", group:lang==="es"?"Pesas libres":"Free weights"},
+    {id:"ez_bar",         es:"Barra EZ (curl)",        en:"EZ curl bar",       icon:"💪", group:lang==="es"?"Pesas libres":"Free weights"},
+    {id:"trap_bar",       es:"Trap bar / Hex bar",     en:"Trap bar",          icon:"⬛",  group:lang==="es"?"Pesas libres":"Free weights"},
+    {id:"weight_plates",  es:"Discos sueltos",         en:"Weight plates",     icon:"🔘", group:lang==="es"?"Pesas libres":"Free weights"},
     // Soportes y estructuras
     {id:"rack",           es:"Rack / Jaula de potencia",en:"Power rack/cage",  icon:"🏗️", group:lang==="es"?"Soportes":"Racks & structures"},
     {id:"bench",          es:"Banco plano",            en:"Flat bench",        icon:"🪑", group:lang==="es"?"Soportes":"Racks & structures"},
     {id:"incline_bench",  es:"Banco ajustable/inclinado",en:"Adjustable bench",icon:"📐", group:lang==="es"?"Soportes":"Racks & structures"},
-    {id:"pull_up_bar",    es:"Barra de dominadas",     en:"Pull-up bar",       icon:"📊", group:lang==="es"?"Soportes":"Racks & structures"},
-    {id:"dip_bar",        es:"Barras paralelas",       en:"Dip bars",          icon:"⚡", group:lang==="es"?"Soportes":"Racks & structures"},
+    {id:"pull_up_bar",    es:"Barra de dominadas",     en:"Pull-up bar",       icon:"⬆️", group:lang==="es"?"Soportes":"Racks & structures"},
+    {id:"dip_bar",        es:"Barras paralelas",       en:"Dip bars",          icon:"➕", group:lang==="es"?"Soportes":"Racks & structures"},
     {id:"squat_stand",    es:"Soportes de sentadilla", en:"Squat stands",      icon:"🦵", group:lang==="es"?"Soportes":"Racks & structures"},
     // Máquinas
     {id:"machine",        es:"Máquinas de musculación",en:"Weight machines",   icon:"⚙️", group:lang==="es"?"Máquinas":"Machines"},
     {id:"cable_machine",  es:"Polea / Cable",          en:"Cable machine",     icon:"🔄", group:lang==="es"?"Máquinas":"Machines"},
-    {id:"smith_machine",  es:"Máquina Smith",          en:"Smith machine",     icon:"🔩", group:lang==="es"?"Máquinas":"Machines"},
+    {id:"smith_machine",  es:"Máquina Smith",          en:"Smith machine",     icon:"🔧", group:lang==="es"?"Máquinas":"Machines"},
     {id:"leg_press_machine",es:"Prensa de pierna",     en:"Leg press machine", icon:"🦿", group:lang==="es"?"Máquinas":"Machines"},
     {id:"cardio_machine", es:"Máquinas de cardio",     en:"Cardio machines",   icon:"🏃", group:lang==="es"?"Máquinas":"Machines"},
     // Accesorios / funcional
-    {id:"resistance_band",es:"Bandas elásticas",       en:"Resistance bands",  icon:"🪢", group:lang==="es"?"Accesorios":"Accessories"},
-    {id:"trx",            es:"TRX / Suspensión",       en:"TRX / Suspension",  icon:"🤸", group:lang==="es"?"Accesorios":"Accessories"},
-    {id:"ab_wheel",       es:"Rueda abdominal",        en:"Ab wheel",          icon:"⭕", group:lang==="es"?"Accesorios":"Accessories"},
+    {id:"resistance_band",es:"Bandas elásticas",       en:"Resistance bands",  icon:"〰️", group:lang==="es"?"Accesorios":"Accessories"},
+    {id:"trx",            es:"TRX / Suspensión",       en:"TRX / Suspension",  icon:"🪝", group:lang==="es"?"Accesorios":"Accessories"},
+    {id:"ab_wheel",       es:"Rueda abdominal",        en:"Ab wheel",          icon:"🌀", group:lang==="es"?"Accesorios":"Accessories"},
     {id:"foam_roller",    es:"Foam roller",            en:"Foam roller",       icon:"🪵", group:lang==="es"?"Accesorios":"Accessories"},
-    {id:"gymnastic_rings",es:"Anillas de gimnasia",    en:"Gymnastic rings",   icon:"⭕", group:lang==="es"?"Accesorios":"Accessories"},
-    {id:"parallettes",    es:"Paraletas (push-up bars)",en:"Parallettes",      icon:"🤲", group:lang==="es"?"Accesorios":"Accessories"},
+    {id:"gymnastic_rings",es:"Anillas de gimnasia",    en:"Gymnastic rings",   icon:"💍", group:lang==="es"?"Accesorios":"Accessories"},
+    {id:"parallettes",    es:"Paraletas (push-up bars)",en:"Parallettes",      icon:"🤸", group:lang==="es"?"Accesorios":"Accessories"},
     // Crossfit / funcional
     {id:"box",            es:"Cajón pliométrico",      en:"Plyo box",          icon:"📦", group:lang==="es"?"Funcional":"Functional"},
-    {id:"battle_ropes",   es:"Cuerdas de batalla",     en:"Battle ropes",      icon:"〰️", group:lang==="es"?"Funcional":"Functional"},
+    {id:"battle_ropes",   es:"Cuerdas de batalla",     en:"Battle ropes",      icon:"🌊", group:lang==="es"?"Funcional":"Functional"},
     {id:"slam_ball",      es:"Balón medicinal / Slam ball",en:"Medicine/slam ball",icon:"🏀",group:lang==="es"?"Funcional":"Functional"},
     {id:"sandbag",        es:"Saco de arena",          en:"Sandbag",           icon:"👝", group:lang==="es"?"Funcional":"Functional"},
-    {id:"jump_rope",      es:"Cuerda para saltar",     en:"Jump rope",         icon:"🪢", group:lang==="es"?"Funcional":"Functional"},
+    {id:"jump_rope",      es:"Cuerda para saltar",     en:"Jump rope",         icon:"🔁", group:lang==="es"?"Funcional":"Functional"},
     // Outdoor / mínimo
     {id:"stairs",         es:"Escaleras",              en:"Stairs",            icon:"🪜", group:lang==="es"?"Exterior":"Outdoor"},
     {id:"park_bars",      es:"Barras de parque",       en:"Park bars",         icon:"🌳", group:lang==="es"?"Exterior":"Outdoor"},
@@ -1918,10 +2034,10 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             )}
 
             {/* Filtros por músculo */}
-            <div style={{display:"flex",gap:5,overflowX:"auto",paddingBottom:6,marginBottom:10}}>
+            <div style={{display:"flex",gap:5,overflowX:"auto",paddingBottom:4,marginBottom:6}}>
               {[{muscle:lang==="es"?"Todos":"All",color:C.tx3},...CATALOG].map(({muscle,color})=>(
                 <button key={muscle} onClick={()=>setCatalogMuscle(muscle===(lang==="es"?"Todos":"All")?"":muscle)} style={{
-                  padding:"5px 10px",borderRadius:16,fontSize:9,fontFamily:mono,letterSpacing:1,
+                  padding:"4px 10px",borderRadius:16,fontSize:9,fontFamily:mono,letterSpacing:1,
                   border:`1px solid ${(catalogMuscle===muscle||(catalogMuscle===""&&muscle===(lang==="es"?"Todos":"All")))?color:C.borderL}`,
                   background:(catalogMuscle===muscle||(catalogMuscle===""&&muscle===(lang==="es"?"Todos":"All")))?"rgba(255,255,255,.06)":"transparent",
                   color:(catalogMuscle===muscle||(catalogMuscle===""&&muscle===(lang==="es"?"Todos":"All")))?color:C.tx3,
@@ -1929,42 +2045,115 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                 }}>{muscle}</button>
               ))}
             </div>
+            {/* Filtros de tipo — compound/isolation/push/pull */}
+            <div style={{display:"flex",gap:5,overflowX:"auto",paddingBottom:6,marginBottom:10}}>
+              {[
+                {k:"",l:lang==="es"?"Todo tipo":"All types",c:C.tx3},
+                {k:"compound",l:"Compound",c:C.blue},
+                {k:"isolation",l:"Isolation",c:C.purple},
+                {k:"push",l:"Push",c:C.yellow},
+                {k:"pull",l:"Pull",c:C.green},
+                {k:"beginner",l:lang==="es"?"Principiante":"Beginner",c:"#5faa88"},
+                {k:"intermediate",l:lang==="es"?"Intermedio":"Intermediate",c:C.yellow},
+                {k:"advanced",l:lang==="es"?"Avanzado":"Advanced",c:C.red},
+              ].map(({k,l,c})=>{
+                const isMec=k==="compound"||k==="isolation";
+                const isDiff=k==="beginner"||k==="intermediate"||k==="advanced";
+                const isForce=k==="push"||k==="pull";
+                const isOn=(k===""&&catalogMec===""&&catalogForce===""&&catalogDiff==="")||(isMec&&catalogMec===k)||(isForce&&catalogForce===k)||(isDiff&&catalogDiff===k);
+                return(
+                  <button key={k} onClick={()=>{
+                    if(k==="")          {setCatalogMec("");setCatalogForce("");setCatalogDiff("");}
+                    else if(isMec)      setCatalogMec(catalogMec===k?"":k);
+                    else if(isForce)    setCatalogForce(catalogForce===k?"":k);
+                    else if(isDiff)     setCatalogDiff(catalogDiff===k?"":k);
+                  }} style={{
+                    padding:"4px 10px",borderRadius:16,fontSize:9,fontFamily:mono,letterSpacing:1,
+                    border:`1px solid ${isOn?c:C.borderL}`,
+                    background:isOn?"rgba(255,255,255,.06)":"transparent",
+                    color:isOn?c:C.tx3,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0,transition:"all .15s",
+                  }}>{l}</button>
+                );
+              })}
+            </div>
+
+            {/* Drawer de técnica */}
+            {drawerEx&&(
+              <div style={{background:C.bgDeep,borderRadius:14,padding:16,marginBottom:12,animation:"fu .2s ease"}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+                  <div>
+                    <div style={{fontSize:13,fontWeight:700,textTransform:"capitalize",marginBottom:4}}>{drawerEx}</div>
+                    <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                      {(EX_META[drawerEx]?.p||[]).map(m=><span key={m} style={{padding:"2px 7px",borderRadius:10,fontSize:9,fontFamily:mono,background:"rgba(95,170,136,.15)",color:C.green,border:"1px solid rgba(95,170,136,.3)"}}>{m}</span>)}
+                      {(EX_META[drawerEx]?.s||[]).map(m=><span key={m} style={{padding:"2px 7px",borderRadius:10,fontSize:9,fontFamily:mono,background:"rgba(136,120,192,.12)",color:C.purple,border:"1px solid rgba(136,120,192,.25)"}}>{m}</span>)}
+                    </div>
+                  </div>
+                  <button onClick={()=>setDrawerEx(null)} style={{background:"none",border:"none",color:C.tx3,fontSize:18,cursor:"pointer",padding:"0 4px"}}>×</button>
+                </div>
+                <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                  {(EX_META[drawerEx]?.steps||[]).map((s,i)=>(
+                    <div key={i} style={{display:"flex",gap:10,alignItems:"flex-start"}}>
+                      <div style={{width:20,height:20,borderRadius:"50%",background:"#424858",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,color:C.tx3,flexShrink:0,fontFamily:mono}}>{String(i+1).padStart(2,"0")}</div>
+                      <div style={{fontSize:12,color:C.tx2,lineHeight:1.5}}>{s}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Lista de ejercicios */}
-            <div style={{maxHeight:380,overflowY:"auto",display:"flex",flexDirection:"column",gap:6,marginBottom:16}}>
+            <div style={{maxHeight:360,overflowY:"auto",display:"flex",flexDirection:"column",gap:5,marginBottom:16}}>
               {CATALOG.filter(g=>!catalogMuscle||g.muscle===catalogMuscle).map(group=>{
-                const filtered=group.exs.filter(ex=>hasEquip(ex));
+                let filtered=group.exs.filter(ex=>hasEquip(ex));
+                if(catalogMec)   filtered=filtered.filter(ex=>EX_META[ex]?.mec===catalogMec);
+                if(catalogForce) filtered=filtered.filter(ex=>EX_META[ex]?.force===catalogForce);
+                if(catalogDiff)  filtered=filtered.filter(ex=>EX_META[ex]?.diff===catalogDiff);
                 if(filtered.length===0) return null;
+                const DIFF_COLOR={beginner:C.green,intermediate:C.yellow,advanced:C.red};
                 return(
                 <React.Fragment key={group.muscle}>
                   {(!catalogMuscle)&&<div style={{fontSize:8,fontFamily:mono,color:group.color,letterSpacing:2,padding:"8px 0 4px",textTransform:"uppercase"}}>{group.muscle}</div>}
                   {filtered.map(ex=>{
                     const added=(manualRoutine[catalogDay]||[]).includes(ex);
+                    const meta=EX_META[ex];
+                    const isDrawerOpen=drawerEx===ex;
                     return(
-                      <button key={ex} onClick={()=>{
-                        const r=[...manualRoutine];
-                        const cur=r[catalogDay]||[];
-                        r[catalogDay]=added?cur.filter(x=>x!==ex):[...cur,ex];
-                        setManualRoutine(r);
-                      }} style={{
-                        display:"flex",alignItems:"center",justifyContent:"space-between",
-                        padding:"8px 10px",borderRadius:12,cursor:"pointer",
-                        border:`1px solid ${added?"rgba(95,170,136,.4)":C.borderL+"55"}`,
-                        background:added?"rgba(95,170,136,.08)":"transparent",
-                        transition:"all .15s",outline:"none",
+                      <div key={ex} style={{
+                        borderRadius:12,border:`1px solid ${added?"rgba(95,170,136,.4)":C.borderL+"55"}`,
+                        background:added?"rgba(95,170,136,.06)":"transparent",
+                        overflow:"hidden",transition:"all .15s",
                       }}>
-                        <div style={{display:"flex",alignItems:"center",gap:12}}>
-                          <VideoThumb src={VID[ex]} size={56}/>
-                          <span style={{fontSize:13,color:added?C.green:C.tx,fontFamily:sans,textAlign:"left",textTransform:"capitalize",fontWeight:added?600:400}}>{ex}</span>
+                        <div style={{display:"flex",alignItems:"center",gap:10,padding:"8px 10px"}}>
+                          <VideoThumb src={VID[ex]} size={52}/>
+                          <div style={{flex:1,minWidth:0}}>
+                            <div style={{fontSize:12,color:added?C.green:C.tx,fontWeight:added?600:500,textTransform:"capitalize",marginBottom:3}}>{ex}</div>
+                            {meta&&(
+                              <div style={{display:"flex",gap:4,flexWrap:"wrap",alignItems:"center"}}>
+                                <span style={{padding:"1px 6px",borderRadius:8,fontSize:8,fontFamily:mono,background:"rgba(95,170,136,.12)",color:C.green,border:"1px solid rgba(95,170,136,.25)"}}>{meta.p[0]}</span>
+                                <span style={{padding:"1px 6px",borderRadius:8,fontSize:8,fontFamily:mono,background:"rgba(255,255,255,.05)",color:C.tx3,border:"1px solid rgba(82,90,110,.3)"}}>{lang==="es"?meta.mec==="compound"?"Compuesto":"Aislamiento":meta.mec==="compound"?"Compound":"Isolation"}</span>
+                                <div style={{width:5,height:5,borderRadius:"50%",background:DIFF_COLOR[meta.diff]||C.tx3,flexShrink:0}}/>
+                              </div>
+                            )}
+                          </div>
+                          <div style={{display:"flex",flexDirection:"column",gap:6,alignItems:"center"}}>
+                            <div onClick={(e)=>{e.stopPropagation();setDrawerEx(isDrawerOpen?null:ex);}} style={{
+                              padding:"3px 7px",borderRadius:6,fontSize:8,fontFamily:mono,letterSpacing:.5,
+                              background:"rgba(106,143,192,.12)",border:"1px solid rgba(106,143,192,.25)",
+                              color:C.blue,cursor:"pointer",whiteSpace:"nowrap",
+                            }}>INFO</div>
+                            <div onClick={()=>{
+                              const r=[...manualRoutine];const cur=r[catalogDay]||[];
+                              r[catalogDay]=added?cur.filter(x=>x!==ex):[...cur,ex];setManualRoutine(r);
+                            }} style={{
+                              width:22,height:22,borderRadius:"50%",flexShrink:0,
+                              border:`1.5px solid ${added?C.green:C.borderL}`,
+                              background:added?C.green:"transparent",
+                              display:"flex",alignItems:"center",justifyContent:"center",
+                              fontSize:12,color:added?C.white:"transparent",transition:"all .15s",cursor:"pointer",
+                            }}>{added?"✓":""}</div>
+                          </div>
                         </div>
-                        <div style={{
-                          width:24,height:24,borderRadius:"50%",flexShrink:0,
-                          border:`1.5px solid ${added?C.green:C.borderL}`,
-                          background:added?C.green:"transparent",
-                          display:"flex",alignItems:"center",justifyContent:"center",
-                          fontSize:13,color:added?C.white:"transparent",transition:"all .15s",
-                        }}>{added?"✓":""}</div>
-                      </button>
+                      </div>
                     );
                   })}
                 </React.Fragment>
