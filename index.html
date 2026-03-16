@@ -2193,7 +2193,14 @@ function MuscleHeatmap({muscleVol,lang}){
     const totalVol=Object.values(muscleVol||{}).reduce((a,b)=>a+b,0);
     if(!muscleVol||totalVol===0){
       obj.traverse(function(c){
-        if(c.isMesh) c.material=new THREE.MeshBasicMaterial({color:0xb0b4c0,vertexColors:false});
+        if(!c.isMesh) return;
+        if(c._isBack){
+          c.material=new THREE.MeshBasicMaterial({color:0xb0b4c0,side:THREE.BackSide,transparent:true,alphaTest:0.5,depthTest:false,depthWrite:false});
+          c.renderOrder=1;
+        } else {
+          c.material=new THREE.MeshBasicMaterial({color:0xb0b4c0,side:THREE.FrontSide});
+          c.renderOrder=0;
+        }
       });
       return;
     }
@@ -2208,117 +2215,50 @@ function MuscleHeatmap({muscleVol,lang}){
     const zMaxAbs=Math.max(Math.abs(wb.min.z),Math.abs(wb.max.z),0.01);
     function G(x,c,s){ return Math.exp(-Math.pow(x-c,2)/(2*s*s)); }
 
-    // MUSCLE POSITIONS — derived from pixel measurements on REAL MODEL renders
-    // yToYn formula: yn = 1-(py-28)/387 where py=pixel y on 260x420 render
-    // pecho cy=118→yn=0.767 | delt cy=98→yn=0.819 | biceps cy=140→yn=0.711
-    // abs cy=172→yn=0.628  | dorsal cy=178→yn=0.612 | trap cy=100→yn=0.814
-    // ANATOMICAL MUSCLE DEFINITIONS — strict front/back, 2D-verified positions
-    const _AX=0.50,_AY=-0.16,_AL2=0.2756;
-    function armT(xn,yn){return((xn-0.45)*_AX+(yn-0.73)*_AY)/_AL2;}
-    function G(x,c,s){return Math.exp(-Math.pow(x-c,2)/(2*s*s));}
+    // MUSCLE DEFINITIONS — all values measured by user raycasting on real model
+    // PECHO yn=0.728 zn=+0.76 | ABS yn=0.608 | BICEPS yn=0.741 xn=0.408 zn=+0.09
+    // DORSAL yn=0.687 zn=-0.63 | TRAPECIO yn=0.819 zn=-0.72 | GLUTEO yn=0.516 zn=-0.71
+    // DELT_ANT yn=0.797 xn=0.287 | DELT_POST yn=0.797 xn=0.310 zn=-0.56
+    // QUAD yn=0.455 zn=+0.58 | ISQUIO yn=0.386 zn=-0.42 | GEMELOS yn=0.201 zn=-0.74
     const DEFS={
-      "pectoral mayor":{
-        zone:function(yn,xn,zn,a,l,t){return t&&zn>0.10&&yn>0.76&&yn<0.87&&xn<0.32;},
-        pk:[[0.807,0.110,0.025,0.058,1.0],[0.805,0.192,0.025,0.052,0.9],[0.800,0.258,0.022,0.040,0.7],[0.810,0.058,0.020,0.038,0.8]],
-        front:true,useT:false
-      },
-      "core (transverso abdominal)":{
-        zone:function(yn,xn,zn,a,l,t){return t&&zn>0.10&&yn>0.58&&yn<0.72&&xn<0.10;},
-        pk:[[0.700,0.050,0.020,0.035,0.9],[0.678,0.055,0.018,0.033,0.9],[0.655,0.050,0.018,0.031,0.8]],
-        front:true,useT:false
-      },
-      "trapecio superior":{
-        zone:function(yn,xn,zn,a,l,t){return t&&zn<-0.10&&yn>0.78&&yn<0.89&&xn<0.22;},
-        pk:[[0.842,0.075,0.020,0.052,1.0],[0.840,0.148,0.020,0.045,0.8],[0.844,0.035,0.016,0.035,0.9]],
-        front:false,useT:false
-      },
-      "dorsal ancho":{
-        zone:function(yn,xn,zn,a,l,t){return t&&zn<-0.10&&yn>0.54&&yn<0.76&&xn<0.32;},
-        pk:[[0.690,0.085,0.048,0.055,1.0],[0.675,0.178,0.043,0.062,0.9],[0.662,0.252,0.036,0.048,0.8],[0.702,0.110,0.036,0.058,0.9]],
-        front:false,useT:false
-      },
-      "glúteo mayor":{
-        zone:function(yn,xn,zn,a,l,t){
-          if(t&&zn<-0.10&&yn>0.44&&yn<0.58&&xn<0.24) return true;
-          if(!a&&!t&&yn>=0.35&&yn<0.44&&zn<-0.05) return true;
-          return false;
-        },
-        pk:[[0.510,0.110,0.036,0.060,1.0],[0.498,0.188,0.032,0.052,0.9],[0.398,0.130,0.028,0.055,0.9],[0.385,0.200,0.026,0.048,0.8]],
-        front:false,useT:false
-      },
-      "deltoides anterior":{
-        zone:function(yn,xn,zn,a,l,t){if(!a)return false;var at=armT(xn,yn);return at>=-0.05&&at<0.20;},
-        front:true,useT:true,tPk:[[0.10,0.050,1.0]]
-      },
-      "deltoides posterior":{
-        zone:function(yn,xn,zn,a,l,t){if(!a)return false;var at=armT(xn,yn);return at>=-0.05&&at<0.20;},
-        front:false,useT:true,tPk:[[0.10,0.050,1.0]]
-      },
-      "bíceps braquial":{
-        zone:function(yn,xn,zn,a,l,t){if(!a)return false;var at=armT(xn,yn);return at>=0.18&&at<0.42;},
-        front:true,useT:true,tPk:[[0.28,0.050,1.0]]
-      },
-      "tríceps braquial":{
-        zone:function(yn,xn,zn,a,l,t){if(!a)return false;var at=armT(xn,yn);return at>=0.18&&at<0.42;},
-        front:false,useT:true,tPk:[[0.28,0.050,1.0]]
-      },
-      "braquiorradial":{
-        zone:function(yn,xn,zn,a,l,t){if(!a)return false;var at=armT(xn,yn);return at>=0.42&&at<0.80;},
-        front:null,useT:true,tPk:[[0.58,0.080,1.0]]
-      },
-      "braquial":{
-        zone:function(yn,xn,zn,a,l,t){if(!a)return false;var at=armT(xn,yn);return at>=0.42&&at<0.80;},
-        front:null,useT:true,tPk:[[0.58,0.080,1.0]]
-      },
-      "cuádriceps":{
-        zone:function(yn,xn,zn,a,l,t){return !a&&yn>=0.33&&yn<0.44;},
-        pk:[[0.409,0.170,0.030,0.055,1.0],[0.398,0.222,0.028,0.045,0.9],[0.398,0.115,0.028,0.040,0.9],[0.380,0.165,0.028,0.052,0.8]],
-        front:true,useT:false
-      },
-      "isquiotibiales":{
-        zone:function(yn,xn,zn,a,l,t){return !a&&yn>=0.33&&yn<0.44;},
-        pk:[[0.398,0.170,0.028,0.055,1.0],[0.375,0.175,0.026,0.052,0.9],[0.350,0.170,0.024,0.048,0.8]],
-        front:false,useT:false
-      },
-      "gastrocnemio":{
-        zone:function(yn,xn,zn,a,l,t){return !a&&yn>=0.08&&yn<0.22;},
-        pk:[[0.152,0.225,0.028,0.048,1.0],[0.155,0.282,0.026,0.042,0.9],[0.140,0.252,0.030,0.050,0.8]],
-        front:false,useT:false
-      },
+      "pectoral mayor":{z:function(yn,xn,zn,l){return !l&&zn>0.30&&yn>0.70&&yn<0.77&&xn<0.28;},pk:[[0.728,0.121,0.022,0.130,1.0]]},
+      "core (transverso abdominal)":{z:function(yn,xn,zn,l){return !l&&zn>0.30&&yn>0.57&&yn<0.65&&xn<0.12;},pk:[[0.608,0.002,0.022,0.070,0.9]]},
+      "trapecio superior":{z:function(yn,xn,zn,l){return !l&&zn<-0.25&&yn>0.79&&yn<0.86&&xn<0.22;},pk:[[0.819,0.129,0.022,0.110,1.0]]},
+      "dorsal ancho":{z:function(yn,xn,zn,l){return !l&&zn<-0.25&&yn>0.63&&yn<0.73&&xn<0.30;},pk:[[0.687,0.122,0.030,0.140,1.0],[0.684,0.000,0.025,0.100,0.7]]},
+      "glúteo mayor":{z:function(yn,xn,zn,l){return zn<-0.25&&yn>0.48&&yn<0.56&&xn<0.28;},pk:[[0.516,0.138,0.025,0.130,1.0]]},
+      "deltoides anterior":{z:function(yn,xn,zn,l){return !l&&yn>0.75&&yn<0.83&&xn>0.22&&xn<0.40&&zn>-0.10;},pk:[[0.797,0.287,0.024,0.070,1.0],[0.795,0.340,0.020,0.055,0.7]]},
+      "deltoides posterior":{z:function(yn,xn,zn,l){return !l&&yn>0.75&&yn<0.83&&xn>0.22&&xn<0.42&&zn<-0.10;},pk:[[0.797,0.310,0.024,0.070,1.0],[0.795,0.360,0.020,0.055,0.7]]},
+      "bíceps braquial":{z:function(yn,xn,zn,l){return !l&&yn>0.70&&yn<0.77&&xn>0.33&&xn<0.52&&zn>-0.10;},pk:[[0.741,0.408,0.022,0.065,1.0],[0.740,0.460,0.018,0.050,0.7]]},
+      "tríceps braquial":{z:function(yn,xn,zn,l){return !l&&yn>0.70&&yn<0.77&&xn>0.33&&xn<0.52&&zn<0.10;},pk:[[0.746,0.453,0.022,0.065,1.0],[0.744,0.400,0.018,0.050,0.7]]},
+      "braquiorradial":{z:function(yn,xn,zn,l){return !l&&yn>0.66&&yn<0.73&&xn>0.52&&xn<0.80;},pk:[[0.698,0.670,0.022,0.100,1.0]]},
+      "braquial":{z:function(yn,xn,zn,l){return !l&&yn>0.66&&yn<0.73&&xn>0.52&&xn<0.80;},pk:[[0.697,0.660,0.022,0.100,1.0]]},
+      "cuádriceps":{z:function(yn,xn,zn,l){return yn>0.42&&yn<0.50&&xn<0.30&&zn>0.10;},pk:[[0.455,0.177,0.025,0.130,1.0]]},
+      "isquiotibiales":{z:function(yn,xn,zn,l){return yn>0.35&&yn<0.44&&xn<0.28&&zn<-0.10;},pk:[[0.386,0.155,0.028,0.120,1.0]]},
+      "gastrocnemio":{z:function(yn,xn,zn,l){return yn>0.17&&yn<0.24&&xn<0.30&&zn<-0.20;},pk:[[0.201,0.199,0.020,0.100,1.0]]},
     };
 
     obj.traverse(function(c){
-      if(!c.isMesh) return;
+      if(!c.isMesh||c._isBack) return;
       const geo=c.geometry, pos=geo.attributes.position;
       if(!pos) return;
-      const col=new Float32Array(pos.count*3);
+      const colF=new Float32Array(pos.count*3);
+      const colB=new Float32Array(pos.count*4);
       for(let i=0;i<pos.count;i++){
         const wy=pos.getY(i)*obj.scale.y+obj.position.y;
         const wx=pos.getX(i)*obj.scale.x;
         const wz=pos.getZ(i)*obj.scale.z;
         const yn=(wy-yMin)/yH, xn=Math.abs(wx)/xMaxAbs, zn=wz/zMaxAbs;
-        const isArm=xn>=0.45&&yn>=0.50&&yn<=0.82;
-        const isLeg=yn<0.44&&!isArm;
-        const isTorso=!isArm&&!isLeg&&yn>=0.44;
-        const fB=1/(1+Math.exp(-zn*8)), bB=1-fB;
+        const isLeg=yn<0.44&&xn<0.35;
         let h=0;
-        for(var mName in DEFS){
-          var vol=vt(mName);if(vol<=0)continue;
-          var D=DEFS[mName];
-          if(!D.zone(yn,xn,zn,isArm,isLeg,isTorso))continue;
-          var pH=0;
-          if(D.useT&&D.tPk){
-            var at2=armT(xn,yn);
-            for(var ti=0;ti<D.tPk.length;ti++)pH=Math.max(pH,D.tPk[ti][2]*G(at2,D.tPk[ti][0],D.tPk[ti][1]));
-          } else if(D.pk){
-            for(var pi=0;pi<D.pk.length;pi++)pH=Math.max(pH,D.pk[pi][4]*G(yn,D.pk[pi][0],D.pk[pi][2])*G(xn,D.pk[pi][1],D.pk[pi][3]));
-          }
-          var side=1;
-          if(D.front===true)  side=fB>0.50?fB:0;
-          if(D.front===false) side=bB>0.50?bB:0;
-          h=Math.max(h,vol*pH*side);
+        for(const mName in DEFS){
+          const vol=vt(mName);if(vol<=0)continue;
+          const D=DEFS[mName];
+          if(!D.z(yn,xn,zn,isLeg))continue;
+          let pH=0;
+          for(let p=0;p<D.pk.length;p++)pH=Math.max(pH,D.pk[p][4]*G(yn,D.pk[p][0],D.pk[p][2])*G(xn,D.pk[p][1],D.pk[p][3]));
+          h=Math.max(h,vol*pH);
         }
-                h=Math.min(1,h);
+        h=Math.min(1,h);
         let r,g,b;
         if(h<0.03){ r=0.68;g=0.70;b=0.74; }
         else{
@@ -2327,13 +2267,27 @@ function MuscleHeatmap({muscleVol,lang}){
           else if(t<0.7){const s=(t-0.4)/0.3;r=0.95;g=0.35-s*0.20;b=0.05;}
           else{const s=(t-0.7)/0.3;r=0.95-s*0.10;g=0.15-s*0.12;b=0.02;}
         }
-        col[i*3]=r; col[i*3+1]=g; col[i*3+2]=b;
+        colF[i*3]=r; colF[i*3+1]=g; colF[i*3+2]=b;
+        colB[i*4]=r; colB[i*4+1]=g; colB[i*4+2]=b;
+        colB[i*4+3]=(h>0.03)?1.0:0.0;
       }
-      geo.setAttribute('color',new THREE.BufferAttribute(col,3));
-      c.material=new THREE.MeshBasicMaterial({vertexColors:true});
+      geo.setAttribute('color',new THREE.BufferAttribute(colF,3));
+      c.material=new THREE.MeshBasicMaterial({vertexColors:true,side:THREE.FrontSide});
+      c.renderOrder=0;
+      if(c._backMesh){
+        if(!c._backGeo){
+          c._backGeo=new THREE.BufferGeometry();
+          c._backGeo.setAttribute('position',geo.attributes.position);
+          c._backMesh.geometry=c._backGeo;
+        }
+        c._backGeo.setAttribute('color',new THREE.BufferAttribute(colB,4));
+        c._backMesh.material=new THREE.MeshBasicMaterial({vertexColors:true,side:THREE.BackSide,transparent:true,alphaTest:0.5,depthTest:false,depthWrite:false});
+        c._backMesh.renderOrder=1;
+      }
     });
   }
 
+  
   React.useEffect(()=>{
     const cv=cRef.current;
     if(!cv) return;
@@ -2382,6 +2336,14 @@ function MuscleHeatmap({muscleVol,lang}){
             });
           });
           sc.add(obj);
+          // Create BackSide clone meshes for back muscles visibility
+          obj.traverse(function(c){
+            if(!c.isMesh||c._isBack) return;
+            var bm=new THREE.Mesh(new THREE.BufferGeometry(),new THREE.MeshBasicMaterial({color:0xb0b4c0,side:THREE.BackSide,transparent:true,alphaTest:0.5,depthTest:false,depthWrite:false}));
+            bm._isBack=true; bm.renderOrder=1;
+            c._backMesh=bm; c._backGeo=null;
+            obj.add(bm);
+          });
           mdlRef.current=obj;
           if(muscleVol&&Object.keys(muscleVol).length>0) applyHeatmap(obj,muscleVol);
           setStatus("");
