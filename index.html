@@ -4,6 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
 <title>FORJA</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
@@ -24,10 +25,287 @@ input[type=number]{-moz-appearance:textfield;}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
 @keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
 ::placeholder{color:#606678;}
+#forja-sync{position:fixed;bottom:14px;right:14px;width:7px;height:7px;border-radius:50%;background:#525a6e;z-index:9999;pointer-events:none;transition:background .4s;}
+#forja-sync.ok{background:#5faa88;animation:syncPulse 3s ease-in-out infinite;}
+#forja-sync.syncing{background:#c0a870;animation:syncPulse .6s ease-in-out infinite;}
+#forja-sync.err{background:#d96060;animation:none;}
+@keyframes syncPulse{0%,100%{opacity:.35}50%{opacity:1}}
 </style>
 </head>
 <body>
 <div id="root"></div>
+<div id="forja-sync" title="sync"></div>
+<script>
+// ═══════════════════════════════════════════════════════════════
+// FORJA SUPABASE LAYER v1.0
+// Hybrid: localStorage instant + Supabase async sync
+// ═══════════════════════════════════════════════════════════════
+
+// ⚠️  CONFIGURAR: reemplaza con tus credenciales de Supabase
+//     Dashboard → Settings → API → Project URL + anon key
+const FORJA_SUPABASE_URL  = 'https://YOUR_PROJECT.supabase.co';
+const FORJA_SUPABASE_KEY  = 'YOUR_ANON_KEY';
+
+let _sb = null, _user = null, _authReady = false;
+const _authCbs = [];
+
+function syncDot(state){ // 'syncing'|'ok'|'offline'|'error'
+  const d=document.getElementById('forja-sync-dot');
+  if(!d)return;
+  d.className='forja-sync-dot '+(state==='ok'?'':state);
+  d.title=state==='ok'?'Synced':state==='syncing'?'Syncing…':state==='error'?'Sync error':'Offline';
+}
+
+function getSB(){
+  if(_sb)return _sb;
+  if(!window.supabase||FORJA_SUPABASE_URL.includes('YOUR_PROJECT')){syncDot('offline');return null;}
+  try{
+    _sb=window.supabase.createClient(FORJA_SUPABASE_URL,FORJA_SUPABASE_KEY,{
+      auth:{persistSession:true,autoRefreshToken:true}
+    });
+    _sb.auth.onAuthStateChange((ev,sess)=>{
+      _user=sess?.user??null;_authReady=true;
+      _authCbs.forEach(cb=>cb(_user));
+      syncDot(_user?'ok':'offline');
+    });
+    _sb.auth.getSession().then(({data:{session}})=>{
+      _user=session?.user??null;_authReady=true;
+      _authCbs.forEach(cb=>cb(_user));
+      syncDot(_user?'ok':'offline');
+    });
+    return _sb;
+  }catch(e){syncDot('error');return null;}
+}
+
+async function ensureAuth(){
+  const sb=getSB();if(!sb)return null;
+  if(_user)return _user;
+  if(!_authReady){
+    await new Promise(res=>{
+      const t=setTimeout(()=>res(),3000);
+      _authCbs.push(u=>{clearTimeout(t);res(u);});
+    });
+    if(_user)return _user;
+  }
+  const{data,error}=await sb.auth.signInAnonymously();
+  if(!error){_user=data.user;syncDot('ok');return _user;}
+  syncDot('error');return null;
+}
+
+// ── MUSCLE MAP: exercise → muscles ──────────────────────────
+const EXERCISE_MUSCLE_MAP={
+  "bench press":             {p:["pectoral mayor"],           s:["tríceps braquial","deltoides anterior"]},
+  "incline bench press":     {p:["pectoral mayor"],           s:["tríceps braquial","deltoides anterior"]},
+  "dumbbell bench press":    {p:["pectoral mayor"],           s:["tríceps braquial","deltoides anterior"]},
+  "incline dumbbell press":  {p:["pectoral mayor"],           s:["tríceps braquial","deltoides anterior"]},
+  "cable fly":               {p:["pectoral mayor"],           s:["deltoides anterior"]},
+  "dumbbell flyes":          {p:["pectoral mayor"],           s:["deltoides anterior"]},
+  "machine chest press":     {p:["pectoral mayor"],           s:["tríceps braquial","deltoides anterior"]},
+  "machine pec fly":         {p:["pectoral mayor"],           s:["deltoides anterior"]},
+  "push up":                 {p:["pectoral mayor"],           s:["tríceps braquial","deltoides anterior"]},
+  "decline push up":         {p:["pectoral mayor"],           s:["tríceps braquial"]},
+  "dips":                    {p:["pectoral mayor"],           s:["tríceps braquial","deltoides anterior"]},
+  "pull up":                 {p:["dorsal ancho"],             s:["bíceps braquial","trapecio superior"]},
+  "weighted pull up":        {p:["dorsal ancho"],             s:["bíceps braquial","trapecio superior"]},
+  "chin up":                 {p:["dorsal ancho"],             s:["bíceps braquial"]},
+  "barbell row":             {p:["dorsal ancho"],             s:["trapecio superior","bíceps braquial"]},
+  "pendlay row":             {p:["dorsal ancho"],             s:["trapecio superior","bíceps braquial"]},
+  "dumbbell row":            {p:["dorsal ancho"],             s:["bíceps braquial"]},
+  "cable row":               {p:["dorsal ancho"],             s:["bíceps braquial"]},
+  "lat pulldown":            {p:["dorsal ancho"],             s:["bíceps braquial"]},
+  "machine neutral row":     {p:["dorsal ancho"],             s:["bíceps braquial"]},
+  "machine pulldown":        {p:["dorsal ancho"],             s:["bíceps braquial"]},
+  "barbell pullover":        {p:["dorsal ancho"],             s:["pectoral mayor","tríceps braquial"]},
+  "barbell rack pull":       {p:["dorsal ancho"],             s:["glúteo mayor","isquiotibiales","trapecio superior"]},
+  "overhead press":          {p:["deltoides anterior"],       s:["tríceps braquial","trapecio superior"]},
+  "dumbbell shoulder press": {p:["deltoides anterior"],       s:["tríceps braquial"]},
+  "seated overhead press":   {p:["deltoides anterior"],       s:["tríceps braquial"]},
+  "lateral raise":           {p:["deltoides anterior"],       s:[]},
+  "dumbbell front raise":    {p:["deltoides anterior"],       s:["pectoral mayor"]},
+  "face pull":               {p:["deltoides posterior"],      s:["trapecio superior"]},
+  "cable face pull":         {p:["deltoides posterior"],      s:["trapecio superior"]},
+  "machine face pulls":      {p:["deltoides posterior"],      s:["trapecio superior"]},
+  "reverse fly":             {p:["deltoides posterior"],      s:["trapecio superior"]},
+  "dumbbell rear delt fly":  {p:["deltoides posterior"],      s:["trapecio superior"]},
+  "dumbbell laying reverse fly":{p:["deltoides posterior"],   s:["trapecio superior"]},
+  "barbell upright row":     {p:["deltoides anterior"],       s:["trapecio superior","bíceps braquial"]},
+  "barbell shrug":           {p:["trapecio superior"],        s:[]},
+  "dumbbell shrug":          {p:["trapecio superior"],        s:[]},
+  "barbell curl":            {p:["bíceps braquial"],          s:["braquiorradial"]},
+  "dumbbell curl":           {p:["bíceps braquial"],          s:["braquiorradial"]},
+  "hammer curl":             {p:["braquial"],                 s:["bíceps braquial","braquiorradial"]},
+  "preacher curl":           {p:["bíceps braquial"],          s:["braquial"]},
+  "concentration curl":      {p:["bíceps braquial"],          s:[]},
+  "reverse curl":            {p:["braquiorradial"],           s:["bíceps braquial"]},
+  "skull crusher":           {p:["tríceps braquial"],         s:[]},
+  "overhead tricep extension":{p:["tríceps braquial"],        s:[]},
+  "tricep pushdown":         {p:["tríceps braquial"],         s:[]},
+  "close grip bench press":  {p:["tríceps braquial"],         s:["pectoral mayor"]},
+  "diamond push ups":        {p:["tríceps braquial"],         s:["pectoral mayor"]},
+  "bench dips":              {p:["tríceps braquial"],         s:["deltoides anterior","pectoral mayor"]},
+  "barbell squat":           {p:["cuádriceps"],               s:["glúteo mayor","isquiotibiales"]},
+  "squat":                   {p:["cuádriceps"],               s:["glúteo mayor","isquiotibiales"]},
+  "front squat":             {p:["cuádriceps"],               s:["glúteo mayor"]},
+  "goblet squat":            {p:["cuádriceps"],               s:["glúteo mayor"]},
+  "leg press":               {p:["cuádriceps"],               s:["glúteo mayor","isquiotibiales"]},
+  "leg extension":           {p:["cuádriceps"],               s:[]},
+  "bulgarian split squat":   {p:["cuádriceps"],               s:["glúteo mayor","isquiotibiales"]},
+  "dumbbell bulgarian split squat":{p:["cuádriceps"],         s:["glúteo mayor","isquiotibiales"]},
+  "deadlift":                {p:["isquiotibiales"],           s:["glúteo mayor","dorsal ancho","trapecio superior"]},
+  "romanian deadlift":       {p:["isquiotibiales"],           s:["glúteo mayor","dorsal ancho"]},
+  "leg curl":                {p:["isquiotibiales"],           s:["gastrocnemio"]},
+  "hip thrust":              {p:["glúteo mayor"],             s:["isquiotibiales","cuádriceps"]},
+  "calf raise":              {p:["gastrocnemio"],             s:[]},
+  "seated calf raise":       {p:["gastrocnemio"],             s:[]},
+  "box jump":                {p:["cuádriceps"],               s:["glúteo mayor","gastrocnemio"]},
+  "barbell thruster":        {p:["cuádriceps"],               s:["deltoides anterior","tríceps braquial"]},
+  "plank":                   {p:["core (transverso abdominal)"],s:[]},
+  "mountain climber":        {p:["core (transverso abdominal)"],s:["cuádriceps"]},
+  "hanging knee raises":     {p:["core (transverso abdominal)"],s:[]},
+  "machine crunch":          {p:["core (transverso abdominal)"],s:[]},
+  "supermans":               {p:["isquiotibiales"],           s:["glúteo mayor"]},
+};
+
+// Auto-compute weekly muscle volume from logs
+function computeWeeklyMuscleVol(logs,routine){
+  const today=new Date();
+  const dow=today.getDay();const daysToMon=dow===0?6:dow-1;
+  const ws=new Date(today);ws.setDate(today.getDate()-daysToMon);ws.setHours(0,0,0,0);
+  const weekStr=ws.toISOString().slice(0,10);
+  const mv={};
+  Object.entries(logs).forEach(([id,entries])=>{
+    entries.forEach(e=>{
+      if(e.d<weekStr)return;
+      let nm=id;
+      if(routine)routine.forEach(d=>{if(!d)return;(d.ex||[]).forEach(ex=>{if(ex.id===id)nm=ex.e;});});
+      const md=EXERCISE_MUSCLE_MAP[nm?.toLowerCase()?.trim()];
+      if(!md)return;
+      const vol=(+e.w||0)*(+e.r||0);if(vol<=0)return;
+      md.p.forEach(m=>{mv[m]=(mv[m]||0)+vol;});
+      md.s.forEach(m=>{mv[m]=(mv[m]||0)+vol*0.20;});
+    });
+  });
+  return mv;
+}
+
+// ── Hybrid store: instant localStorage + async Supabase ──────
+const FStore={
+  async saveProfile(profile,routine){
+    try{localStorage.setItem('fv8p',JSON.stringify(profile));}catch(_){}
+    try{localStorage.setItem('fv8r',JSON.stringify(routine));}catch(_){}
+    const sb=getSB();const user=await ensureAuth();
+    if(!sb||!user)return;
+    syncDot('syncing');
+    try{
+      await sb.from('user_profiles').upsert({
+        user_id:user.id,profile_data:profile,routine_data:routine,
+        updated_at:new Date().toISOString()
+      },{onConflict:'user_id'});
+      syncDot('ok');
+    }catch(e){syncDot('error');}
+  },
+
+  async loadProfile(){
+    try{
+      const p=localStorage.getItem('fv8p');const r=localStorage.getItem('fv8r');
+      if(p)return{profile:JSON.parse(p),routine:r?JSON.parse(r):null};
+    }catch(_){}
+    const sb=getSB();const user=await ensureAuth();
+    if(!sb||!user)return null;
+    syncDot('syncing');
+    const{data}=await sb.from('user_profiles').select('profile_data,routine_data').eq('user_id',user.id).single();
+    if(data){
+      try{localStorage.setItem('fv8p',JSON.stringify(data.profile_data));}catch(_){}
+      try{localStorage.setItem('fv8r',JSON.stringify(data.routine_data));}catch(_){}
+      syncDot('ok');
+      return{profile:data.profile_data,routine:data.routine_data};
+    }
+    return null;
+  },
+
+  async saveLogs(logs){
+    try{localStorage.setItem('fv8l',JSON.stringify(logs));}catch(_){}
+    // Note: individual log entries are saved via saveLogEntry for Supabase
+  },
+
+  async saveLogEntry(exerciseId,exerciseName,weightKg,reps,rm){
+    const today=new Date().toISOString().slice(0,10);
+    try{
+      const raw=localStorage.getItem('fv8l');
+      const logs=raw?JSON.parse(raw):{};
+      if(!logs[exerciseId])logs[exerciseId]=[];
+      logs[exerciseId]=[{d:today,w:weightKg,r:reps,rm},...logs[exerciseId]].slice(0,60);
+      localStorage.setItem('fv8l',JSON.stringify(logs));
+    }catch(_){}
+    const sb=getSB();const user=await ensureAuth();
+    if(!sb||!user)return;
+    syncDot('syncing');
+    try{
+      await sb.from('exercise_logs').insert({
+        user_id:user.id,exercise_id:exerciseId,exercise_name:exerciseName,
+        logged_at:today,weight_kg:weightKg,reps:reps,estimated_1rm:rm
+      });
+      syncDot('ok');
+    }catch(e){syncDot('error');}
+  },
+
+  async loadLogs(){
+    try{const raw=localStorage.getItem('fv8l');if(raw)return JSON.parse(raw);}catch(_){}
+    const sb=getSB();const user=await ensureAuth();
+    if(!sb||!user)return{};
+    syncDot('syncing');
+    try{
+      const{data}=await sb.from('exercise_logs')
+        .select('exercise_id,logged_at,weight_kg,reps,estimated_1rm')
+        .eq('user_id',user.id).order('logged_at',{ascending:false}).limit(1000);
+      if(!data)return{};
+      const logs={};
+      data.forEach(row=>{
+        if(!logs[row.exercise_id])logs[row.exercise_id]=[];
+        logs[row.exercise_id].push({d:row.logged_at,w:row.weight_kg,r:row.reps,rm:row.estimated_1rm});
+      });
+      try{localStorage.setItem('fv8l',JSON.stringify(logs));}catch(_){}
+      syncDot('ok');return logs;
+    }catch(e){syncDot('error');return{};}
+  },
+
+  async saveSession(dayLabel,exercises,durationSecs){
+    const sb=getSB();const user=await ensureAuth();
+    if(!sb||!user)return null;
+    syncDot('syncing');
+    const today=new Date().toISOString().slice(0,10);
+    const exData=exercises.map(ex=>({
+      id:ex.id,name:ex.e,
+      muscles_primary:(EXERCISE_MUSCLE_MAP[ex.e?.toLowerCase()]?.p||[]),
+      muscles_secondary:(EXERCISE_MUSCLE_MAP[ex.e?.toLowerCase()]?.s||[])
+    }));
+    try{
+      const{data,error}=await sb.from('sessions').insert({
+        user_id:user.id,session_date:today,day_label:dayLabel,
+        exercises:exData,duration_seconds:durationSecs
+      }).select('id').single();
+      syncDot('ok');return data?.id||null;
+    }catch(e){syncDot('error');return null;}
+  },
+
+  saveDone(weekKey,done){
+    try{localStorage.setItem(`fv8d:${weekKey}`,JSON.stringify(done));}catch(_){}
+  },
+  loadDone(weekKey){
+    try{const r=localStorage.getItem(`fv8d:${weekKey}`);return r?JSON.parse(r):{};}catch(_){return{};}
+  },
+  saveMacros(dateKey,macros){
+    try{localStorage.setItem(`fv8m:${dateKey}`,JSON.stringify(macros));}catch(_){}
+  },
+  loadMacros(dateKey){
+    try{const r=localStorage.getItem(`fv8m:${dateKey}`);return r?JSON.parse(r):{};}catch(_){return{};}
+  }
+};
+
+// Backwards-compat: keep old store{} pointing to FStore sync ops
+// store{} compatibility shim is defined in the Supabase layer above
+</script>
+
 <script type="text/babel">
 const {useState,useEffect,useCallback,useRef}=React;
 
@@ -487,14 +765,14 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
       // Haptic
       try{navigator.vibrate&&navigator.vibrate(40);}catch{}
       // Save log
-      onSaveLog(exs[ei].id,ns[ei][si].kg,ns[ei][si].rp);
+      onSaveLog(exs[ei].id,ns[ei][si].kg,ns[ei][si].rp,exs[ei].e);
       onToggle(exs[ei].id);
       // Rest
       startRest(ei,si);
     }
     // Check all done
     const allDone=ns.every(e=>e.every(s=>s.done));
-    if(allDone) setTimeout(()=>{setFinalSecs(sessSecs);setAllDone(true);},700);
+    if(allDone) setTimeout(()=>{setFinalSecs(sessSecs);setAllDone(true);FStore.saveSession(day&&day.l,exs,sessSecs);},700);
   }
 
   function addSet(ei){
@@ -1044,14 +1322,14 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   const mt={cal:2000,prot:150,carbs:200,fat:60};
 
   useEffect(()=>{
-    try{const r=store.get(`fv8d:${w}`);if(r)setDone(JSON.parse(r.value));}catch(_){}
-    try{const r=store.get("fv8l");if(r)setLogs(JSON.parse(r.value));}catch(_){}
-    try{const r=store.get(`fv8m:${today}`);if(r)setMacros(JSON.parse(r.value));}catch(_){}
+    setDone(FStore.loadDone(w));
+    setMacros(FStore.loadMacros(today));
+    FStore.loadLogs().then(l=>setLogs(l));
   },[]);
 
-  const sd=useCallback(n=>{setDone(n);store.set(`fv8d:${w}`,JSON.stringify(n));},[w]);
-  const slg=useCallback(n=>{setLogs(n);store.set("fv8l",JSON.stringify(n));},[]);
-  const sm=useCallback(n=>{setMacros(n);store.set(`fv8m:${today}`,JSON.stringify(n));},[today]);
+  const sd=useCallback(n=>{setDone(n);FStore.saveDone(w,n);},[w]);
+  const slg=useCallback(n=>{setLogs(n);FStore.saveLogs(n);},[]);
+  const sm=useCallback(n=>{setMacros(n);FStore.saveMacros(today,n);},[today]);
 
   const day=routine?routine[sel]:null;
   const exs=day?day.ex:[];
@@ -1061,12 +1339,14 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   const tot=entries.reduce((a,e)=>({cal:a.cal+(+e.cal||0),prot:a.prot+(+e.prot||0),carbs:a.carbs+(+e.carbs||0),fat:a.fat+(+e.fat||0)}),{cal:0,prot:0,carbs:0,fat:0});
 
   const toggle=id=>{const k=`${sel}-${id}`;sd({...done,[k]:!done[k]});};
-  const saveLog=(id,kg,rp)=>{
+  const saveLog=(id,kg,rp,exName)=>{
     if(!kg&&!rp)return;
     const nl={...logs};
     if(!nl[id])nl[id]=[];
-    nl[id]=[{d:today,w:kg,r:rp,rm:epley(kg,rp)},...nl[id]].slice(0,60);
+    const rm1=epley(kg,rp);
+    nl[id]=[{d:today,w:kg,r:rp,rm:rm1},...nl[id]].slice(0,60);
     slg(nl);
+    FStore.saveLogEntry(id,exName||id,kg,rp,rm1);
   };
 
   const exportData=()=>{
@@ -1584,8 +1864,9 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
       const exs=manualRoutine[idx]||[];
       return {l:`DÍA ${idx+1}`,ex:exs.map(e=>({e,s:3,r:"8-12",id:`m${idx}${e}`}))};
     });
-    sp({lang,goal:"general",level:"int",days:manualDays,age,weight,height,units,selDays:sd,gender,mode:"manual"});
-    sr(r);setStep(99);
+    const pfm={lang,goal:"general",level:"int",days:manualDays,age,weight,height,units,selDays:sd,gender,mode:"manual"};
+    FStore.saveProfile(pfm,r);
+    sp(pfm);sr(r);setStep(99);
   };
 
   // helpers de conversión
@@ -1620,8 +1901,9 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
     const splits=RAW[key]||RAW[`${days}beg`]||Object.values(RAW)[0];
     const sd=selDays.length===days?selDays:[0,1,2,3,4,5].slice(0,days);
     const r=buildRoutine7(splits,sd,goal);
-    sp({lang,goal,level,days,age,weight,height,units,selDays:sd,gender});
-    sr(r);setStep(99);
+    const pf={lang,goal,level,days,age,weight,height,units,selDays:sd,gender};
+    FStore.saveProfile(pf,r);
+    sp(pf);sr(r);setStep(99);
   };
 
   let _optIdx=0;
@@ -2600,49 +2882,8 @@ function StatsScreen({logs,routine,lang,profile}){
     });
   });
 
-  // Volumen por músculo esta semana
-  const muscleVol={};
-  Object.entries(logs).forEach(([id,entries])=>{
-    entries.forEach(e=>{
-      if(e.d>=weekStr){
-        let exName=id;
-        if(routine) routine.forEach(d=>{if(!d)return;d.ex&&d.ex.forEach(ex=>{if(ex.id===id)exName=ex.e;})});
-        const meta=EX_META[exName?.toLowerCase()];
-        if(meta){
-          const vol=(+e.w||0)*(+e.r||0);
-          // Normalizar nombre del músculo primario
-          const normalizeMuscle=(m)=>{
-            if(!m) return m;
-            if(m.includes('pectoral mayor')) return 'pectoral mayor';
-            if(m.includes('bíceps braquial')||m==='bíceps') return 'bíceps braquial';
-            if(m.includes('tríceps braquial')||m==='tríceps') return 'tríceps braquial';
-            if(m.includes('deltoides anterior')||m==='deltoides') return 'deltoides anterior';
-            if(m.includes('deltoides posterior')) return 'deltoides posterior';
-            if(m.includes('trapecio')) return 'trapecio superior';
-            if(m.includes('core')||m.includes('recto abdominal')||m.includes('oblicuos')) return 'core (transverso abdominal)';
-            if(m.includes('glúteo')) return 'glúteo mayor';
-            if(m.includes('gastrocnemio')||m==='gemelos') return 'gastrocnemio';
-            if(m.includes('cuádriceps')||m==='recto femoral') return 'cuádriceps';
-            if(m.includes('isquiotibiales')) return 'isquiotibiales';
-            if(m.includes('dorsal')) return 'dorsal ancho';
-            return m;
-          };
-          const primary=normalizeMuscle(meta.p[0]);
-          muscleVol[primary]=(muscleVol[primary]||0)+vol;
-          // Solo acumular secundarios directamente relevantes al heatmap (no anconeo, romboides, etc.)
-          const HEATMAP_KEYS=new Set(['bíceps braquial','tríceps braquial','deltoides anterior',
-            'deltoides posterior','trapecio superior','core (transverso abdominal)',
-            'dorsal ancho','glúteo mayor','cuádriceps','isquiotibiales','gastrocnemio',
-            'braquial','braquiorradial']);
-          meta.s.forEach(sec=>{
-            const ns=normalizeMuscle(sec);
-            if(ns && HEATMAP_KEYS.has(ns) && ns!==primary)
-              muscleVol[ns]=(muscleVol[ns]||0)+vol*0.20; // 20% para secundarios, no 40%
-          });
-        }
-      }
-    });
-  });
+  // Volumen por músculo esta semana (auto-calculado desde logs)
+  const muscleVol=computeWeeklyMuscleVol(logs,routine);
   const mvArr=Object.entries(muscleVol).sort((a,b)=>b[1]-a[1]);
   const totalMV=mvArr.reduce((s,[,v])=>s+v,0)||1;
 
@@ -3094,12 +3335,19 @@ function App(){
   const[ready,setReady]=useState(false);
 
   useEffect(()=>{
-    try{const p=store.get("fv8p");if(p){const d=JSON.parse(p.value);setProfile(d);setLang(d.lang);const r=store.get("fv8r");if(r)setRoutine(JSON.parse(r.value));setStep(99);}}catch(_){}
-    setReady(true);
+    FStore.loadProfile().then(data=>{
+      if(data&&data.profile){
+        setProfile(data.profile);
+        setLang(data.profile.lang||null);
+        if(data.routine)setRoutine(data.routine);
+        setStep(99);
+      }
+      setReady(true);
+    }).catch(()=>setReady(true));
   },[]);
 
-  const sp=useCallback(p=>{setProfile(p);store.set("fv8p",JSON.stringify(p));},[]);
-  const sr=useCallback(r=>{setRoutine(r);store.set("fv8r",JSON.stringify(r));},[]);
+  const sp=useCallback(p=>{setProfile(p);},[]);
+  const sr=useCallback(r=>{setRoutine(r);},[]);
 
   if(!ready)return <div style={{minHeight:"100vh",background:"#383e4e"}}/>;
   if(step<99)return <Onboard lang={lang} setLang={setLang} step={step} setStep={setStep} sp={sp} sr={sr}/>;
