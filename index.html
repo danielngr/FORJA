@@ -2296,12 +2296,27 @@ function MuscleHeatmap({muscleVol,lang}){
         for(const mName in DEFS){
           const vol=vt(mName);if(vol<=0)continue;
           const D=DEFS[mName];
-          if(!D.z(yn,xn,zn,isLeg))continue;
+          // Soft zone check: use zone as a hint, not hard gate
+          // Muscles near the boundary get a smooth falloff instead of hard clip
+          const inZone=D.z(yn,xn,zn,isLeg);
+          // Just outside zone: allow 15% bleed for smooth edge diffusion
+          if(!inZone){
+            // Check if we are close to zone — sample with relaxed bounds
+            const nearZone=D.z(yn,xn,zn*0.7,isLeg); // soften zn check
+            if(!nearZone) continue;
+          }
+          const zoneFade=inZone?1.0:0.15; // full weight inside, 15% bleed outside
           let pH=0;
-          for(let p=0;p<D.pk.length;p++)pH=Math.max(pH,D.pk[p][4]*G(yn,D.pk[p][0],D.pk[p][2])*G(xn,D.pk[p][1],D.pk[p][3]));
-          h=Math.max(h,vol*pH);
+          for(let p=0;p<D.pk.length;p++){
+            // Wider yn/xn sigmas for softer edges — multiply sigma by 1.35
+            const pG=D.pk[p][4]*G(yn,D.pk[p][0],D.pk[p][2]*1.35)*G(xn,D.pk[p][1],D.pk[p][3]*1.35);
+            pH=Math.max(pH,pG);
+          }
+          // Additive blend with zone fade — creates soft overlap at boundaries
+          h=Math.max(h, vol*pH*zoneFade);
         }
-        h=Math.min(1,h);
+        // Soft power curve: lifts mid-tones, creates smoother gradient
+        h=Math.min(1, Math.pow(h, 0.75));
         let r,g,b;
         if(h<0.03){ r=0.68;g=0.70;b=0.74; }
         else{
