@@ -7,63 +7,59 @@
 *{margin:0;padding:0;box-sizing:border-box;}
 body{background:#1a1e2a;font-family:monospace;color:#C8CDD8;display:flex;flex-direction:column;height:100vh;overflow:hidden;}
 #top{display:flex;gap:6px;padding:6px 10px;background:#2c3040;align-items:center;flex-wrap:wrap;border-bottom:1px solid #383e4e;}
-#top h1{font-size:10px;color:#5faa88;letter-spacing:2px;margin-right:6px;}
+h1{font-size:10px;color:#5faa88;letter-spacing:2px;margin-right:6px;}
 .btn{padding:3px 9px;background:#383e4e;border:1px solid #525a6e;color:#C8CDD8;border-radius:6px;cursor:pointer;font-size:8px;font-family:monospace;}
 .btn:hover{background:#525a6e;}
 .btn.on{background:#5faa88;color:#1a1e2a;border-color:#5faa88;}
-#status{font-size:8px;color:#6a8fc0;margin-left:auto;min-width:120px;}
-#main{display:flex;flex:1;gap:0;min-height:0;}
-#left{flex:1;display:flex;flex-direction:column;border-right:2px solid #383e4e;position:relative;}
-#left-label{font-size:8px;color:#7a8294;text-align:center;padding:3px;background:#2c3040;letter-spacing:1px;}
-#ref-embed{flex:1;width:100%;border:none;}
+#status{font-size:8px;color:#6a8fc0;margin-left:auto;}
+#main{display:flex;flex:1;min-height:0;}
+#left{flex:1;display:flex;flex-direction:column;border-right:2px solid #383e4e;}
 #right{flex:1;display:flex;flex-direction:column;}
-#right-label{font-size:8px;color:#7a8294;text-align:center;padding:3px;background:#2c3040;letter-spacing:1px;}
+.pane-lbl{font-size:8px;color:#7a8294;text-align:center;padding:3px;background:#2c3040;letter-spacing:1px;}
+#ref-embed{flex:1;width:100%;border:none;}
 #cv{flex:1;width:100%;cursor:crosshair;display:block;}
-#bottom{display:flex;border-top:1px solid #383e4e;min-height:48px;}
-#muscles-panel{background:#2c3040;padding:4px 8px;font-size:8px;display:flex;gap:4px;flex-wrap:wrap;align-items:center;flex:1;overflow-y:auto;}
-#log-panel{background:#1a1e2a;padding:4px 8px;font-size:8px;color:#5faa88;width:280px;overflow-y:auto;border-left:1px solid #383e4e;line-height:1.6;}
+#bottom{display:flex;border-top:1px solid #383e4e;min-height:46px;}
+#mp{background:#2c3040;padding:4px 8px;display:flex;gap:4px;flex-wrap:wrap;align-items:center;flex:1;overflow-y:auto;}
+#log{background:#1a1e2a;padding:4px 8px;font-size:8px;color:#5faa88;width:300px;overflow-y:auto;border-left:1px solid #383e4e;line-height:1.6;}
 .mbtn{padding:2px 7px;border-radius:4px;cursor:pointer;font-size:7px;border:1px solid #525a6e;background:#383e4e;color:#C8CDD8;}
 .mbtn.sel{border-color:#c0a870;background:#2a2a1e;color:#c0a870;}
-#popup{position:fixed;bottom:56px;right:10px;background:#2c3040;border:1px solid #5faa88;border-radius:8px;padding:6px 10px;font-size:8px;color:#5faa88;display:none;z-index:100;max-width:300px;}
+#pop{position:fixed;bottom:54px;right:8px;background:#2c3040;border:1px solid #5faa88;border-radius:8px;padding:6px 10px;font-size:8px;color:#5faa88;display:none;z-index:100;max-width:320px;}
 </style>
 </head>
 <body>
 <div id="top">
   <h1>FORJA CALIBRADOR DUAL</h1>
-  <button class="btn on" id="btn-diag" onclick="toggleDiag()">DIAGNÓSTICO ON</button>
+  <button class="btn on" id="btn-diag" onclick="toggleDiag()">DIAG ON</button>
   <button class="btn" onclick="toggleBack()">FRONT / BACK</button>
-  <button class="btn" onclick="exportDefs()" style="border-color:#5faa88;color:#5faa88;">⬇ EXPORTAR DEFS</button>
-  <button class="btn" onclick="clearSel()">LIMPIAR SEL.</button>
+  <button class="btn" onclick="exportDefs()" style="border-color:#5faa88;color:#5faa88;">⬇ EXPORTAR</button>
+  <button class="btn" onclick="clearSel()">LIMPIAR SEL</button>
   <span style="font-size:8px;color:#7a8294;margin-left:4px;">MÚSCULO:</span>
-  <span id="sel-label" style="font-size:8px;color:#c0a870;font-weight:bold;">pectoral mayor</span>
+  <span id="sel-lbl" style="font-size:8px;color:#c0a870;font-weight:bold;">pectoral mayor</span>
   <span id="status">cargando...</span>
 </div>
 <div id="main">
   <div id="left">
-    <div id="left-label">① REFERENCIA chrisfischerart — observa color y forma de cada músculo</div>
+    <div class="pane-lbl">① REFERENCIA chrisfischerart — color y forma de cada músculo</div>
     <iframe id="ref-embed"
       src="https://sketchfab.com/models/33162ec759e04d2985dbbdf4ec908d66/embed?autostart=1&ui_controls=1&ui_infos=0&ui_inspector=0&ui_stop=0&ui_watermark=0"
-      allow="autoplay; fullscreen; xr-spatial-tracking" allowfullscreen>
-    </iframe>
+      allow="autoplay; fullscreen; xr-spatial-tracking" allowfullscreen></iframe>
   </div>
   <div id="right">
-    <div id="right-label">② TU MODELO — click para marcar posición del músculo seleccionado</div>
+    <div class="pane-lbl">② TU MODELO — click para marcar músculo seleccionado</div>
     <canvas id="cv"></canvas>
   </div>
 </div>
 <div id="bottom">
-  <div id="muscles-panel">
-    <span style="color:#7a8294;font-size:7px;margin-right:2px;">SEL:</span>
-  </div>
-  <div id="log-panel">Selecciona músculo → click en tu modelo</div>
+  <div id="mp"><span style="color:#7a8294;font-size:7px;margin-right:2px;">SEL:</span></div>
+  <div id="log">Selecciona músculo → click en tu modelo</div>
 </div>
-<div id="popup"></div>
+<div id="pop"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/RGBELoader.js"></script>
 <script>
-
+// ── MUSCLES ──────────────────────────────────────────────────────────────────
 const MUSCLES = {
   "pectoral mayor":      {col:[1.0,0.15,0.15], samples:[]},
   "core/abs":            {col:[0.15,0.95,0.15], samples:[]},
@@ -81,10 +77,11 @@ const MUSCLES = {
 };
 let selMuscle = "pectoral mayor";
 let diagMode  = true;
-let showBack  = false;
 let obj       = null;
+let ry=0, rx=0.05, drg=false, px=0, py=0, vx=0, vy=0, mxD=0, myD=0;
 
-const mp = document.getElementById('muscles-panel');
+// Build muscle buttons
+const mp = document.getElementById('mp');
 Object.keys(MUSCLES).forEach(name => {
   const b = document.createElement('button');
   b.className = 'mbtn' + (name===selMuscle?' sel':'');
@@ -93,12 +90,12 @@ Object.keys(MUSCLES).forEach(name => {
     selMuscle = name;
     document.querySelectorAll('.mbtn').forEach(x=>x.classList.remove('sel'));
     b.classList.add('sel');
-    document.getElementById('sel-label').textContent = name;
+    document.getElementById('sel-lbl').textContent = name;
   };
   mp.appendChild(b);
 });
 
-// THREE setup
+// ── THREE ────────────────────────────────────────────────────────────────────
 const cv  = document.getElementById('cv');
 const ren = new THREE.WebGLRenderer({canvas:cv, antialias:true});
 ren.setPixelRatio(Math.min(devicePixelRatio,2));
@@ -109,8 +106,6 @@ ren.toneMappingExposure = 1.3;
 const sc  = new THREE.Scene();
 const cam = new THREE.PerspectiveCamera(32,1,0.1,200);
 cam.position.set(0,-0.1,7.8); cam.lookAt(0,-0.1,0);
-
-// Lights — bright enough to see chrome
 sc.add(new THREE.AmbientLight(0xffffff,0.5));
 [[0xffffff,7,4,6,5],[0xaaddff,4,-5,3,-3],[0xffffff,5,0,8,0],[0xffffff,4,0,-2,6]].forEach(p=>{
   const l=new THREE.PointLight(p[0],p[1],40); l.position.set(p[2],p[3],p[4]); sc.add(l);
@@ -125,172 +120,173 @@ function resize(){
 }
 window.addEventListener('resize',resize);
 
-// Orbit
-let ry=0, rx=0.05, drg=false, px=0, py=0, vx=0, vy=0, mxDown=0, myDown=0;
+// ── ORBIT + CLICK ─────────────────────────────────────────────────────────────
 cv.addEventListener('mousedown', e=>{
-  drg=true; mxDown=px=e.clientX; myDown=py=e.clientY; vx=vy=0;
+  drg=true; mxD=px=e.clientX; myD=py=e.clientY; vx=vy=0;
   cv.style.cursor='grabbing';
 });
 window.addEventListener('mouseup', e=>{
   if(drg){
-    const moved = Math.abs(e.clientX-mxDown)+Math.abs(e.clientY-myDown);
-    if(moved < 5) onCanvasClick(e);
+    const moved = Math.abs(e.clientX-mxD) + Math.abs(e.clientY-myD);
+    if(moved < 5) handleClick(e);  // click = barely moved
   }
   drg=false; cv.style.cursor='crosshair';
 });
 window.addEventListener('mousemove', e=>{
   if(!drg) return;
   const dx=e.clientX-px, dy=e.clientY-py;
-  ry+=dx*0.010; rx+=dy*0.006; vx=dx*0.010; vy=dy*0.006; px=e.clientX; py=e.clientY;
+  ry+=dx*0.010; rx+=dy*0.006; vx=dx*0.010; vy=dy*0.006;
+  px=e.clientX; py=e.clientY;
 });
 
-// Click → raycast
-function onCanvasClick(e){
+// ── CLICK HANDLER ────────────────────────────────────────────────────────────
+function handleClick(e){
   if(!obj) return;
-  const rect=cv.getBoundingClientRect();
-  const mx=((e.clientX-rect.left)/cv.width)*2-1;
-  const my=-((e.clientY-rect.top)/cv.height)*2+1;
-  const ray=new THREE.Raycaster();
-  ray.setFromCamera({x:mx,y:my},cam);
-  // Only raycast against front mesh (not back/backBody clones)
-  const meshes=[];
-  obj.traverse(c=>{if(c.isMesh&&!c._isBack&&!c._isBackBody)meshes.push(c);});
-  const hits=ray.intersectObjects(meshes,false);
-  if(!hits.length) return;
-  // Filter by face normal — only accept faces whose normal points toward camera
-  // This ensures clicks from back only register back faces, from front only front faces
-  const camDir=new THREE.Vector3();
-  cam.getWorldDirection(camDir); // points INTO screen (away from camera)
-  const lookingFromBack=Math.cos(ry)<0;
-  let validHit=null;
-  for(const hit of hits){
-    const face=hit.face;
-    if(!face) continue;
-    // Transform face normal to world space
-    const norm=face.normal.clone().transformDirection(hit.object.matrixWorld);
-    // Normal dot camDir: if positive → face pointing same way as camera → back face from camera POV
-    const dot=norm.dot(camDir);
-    // From front: we want faces with dot < 0 (facing camera)
-    // From back: we want faces with dot > 0 (facing camera from back = originally back faces)
-    if(lookingFromBack ? dot>0.1 : dot<-0.1){
-      validHit=hit; break;
-    }
-  }
-  if(!validHit) return;
-  const pt=validHit.point;
-  const wb=new THREE.Box3().setFromObject(obj);
+  // Only handle clicks on the right canvas
+  const rect = cv.getBoundingClientRect();
+  if(e.clientX < rect.left || e.clientX > rect.right) return;
+  if(e.clientY < rect.top  || e.clientY > rect.bottom) return;
+
+  const mx = ((e.clientX-rect.left)/cv.width)*2-1;
+  const my = -((e.clientY-rect.top)/cv.height)*2+1;
+  const ray = new THREE.Raycaster();
+  ray.setFromCamera({x:mx, y:my}, cam);
+
+  // KEY FIX: from back → raycast BackSide mesh (backBodyMesh)
+  //          from front → raycast FrontSide mesh
+  const fromBack = Math.cos(ry) < 0;
+  const targets = [];
+  obj.traverse(c => {
+    if(fromBack && c._isBackBody) targets.push(c);
+    if(!fromBack && c.isMesh && !c._isBack && !c._isBackBody) targets.push(c);
+  });
+
+  const hits = ray.intersectObjects(targets, false);
+  if(!hits.length){ addLog('no hit'); return; }
+
+  const pt = hits[0].point;
+  const wb = new THREE.Box3().setFromObject(obj);
   const yMin=wb.min.y, yH=wb.max.y-wb.min.y||1;
-  const xMaxAbs=Math.max(Math.abs(wb.min.x),Math.abs(wb.max.x))||1;
-  const zMaxAbs=Math.max(Math.abs(wb.min.z),Math.abs(wb.max.z),0.01);
-  const yn=(pt.y-yMin)/yH;
-  const xn=Math.abs(pt.x)/xMaxAbs;
-  const zn=pt.z/zMaxAbs;
+  const xA=Math.max(Math.abs(wb.min.x),Math.abs(wb.max.x))||1;
+  const zA=Math.max(Math.abs(wb.min.z),Math.abs(wb.max.z),0.01);
+  const yn=(pt.y-yMin)/yH, xn=Math.abs(pt.x)/xA, zn=pt.z/zA;
+
   MUSCLES[selMuscle].samples.push({yn,xn,zn});
-  const n=MUSCLES[selMuscle].samples.length;
-  const msg=`[${selMuscle}] #${n} yn=${yn.toFixed(3)} xn=${xn.toFixed(3)} zn=${zn.toFixed(3)}`;
+  const n = MUSCLES[selMuscle].samples.length;
+  const msg = `[${selMuscle}] #${n} yn=${yn.toFixed(3)} xn=${xn.toFixed(3)} zn=${zn.toFixed(3)} (${fromBack?'BACK':'FRONT'})`;
   addLog(msg); showPop(msg);
   paintDiag();
 }
 
 function addLog(m){
-  const el=document.getElementById('log-panel');
+  const el=document.getElementById('log');
   el.innerHTML=m+'<br>'+el.innerHTML;
 }
 function showPop(m){
-  const p=document.getElementById('popup');
+  const p=document.getElementById('pop');
   p.textContent=m; p.style.display='block';
   clearTimeout(window._pt); window._pt=setTimeout(()=>p.style.display='none',2500);
 }
 
-// Diagnostic paint
+// ── DIAGNOSTIC PAINT ─────────────────────────────────────────────────────────
 function G(x,c,s){return Math.exp(-Math.pow(x-c,2)/(2*s*s));}
+
 function paintDiag(){
   if(!obj) return;
-  if(!diagMode){
-    obj.traverse(c=>{
-      if(c.isMesh&&!c._isBack&&!c._isBackBody)
-        c.material=new THREE.MeshStandardMaterial({color:0xffffff,metalness:1,roughness:0.03,side:THREE.FrontSide,envMap:sc.environment||null});
-      if(c._isBackBody)
-        c.material=new THREE.MeshStandardMaterial({color:0xffffff,metalness:1,roughness:0.03,side:THREE.BackSide,envMap:sc.environment||null});
-      if(c._isBack) c.visible=false;
-    });
-    return;
-  }
   const wb=new THREE.Box3().setFromObject(obj);
   const yMin=wb.min.y, yH=wb.max.y-wb.min.y||1;
-  const xMaxAbs=Math.max(Math.abs(wb.min.x),Math.abs(wb.max.x))||1;
-  const zMaxAbs=Math.max(Math.abs(wb.min.z),Math.abs(wb.max.z),0.01);
-  obj.traverse(c=>{
-    if(!c.isMesh||c._isBack||c._isBackBody) return;
-    const geo=c.geometry, pos=geo.attributes.position; if(!pos) return;
-    const col=new Float32Array(pos.count*3);
-    const colB=new Float32Array(pos.count*4);
-    for(let i=0;i<pos.count;i++){
-      const wy=pos.getY(i)*obj.scale.y+obj.position.y;
-      const wx=pos.getX(i)*obj.scale.x, wz=pos.getZ(i)*obj.scale.z;
-      const yn=(wy-yMin)/yH, xn=Math.abs(wx)/xMaxAbs, zn=wz/zMaxAbs;
-      let r=0.18, g=0.20, b=0.24, maxS=0;
-      Object.entries(MUSCLES).forEach(([,m])=>{
-        m.samples.forEach(s=>{
-          // Use zn consistency: samples and vertices should be on same side of body
-          const sameSide=(Math.abs(s.zn)<0.1)||(Math.abs(zn)<0.1)||
-                         (s.zn>0&&zn>-0.15)||(s.zn<0&&zn<0.15) ? 1:0;
-          const score=G(yn,s.yn,0.035)*G(xn,s.xn,0.055)*sameSide;
-          if(score>maxS){
-            maxS=score;
-            const k=Math.min(1,score*3.5);
-            r=m.col[0]*k; g=m.col[1]*k; b=m.col[2]*k;
-          }
-        });
+  const xA=Math.max(Math.abs(wb.min.x),Math.abs(wb.max.x))||1;
+  const zA=Math.max(Math.abs(wb.min.z),Math.abs(wb.max.z),0.01);
+  const env=sc.environment||null;
+
+  // Find front mesh
+  let frontMesh=null;
+  obj.traverse(c=>{ if(c.isMesh&&!c._isBack&&!c._isBackBody) frontMesh=c; });
+  if(!frontMesh) return;
+
+  const geo=frontMesh.geometry, pos=geo.attributes.position; if(!pos) return;
+  const col  = new Float32Array(pos.count*3);  // front RGB
+  const colB = new Float32Array(pos.count*4);  // back RGBA
+
+  for(let i=0;i<pos.count;i++){
+    const wy=pos.getY(i)*obj.scale.y+obj.position.y;
+    const wx=pos.getX(i)*obj.scale.x, wz=pos.getZ(i)*obj.scale.z;
+    const yn=(wy-yMin)/yH, xn=Math.abs(wx)/xA, zn=wz/zA;
+    let r=0.18, g=0.20, b=0.24, maxS=0;
+
+    Object.entries(MUSCLES).forEach(([,m])=>{
+      m.samples.forEach(s=>{
+        // Only match same side: front samples (zn>0) stay front, back samples (zn<0) stay back
+        const sameSide = (s.zn>=0 && zn>=-0.1) || (s.zn<0 && zn<=0.1) || (Math.abs(s.zn)<0.15);
+        if(!sameSide) return;
+        const score = G(yn,s.yn,0.040)*G(xn,s.xn,0.065);
+        if(score>maxS){
+          maxS=score;
+          const k=Math.min(1,score*3.5);
+          r=m.col[0]*k; g=m.col[1]*k; b=m.col[2]*k;
+        }
       });
-      col[i*3]=r; col[i*3+1]=g; col[i*3+2]=b;
-      // back RGBA: alpha=1 only for colored muscle pixels
-      colB[i*4]=r; colB[i*4+1]=g; colB[i*4+2]=b;
-      colB[i*4+3]=(r>0.3||g>0.3||b>0.3)?1.0:0.0;
+    });
+
+    col[i*3]=r; col[i*3+1]=g; col[i*3+2]=b;
+    colB[i*4]=r; colB[i*4+1]=g; colB[i*4+2]=b;
+    colB[i*4+3]=(r>0.25||g>0.25||b>0.25)?1.0:0.0;
+  }
+
+  if(!diagMode){
+    // Chrome mode
+    frontMesh.material=new THREE.MeshStandardMaterial({color:0xffffff,metalness:1,roughness:0.03,envMap:env,envMapIntensity:2.5,side:THREE.FrontSide});
+    if(frontMesh._backBodyMesh) frontMesh._backBodyMesh.material=new THREE.MeshStandardMaterial({color:0xffffff,metalness:1,roughness:0.03,envMap:env,envMapIntensity:2.5,side:THREE.BackSide});
+    if(frontMesh._backMesh) frontMesh._backMesh.visible=false;
+    return;
+  }
+
+  // Front: colored diagnostic
+  geo.setAttribute('color',new THREE.BufferAttribute(col,3));
+  frontMesh.material=new THREE.MeshBasicMaterial({vertexColors:true,side:THREE.FrontSide});
+
+  // BackBody: chrome (silhouette)
+  if(frontMesh._backBodyMesh){
+    frontMesh._backBodyMesh.material=new THREE.MeshStandardMaterial({
+      color:0xffffff,metalness:1,roughness:0.03,envMap:env,envMapIntensity:2.5,side:THREE.BackSide
+    });
+  }
+
+  // BackHeat: colored back diagnostic with alphaTest
+  if(frontMesh._backMesh){
+    frontMesh._backMesh.visible=true;
+    if(!frontMesh._backGeo){
+      frontMesh._backGeo=new THREE.BufferGeometry();
+      frontMesh._backGeo.setAttribute('position',pos);
+      frontMesh._backMesh.geometry=frontMesh._backGeo;
     }
-    geo.setAttribute('color',new THREE.BufferAttribute(col,3));
-    c.material=new THREE.MeshBasicMaterial({vertexColors:true,side:THREE.FrontSide});
-    // Update backBody (chrome) and backHeat (colored)
-    if(c._backBodyMesh){
-      c._backBodyMesh.material=new THREE.MeshStandardMaterial({
-        color:0xffffff,metalness:1.0,roughness:0.03,
-        envMap:sc.environment||null,envMapIntensity:2.5,side:THREE.BackSide
-      });
-    }
-    if(c._backMesh){
-      c._backMesh.visible=true;
-      if(!c._backGeo){
-        c._backGeo=new THREE.BufferGeometry();
-        c._backGeo.setAttribute('position',geo.attributes.position);
-        c._backMesh.geometry=c._backGeo;
-      }
-      c._backGeo.setAttribute('color',new THREE.BufferAttribute(colB,4));
-      c._backMesh.material=new THREE.MeshBasicMaterial({
-        vertexColors:true,side:THREE.BackSide,
-        transparent:true,alphaTest:0.5,depthTest:true,depthWrite:false
-      });
-      c._backMesh.renderOrder=1;
-    }
-  });
+    frontMesh._backGeo.setAttribute('color',new THREE.BufferAttribute(colB,4));
+    frontMesh._backMesh.material=new THREE.MeshBasicMaterial({
+      vertexColors:true, side:THREE.BackSide,
+      transparent:true, alphaTest:0.5, depthTest:true, depthWrite:false
+    });
+    frontMesh._backMesh.renderOrder=1;
+  }
 }
 
 function toggleDiag(){
   diagMode=!diagMode;
   const b=document.getElementById('btn-diag');
   b.classList.toggle('on',diagMode);
-  b.textContent='DIAGNÓSTICO '+(diagMode?'ON':'OFF');
+  b.textContent='DIAG '+(diagMode?'ON':'OFF');
   paintDiag();
 }
 function toggleBack(){
-  showBack=!showBack;
-  if(obj) { ry=showBack?Math.PI:0; rx=0; vx=vy=0; }
+  ry = Math.cos(ry)<0 ? 0 : Math.PI;
+  rx=0; vx=vy=0;
 }
 function clearSel(){
   MUSCLES[selMuscle].samples=[];
-  addLog('Borrado: '+selMuscle); paintDiag();
+  addLog('Borrado: '+selMuscle);
+  paintDiag();
 }
 
-// Export
+// ── EXPORT ───────────────────────────────────────────────────────────────────
 function exportDefs(){
   const entries=Object.entries(MUSCLES).filter(([,m])=>m.samples.length>0);
   if(!entries.length){addLog('Sin muestras');return;}
@@ -310,17 +306,43 @@ function exportDefs(){
   ta.value=out;
   ta.style.cssText='position:fixed;inset:50px;z-index:200;background:#1a1e2a;color:#5faa88;font-size:9px;border:1px solid #5faa88;border-radius:8px;padding:10px;';
   const btn=document.createElement('button');
-  btn.textContent='✕ CERRAR';
-  btn.style.cssText='position:fixed;top:54px;right:14px;z-index:201;background:#d96060;color:#fff;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:9px;';
+  btn.textContent='✕';
+  btn.style.cssText='position:fixed;top:54px;right:14px;z-index:201;background:#d96060;color:#fff;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:10px;';
   btn.onclick=()=>{ta.remove();btn.remove();};
   document.body.appendChild(ta); document.body.appendChild(btn);
   ta.select(); addLog('DEFS listas — copia el texto');
 }
 
-// Load model with HDRI
+// ── LOAD MODEL ───────────────────────────────────────────────────────────────
 const pmrem=new THREE.PMREMGenerator(ren);
 pmrem.compileEquirectangularShader();
 document.getElementById('status').textContent='cargando entorno...';
+
+function buildMeshes(loaded){
+  // Collect front meshes BEFORE adding any new ones (avoid mutation bug)
+  const fronts=[];
+  loaded.traverse(c=>{ if(c.isMesh) fronts.push(c); });
+
+  fronts.forEach(c=>{
+    // Front chrome
+    c.material=new THREE.MeshStandardMaterial({
+      color:0xffffff,metalness:1.0,roughness:0.03,
+      envMap:sc.environment||null,envMapIntensity:2.5,side:THREE.FrontSide
+    });
+    // BackBody: SHARES geometry — essential for raycasting from back
+    const bBody=new THREE.Mesh(c.geometry, new THREE.MeshStandardMaterial({
+      color:0xffffff,metalness:1.0,roughness:0.03,
+      envMap:sc.environment||null,envMapIntensity:2.5,side:THREE.BackSide
+    }));
+    bBody._isBackBody=true; bBody.renderOrder=0;
+    c._backBodyMesh=bBody; loaded.add(bBody);
+    // BackHeat: empty geometry, filled by paintDiag
+    const bHeat=new THREE.Mesh(new THREE.BufferGeometry(),
+      new THREE.MeshBasicMaterial({side:THREE.BackSide,transparent:true,alphaTest:0.5,depthTest:true,depthWrite:false}));
+    bHeat._isBack=true; bHeat.renderOrder=1; bHeat.visible=false;
+    c._backMesh=bHeat; c._backGeo=null; loaded.add(bHeat);
+  });
+}
 
 function loadModel(){
   document.getElementById('status').textContent='cargando OBJ...';
@@ -331,34 +353,13 @@ function loadModel(){
       const s=3.6/Math.max(...box.getSize(new THREE.Vector3()).toArray());
       loaded.scale.setScalar(s);
       loaded.position.sub(box.getCenter(new THREE.Vector3()).multiplyScalar(s));
-      // Collect front meshes first, THEN add back meshes (avoid traverse mutation bug)
-      const frontMeshes=[];
-      loaded.traverse(c=>{if(c.isMesh)frontMeshes.push(c);});
-      frontMeshes.forEach(c=>{
-        c.material=new THREE.MeshStandardMaterial({
-          color:0xffffff, metalness:1.0, roughness:0.03,
-          envMap:sc.environment||null, envMapIntensity:2.5, side:THREE.FrontSide
-        });
-        // BackBody — chrome BackSide silhouette
-        const bBody=new THREE.Mesh(c.geometry,new THREE.MeshStandardMaterial({
-          color:0xffffff,metalness:1.0,roughness:0.03,
-          envMap:sc.environment||null,envMapIntensity:2.5,side:THREE.BackSide
-        }));
-        bBody._isBackBody=true; bBody.renderOrder=0;
-        c._backBodyMesh=bBody; loaded.add(bBody);
-        // BackHeat — diagnostic colored overlay
-        const bHeat=new THREE.Mesh(new THREE.BufferGeometry(),
-          new THREE.MeshBasicMaterial({color:0xb0b4c0,side:THREE.BackSide,
-            transparent:true,alphaTest:0.5,depthTest:true,depthWrite:false}));
-        bHeat._isBack=true; bHeat.renderOrder=1; bHeat.visible=false;
-        c._backMesh=bHeat; c._backGeo=null; loaded.add(bHeat);
-      });
+      buildMeshes(loaded);
       sc.add(loaded); obj=loaded;
       document.getElementById('status').textContent='LISTO ✓';
-      addLog('Modelo listo. Selecciona músculo → click en el modelo.');
+      addLog('Modelo listo. Selecciona músculo → click.');
     },
     x=>document.getElementById('status').textContent='OBJ '+(x.loaded/1048576).toFixed(1)+'MB',
-    e=>{ document.getElementById('status').textContent='ERROR cargando OBJ'; addLog('ERROR: '+e); }
+    ()=>document.getElementById('status').textContent='ERROR OBJ'
   );
 }
 
@@ -366,14 +367,12 @@ new THREE.RGBELoader().load(
   'https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/studio_small_08_1k.hdr',
   function(hdr){
     const env=pmrem.fromEquirectangular(hdr).texture;
-    sc.environment=env; hdr.dispose(); pmrem.dispose();
-    loadModel();
+    sc.environment=env; hdr.dispose(); pmrem.dispose(); loadModel();
   },
-  undefined,
-  function(){ pmrem.dispose(); loadModel(); }
+  undefined, ()=>{ pmrem.dispose(); loadModel(); }
 );
 
-// Render loop
+// ── RENDER LOOP ───────────────────────────────────────────────────────────────
 (function loop(){
   requestAnimationFrame(loop);
   resize();
