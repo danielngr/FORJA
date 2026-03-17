@@ -13,77 +13,57 @@ body{background:#1a1e2a;font-family:monospace;color:#C8CDD8;display:flex;flex-di
 .btn.on{background:#5faa88;color:#1a1e2a;border-color:#5faa88;}
 #status{font-size:8px;color:#6a8fc0;margin-left:auto;min-width:120px;}
 #main{display:flex;flex:1;gap:0;min-height:0;}
-/* LEFT: reference embed */
 #left{flex:1;display:flex;flex-direction:column;border-right:2px solid #383e4e;position:relative;}
 #left-label{font-size:8px;color:#7a8294;text-align:center;padding:3px;background:#2c3040;letter-spacing:1px;}
 #ref-embed{flex:1;width:100%;border:none;}
-#ref-overlay{position:absolute;top:24px;left:0;right:0;bottom:0;pointer-events:none;display:flex;align-items:center;justify-content:center;}
-#ref-hint{background:rgba(44,48,64,0.85);padding:8px 14px;border-radius:8px;font-size:9px;color:#c0a870;border:1px solid #c0a870;text-align:center;line-height:1.6;}
-/* RIGHT: our model */
 #right{flex:1;display:flex;flex-direction:column;}
 #right-label{font-size:8px;color:#7a8294;text-align:center;padding:3px;background:#2c3040;letter-spacing:1px;}
-#cv{flex:1;width:100%;cursor:crosshair;}
-/* BOTTOM */
-#bottom{display:flex;border-top:1px solid #383e4e;}
-#muscles-panel{background:#2c3040;padding:4px 8px;font-size:8px;display:flex;gap:4px;flex-wrap:wrap;align-items:center;flex:1;max-height:50px;overflow-y:auto;}
-#log-panel{background:#1a1e2a;padding:4px 8px;font-size:8px;color:#5faa88;width:260px;overflow-y:auto;max-height:50px;border-left:1px solid #383e4e;}
+#cv{flex:1;width:100%;cursor:crosshair;display:block;}
+#bottom{display:flex;border-top:1px solid #383e4e;min-height:48px;}
+#muscles-panel{background:#2c3040;padding:4px 8px;font-size:8px;display:flex;gap:4px;flex-wrap:wrap;align-items:center;flex:1;overflow-y:auto;}
+#log-panel{background:#1a1e2a;padding:4px 8px;font-size:8px;color:#5faa88;width:280px;overflow-y:auto;border-left:1px solid #383e4e;line-height:1.6;}
 .mbtn{padding:2px 7px;border-radius:4px;cursor:pointer;font-size:7px;border:1px solid #525a6e;background:#383e4e;color:#C8CDD8;}
-.mbtn.sel{border-color:#c0a870;background:#383e30;color:#c0a870;}
-/* Coords popup */
-#popup{position:fixed;bottom:60px;right:10px;background:#2c3040;border:1px solid #5faa88;border-radius:8px;padding:8px 12px;font-size:9px;color:#5faa88;display:none;z-index:100;max-width:300px;word-break:break-all;}
+.mbtn.sel{border-color:#c0a870;background:#2a2a1e;color:#c0a870;}
+#popup{position:fixed;bottom:56px;right:10px;background:#2c3040;border:1px solid #5faa88;border-radius:8px;padding:6px 10px;font-size:8px;color:#5faa88;display:none;z-index:100;max-width:300px;}
 </style>
 </head>
 <body>
 <div id="top">
   <h1>FORJA CALIBRADOR DUAL</h1>
   <button class="btn on" id="btn-diag" onclick="toggleDiag()">DIAGNÓSTICO ON</button>
-  <button class="btn" onclick="toggleBack()">FRONT/BACK</button>
-  <button class="btn" onclick="exportDefs()" style="background:#5faa8844;border-color:#5faa88;color:#5faa88;">⬇ EXPORTAR DEFS</button>
-  <button class="btn" onclick="clearSamples()">LIMPIAR</button>
-  <span style="font-size:8px;color:#7a8294;">| MÚSCULO:</span>
-  <span id="sel-label" style="font-size:8px;color:#c0a870;">pectoral mayor</span>
+  <button class="btn" onclick="toggleBack()">FRONT / BACK</button>
+  <button class="btn" onclick="exportDefs()" style="border-color:#5faa88;color:#5faa88;">⬇ EXPORTAR DEFS</button>
+  <button class="btn" onclick="clearSel()">LIMPIAR SEL.</button>
+  <span style="font-size:8px;color:#7a8294;margin-left:4px;">MÚSCULO:</span>
+  <span id="sel-label" style="font-size:8px;color:#c0a870;font-weight:bold;">pectoral mayor</span>
   <span id="status">cargando...</span>
 </div>
 <div id="main">
   <div id="left">
-    <div id="left-label">① REFERENCIA — chrisfischerart (Sketchfab embed) — observa los colores de cada músculo</div>
+    <div id="left-label">① REFERENCIA chrisfischerart — observa color y forma de cada músculo</div>
     <iframe id="ref-embed"
-      src="https://sketchfab.com/models/33162ec759e04d2985dbbdf4ec908d66/embed?autostart=1&ui_controls=1&ui_infos=0&ui_inspector=0&ui_stop=0&ui_watermark=0&ui_ar=0"
-      allow="autoplay; fullscreen; xr-spatial-tracking"
-      allowfullscreen>
+      src="https://sketchfab.com/models/33162ec759e04d2985dbbdf4ec908d66/embed?autostart=1&ui_controls=1&ui_infos=0&ui_inspector=0&ui_stop=0&ui_watermark=0"
+      allow="autoplay; fullscreen; xr-spatial-tracking" allowfullscreen>
     </iframe>
-    <div id="ref-overlay">
-      <div id="ref-hint">
-        ← Gira este modelo hasta ver el músculo que quieres<br>
-        Luego haz click en el modelo DERECHO (tuyo) ↓
-      </div>
-    </div>
   </div>
   <div id="right">
-    <div id="right-label">② TU MODELO — click para registrar posición del músculo seleccionado</div>
+    <div id="right-label">② TU MODELO — click para marcar posición del músculo seleccionado</div>
     <canvas id="cv"></canvas>
   </div>
 </div>
 <div id="bottom">
   <div id="muscles-panel">
-    <span style="color:#7a8294;font-size:7px;margin-right:4px;">SELECCIONA:</span>
+    <span style="color:#7a8294;font-size:7px;margin-right:2px;">SEL:</span>
   </div>
-  <div id="log-panel">click en tu modelo para registrar posiciones</div>
+  <div id="log-panel">Selecciona músculo → click en tu modelo</div>
 </div>
 <div id="popup"></div>
 
-</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/RGBELoader.js"></script>
 <script>
 
-// Check if running from file:// protocol
-if(window.location.protocol === 'file:') {
-  document.getElementById('status').innerHTML = '<span style="color:#d96060">⚠ Abre desde servidor: python3 -m http.server 8080</span>';
-}
-
-// ─── MUSCLES ─────────────────────────────────────────────────────────────────
 const MUSCLES = {
   "pectoral mayor":      {col:[1.0,0.15,0.15], samples:[]},
   "core/abs":            {col:[0.15,0.95,0.15], samples:[]},
@@ -102,142 +82,140 @@ const MUSCLES = {
 let selMuscle = "pectoral mayor";
 let diagMode  = true;
 let showBack  = false;
-let obj = null;
+let obj       = null;
 
-// Build muscle buttons
 const mp = document.getElementById('muscles-panel');
-Object.keys(MUSCLES).forEach(name=>{
-  const b=document.createElement('button');
-  b.className='mbtn'+(name===selMuscle?' sel':'');
-  b.textContent=name;
-  b.id='mbtn-'+name;
-  b.onclick=()=>{
-    selMuscle=name;
+Object.keys(MUSCLES).forEach(name => {
+  const b = document.createElement('button');
+  b.className = 'mbtn' + (name===selMuscle?' sel':'');
+  b.textContent = name;
+  b.onclick = () => {
+    selMuscle = name;
     document.querySelectorAll('.mbtn').forEach(x=>x.classList.remove('sel'));
     b.classList.add('sel');
-    document.getElementById('sel-label').textContent=name;
+    document.getElementById('sel-label').textContent = name;
   };
   mp.appendChild(b);
 });
 
-// ─── THREE SETUP ─────────────────────────────────────────────────────────────
+// THREE setup
 const cv  = document.getElementById('cv');
-const ren = new THREE.WebGLRenderer({canvas:cv,antialias:true});
+const ren = new THREE.WebGLRenderer({canvas:cv, antialias:true});
 ren.setPixelRatio(Math.min(devicePixelRatio,2));
 ren.setClearColor(0x1a1e2a,1);
-ren.outputEncoding=THREE.sRGBEncoding;
-ren.toneMapping=THREE.ACESFilmicToneMapping;
-ren.toneMappingExposure=1.2;
+ren.outputEncoding = THREE.sRGBEncoding;
+ren.toneMapping    = THREE.ACESFilmicToneMapping;
+ren.toneMappingExposure = 1.3;
 const sc  = new THREE.Scene();
 const cam = new THREE.PerspectiveCamera(32,1,0.1,200);
-cam.position.set(0,-0.1,7.8);
-cam.lookAt(0,-0.1,0);
-sc.add(new THREE.AmbientLight(0xffffff,0.4));
-const kl=new THREE.DirectionalLight(0xffffff,1.5);kl.position.set(3,5,4);sc.add(kl);
-const fl=new THREE.DirectionalLight(0x8899ff,0.5);fl.position.set(-4,1,-3);sc.add(fl);
+cam.position.set(0,-0.1,7.8); cam.lookAt(0,-0.1,0);
+
+// Lights — bright enough to see chrome
+sc.add(new THREE.AmbientLight(0xffffff,0.5));
+[[0xffffff,7,4,6,5],[0xaaddff,4,-5,3,-3],[0xffffff,5,0,8,0],[0xffffff,4,0,-2,6]].forEach(p=>{
+  const l=new THREE.PointLight(p[0],p[1],40); l.position.set(p[2],p[3],p[4]); sc.add(l);
+});
 
 function resize(){
-  const w=cv.offsetWidth,h=cv.offsetHeight;
-  if(!w||!h)return;
-  cv.width=w;cv.height=h;
+  const w=cv.offsetWidth, h=cv.offsetHeight;
+  if(!w||!h) return;
+  cv.width=w; cv.height=h;
   ren.setSize(w,h,false);
-  cam.aspect=w/h;cam.updateProjectionMatrix();
+  cam.aspect=w/h; cam.updateProjectionMatrix();
 }
 window.addEventListener('resize',resize);
 
-// ─── ORBIT ───────────────────────────────────────────────────────────────────
-let ry=0,rx=0.05,drg=false,px=0,py=0,vx=0,vy=0;
-cv.addEventListener('mousedown',e=>{
-  // Check if it's a click (not a drag start)
-  px=e.clientX;py=e.clientY;vx=vy=0;drg=true;
+// Orbit
+let ry=0, rx=0.05, drg=false, px=0, py=0, vx=0, vy=0, mxDown=0, myDown=0;
+cv.addEventListener('mousedown', e=>{
+  drg=true; mxDown=px=e.clientX; myDown=py=e.clientY; vx=vy=0;
   cv.style.cursor='grabbing';
 });
-window.addEventListener('mouseup',e=>{
-  if(drg && Math.abs(e.clientX-px)<5 && Math.abs(e.clientY-py)<5){
-    onCanvasClick(e);
+window.addEventListener('mouseup', e=>{
+  if(drg){
+    const moved = Math.abs(e.clientX-mxDown)+Math.abs(e.clientY-myDown);
+    if(moved < 5) onCanvasClick(e);
   }
-  drg=false;cv.style.cursor='crosshair';
+  drg=false; cv.style.cursor='crosshair';
 });
-window.addEventListener('mousemove',e=>{
-  if(!drg)return;
-  const dx=e.clientX-px,dy=e.clientY-py;
-  ry+=dx*0.010;rx+=dy*0.006;
-  vx=dx*0.010;vy=dy*0.006;
-  px=e.clientX;py=e.clientY;
+window.addEventListener('mousemove', e=>{
+  if(!drg) return;
+  const dx=e.clientX-px, dy=e.clientY-py;
+  ry+=dx*0.010; rx+=dy*0.006; vx=dx*0.010; vy=dy*0.006; px=e.clientX; py=e.clientY;
 });
 
-// ─── CLICK → RAYCAST ─────────────────────────────────────────────────────────
+// Click → raycast
 function onCanvasClick(e){
-  if(!obj)return;
+  if(!obj) return;
   const rect=cv.getBoundingClientRect();
   const mx=((e.clientX-rect.left)/cv.width)*2-1;
   const my=-((e.clientY-rect.top)/cv.height)*2+1;
   const ray=new THREE.Raycaster();
   ray.setFromCamera({x:mx,y:my},cam);
   const meshes=[];
-  obj.traverse(c=>{if(c.isMesh&&!c._isBack&&!c._isBackBody)meshes.push(c);});
+  obj.traverse(c=>{if(c.isMesh)meshes.push(c);});
   const hits=ray.intersectObjects(meshes,false);
-  if(!hits.length)return;
+  if(!hits.length) return;
   const pt=hits[0].point;
   const wb=new THREE.Box3().setFromObject(obj);
-  const yMin=wb.min.y,yH=wb.max.y-wb.min.y||1;
+  const yMin=wb.min.y, yH=wb.max.y-wb.min.y||1;
   const xMaxAbs=Math.max(Math.abs(wb.min.x),Math.abs(wb.max.x))||1;
   const zMaxAbs=Math.max(Math.abs(wb.min.z),Math.abs(wb.max.z),0.01);
   const yn=(pt.y-yMin)/yH;
   const xn=Math.abs(pt.x)/xMaxAbs;
   const zn=pt.z/zMaxAbs;
   MUSCLES[selMuscle].samples.push({yn,xn,zn});
-  const msg=`[${selMuscle}] #${MUSCLES[selMuscle].samples.length} → yn=${yn.toFixed(3)} xn=${xn.toFixed(3)} zn=${zn.toFixed(3)}`;
-  log(msg);
-  showPopup(msg);
+  const n=MUSCLES[selMuscle].samples.length;
+  const msg=`[${selMuscle}] #${n} yn=${yn.toFixed(3)} xn=${xn.toFixed(3)} zn=${zn.toFixed(3)}`;
+  addLog(msg); showPop(msg);
   paintDiag();
 }
 
-function log(msg){
+function addLog(m){
   const el=document.getElementById('log-panel');
-  el.innerHTML=msg+'<br>'+el.innerHTML;
+  el.innerHTML=m+'<br>'+el.innerHTML;
 }
-function showPopup(msg){
+function showPop(m){
   const p=document.getElementById('popup');
-  p.textContent=msg;p.style.display='block';
-  clearTimeout(window._pt);window._pt=setTimeout(()=>p.style.display='none',3000);
+  p.textContent=m; p.style.display='block';
+  clearTimeout(window._pt); window._pt=setTimeout(()=>p.style.display='none',2500);
 }
 
-// ─── DIAGNOSTIC PAINT ────────────────────────────────────────────────────────
+// Diagnostic paint
 function G(x,c,s){return Math.exp(-Math.pow(x-c,2)/(2*s*s));}
-
 function paintDiag(){
-  if(!obj)return;
+  if(!obj) return;
   if(!diagMode){
     obj.traverse(c=>{
-      if(c.isMesh&&!c._isBack&&!c._isBackBody)
-        c.material=new THREE.MeshStandardMaterial({color:0xffffff,metalness:1,roughness:0.03});
+      if(c.isMesh) c.material=new THREE.MeshStandardMaterial({color:0xffffff,metalness:1,roughness:0.03,envMap:sc.environment||null});
     });
     return;
   }
   const wb=new THREE.Box3().setFromObject(obj);
-  const yMin=wb.min.y,yH=wb.max.y-wb.min.y||1;
+  const yMin=wb.min.y, yH=wb.max.y-wb.min.y||1;
   const xMaxAbs=Math.max(Math.abs(wb.min.x),Math.abs(wb.max.x))||1;
   const zMaxAbs=Math.max(Math.abs(wb.min.z),Math.abs(wb.max.z),0.01);
   obj.traverse(c=>{
-    if(!c.isMesh||c._isBack||c._isBackBody)return;
-    const geo=c.geometry,pos=geo.attributes.position;if(!pos)return;
+    if(!c.isMesh) return;
+    const geo=c.geometry, pos=geo.attributes.position; if(!pos) return;
     const col=new Float32Array(pos.count*3);
     for(let i=0;i<pos.count;i++){
       const wy=pos.getY(i)*obj.scale.y+obj.position.y;
-      const wx=pos.getX(i)*obj.scale.x,wz=pos.getZ(i)*obj.scale.z;
-      const yn=(wy-yMin)/yH,xn=Math.abs(wx)/xMaxAbs,zn=wz/zMaxAbs;
-      let r=0.18,g=0.20,b=0.24,maxS=0;
+      const wx=pos.getX(i)*obj.scale.x, wz=pos.getZ(i)*obj.scale.z;
+      const yn=(wy-yMin)/yH, xn=Math.abs(wx)/xMaxAbs, zn=wz/zMaxAbs;
+      let r=0.18, g=0.20, b=0.24, maxS=0;
       Object.entries(MUSCLES).forEach(([,m])=>{
         m.samples.forEach(s=>{
-          const sc2=G(yn,s.yn,0.035)*G(xn,s.xn,0.055)*(zn*s.zn>0||Math.abs(s.zn)<0.1?1:0);
-          if(sc2>maxS){maxS=sc2;
-            const k=Math.min(1,sc2*3.5);
-            r=m.col[0]*k;g=m.col[1]*k;b=m.col[2]*k;
+          const side=(s.zn>0.1&&zn<-0.1)||(s.zn<-0.1&&zn>0.1)?0:1;
+          const score=G(yn,s.yn,0.035)*G(xn,s.xn,0.055)*side;
+          if(score>maxS){
+            maxS=score;
+            const k=Math.min(1,score*3.5);
+            r=m.col[0]*k; g=m.col[1]*k; b=m.col[2]*k;
           }
         });
       });
-      col[i*3]=r;col[i*3+1]=g;col[i*3+2]=b;
+      col[i*3]=r; col[i*3+1]=g; col[i*3+2]=b;
     }
     geo.setAttribute('color',new THREE.BufferAttribute(col,3));
     c.material=new THREE.MeshBasicMaterial({vertexColors:true,side:THREE.FrontSide});
@@ -246,85 +224,94 @@ function paintDiag(){
 
 function toggleDiag(){
   diagMode=!diagMode;
-  document.getElementById('btn-diag').classList.toggle('on',diagMode);
-  document.getElementById('btn-diag').textContent='DIAGNÓSTICO '+(diagMode?'ON':'OFF');
+  const b=document.getElementById('btn-diag');
+  b.classList.toggle('on',diagMode);
+  b.textContent='DIAGNÓSTICO '+(diagMode?'ON':'OFF');
   paintDiag();
 }
 function toggleBack(){
   showBack=!showBack;
-  if(obj)obj.rotation.y=showBack?Math.PI:0;
+  if(obj) { ry=showBack?Math.PI:0; rx=0; vx=vy=0; }
 }
-function clearSamples(){
+function clearSel(){
   MUSCLES[selMuscle].samples=[];
-  log('Muestras borradas: '+selMuscle);
-  paintDiag();
+  addLog('Borrado: '+selMuscle); paintDiag();
 }
 
-// ─── EXPORT ──────────────────────────────────────────────────────────────────
+// Export
 function exportDefs(){
-  // Compute bounding box from existing samples to generate zone functions
-  let out = `// FORJA DEFS — generado por calibrador dual\nconst DEFS={\n`;
   const entries=Object.entries(MUSCLES).filter(([,m])=>m.samples.length>0);
-  if(!entries.length){log('Sin muestras para exportar');return;}
+  if(!entries.length){addLog('Sin muestras');return;}
+  let out='// FORJA DEFS — calibrador dual\nconst DEFS={\n';
   entries.forEach(([name,m])=>{
-    const yns=m.samples.map(s=>s.yn);
-    const xns=m.samples.map(s=>s.xn);
-    const zns=m.samples.map(s=>s.zn);
-    const ynMin=(Math.min(...yns)-0.05).toFixed(3);
-    const ynMax=(Math.max(...yns)+0.05).toFixed(3);
-    const xnMin=(Math.min(...xns)-0.02).toFixed(3);
-    const xnMax=(Math.max(...xns)+0.05).toFixed(3);
+    const yns=m.samples.map(s=>s.yn), xns=m.samples.map(s=>s.xn), zns=m.samples.map(s=>s.zn);
+    const ynMin=(Math.min(...yns)-0.045).toFixed(3);
+    const ynMax=(Math.max(...yns)+0.045).toFixed(3);
+    const xnMax=(Math.max(...xns)+0.055).toFixed(3);
     const zAvg=zns.reduce((a,b)=>a+b,0)/zns.length;
-    const zCond=Math.abs(zAvg)<0.15?'':(zAvg>0?`&&zn>-0.05`:`&&zn<0.05`);
-    const pks=m.samples.map(s=>`[${s.yn.toFixed(3)},${s.xn.toFixed(3)},0.030,0.080,1.0]`).join(',\n        ');
-    const nameK=name.replace(/\//g,'_').replace(/\s/g,'_');
-    out+=`  "${name}":{z:(yn,xn,zn,l)=>yn>${ynMin}&&yn<${ynMax}&&xn>${xnMin}&&xn<${xnMax}${zCond},pk:[\n        ${pks}\n      ]},\n`;
+    const zCond=Math.abs(zAvg)<0.12?'':(zAvg>0?'&&zn>-0.05':'&&zn<0.05');
+    const pks=m.samples.map(s=>`[${s.yn.toFixed(3)},${s.xn.toFixed(3)},0.028,0.075,1.0]`).join(',\n        ');
+    out+=`  "${name}":{z:(yn,xn,zn,l)=>yn>${ynMin}&&yn<${ynMax}&&xn<${xnMax}${zCond},pk:[\n        ${pks}\n      ]},\n`;
   });
-  out+=`};\n`;
-  // Show in textarea overlay
+  out+='};\n';
   const ta=document.createElement('textarea');
   ta.value=out;
-  ta.style.cssText='position:fixed;top:50px;right:10px;left:10px;height:300px;z-index:200;background:#1a1e2a;color:#5faa88;font-size:9px;border:1px solid #5faa88;border-radius:8px;padding:8px;';
-  const close=document.createElement('button');
-  close.textContent='✕ CERRAR';
-  close.style.cssText='position:fixed;top:54px;right:14px;z-index:201;background:#d96060;color:white;border:none;border-radius:4px;padding:3px 8px;cursor:pointer;font-size:9px;';
-  close.onclick=()=>{ta.remove();close.remove();};
-  document.body.appendChild(ta);
-  document.body.appendChild(close);
-  ta.select();
-  log('DEFS exportadas — copia el texto del panel');
+  ta.style.cssText='position:fixed;inset:50px;z-index:200;background:#1a1e2a;color:#5faa88;font-size:9px;border:1px solid #5faa88;border-radius:8px;padding:10px;';
+  const btn=document.createElement('button');
+  btn.textContent='✕ CERRAR';
+  btn.style.cssText='position:fixed;top:54px;right:14px;z-index:201;background:#d96060;color:#fff;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:9px;';
+  btn.onclick=()=>{ta.remove();btn.remove();};
+  document.body.appendChild(ta); document.body.appendChild(btn);
+  ta.select(); addLog('DEFS listas — copia el texto');
 }
 
-// ─── LOAD MODEL ──────────────────────────────────────────────────────────────
-document.getElementById('status').textContent='cargando OBJ...';
-const objLoader = new THREE.OBJLoader();
-  objLoader.crossOrigin = 'anonymous';
-  objLoader.load(
-  'https://forjavideos.b-cdn.net/cuerpo.obj',
-  function(loaded){
-    const box=new THREE.Box3().setFromObject(loaded);
-    const s=3.6/Math.max(...box.getSize(new THREE.Vector3()).toArray());
-    loaded.scale.setScalar(s);
-    loaded.position.sub(box.getCenter(new THREE.Vector3()).multiplyScalar(s));
-    loaded.traverse(c=>{
-      if(c.isMesh) c.material=new THREE.MeshStandardMaterial({color:0xffffff,metalness:1,roughness:0.03});
-    });
-    sc.add(loaded);obj=loaded;
-    document.getElementById('status').textContent='LISTO';
-    document.getElementById('ref-hint').textContent='← Gira la referencia hasta ver el músculo → click en TU modelo →';
-    log('Modelo cargado. Selecciona músculo → click en tu modelo para marcar posiciones.');
+// Load model with HDRI
+const pmrem=new THREE.PMREMGenerator(ren);
+pmrem.compileEquirectangularShader();
+document.getElementById('status').textContent='cargando entorno...';
+
+function loadModel(){
+  document.getElementById('status').textContent='cargando OBJ...';
+  new THREE.OBJLoader().load(
+    'https://forjavideos.b-cdn.net/cuerpo.obj',
+    function(loaded){
+      const box=new THREE.Box3().setFromObject(loaded);
+      const s=3.6/Math.max(...box.getSize(new THREE.Vector3()).toArray());
+      loaded.scale.setScalar(s);
+      loaded.position.sub(box.getCenter(new THREE.Vector3()).multiplyScalar(s));
+      loaded.traverse(c=>{
+        if(c.isMesh) c.material=new THREE.MeshStandardMaterial({
+          color:0xffffff, metalness:1.0, roughness:0.03,
+          envMap:sc.environment||null, envMapIntensity:2.5
+        });
+      });
+      sc.add(loaded); obj=loaded;
+      document.getElementById('status').textContent='LISTO ✓';
+      addLog('Modelo listo. Selecciona músculo → click en el modelo.');
+    },
+    x=>document.getElementById('status').textContent='OBJ '+(x.loaded/1048576).toFixed(1)+'MB',
+    e=>{ document.getElementById('status').textContent='ERROR cargando OBJ'; addLog('ERROR: '+e); }
+  );
+}
+
+new THREE.RGBELoader().load(
+  'https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/studio_small_08_1k.hdr',
+  function(hdr){
+    const env=pmrem.fromEquirectangular(hdr).texture;
+    sc.environment=env; hdr.dispose(); pmrem.dispose();
+    loadModel();
   },
-  x=>document.getElementById('status').textContent='OBJ '+(x.loaded/1048576).toFixed(1)+'MB',
-  e=>{ document.getElementById('status').textContent='ERROR CORS — sube a servidor'; log('ERROR: abre este archivo desde un servidor web, no como file://. Usa: python3 -m http.server 8080'); }
+  undefined,
+  function(){ pmrem.dispose(); loadModel(); }
 );
 
-// ─── RENDER LOOP ─────────────────────────────────────────────────────────────
+// Render loop
 (function loop(){
   requestAnimationFrame(loop);
   resize();
   if(!drg){vx*=0.92;vy*=0.92;ry+=vx;rx+=vy;}
-  rx=Math.max(-1.1,Math.min(1.1,rx));
-  if(obj){obj.rotation.y=showBack?Math.PI+ry:ry;obj.rotation.x=rx;}
+  rx=Math.max(-1.2,Math.min(1.2,rx));
+  if(obj){obj.rotation.y=ry;obj.rotation.x=rx;}
   ren.render(sc,cam);
 })();
 </script>
