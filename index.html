@@ -2227,122 +2227,55 @@ function MuscleHeatmap({muscleVol,lang}){
     // DELT_ANT yn=0.797 xn=0.287 | DELT_POST yn=0.797 xn=0.310 zn=-0.56
     // QUAD yn=0.455 zn=+0.58 | ISQUIO yn=0.386 zn=-0.42 | GEMELOS yn=0.201 zn=-0.74
     const DEFS={
-      "pectoral mayor":{z:function(yn,xn,zn,l){return !l&&zn>0.20&&yn>0.71&&yn<0.80&&xn<0.32;},pk:[
-        // Pecho: 2 lóbulos separados, forma de mariposa, más ancho que alto
-        [0.752,0.080,0.020,0.090,1.0],  // lóbulo izq centro-interior
-        [0.752,0.190,0.020,0.090,1.0],  // lóbulo der centro
-        [0.746,0.130,0.016,0.110,0.8],  // centro sternal (unión)
-        [0.759,0.055,0.016,0.060,0.7],  // borde superior izq
-        [0.759,0.215,0.016,0.060,0.7],  // borde superior der
-        [0.740,0.060,0.014,0.070,0.6],  // borde inferior izq
-        [0.740,0.205,0.014,0.070,0.6],  // borde inferior der
-      ]},
-      "core (transverso abdominal)":{z:function(yn,xn,zn,l){return !l&&zn>0.25&&yn>0.56&&yn<0.66&&xn<0.14;},pk:[
-        // Abs: 3 pares de rectángulos (six pack), más estrecho que el pecho
-        [0.632,0.042,0.018,0.045,1.0],  // recto sup
-        [0.609,0.042,0.018,0.042,0.95], // recto med
-        [0.586,0.042,0.016,0.038,0.85], // recto inf
-        [0.620,0.002,0.030,0.015,0.5],  // línea alba (centro)
-      ]},
+      "pectoral mayor":{z:function(yn,xn,zn,l){return !l&&zn>0.20&&yn>0.69&&yn<0.78&&xn<0.30;},pk:[
+        [0.728,0.080,0.020,0.090,1.0],[0.728,0.180,0.020,0.090,1.0],
+        [0.722,0.130,0.016,0.110,0.8],[0.740,0.055,0.016,0.060,0.7],
+        [0.715,0.210,0.014,0.065,0.6]]},
+      "core (transverso abdominal)":{z:function(yn,xn,zn,l){return !l&&zn>0.20&&yn>0.56&&yn<0.66&&xn<0.14;},pk:[
+        [0.635,0.038,0.018,0.042,1.0],[0.608,0.040,0.018,0.038,0.95],
+        [0.583,0.038,0.016,0.035,0.85],[0.620,0.100,0.020,0.055,0.55]]},
+      "deltoides anterior":{z:function(yn,xn,zn,l){return !l&&zn>-0.05&&yn>0.74&&yn<0.84&&xn>0.20&&xn<0.42;},pk:[
+        [0.800,0.265,0.022,0.052,1.0],[0.790,0.290,0.020,0.046,0.90],
+        [0.778,0.295,0.018,0.040,0.80],[0.762,0.280,0.016,0.034,0.65]]},
+      "deltoides posterior":{z:function(yn,xn,zn,l){return !l&&zn<-0.05&&yn>0.74&&yn<0.84&&xn>0.10&&xn<0.44;},pk:[
+        [0.800,0.280,0.022,0.055,1.0],[0.788,0.300,0.020,0.050,0.90],
+        [0.775,0.295,0.018,0.044,0.80],[0.762,0.280,0.016,0.036,0.65]]},
       "trapecio superior":{z:function(yn,xn,zn,l){return !l&&zn<-0.20&&yn>0.78&&yn<0.88&&xn<0.26;},pk:[
-        // Trapecio: forma de rombo, pico en cuello, se expande hacia hombros
-        [0.840,0.000,0.018,0.010,0.9],  // pico cervical (cuello)
-        [0.830,0.080,0.022,0.075,1.0],  // banda sup izq
-        [0.830,0.160,0.020,0.065,0.9],  // banda sup der
-        [0.815,0.115,0.020,0.090,0.85], // zona media
-        [0.800,0.060,0.016,0.060,0.7],  // zona inf izq
-        [0.800,0.160,0.016,0.055,0.65], // zona inf der
-      ]},
+        [0.840,0.000,0.018,0.010,0.9],[0.830,0.090,0.022,0.075,1.0],
+        [0.828,0.160,0.020,0.065,0.9],[0.815,0.110,0.020,0.090,0.85],
+        [0.800,0.070,0.016,0.058,0.7],[0.800,0.160,0.016,0.052,0.65]]},
       "dorsal ancho":{z:function(yn,xn,zn,l){return !l&&zn<-0.20&&yn>0.60&&yn<0.77&&xn<0.35;},pk:[
-        // Dorsal: forma de V invertida — ancho abajo, estrecho arriba
-        // Parte superior (más estrecha, cerca espina)
-        [0.740,0.050,0.016,0.055,0.75], // sup izq
-        [0.740,0.130,0.016,0.050,0.70], // sup der
-        // Parte media (expansión)
-        [0.710,0.080,0.022,0.090,0.95], // med izq
-        [0.710,0.195,0.020,0.080,0.90], // med der
-        // Parte inferior (más ancha, inserción lumbar)
-        [0.680,0.110,0.025,0.130,1.0],  // inf centro-izq
-        [0.680,0.240,0.022,0.100,0.90], // inf centro-der
-        [0.660,0.140,0.020,0.150,0.85], // inf ancho
-      ]},
+        [0.740,0.055,0.016,0.055,0.75],[0.725,0.120,0.018,0.060,0.80],
+        [0.710,0.090,0.022,0.090,0.95],[0.710,0.195,0.020,0.080,0.90],
+        [0.685,0.140,0.025,0.130,1.0],[0.680,0.255,0.022,0.095,0.90],
+        [0.660,0.200,0.020,0.145,0.85]]},
       "glúteo mayor":{z:function(yn,xn,zn,l){return zn<-0.20&&yn>0.47&&yn<0.58&&xn<0.30;},pk:[
-        // Glúteo: forma redondeada, 2 mitades simétricas
-        [0.535,0.090,0.028,0.095,1.0],  // glúteo izq centro
-        [0.535,0.200,0.026,0.085,0.95], // glúteo der centro
-        [0.520,0.060,0.024,0.065,0.85], // borde inf izq
-        [0.520,0.225,0.022,0.060,0.80], // borde inf der
-        [0.548,0.070,0.018,0.070,0.75], // borde sup izq
-        [0.548,0.200,0.017,0.065,0.70], // borde sup der
-      ]},
-      "deltoides anterior":{z:function(yn,xn,zn,l){return !l&&yn>0.74&&yn<0.84&&xn>0.20&&xn<0.42&&zn>-0.12;},pk:[
-        // Deltoides: forma de D invertida, pico en el acromion
-        [0.800,0.285,0.022,0.055,1.0],  // pico acromion
-        [0.788,0.305,0.020,0.048,0.90], // cuerpo sup
-        [0.776,0.300,0.018,0.042,0.80], // cuerpo mid
-        [0.762,0.288,0.016,0.035,0.65], // cuerpo inf
-        [0.795,0.255,0.018,0.040,0.75], // borde ant sup
-        [0.780,0.260,0.016,0.035,0.65], // borde ant inf
-      ]},
-      "deltoides posterior":{z:function(yn,xn,zn,l){return !l&&yn>0.74&&yn<0.84&&xn>0.20&&xn<0.44&&zn<-0.12;},pk:[
-        [0.800,0.305,0.022,0.055,1.0],  // pico acromion post
-        [0.788,0.320,0.020,0.050,0.90], // cuerpo sup
-        [0.776,0.315,0.018,0.044,0.80], // cuerpo mid
-        [0.762,0.300,0.016,0.036,0.65], // cuerpo inf
-        [0.795,0.270,0.018,0.042,0.75], // borde post sup
-      ]},
-      "bíceps braquial":{z:function(yn,xn,zn,l){return !l&&yn>0.69&&yn<0.78&&xn>0.32&&xn<0.53&&zn>-0.12;},pk:[
-        // Bíceps: forma ovalada alargada, pico en el vientre del músculo
-        [0.745,0.400,0.022,0.055,1.0],  // vientre bicipital
-        [0.752,0.415,0.018,0.048,0.90], // porción larga
-        [0.738,0.385,0.018,0.048,0.88], // porción corta
-        [0.758,0.430,0.014,0.038,0.70], // extremo proximal
-        [0.732,0.370,0.014,0.036,0.65], // extremo distal
-      ]},
-      "tríceps braquial":{z:function(yn,xn,zn,l){return !l&&yn>0.69&&yn<0.78&&xn>0.32&&xn<0.53&&zn<0.12;},pk:[
-        // Tríceps: forma de herradura, 3 cabezas
-        [0.748,0.440,0.022,0.055,1.0],  // cabeza larga (pico)
-        [0.740,0.420,0.020,0.050,0.90], // cabeza lateral
-        [0.755,0.455,0.016,0.042,0.80], // cabeza medial
-        [0.730,0.400,0.016,0.038,0.65], // distal
-      ]},
+        [0.535,0.080,0.028,0.092,1.0],[0.535,0.185,0.026,0.082,0.95],
+        [0.520,0.060,0.024,0.062,0.85],[0.520,0.210,0.022,0.058,0.80],
+        [0.549,0.116,0.025,0.088,0.90]]},
+      "bíceps braquial":{z:function(yn,xn,zn,l){return !l&&zn>-0.05&&yn>0.69&&yn<0.78&&xn>0.32&&xn<0.53;},pk:[
+        [0.745,0.390,0.022,0.052,1.0],[0.755,0.410,0.018,0.048,0.90],
+        [0.738,0.380,0.018,0.048,0.88],[0.760,0.430,0.014,0.036,0.70]]},
+      "tríceps braquial":{z:function(yn,xn,zn,l){return !l&&zn<-0.05&&yn>0.69&&yn<0.78&&xn>0.32&&xn<0.53;},pk:[
+        [0.748,0.400,0.022,0.052,1.0],[0.755,0.430,0.020,0.048,0.90],
+        [0.738,0.380,0.018,0.040,0.80],[0.762,0.450,0.016,0.038,0.65]]},
       "braquiorradial":{z:function(yn,xn,zn,l){return !l&&yn>0.65&&yn<0.74&&xn>0.50&&xn<0.82;},pk:[
-        // Antebrazo: elongado siguiendo el radio
-        [0.700,0.640,0.020,0.075,1.0],
-        [0.685,0.670,0.018,0.065,0.85],
-        [0.672,0.695,0.016,0.055,0.70],
-      ]},
+        [0.698,0.620,0.020,0.072,1.0],[0.682,0.650,0.018,0.062,0.85],
+        [0.668,0.680,0.016,0.052,0.70]]},
       "braquial":{z:function(yn,xn,zn,l){return !l&&yn>0.65&&yn<0.74&&xn>0.50&&xn<0.82;},pk:[
-        [0.698,0.635,0.020,0.075,1.0],
-        [0.682,0.665,0.018,0.065,0.85],
-      ]},
+        [0.696,0.615,0.020,0.072,1.0],[0.680,0.645,0.018,0.062,0.85]]},
       "cuádriceps":{z:function(yn,xn,zn,l){return yn>0.38&&yn<0.52&&xn<0.32&&zn>0.05;},pk:[
-        // Cuádriceps: 4 cabezas, forma ovalada elongada vertical
-        [0.468,0.155,0.028,0.085,1.0],  // recto femoral (sup)
-        [0.448,0.170,0.025,0.090,0.95], // vasto lateral
-        [0.428,0.155,0.022,0.085,0.90], // zona media
-        [0.408,0.145,0.020,0.078,0.80], // zona inf media
-        [0.388,0.135,0.018,0.070,0.65], // zona inf (cerca rodilla)
-        [0.455,0.215,0.022,0.065,0.75], // vasto lateral ext
-        [0.455,0.095,0.022,0.055,0.70], // vasto medial
-      ]},
-      "isquiotibiales":{z:function(yn,xn,zn,l){return yn>0.32&&yn<0.46&&xn<0.30&&zn<-0.08;},pk:[
-        // Isquios: 2 músculos paralelos, forma elongada
-        [0.420,0.095,0.025,0.065,1.0],  // bíceps femoral
-        [0.400,0.100,0.022,0.070,0.95], // semimembranoso
-        [0.380,0.090,0.020,0.065,0.85],
-        [0.360,0.080,0.018,0.058,0.70],
-        [0.420,0.175,0.022,0.055,0.80], // bíceps femoral lateral
-        [0.400,0.165,0.020,0.050,0.70],
-      ]},
+        [0.468,0.150,0.028,0.082,1.0],[0.448,0.165,0.025,0.088,0.95],
+        [0.425,0.155,0.022,0.082,0.90],[0.405,0.140,0.020,0.075,0.80],
+        [0.460,0.200,0.022,0.062,0.75],[0.455,0.092,0.022,0.052,0.70]]},
+      "isquiotibiales":{z:function(yn,xn,zn,l){return yn>0.32&&yn<0.46&&xn<0.30&&zn<-0.05;},pk:[
+        [0.420,0.100,0.025,0.065,1.0],[0.400,0.105,0.022,0.068,0.95],
+        [0.380,0.092,0.020,0.062,0.85],[0.358,0.082,0.018,0.056,0.70],
+        [0.418,0.175,0.022,0.052,0.80],[0.398,0.165,0.020,0.048,0.70]]},
       "gastrocnemio":{z:function(yn,xn,zn,l){return yn>0.14&&yn<0.26&&xn<0.32&&zn<-0.15;},pk:[
-        // Gemelos: forma de diamante, 2 cabezas medial/lateral
-        [0.215,0.105,0.022,0.060,1.0],  // cabeza medial (pico)
-        [0.215,0.195,0.020,0.055,0.95], // cabeza lateral (pico)
-        [0.200,0.150,0.020,0.075,0.85], // unión central
-        [0.185,0.145,0.018,0.068,0.75], // zona media
-        [0.170,0.140,0.015,0.058,0.55], // distal (hacia tendón)
-      ]},
+        [0.215,0.110,0.022,0.058,1.0],[0.215,0.190,0.020,0.052,0.95],
+        [0.200,0.150,0.020,0.072,0.85],[0.183,0.145,0.018,0.065,0.75],
+        [0.168,0.140,0.015,0.055,0.55]]},
     };
 
     // Ensure back meshes are visible
