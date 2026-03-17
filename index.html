@@ -659,7 +659,7 @@ const EX_META={
 };
 
 
-function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,onBack}){
+function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBack}){
   const exs=day.ex;
   const C2={bg:"#383e4e",bgD:"#2c3040",card:"#424858",border:"#525a6e",borderL:"#4a5264",
     tx:"#F0F2F5",tx2:"#C8CDD8",tx3:"#7a8294",
@@ -1339,14 +1339,17 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   const tot=entries.reduce((a,e)=>({cal:a.cal+(+e.cal||0),prot:a.prot+(+e.prot||0),carbs:a.carbs+(+e.carbs||0),fat:a.fat+(+e.fat||0)}),{cal:0,prot:0,carbs:0,fat:0});
 
   const toggle=id=>{const k=`${sel}-${id}`;sd({...done,[k]:!done[k]});};
+  const BW_EXERCISES=new Set(["pull up","weighted pull up","chin up","push up","decline push up","dips","bench dips","diamond push ups","plank","mountain climber","hanging knee raises","box jump","bodyweight squat"]);
   const saveLog=(id,kg,rp,exName)=>{
-    if(!kg&&!rp)return;
+    // For bodyweight exercises with kg=0, use bodyweight from profile
+    const effKg=(+kg>0)?+kg:(BW_EXERCISES.has(exName?.toLowerCase()?.trim())?(+profile?.weight||75):0);
+    if(!effKg&&!rp)return;
     const nl={...logs};
     if(!nl[id])nl[id]=[];
-    const rm1=epley(kg,rp);
-    nl[id]=[{d:today,w:kg,r:rp,rm:rm1},...nl[id]].slice(0,60);
+    const rm1=epley(effKg,rp);
+    nl[id]=[{d:today,w:effKg,r:rp,rm:rm1},...nl[id]].slice(0,60);
     slg(nl);
-    FStore.saveLogEntry(id,exName||id,kg,rp,rm1);
+    FStore.saveLogEntry(id,exName||id,effKg,rp,rm1);
   };
 
   const exportData=()=>{
@@ -1377,7 +1380,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
 
   if(inWorkout&&day&&day.ex&&day.ex.length){
     return <WorkoutScreen day={day} sel={sel} done={done} logs={logs}
-      onToggle={toggle} onSaveLog={saveLog} t={t} lang={lang} onBack={()=>setInWorkout(false)}/>;
+      onToggle={toggle} onSaveLog={saveLog} t={t} lang={lang} profile={profile} onBack={()=>setInWorkout(false)}/>;
   }
 
   return(
