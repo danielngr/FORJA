@@ -1919,18 +1919,25 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
   };
 
   let _optIdx=0;
+  // Liquid glass style helper
+  const glassCard={background:"rgba(66,72,88,0.55)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",border:"1px solid rgba(240,242,245,0.10)",borderRadius:20};
   const Opt=({active,onClick,children})=>{
     const n=String(++_optIdx).padStart(2,"0");
     return(
       <button onClick={onClick} style={{
-        width:"100%",padding:"14px 0",cursor:"pointer",background:"transparent",border:"none",
-        borderBottom:`1px solid ${active?C.border+"88":C.borderL+"55"}`,
+        width:"100%",padding:"14px 0",cursor:"pointer",border:"none",
+        background:active?"rgba(240,242,245,0.07)":"transparent",
+        borderBottom:`1px solid ${active?"rgba(240,242,245,0.18)":"rgba(240,242,245,0.08)"}`,
+        borderRadius:active?8:0,
         display:"flex",alignItems:"center",gap:14,textAlign:"left",
-        transition:"all 0.15s",position:"relative",outline:"none"}}>
+        transition:"all 0.2s",position:"relative",outline:"none",
+        backdropFilter:active?"blur(12px)":"none",
+        WebkitBackdropFilter:active?"blur(12px)":"none",
+      }}>
         <div style={{width:2,height:active?"100%":"0%",background:C.tx,borderRadius:1,transition:"height 0.2s ease",position:"absolute",left:-14,top:0,bottom:0,margin:"auto"}}/>
-        <span style={{fontSize:9,fontFamily:mono,color:active?C.tx3:C.borderL,letterSpacing:1,minWidth:20,transition:"color 0.15s"}}>{n}</span>
-        <span style={{flex:1,fontSize:14,fontWeight:active?700:400,fontFamily:active?sans:mono,letterSpacing:active?-0.3:1.5,color:active?C.tx:C.tx3,textTransform:active?"none":"uppercase",transition:"all 0.15s"}}>{children}</span>
-        <span style={{fontSize:10,fontFamily:mono,color:active?C.tx:C.borderL,opacity:active?1:0,transition:"opacity 0.15s"}}>●</span>
+        <span style={{fontSize:9,fontFamily:mono,color:active?"#F0F2F5":"#9aa0b0",letterSpacing:1,minWidth:20,transition:"color 0.15s"}}>{n}</span>
+        <span style={{flex:1,fontSize:14,fontWeight:active?700:500,fontFamily:active?sans:mono,letterSpacing:active?-0.3:1,color:active?"#F0F2F5":"#b8bcc8",textTransform:active?"none":"uppercase",transition:"all 0.15s"}}>{children}</span>
+        <span style={{fontSize:10,fontFamily:mono,color:"#F0F2F5",opacity:active?1:0,transition:"opacity 0.15s"}}>●</span>
       </button>
     );
   };
@@ -1963,7 +1970,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
   );
 
   return(
-    <div style={{minHeight:"100vh",background:C.bg,color:C.tx,fontFamily:sans}}>
+    <div style={{minHeight:"100vh",background:`linear-gradient(160deg,#252936 0%,#2e3448 50%,#383e4e 100%)`,color:C.tx,fontFamily:sans}}>
       {step===0&&(
         <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",justifyContent:"flex-end",padding:"0 26px",paddingBottom:"8vh",animation:"fogIn 0.8s ease",position:"relative",zIndex:1}}>
           {/* Canvas full viewport — partículas llegan al tope */}
@@ -1979,8 +1986,8 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             </div>
           <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:10,position:"relative",zIndex:1}}>// SELECT LANGUAGE</div>
           <div style={{display:"flex",flexDirection:"column",marginBottom:36,borderTop:`1px solid ${C.borderL}55`,position:"relative",zIndex:1}}>
-            <Opt active={lang==="es"} onClick={()=>setLang("es")}>Español</Opt>
-            <Opt active={lang==="en"} onClick={()=>setLang("en")}>English</Opt>
+            <Opt active={lang==="es"} onClick={()=>{setLang("es");}}>Español</Opt>
+            <Opt active={lang==="en"} onClick={()=>{setLang("en");}}>English</Opt>
           </div>
           <div style={{position:"relative",zIndex:1}}>
             <Btn onClick={()=>setStep(1)} disabled={!lang}>{t.next}</Btn>
@@ -2052,8 +2059,9 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:28,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"¿Cómo la quieres?":"How do you want it?"}</div>
             <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:32}}>
               <button onClick={()=>{setMode("auto");setStep(3);}} style={{
-                padding:"20px 18px",borderRadius:14,cursor:"pointer",border:`1.5px solid ${C.borderL}`,
-                background:"transparent",display:"flex",alignItems:"center",gap:16,outline:"none",transition:"all .2s",
+                padding:"20px 18px",borderRadius:14,cursor:"pointer",border:`1.5px solid rgba(240,242,245,0.12)`,
+                background:"rgba(66,72,88,0.45)",backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",
+                display:"flex",alignItems:"center",gap:16,outline:"none",transition:"all .2s",
               }}>
                 <div style={{width:42,height:42,borderRadius:12,background:"rgba(106,143,192,.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>⚡</div>
                 <div style={{textAlign:"left"}}>
@@ -2062,8 +2070,9 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                 </div>
               </button>
               <button onClick={()=>{setMode("manual");setStep(20);}} style={{
-                padding:"20px 18px",borderRadius:14,cursor:"pointer",border:`1.5px solid ${C.borderL}`,
-                background:"transparent",display:"flex",alignItems:"center",gap:16,outline:"none",transition:"all .2s",
+                padding:"20px 18px",borderRadius:14,cursor:"pointer",border:`1.5px solid rgba(240,242,245,0.12)`,
+                background:"rgba(66,72,88,0.45)",backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",
+                display:"flex",alignItems:"center",gap:16,outline:"none",transition:"all .2s",
               }}>
                 <div style={{width:42,height:42,borderRadius:12,background:"rgba(95,170,136,.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>✏️</div>
                 <div style={{textAlign:"left"}}>
@@ -2077,7 +2086,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
           {step===3&&(<>
             <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{t.goal}</div>
             <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:24,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"¿Qué buscas?":"What's your goal?"}</div>
-            <div style={{display:"flex",flexDirection:"column",borderTop:`1px solid ${C.borderL}55`}}>
+            <div style={{display:"flex",flexDirection:"column",borderTop:`1px solid rgba(240,242,245,0.12)`}}>
               {[["muscle",t.muscle],["strength",t.strength],["lose",t.lose],["recomp",t.recomp],["general",t.general]].map(([id,lb])=>(
                 <Opt key={id} active={goal===id} onClick={()=>setGoal(id)}>{lb}</Opt>
               ))}
@@ -2090,7 +2099,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
           {step===4&&mode==="auto"&&(<>
             <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{t.level}</div>
             <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:24,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"Tu experiencia":"Your experience"}</div>
-            <div style={{display:"flex",flexDirection:"column",borderTop:`1px solid ${C.borderL}55`}}>
+            <div style={{display:"flex",flexDirection:"column",borderTop:`1px solid rgba(240,242,245,0.12)`}}>
               {[["beg",t.beg],["int",t.int],["adv",t.adv]].map(([id,lb])=>(
                 <Opt key={id} active={level===id} onClick={()=>setLevel(id)}>{lb}</Opt>
               ))}
