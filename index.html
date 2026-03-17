@@ -2492,22 +2492,29 @@ function MuscleHeatmap({muscleVol,lang}){
       );
     }
 
+    // Timeout: if HDRI takes >5s, use fallback lights
+    var _hdriLoaded=false;
+    function _fallbackLights(){
+      if(_hdriLoaded)return; _hdriLoaded=true;
+      [[0xffffff,8,4,6,5],[0xaaddff,4,-5,3,-3],[0xffffff,5,0,-5,-4],[0xffffff,3,0,8,0]].forEach(function(p){
+        var l=new THREE.PointLight(p[0],p[1],35);l.position.set(p[2],p[3],p[4]);sc.add(l);
+      });
+      loadModel(false);
+    }
+    var _hdriTimeout=setTimeout(_fallbackLights,5000);
     new THREE.RGBELoader().load(
       'https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/studio_small_08_1k.hdr',
       function(hdr){
+        if(_hdriLoaded)return; _hdriLoaded=true; clearTimeout(_hdriTimeout);
         var env=pmrem.fromEquirectangular(hdr).texture;
-        sc.environment=env;
-        obj._envMap=env; // store for heatmap use — but obj not loaded yet, store on sc
-        sc._envMap=env;
+        sc.environment=env; sc._envMap=env;
         hdr.dispose();pmrem.dispose();
         loadModel(true);
       },
       undefined,
       function(){
-        [[0xffffff,8,4,6,5],[0xaaddff,4,-5,3,-3],[0xffffff,5,0,-5,-4],[0xffffff,3,0,8,0]].forEach(function(p){
-          const l=new THREE.PointLight(p[0],p[1],35);l.position.set(p[2],p[3],p[4]);sc.add(l);
-        });
-        loadModel(false);
+        clearTimeout(_hdriTimeout);
+        _fallbackLights();
       }
     );
 
