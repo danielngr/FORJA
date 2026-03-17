@@ -1615,6 +1615,15 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                       <button onClick={exportData} style={{background:"none",border:`1px solid ${C.borderL}`,borderRadius:8,padding:"8px 18px",color:C.tx3,fontSize:9,fontFamily:mono,letterSpacing:2,cursor:"pointer"}}>
                         {lang==="es"?"↓ EXPORTAR":"↓ EXPORT"}
                       </button>
+                      <button onClick={()=>{
+                        if(window.confirm("🧪 MODO TEST — Borrar todos los logs para probar desde cero?")){
+                          slg({});
+                          sd({});
+                          ['fv8l'].forEach(k=>localStorage.removeItem(k));
+                        }
+                      }} style={{background:"none",border:`1px solid rgba(217,96,96,.35)`,borderRadius:8,padding:"8px 18px",color:"rgba(217,96,96,.6)",fontSize:9,fontFamily:mono,letterSpacing:2,cursor:"pointer"}}>
+                        🧪 RESET TEST
+                      </button>
                     </>
                   ):(
                     <div style={{display:"flex",gap:8,justifyContent:"center"}}>
