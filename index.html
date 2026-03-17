@@ -2495,7 +2495,7 @@ function MuscleHeatmap({muscleVol,lang}){
     const maxV=Math.max(...Object.values(muscleVol),1);
     const mv={};
     Object.keys(muscleVol).forEach(k=>{ mv[k]=Math.min(1,(muscleVol[k]||0)/maxV); });
-    const THR=0.25;
+    const THR=0.08;
     const vt=k=>(mv[k]||0)>=THR?mv[k]:0;
     const wb=new THREE.Box3().setFromObject(obj);
     const yMin=wb.min.y, yH=(wb.max.y-wb.min.y)||1;
@@ -2854,21 +2854,21 @@ function computeRecovery(logs,routine){
       const vol=(+e.w||0)*(+e.r||0); if(vol<=0) return;
       const ts=new Date(e.d).getTime();
       md.p.forEach(m=>{
-        if(!lastHit[m]||ts>lastHit[m].ts) lastHit[m]={ts,vol};
+        if(!lastHit[m]||ts>lastHit[m].ts) lastHit[m]={ts,vol,isPrimary:true};
       });
       md.s.forEach(m=>{
         const sv=vol*0.35;
-        if(!lastHit[m]||ts>lastHit[m].ts) lastHit[m]={ts,vol:sv};
+        if(!lastHit[m]||ts>lastHit[m].ts) lastHit[m]={ts,vol:sv,isPrimary:false};
       });
     });
   });
   const result={};
-  Object.entries(lastHit).forEach(([m,{ts}])=>{
+  Object.entries(lastHit).forEach(([m,{ts,isPrimary}])=>{
     const hrs=RECOVERY_HOURS[m]||48;
     const elapsedHrs=(now-ts)/3600000;
     const score=Math.min(1, elapsedHrs/hrs);
     const hoursLeft=Math.max(0, Math.round(hrs-elapsedHrs));
-    result[m]={score, hoursLeft};
+    result[m]={score, hoursLeft, isPrimary};
   });
   return result;
 }
@@ -2876,11 +2876,9 @@ function computeRecovery(logs,routine){
 // Recovery → heatmap input: fatigued muscles show as red/orange, recovered as green
 function recoveryToHeatmap(recovery){
   const mv={};
-  Object.entries(recovery).forEach(([m,{score}])=>{
-    // score=1 (recovered)=no heat, score=0 (fresh fatigue)=max heat
-    // We invert so fatigue=high value in heatmap
+  Object.entries(recovery).forEach(([m,{score,isPrimary}])=>{
     const fatigue=1-score;
-    if(fatigue>0.05) mv[m]=fatigue;
+    if(fatigue>0.05) mv[m]=isPrimary!==false?fatigue:fatigue*0.40;
   });
   return mv;
 }
