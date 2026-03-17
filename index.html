@@ -1797,6 +1797,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
 
   // Catálogo de ejercicios agrupado por músculo
   const[equipment,setEquipment]=useState([]); // equipo disponible
+  const[eqMode,setEqMode]=useState(null); // "full" | "home" | "custom" | null
 
   // Mapa equipo por ejercicio
   const EQ_MAP={
@@ -2204,11 +2205,12 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                 {key:"custom",icon:"✏️", es:"Lo selecciono yo",en:"Custom",     sub:{es:"Elige exactamente lo que tienes",en:"Pick exactly what you have"},
                   eq:null},
               ].map(({key,icon,es:esl,en:enl,sub,eq})=>{
-                const active=key!=="custom"&&JSON.stringify([...equipment].sort())===JSON.stringify([...eq].sort());
+                const active=eqMode===key;
                 return(
                   <button key={key} onClick={()=>{
+                    setEqMode(key);
                     if(eq) setEquipment(eq);
-                    if(key==="custom") setEquipment([]);
+                    else setEquipment([]);
                   }} style={{
                     padding:"18px 20px",borderRadius:16,cursor:"pointer",
                     border:`1.5px solid ${active?"rgba(240,242,245,0.5)":"rgba(240,242,245,0.08)"}`,
@@ -2438,9 +2440,9 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                   sub:{es:"Elige exactamente lo que tienes",en:"Pick exactly what you have"},
                   eq:null},
               ].map(({key,icon,es:esl,en:enl,sub,eq})=>{
-                const active=key!=="custom"&&JSON.stringify([...equipment].sort())===JSON.stringify([...eq].sort());
+                const active=eqMode===key;
                 return(
-                  <button key={key} onClick={()=>{if(eq)setEquipment(eq);else setEquipment([]);}} style={{
+                  <button key={key} onClick={()=>{setEqMode(key);if(eq)setEquipment(eq);else setEquipment([]);}} style={{
                     padding:"18px 20px",borderRadius:16,cursor:"pointer",
                     border:`1.5px solid ${active?"rgba(240,242,245,0.5)":"rgba(240,242,245,0.08)"}`,
                     background:active?"rgba(240,242,245,0.09)":"rgba(66,72,88,0.35)",
@@ -2462,14 +2464,9 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                 );
               })}
             </div>
-            {/* Burbujas custom — solo si no hay preset */}
+            {/* Burbujas custom — solo si eqMode==="custom" */}
             {(()=>{
-              const presets=[
-                ["barbell","dumbbells","bench","rack","pull_up_bar","dip_bar","cable_machine","machine","leg_press_machine"],
-                ["barbell","dumbbells","bench","rack","pull_up_bar","dip_bar"],
-              ];
-              const isPreset=presets.some(p=>JSON.stringify([...equipment].sort())===JSON.stringify([...p].sort()));
-              if(isPreset&&equipment.length>0) return null;
+              if(eqMode!=="custom") return null;
               return(
                 <div style={{marginBottom:24}}>
                   <div style={{fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:14,textTransform:"uppercase"}}>
