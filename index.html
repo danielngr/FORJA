@@ -2842,11 +2842,12 @@ const RECOVERY_HOURS={
 };
 function computeRecovery(logs,routine){
   const now=Date.now();
-  // For each muscle, find the most recent log entry and compute fatigue decay
+  // Only consider logs within the last 4 days (max recovery window is 72h)
+  const cutoff=new Date(now-4*24*3600000).toISOString().slice(0,10);
   const lastHit={};  // muscle → {ts, vol}
   Object.entries(logs).forEach(([id,entries])=>{
     entries.forEach(e=>{
-      if(!e.d) return;
+      if(!e.d||e.d<cutoff) return;
       let nm=id;
       if(routine) routine.forEach(d=>{if(!d)return;(d.ex||[]).forEach(ex=>{if(ex.id===id)nm=ex.e;});});
       const md=EXERCISE_MUSCLE_MAP[nm?.toLowerCase()?.trim()];
