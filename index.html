@@ -2373,176 +2373,234 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
           {/* Step 21 — qué días manual */}
           {step===21&&(<>
             <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{lang==="es"?"QUÉ DÍAS":"WHICH DAYS"}</div>
-            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:28,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"¿Qué días?":"Which days?"}</div>
-            <div style={{display:"flex",gap:8,justifyContent:"center",marginBottom:8}}>
-              {(lang==="es"?["L","M","X","J","V","S","D"]:["M","T","W","T","F","S","S"]).map((d,i)=>(
-                <button key={i} onClick={()=>{
-                  const ns=manualSelDays.includes(i)?manualSelDays.filter(x=>x!==i):[...manualSelDays,i].slice(0,manualDays);
-                  setManualSelDays([...ns].sort((a,b)=>a-b));
-                }} style={{
-                  width:42,height:52,borderRadius:10,
-                  border:`1.5px solid ${manualSelDays.includes(i)?C.tx:C.borderL}`,
-                  background:manualSelDays.includes(i)?C.tx:"transparent",
-                  color:manualSelDays.includes(i)?C.bgDeep:C.tx3,
-                  fontSize:13,fontWeight:700,fontFamily:mono,cursor:"pointer",transition:"all .15s"
-                }}>{d}</button>
-              ))}
+            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:8,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"¿Qué días?":"Which days?"}</div>
+            <div style={{fontFamily:mono,fontSize:10,color:C.tx3,letterSpacing:1,marginBottom:28,opacity:.7}}>
+              {lang==="es"?`Selecciona ${manualDays} días`:`Select ${manualDays} days`}
             </div>
-            <div style={{fontFamily:mono,fontSize:9,color:C.tx3,letterSpacing:1.5,textAlign:"center",marginBottom:28}}>
-              {manualSelDays.length}/{manualDays} {lang==="es"?"días seleccionados":"days selected"}
-            </div>
-            <div style={{display:"flex",gap:10,marginTop:8}}>
-              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(20)}>{t.back}</Btn></div>
-              <div style={{flex:2}}><Btn onClick={()=>{setStep(22);}} disabled={manualSelDays.length!==manualDays}>{t.next}</Btn></div>
-            </div>
-          </>)}
-
-          {/* Step 22 — equipo disponible */}
-          {step===22&&(<>
-            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{lang==="es"?"EQUIPAMIENTO":"EQUIPMENT"}</div>
-            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:8,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"¿Qué tienes?":"What do you have?"}</div>
-            <div style={{fontSize:12,color:C.tx3,marginBottom:20,fontFamily:mono}}>{lang==="es"?"Selecciona el equipo disponible. El catálogo se filtrará automáticamente.":"Select available equipment. The catalog will filter automatically."}</div>
-            {/* Agrupado por categoría */}
-            {[...new Set(EQ_OPTIONS.map(e=>e.group))].map(grp=>(
-              <div key={grp} style={{marginBottom:16}}>
-                <div style={{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:2,textTransform:"uppercase",marginBottom:8,paddingBottom:4,borderBottom:`1px solid ${C.borderL}33`}}>{grp}</div>
-                <div style={{display:"flex",flexDirection:"column",gap:6}}>
-                  {EQ_OPTIONS.filter(e=>e.group===grp).map(({id,es,en,icon})=>{
-                    const on=equipment.includes(id);
-                    return(
-                      <button key={id} onClick={()=>setEquipment(on?equipment.filter(x=>x!==id):[...equipment,id])} style={{
-                        display:"flex",alignItems:"center",gap:12,padding:"11px 14px",borderRadius:10,cursor:"pointer",
-                        border:`1px solid ${on?C.tx:C.borderL}`,
-                        background:on?"rgba(240,242,245,.06)":"transparent",
-                        transition:"all .15s",outline:"none",
+            <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:32}}>
+              {(lang==="es"?["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"]:["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]).map((d,i)=>{
+                const sel=manualSelDays.includes(i);
+                return(
+                  <button key={i} onClick={()=>{
+                    const ns=sel?manualSelDays.filter(x=>x!==i):[...manualSelDays,i].slice(0,manualDays);
+                    setManualSelDays([...ns].sort((a,b)=>a-b));
+                  }} style={{
+                    padding:"16px 20px",borderRadius:14,cursor:"pointer",
+                    border:`1.5px solid ${sel?"rgba(240,242,245,0.5)":"rgba(240,242,245,0.08)"}`,
+                    background:sel?"rgba(240,242,245,0.09)":"rgba(66,72,88,0.35)",
+                    backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",
+                    display:"flex",alignItems:"center",justifyContent:"space-between",
+                    transition:"all .2s",outline:"none",
+                  }}>
+                    <div style={{display:"flex",alignItems:"center",gap:14}}>
+                      <div style={{
+                        width:36,height:36,borderRadius:10,
+                        background:sel?"rgba(240,242,245,0.15)":"rgba(240,242,245,0.04)",
+                        display:"flex",alignItems:"center",justifyContent:"center",
+                        fontSize:11,fontFamily:mono,fontWeight:700,
+                        color:sel?"#F0F2F5":"#9aa0b0",letterSpacing:1,transition:"all .2s",
                       }}>
-                        <span style={{fontSize:18,flexShrink:0,width:24,textAlign:"center"}}>{icon}</span>
-                        <span style={{fontSize:13,fontWeight:on?600:400,color:on?C.tx:C.tx3,fontFamily:sans,flex:1,textAlign:"left"}}>{lang==="es"?es:en}</span>
-                        <div style={{width:18,height:18,borderRadius:"50%",border:`1px solid ${on?C.tx:C.borderL}`,background:on?C.tx:"transparent",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:on?C.bgDeep:"transparent",flexShrink:0,transition:"all .15s"}}>{on?"✓":""}</div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-            {/* Preview de ejercicios disponibles */}
-            <div style={{fontFamily:mono,fontSize:9,color:C.tx3,letterSpacing:1,marginBottom:24}}>
-              {(()=>{
-                const avail=Object.keys(EQ_MAP).filter(ex=>hasEquip(ex)).length;
-                return lang==="es"?`${avail} ejercicios disponibles con tu equipo`:`${avail} exercises available with your equipment`;
-              })()}
+                        {(lang==="es"?["L","M","X","J","V","S","D"]:["M","T","W","T","F","S","S"])[i]}
+                      </div>
+                      <span style={{fontSize:15,fontWeight:sel?700:400,color:sel?"#F0F2F5":"#b8bcc8",transition:"all .15s"}}>{d}</span>
+                    </div>
+                    <div style={{
+                      width:22,height:22,borderRadius:"50%",
+                      background:sel?"#F0F2F5":"transparent",
+                      border:`1.5px solid ${sel?"#F0F2F5":"rgba(240,242,245,0.2)"}`,
+                      display:"flex",alignItems:"center",justifyContent:"center",
+                      fontSize:12,color:sel?"#2c3040":"transparent",transition:"all .2s",flexShrink:0,
+                    }}>{sel?"✓":""}</div>
+                  </button>
+                );
+              })}
             </div>
             <div style={{display:"flex",gap:10}}>
-              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(21)}>{t.back}</Btn></div>
-              <div style={{flex:2}}><Btn onClick={()=>{setCatalogDay(0);setCatalogMuscle("");setStep(23);}}>{lang==="es"?"IR AL CATÁLOGO":"GO TO CATALOG"}</Btn></div>
+              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(20)}>{t.back}</Btn></div>
+              <div style={{flex:2}}><Btn onClick={()=>setStep(22)} disabled={manualSelDays.length!==manualDays}>{t.next}</Btn></div>
             </div>
           </>)}
 
-          {/* Step 23 — catálogo de ejercicios por día */}
+          {/* Step 22 — equipo manual con pills + burbujas */}
+          {step===22&&(<>
+            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{lang==="es"?"EQUIPAMIENTO":"EQUIPMENT"}</div>
+            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:28,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"¿Qué tienes?":"What do you have?"}</div>
+            {/* 3 pills preset */}
+            <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:24}}>
+              {[
+                {key:"full",  icon:"🏋️", es:"Gym completo",   en:"Full gym",
+                  sub:{es:"Barras, mancuernas, máquinas, poleas",en:"Barbells, dumbbells, machines, cables"},
+                  eq:["barbell","dumbbells","bench","rack","pull_up_bar","dip_bar","cable_machine","machine","leg_press_machine"]},
+                {key:"home",  icon:"🔩", es:"Home gym",        en:"Home gym",
+                  sub:{es:"Barra, mancuernas, banco, dominadas",en:"Barbell, dumbbells, bench, pull-up bar"},
+                  eq:["barbell","dumbbells","bench","rack","pull_up_bar","dip_bar"]},
+                {key:"custom",icon:"✏️", es:"Lo selecciono yo",en:"Custom",
+                  sub:{es:"Elige exactamente lo que tienes",en:"Pick exactly what you have"},
+                  eq:null},
+              ].map(({key,icon,es:esl,en:enl,sub,eq})=>{
+                const active=key!=="custom"&&JSON.stringify([...equipment].sort())===JSON.stringify([...eq].sort());
+                return(
+                  <button key={key} onClick={()=>{if(eq)setEquipment(eq);else setEquipment([]);}} style={{
+                    padding:"18px 20px",borderRadius:16,cursor:"pointer",
+                    border:`1.5px solid ${active?"rgba(240,242,245,0.5)":"rgba(240,242,245,0.08)"}`,
+                    background:active?"rgba(240,242,245,0.09)":"rgba(66,72,88,0.35)",
+                    backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",
+                    display:"flex",alignItems:"center",gap:16,outline:"none",transition:"all .2s",
+                  }}>
+                    <div style={{fontSize:28,flexShrink:0}}>{icon}</div>
+                    <div style={{flex:1,textAlign:"left"}}>
+                      <div style={{fontSize:15,fontWeight:active?700:500,color:active?"#F0F2F5":"#b8bcc8",marginBottom:2}}>{lang==="es"?esl:enl}</div>
+                      <div style={{fontSize:10,fontFamily:mono,color:"#7a8294",letterSpacing:.5}}>{lang==="es"?sub.es:sub.en}</div>
+                    </div>
+                    <div style={{width:22,height:22,borderRadius:"50%",flexShrink:0,
+                      background:active?"#F0F2F5":"transparent",
+                      border:`1.5px solid ${active?"#F0F2F5":"rgba(240,242,245,0.2)"}`,
+                      display:"flex",alignItems:"center",justifyContent:"center",
+                      fontSize:12,color:active?"#2c3040":"transparent",transition:"all .2s",
+                    }}>{active?"✓":""}</div>
+                  </button>
+                );
+              })}
+            </div>
+            {/* Burbujas custom — solo si no hay preset */}
+            {(()=>{
+              const presets=[
+                ["barbell","dumbbells","bench","rack","pull_up_bar","dip_bar","cable_machine","machine","leg_press_machine"],
+                ["barbell","dumbbells","bench","rack","pull_up_bar","dip_bar"],
+              ];
+              const isPreset=presets.some(p=>JSON.stringify([...equipment].sort())===JSON.stringify([...p].sort()));
+              if(isPreset&&equipment.length>0) return null;
+              return(
+                <div style={{marginBottom:24}}>
+                  <div style={{fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:14,textTransform:"uppercase"}}>
+                    {lang==="es"?"Toca lo que tienes":"Tap what you have"}
+                  </div>
+                  {[...new Set(EQ_OPTIONS.map(e=>e.group))].map(grp=>(
+                    <div key={grp} style={{marginBottom:18}}>
+                      <div style={{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:2,textTransform:"uppercase",marginBottom:10,opacity:.6}}>{grp}</div>
+                      <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+                        {EQ_OPTIONS.filter(e=>e.group===grp).map(({id,es:esl,en:enl,icon})=>{
+                          const on=equipment.includes(id);
+                          return(
+                            <button key={id} onClick={()=>setEquipment(on?equipment.filter(x=>x!==id):[...equipment,id])}
+                              style={{
+                                display:"flex",alignItems:"center",gap:6,padding:"9px 14px",borderRadius:50,cursor:"pointer",
+                                border:`1.5px solid ${on?"rgba(240,242,245,0.5)":"rgba(240,242,245,0.08)"}`,
+                                background:on?"rgba(240,242,245,0.12)":"rgba(66,72,88,0.3)",
+                                backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)",
+                                transition:"all .15s",outline:"none",
+                              }}>
+                              <span style={{fontSize:15}}>{icon}</span>
+                              <span style={{fontSize:11,fontWeight:on?600:400,color:on?"#F0F2F5":"#9aa0b0",fontFamily:mono,whiteSpace:"nowrap"}}>{lang==="es"?esl:enl}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                  <div style={{fontFamily:mono,fontSize:9,color:C.tx3,letterSpacing:1,marginTop:4,opacity:.7}}>
+                    {(()=>{const avail=Object.keys(EQ_MAP).filter(ex=>hasEquip(ex)).length;
+                      return lang==="es"?`${avail} ejercicios disponibles`:`${avail} exercises available`;
+                    })()}
+                  </div>
+                </div>
+              );
+            })()}
+            <div style={{display:"flex",gap:10}}>
+              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(21)}>{t.back}</Btn></div>
+              <div style={{flex:2}}><Btn onClick={()=>{setCatalogDay(0);setCatalogMuscle("");setStep(23);}}>{lang==="es"?"VER CATÁLOGO →":"CATALOG →"}</Btn></div>
+            </div>
+          </>)}
+
+          {/* Step 23 — catálogo rediseñado */}
           {step===23&&(<>
-            {/* Header: tabs de días */}
-            <div style={{marginBottom:16}}>
-              <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:10}}>{lang==="es"?"CATÁLOGO":"CATALOG"}</div>
-              <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:4}}>
+            {/* Header sticky con días */}
+            <div style={{position:"sticky",top:0,zIndex:5,background:"rgba(44,48,64,0.92)",backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",marginBottom:16,paddingBottom:12,borderBottom:"1px solid rgba(240,242,245,0.07)"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2}}>{lang==="es"?"CATÁLOGO":"CATALOG"}</div>
+                <div style={{fontSize:9,fontFamily:mono,color:C.tx3,opacity:.6}}>
+                  {manualSelDays.reduce((t,_,i)=>t+(manualRoutine[i]||[]).length,0)} {lang==="es"?"ejercicios totales":"total exercises"}
+                </div>
+              </div>
+              {/* Tabs días */}
+              <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:2}}>
                 {manualSelDays.map((dayIdx,i)=>{
                   const dayNames=lang==="es"?["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"]:["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
                   const exCount=(manualRoutine[i]||[]).length;
+                  const isSel=catalogDay===i;
                   return(
                     <button key={i} onClick={()=>{setCatalogDay(i);setCatalogMuscle("");}} style={{
-                      padding:"6px 12px",borderRadius:20,fontSize:10,fontFamily:mono,letterSpacing:1,
-                      border:`1.5px solid ${catalogDay===i?C.tx:C.borderL}`,
-                      background:catalogDay===i?C.tx:"transparent",
-                      color:catalogDay===i?C.bgDeep:C.tx3,cursor:"pointer",
-                      whiteSpace:"nowrap",flexShrink:0,transition:"all .15s",
-                    }}>{dayNames[dayIdx]}{exCount>0?` · ${exCount}`:""}</button>
+                      padding:"8px 14px",borderRadius:10,fontSize:10,fontFamily:mono,letterSpacing:1,flexShrink:0,
+                      border:`1.5px solid ${isSel?"rgba(240,242,245,0.4)":"rgba(240,242,245,0.08)"}`,
+                      background:isSel?"rgba(240,242,245,0.1)":"rgba(66,72,88,0.3)",
+                      backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)",
+                      color:isSel?"#F0F2F5":"#9aa0b0",cursor:"pointer",transition:"all .15s",
+                      display:"flex",flexDirection:"column",alignItems:"center",gap:2,
+                    }}>
+                      <span style={{fontWeight:isSel?700:400}}>{dayNames[dayIdx]}</span>
+                      <span style={{fontSize:8,opacity:.7}}>{exCount>0?`${exCount} ej`:"vacío"}</span>
+                    </button>
                   );
                 })}
               </div>
             </div>
 
-            {/* Ejercicios agregados al día actual */}
+            {/* Ejercicios ya agregados al día */}
             {(manualRoutine[catalogDay]||[]).length>0&&(
-              <div style={{marginBottom:12}}>
-                <div style={{fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:1.5,marginBottom:6}}>{lang==="es"?"AGREGADOS":"ADDED"}</div>
+              <div style={{marginBottom:16,padding:"12px 14px",borderRadius:14,background:"rgba(95,170,136,0.06)",border:"1px solid rgba(95,170,136,0.15)"}}>
+                <div style={{fontSize:8,fontFamily:mono,color:C.green,letterSpacing:2,marginBottom:8,textTransform:"uppercase"}}>{lang==="es"?"AGREGADOS AL DÍA":"ADDED TODAY"} · {(manualRoutine[catalogDay]||[]).length}</div>
                 <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
                   {(manualRoutine[catalogDay]||[]).map(ex=>(
                     <div key={ex} style={{
-                      display:"flex",alignItems:"center",gap:4,padding:"4px 10px",
-                      borderRadius:20,background:"rgba(95,170,136,.15)",
-                      border:"1px solid rgba(95,170,136,.3)",fontSize:10,fontFamily:mono,color:C.green,
+                      display:"flex",alignItems:"center",gap:5,padding:"5px 10px 5px 12px",
+                      borderRadius:20,background:"rgba(95,170,136,0.12)",
+                      border:"1px solid rgba(95,170,136,0.25)",
                     }}>
-                      {ex}
-                      <button onClick={()=>{
-                        const r=[...manualRoutine];r[catalogDay]=(r[catalogDay]||[]).filter(x=>x!==ex);setManualRoutine(r);
-                      }} style={{background:"none",border:"none",color:C.green,cursor:"pointer",fontSize:12,lineHeight:1,padding:0}}>×</button>
+                      <span style={{fontSize:11,color:C.green,textTransform:"capitalize"}}>{ex}</span>
+                      <button onClick={()=>{const r=[...manualRoutine];r[catalogDay]=(r[catalogDay]||[]).filter(x=>x!==ex);setManualRoutine(r);}}
+                        style={{background:"none",border:"none",color:"rgba(95,170,136,0.6)",cursor:"pointer",fontSize:14,lineHeight:1,padding:"0 0 0 2px",display:"flex",alignItems:"center"}}>×</button>
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Filtros por músculo */}
-            <div style={{display:"flex",gap:5,overflowX:"auto",paddingBottom:4,marginBottom:6}}>
-              {[{muscle:lang==="es"?"Todos":"All",color:C.tx3},...CATALOG].map(({muscle,color})=>(
-                <button key={muscle} onClick={()=>setCatalogMuscle(muscle===(lang==="es"?"Todos":"All")?"":muscle)} style={{
-                  padding:"4px 10px",borderRadius:16,fontSize:9,fontFamily:mono,letterSpacing:1,
-                  border:`1px solid ${(catalogMuscle===muscle||(catalogMuscle===""&&muscle===(lang==="es"?"Todos":"All")))?color:C.borderL}`,
-                  background:(catalogMuscle===muscle||(catalogMuscle===""&&muscle===(lang==="es"?"Todos":"All")))?"rgba(255,255,255,.06)":"transparent",
-                  color:(catalogMuscle===muscle||(catalogMuscle===""&&muscle===(lang==="es"?"Todos":"All")))?color:C.tx3,
-                  cursor:"pointer",whiteSpace:"nowrap",flexShrink:0,transition:"all .15s",
-                }}>{muscle}</button>
-              ))}
-            </div>
-            {/* Filtros de tipo — compound/isolation/push/pull */}
-            <div style={{display:"flex",gap:5,overflowX:"auto",paddingBottom:6,marginBottom:10}}>
-              {[
-                {k:"",l:lang==="es"?"Todo tipo":"All types",c:C.tx3},
-                {k:"compound",l:"Compound",c:C.blue},
-                {k:"isolation",l:"Isolation",c:C.purple},
-                {k:"push",l:"Push",c:C.yellow},
-                {k:"pull",l:"Pull",c:C.green},
-                {k:"beginner",l:lang==="es"?"Principiante":"Beginner",c:"#5faa88"},
-                {k:"intermediate",l:lang==="es"?"Intermedio":"Intermediate",c:C.yellow},
-                {k:"advanced",l:lang==="es"?"Avanzado":"Advanced",c:C.red},
-              ].map(({k,l,c})=>{
-                const isMec=k==="compound"||k==="isolation";
-                const isDiff=k==="beginner"||k==="intermediate"||k==="advanced";
-                const isForce=k==="push"||k==="pull";
-                const isOn=(k===""&&catalogMec===""&&catalogForce===""&&catalogDiff==="")||(isMec&&catalogMec===k)||(isForce&&catalogForce===k)||(isDiff&&catalogDiff===k);
-                return(
-                  <button key={k} onClick={()=>{
-                    if(k==="")          {setCatalogMec("");setCatalogForce("");setCatalogDiff("");}
-                    else if(isMec)      setCatalogMec(catalogMec===k?"":k);
-                    else if(isForce)    setCatalogForce(catalogForce===k?"":k);
-                    else if(isDiff)     setCatalogDiff(catalogDiff===k?"":k);
-                  }} style={{
-                    padding:"4px 10px",borderRadius:16,fontSize:9,fontFamily:mono,letterSpacing:1,
-                    border:`1px solid ${isOn?c:C.borderL}`,
-                    background:isOn?"rgba(255,255,255,.06)":"transparent",
-                    color:isOn?c:C.tx3,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0,transition:"all .15s",
-                  }}>{l}</button>
-                );
-              })}
+            {/* Filtro por grupo muscular — pills grandes con color */}
+            <div style={{marginBottom:12}}>
+              <div style={{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:8,textTransform:"uppercase",opacity:.6}}>{lang==="es"?"GRUPO MUSCULAR":"MUSCLE GROUP"}</div>
+              <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                {[{muscle:lang==="es"?"Todo":"All",color:C.tx3},...CATALOG].map(({muscle,color})=>{
+                  const active=catalogMuscle===muscle||(catalogMuscle===""&&muscle===(lang==="es"?"Todo":"All"));
+                  return(
+                    <button key={muscle} onClick={()=>setCatalogMuscle(muscle===(lang==="es"?"Todo":"All")?"":muscle)} style={{
+                      padding:"7px 14px",borderRadius:20,fontSize:10,fontFamily:mono,letterSpacing:.5,cursor:"pointer",
+                      border:`1.5px solid ${active?color+"88":"rgba(240,242,245,0.08)"}`,
+                      background:active?color+"18":"rgba(66,72,88,0.3)",
+                      color:active?color:"#9aa0b0",transition:"all .15s",outline:"none",
+                    }}>{muscle}</button>
+                  );
+                })}
+              </div>
             </div>
 
-            {/* Drawer de técnica */}
+            {/* Drawer técnica */}
             {drawerEx&&(
-              <div style={{background:C.bgDeep,borderRadius:14,padding:16,marginBottom:12,animation:"fu .2s ease"}}>
+              <div style={{background:"rgba(44,48,64,0.9)",backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",borderRadius:16,padding:16,marginBottom:12,border:"1px solid rgba(240,242,245,0.08)",animation:"fu .2s ease"}}>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
                   <div>
-                    <div style={{fontSize:13,fontWeight:700,textTransform:"capitalize",marginBottom:4}}>{drawerEx}</div>
-                    <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                      {(EX_META[drawerEx]?.p||[]).map(m=><span key={m} style={{padding:"2px 7px",borderRadius:10,fontSize:9,fontFamily:mono,background:"rgba(95,170,136,.15)",color:C.green,border:"1px solid rgba(95,170,136,.3)"}}>{m}</span>)}
-                      {(EX_META[drawerEx]?.s||[]).map(m=><span key={m} style={{padding:"2px 7px",borderRadius:10,fontSize:9,fontFamily:mono,background:"rgba(136,120,192,.12)",color:C.purple,border:"1px solid rgba(136,120,192,.25)"}}>{m}</span>)}
+                    <div style={{fontSize:13,fontWeight:700,textTransform:"capitalize",marginBottom:6}}>{drawerEx}</div>
+                    <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+                      {(EX_META[drawerEx]?.p||[]).map(m=><span key={m} style={{padding:"2px 8px",borderRadius:10,fontSize:9,fontFamily:mono,background:"rgba(95,170,136,.12)",color:C.green,border:"1px solid rgba(95,170,136,.25)"}}>{m}</span>)}
+                      {(EX_META[drawerEx]?.s||[]).map(m=><span key={m} style={{padding:"2px 8px",borderRadius:10,fontSize:9,fontFamily:mono,background:"rgba(136,120,192,.1)",color:C.purple,border:"1px solid rgba(136,120,192,.2)"}}>{m}</span>)}
                     </div>
                   </div>
-                  <button onClick={()=>setDrawerEx(null)} style={{background:"none",border:"none",color:C.tx3,fontSize:18,cursor:"pointer",padding:"0 4px"}}>×</button>
+                  <button onClick={()=>setDrawerEx(null)} style={{background:"rgba(240,242,245,0.06)",border:"1px solid rgba(240,242,245,0.1)",borderRadius:8,color:C.tx3,fontSize:16,cursor:"pointer",padding:"4px 10px"}}>×</button>
                 </div>
-                <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                <div style={{display:"flex",flexDirection:"column",gap:10}}>
                   {(EX_META[drawerEx]?.steps||[]).map((s,i)=>(
                     <div key={i} style={{display:"flex",gap:10,alignItems:"flex-start"}}>
-                      <div style={{width:20,height:20,borderRadius:"50%",background:"#424858",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,color:C.tx3,flexShrink:0,fontFamily:mono}}>{String(i+1).padStart(2,"0")}</div>
-                      <div style={{fontSize:12,color:C.tx2,lineHeight:1.5}}>{s}</div>
+                      <div style={{width:22,height:22,borderRadius:"50%",background:"rgba(240,242,245,0.06)",border:"1px solid rgba(240,242,245,0.1)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,color:C.tx3,flexShrink:0,fontFamily:mono}}>{i+1}</div>
+                      <div style={{fontSize:12,color:C.tx2,lineHeight:1.6}}>{s}</div>
                     </div>
                   ))}
                 </div>
@@ -2550,61 +2608,66 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             )}
 
             {/* Lista de ejercicios */}
-            <div style={{maxHeight:360,overflowY:"auto",display:"flex",flexDirection:"column",gap:5,marginBottom:16}}>
+            <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:20}}>
               {CATALOG.filter(g=>!catalogMuscle||g.muscle===catalogMuscle).map(group=>{
                 let filtered=group.exs.filter(ex=>hasEquip(ex));
                 if(catalogMec)   filtered=filtered.filter(ex=>EX_META[ex]?.mec===catalogMec);
                 if(catalogForce) filtered=filtered.filter(ex=>EX_META[ex]?.force===catalogForce);
                 if(catalogDiff)  filtered=filtered.filter(ex=>EX_META[ex]?.diff===catalogDiff);
                 if(filtered.length===0) return null;
-                const DIFF_COLOR={beginner:C.green,intermediate:C.yellow,advanced:C.red};
                 return(
-                <React.Fragment key={group.muscle}>
-                  {(!catalogMuscle)&&<div style={{fontSize:8,fontFamily:mono,color:group.color,letterSpacing:2,padding:"8px 0 4px",textTransform:"uppercase"}}>{group.muscle}</div>}
-                  {filtered.map(ex=>{
-                    const added=(manualRoutine[catalogDay]||[]).includes(ex);
-                    const meta=EX_META[ex];
-                    const isDrawerOpen=drawerEx===ex;
-                    return(
-                      <div key={ex} style={{
-                        borderRadius:12,border:`1px solid ${added?"rgba(95,170,136,.4)":C.borderL+"55"}`,
-                        background:added?"rgba(95,170,136,.06)":"transparent",
-                        overflow:"hidden",transition:"all .15s",
-                      }}>
-                        <div style={{display:"flex",alignItems:"center",gap:10,padding:"8px 10px"}}>
-                          <VideoThumb src={VID[ex]} size={52}/>
-                          <div style={{flex:1,minWidth:0}}>
-                            <div style={{fontSize:12,color:added?C.green:C.tx,fontWeight:added?600:500,textTransform:"capitalize",marginBottom:3}}>{ex}</div>
-                            {meta&&(
-                              <div style={{display:"flex",gap:4,flexWrap:"wrap",alignItems:"center"}}>
-                                <span style={{padding:"1px 6px",borderRadius:8,fontSize:8,fontFamily:mono,background:"rgba(95,170,136,.12)",color:C.green,border:"1px solid rgba(95,170,136,.25)"}}>{meta.p[0]}</span>
-                                <span style={{padding:"1px 6px",borderRadius:8,fontSize:8,fontFamily:mono,background:"rgba(255,255,255,.05)",color:C.tx3,border:"1px solid rgba(82,90,110,.3)"}}>{lang==="es"?meta.mec==="compound"?"Compuesto":"Aislamiento":meta.mec==="compound"?"Compound":"Isolation"}</span>
-                                <div style={{width:5,height:5,borderRadius:"50%",background:DIFF_COLOR[meta.diff]||C.tx3,flexShrink:0}}/>
-                              </div>
-                            )}
-                          </div>
-                          <div style={{display:"flex",flexDirection:"column",gap:6,alignItems:"center"}}>
-                            <div onClick={(e)=>{e.stopPropagation();setDrawerEx(isDrawerOpen?null:ex);}} style={{
-                              padding:"3px 7px",borderRadius:6,fontSize:8,fontFamily:mono,letterSpacing:.5,
-                              background:"rgba(106,143,192,.12)",border:"1px solid rgba(106,143,192,.25)",
-                              color:C.blue,cursor:"pointer",whiteSpace:"nowrap",
-                            }}>INFO</div>
-                            <div onClick={()=>{
-                              const r=[...manualRoutine];const cur=r[catalogDay]||[];
-                              r[catalogDay]=added?cur.filter(x=>x!==ex):[...cur,ex];setManualRoutine(r);
-                            }} style={{
-                              width:22,height:22,borderRadius:"50%",flexShrink:0,
-                              border:`1.5px solid ${added?C.green:C.borderL}`,
-                              background:added?C.green:"transparent",
-                              display:"flex",alignItems:"center",justifyContent:"center",
-                              fontSize:12,color:added?C.white:"transparent",transition:"all .15s",cursor:"pointer",
-                            }}>{added?"✓":""}</div>
+                  <React.Fragment key={group.muscle}>
+                    {!catalogMuscle&&(
+                      <div style={{display:"flex",alignItems:"center",gap:8,padding:"4px 0"}}>
+                        <div style={{width:3,height:16,borderRadius:2,background:group.color,flexShrink:0}}/>
+                        <div style={{fontSize:9,fontFamily:mono,color:group.color,letterSpacing:2,textTransform:"uppercase"}}>{group.muscle}</div>
+                      </div>
+                    )}
+                    {filtered.map(ex=>{
+                      const added=(manualRoutine[catalogDay]||[]).includes(ex);
+                      const meta=EX_META[ex];
+                      const DIFF_C={beginner:C.green,intermediate:C.yellow,advanced:C.red};
+                      return(
+                        <div key={ex} style={{
+                          borderRadius:14,border:`1.5px solid ${added?"rgba(95,170,136,0.35)":"rgba(240,242,245,0.07)"}`,
+                          background:added?"rgba(95,170,136,0.07)":"rgba(56,62,78,0.6)",
+                          backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)",
+                          overflow:"hidden",transition:"all .2s",
+                        }}>
+                          <div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px"}}>
+                            <VideoThumb src={VID[ex]} size={54}/>
+                            <div style={{flex:1,minWidth:0}}>
+                              <div style={{fontSize:13,color:added?C.green:"#D0D4DE",fontWeight:added?600:500,textTransform:"capitalize",marginBottom:4}}>{ex}</div>
+                              {meta&&(
+                                <div style={{display:"flex",gap:5,flexWrap:"wrap",alignItems:"center"}}>
+                                  <span style={{padding:"2px 8px",borderRadius:8,fontSize:8,fontFamily:mono,background:"rgba(95,170,136,.1)",color:C.green,border:"1px solid rgba(95,170,136,.2)"}}>{meta.p[0]}</span>
+                                  <span style={{padding:"2px 8px",borderRadius:8,fontSize:8,fontFamily:mono,background:"rgba(240,242,245,.05)",color:"#8a90a0",border:"1px solid rgba(240,242,245,.08)"}}>{lang==="es"?meta.mec==="compound"?"Compuesto":"Aislamiento":meta.mec==="compound"?"Compound":"Isolation"}</span>
+                                  <div style={{width:6,height:6,borderRadius:"50%",background:DIFF_C[meta.diff]||C.tx3}}/>
+                                </div>
+                              )}
+                            </div>
+                            <div style={{display:"flex",flexDirection:"column",gap:6,alignItems:"center",flexShrink:0}}>
+                              <button onClick={(e)=>{e.stopPropagation();setDrawerEx(drawerEx===ex?null:ex);}} style={{
+                                padding:"4px 8px",borderRadius:8,fontSize:8,fontFamily:mono,
+                                background:"rgba(106,143,192,0.1)",border:"1px solid rgba(106,143,192,0.2)",
+                                color:C.blue,cursor:"pointer",letterSpacing:.5,
+                              }}>INFO</button>
+                              <button onClick={()=>{
+                                const r=[...manualRoutine];const cur=r[catalogDay]||[];
+                                r[catalogDay]=added?cur.filter(x=>x!==ex):[...cur,ex];setManualRoutine(r);
+                              }} style={{
+                                width:28,height:28,borderRadius:"50%",flexShrink:0,
+                                border:`1.5px solid ${added?"rgba(95,170,136,0.6)":"rgba(240,242,245,0.15)"}`,
+                                background:added?"rgba(95,170,136,0.2)":"transparent",
+                                display:"flex",alignItems:"center",justifyContent:"center",
+                                fontSize:14,color:added?C.green:"#6a7080",transition:"all .2s",cursor:"pointer",
+                              }}>{added?"✓":"+"}</button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </React.Fragment>
+                      );
+                    })}
+                  </React.Fragment>
                 );
               })}
             </div>
