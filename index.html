@@ -3053,9 +3053,14 @@ function StatsScreen({logs,routine,lang,profile}){
           <div style={{fontSize:11,fontFamily:mono,color:C.tx3,letterSpacing:1,marginBottom:4,textTransform:"uppercase"}}>{prView.name}</div>
 
           {/* 1RM grande */}
-          <div style={{display:"flex",alignItems:"baseline",gap:6,marginBottom:14}}>
+          <div style={{display:"flex",alignItems:"baseline",gap:6,marginBottom:6}}>
             <div style={{fontSize:52,fontWeight:900,letterSpacing:-3,color:C.tx,lineHeight:1,fontFamily:sans}}>{prView.best1rm}</div>
             <div style={{fontSize:14,fontFamily:mono,color:C.tx3,fontWeight:400}}>kg<br/><span style={{fontSize:9}}>1RM est.</span></div>
+          </div>
+          <div style={{fontSize:9,fontFamily:mono,color:C.tx3,opacity:.55,letterSpacing:.5,marginBottom:14}}>
+            {es
+              ?"peso × (1 + reps/30) — cuánto podrías levantar una sola vez"
+              :"weight × (1 + reps/30) — your estimated single max lift"}
           </div>
 
           {/* Detalle del set */}
