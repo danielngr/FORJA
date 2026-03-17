@@ -152,11 +152,32 @@ function onCanvasClick(e){
   const my=-((e.clientY-rect.top)/cv.height)*2+1;
   const ray=new THREE.Raycaster();
   ray.setFromCamera({x:mx,y:my},cam);
+  // Only raycast against front mesh (not back/backBody clones)
   const meshes=[];
-  obj.traverse(c=>{if(c.isMesh)meshes.push(c);});
+  obj.traverse(c=>{if(c.isMesh&&!c._isBack&&!c._isBackBody)meshes.push(c);});
   const hits=ray.intersectObjects(meshes,false);
   if(!hits.length) return;
-  const pt=hits[0].point;
+  // Filter by face normal — only accept faces whose normal points toward camera
+  // This ensures clicks from back only register back faces, from front only front faces
+  const camDir=new THREE.Vector3();
+  cam.getWorldDirection(camDir); // points INTO screen (away from camera)
+  const lookingFromBack=Math.cos(ry)<0;
+  let validHit=null;
+  for(const hit of hits){
+    const face=hit.face;
+    if(!face) continue;
+    // Transform face normal to world space
+    const norm=face.normal.clone().transformDirection(hit.object.matrixWorld);
+    // Normal dot camDir: if positive → face pointing same way as camera → back face from camera POV
+    const dot=norm.dot(camDir);
+    // From front: we want faces with dot < 0 (facing camera)
+    // From back: we want faces with dot > 0 (facing camera from back = originally back faces)
+    if(lookingFromBack ? dot>0.1 : dot<-0.1){
+      validHit=hit; break;
+    }
+  }
+  if(!validHit) return;
+  const pt=validHit.point;
   const wb=new THREE.Box3().setFromObject(obj);
   const yMin=wb.min.y, yH=wb.max.y-wb.min.y||1;
   const xMaxAbs=Math.max(Math.abs(wb.min.x),Math.abs(wb.max.x))||1;
@@ -211,8 +232,10 @@ function paintDiag(){
       let r=0.18, g=0.20, b=0.24, maxS=0;
       Object.entries(MUSCLES).forEach(([,m])=>{
         m.samples.forEach(s=>{
-          const side=(s.zn>0.1&&zn<-0.1)||(s.zn<-0.1&&zn>0.1)?0:1;
-          const score=G(yn,s.yn,0.035)*G(xn,s.xn,0.055)*side;
+          // Use zn consistency: samples and vertices should be on same side of body
+          const sameSide=(Math.abs(s.zn)<0.1)||(Math.abs(zn)<0.1)||
+                         (s.zn>0&&zn>-0.15)||(s.zn<0&&zn<0.15) ? 1:0;
+          const score=G(yn,s.yn,0.035)*G(xn,s.xn,0.055)*sameSide;
           if(score>maxS){
             maxS=score;
             const k=Math.min(1,score*3.5);
