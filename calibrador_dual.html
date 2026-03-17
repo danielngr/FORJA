@@ -187,7 +187,11 @@ function paintDiag(){
   if(!obj) return;
   if(!diagMode){
     obj.traverse(c=>{
-      if(c.isMesh) c.material=new THREE.MeshStandardMaterial({color:0xffffff,metalness:1,roughness:0.03,envMap:sc.environment||null});
+      if(c.isMesh&&!c._isBack&&!c._isBackBody)
+        c.material=new THREE.MeshStandardMaterial({color:0xffffff,metalness:1,roughness:0.03,side:THREE.FrontSide,envMap:sc.environment||null});
+      if(c._isBackBody)
+        c.material=new THREE.MeshStandardMaterial({color:0xffffff,metalness:1,roughness:0.03,side:THREE.BackSide,envMap:sc.environment||null});
+      if(c._isBack) c.visible=false;
     });
     return;
   }
@@ -196,9 +200,10 @@ function paintDiag(){
   const xMaxAbs=Math.max(Math.abs(wb.min.x),Math.abs(wb.max.x))||1;
   const zMaxAbs=Math.max(Math.abs(wb.min.z),Math.abs(wb.max.z),0.01);
   obj.traverse(c=>{
-    if(!c.isMesh) return;
+    if(!c.isMesh||c._isBack||c._isBackBody) return;
     const geo=c.geometry, pos=geo.attributes.position; if(!pos) return;
     const col=new Float32Array(pos.count*3);
+    const colB=new Float32Array(pos.count*4);
     for(let i=0;i<pos.count;i++){
       const wy=pos.getY(i)*obj.scale.y+obj.position.y;
       const wx=pos.getX(i)*obj.scale.x, wz=pos.getZ(i)*obj.scale.z;
@@ -216,9 +221,33 @@ function paintDiag(){
         });
       });
       col[i*3]=r; col[i*3+1]=g; col[i*3+2]=b;
+      // back RGBA: alpha=1 only for colored muscle pixels
+      colB[i*4]=r; colB[i*4+1]=g; colB[i*4+2]=b;
+      colB[i*4+3]=(r>0.3||g>0.3||b>0.3)?1.0:0.0;
     }
     geo.setAttribute('color',new THREE.BufferAttribute(col,3));
     c.material=new THREE.MeshBasicMaterial({vertexColors:true,side:THREE.FrontSide});
+    // Update backBody (chrome) and backHeat (colored)
+    if(c._backBodyMesh){
+      c._backBodyMesh.material=new THREE.MeshStandardMaterial({
+        color:0xffffff,metalness:1.0,roughness:0.03,
+        envMap:sc.environment||null,envMapIntensity:2.5,side:THREE.BackSide
+      });
+    }
+    if(c._backMesh){
+      c._backMesh.visible=true;
+      if(!c._backGeo){
+        c._backGeo=new THREE.BufferGeometry();
+        c._backGeo.setAttribute('position',geo.attributes.position);
+        c._backMesh.geometry=c._backGeo;
+      }
+      c._backGeo.setAttribute('color',new THREE.BufferAttribute(colB,4));
+      c._backMesh.material=new THREE.MeshBasicMaterial({
+        vertexColors:true,side:THREE.BackSide,
+        transparent:true,alphaTest:0.5,depthTest:true,depthWrite:false
+      });
+      c._backMesh.renderOrder=1;
+    }
   });
 }
 
@@ -279,11 +308,27 @@ function loadModel(){
       const s=3.6/Math.max(...box.getSize(new THREE.Vector3()).toArray());
       loaded.scale.setScalar(s);
       loaded.position.sub(box.getCenter(new THREE.Vector3()).multiplyScalar(s));
-      loaded.traverse(c=>{
-        if(c.isMesh) c.material=new THREE.MeshStandardMaterial({
+      // Collect front meshes first, THEN add back meshes (avoid traverse mutation bug)
+      const frontMeshes=[];
+      loaded.traverse(c=>{if(c.isMesh)frontMeshes.push(c);});
+      frontMeshes.forEach(c=>{
+        c.material=new THREE.MeshStandardMaterial({
           color:0xffffff, metalness:1.0, roughness:0.03,
-          envMap:sc.environment||null, envMapIntensity:2.5
+          envMap:sc.environment||null, envMapIntensity:2.5, side:THREE.FrontSide
         });
+        // BackBody — chrome BackSide silhouette
+        const bBody=new THREE.Mesh(c.geometry,new THREE.MeshStandardMaterial({
+          color:0xffffff,metalness:1.0,roughness:0.03,
+          envMap:sc.environment||null,envMapIntensity:2.5,side:THREE.BackSide
+        }));
+        bBody._isBackBody=true; bBody.renderOrder=0;
+        c._backBodyMesh=bBody; loaded.add(bBody);
+        // BackHeat — diagnostic colored overlay
+        const bHeat=new THREE.Mesh(new THREE.BufferGeometry(),
+          new THREE.MeshBasicMaterial({color:0xb0b4c0,side:THREE.BackSide,
+            transparent:true,alphaTest:0.5,depthTest:true,depthWrite:false}));
+        bHeat._isBack=true; bHeat.renderOrder=1; bHeat.visible=false;
+        c._backMesh=bHeat; c._backGeo=null; loaded.add(bHeat);
       });
       sc.add(loaded); obj=loaded;
       document.getElementById('status').textContent='LISTO ✓';
