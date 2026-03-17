@@ -1343,7 +1343,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   const saveLog=(id,kg,rp,exName)=>{
     // For bodyweight exercises with kg=0, use bodyweight from profile
     const effKg=(+kg>0)?+kg:(BW_EXERCISES.has(exName?.toLowerCase()?.trim())?(+profile?.weight||75):0);
-    if(!effKg&&!rp)return;
+    if((!effKg||effKg<=0)&&(!rp||+rp<=0))return;
     const nl={...logs};
     if(!nl[id])nl[id]=[];
     const rm1=epley(effKg,rp);
@@ -3012,7 +3012,7 @@ function StatsScreen({logs,routine,lang,profile}){
     "isquiotibiales":C.yellow,"glúteo mayor":C.purple,"deltoides anterior":C.blue,
     "bíceps braquial":C.green,"tríceps braquial":C.yellow};
 
-  if(prs.length===0&&weekVol===0) return(
+  if(prs.length===0&&weekVol===0&&Object.keys(recovery).length===0) return(
     <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:300,gap:12}}>
       <div style={{fontSize:32,opacity:.3}}>📊</div>
       <div style={{fontFamily:mono,fontSize:10,color:C.tx3,letterSpacing:2,textAlign:"center"}}>
