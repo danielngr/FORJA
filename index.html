@@ -1385,12 +1385,13 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
 
   return(
     <div style={{minHeight:"100vh",background:C.bg,color:C.tx,fontFamily:sans}}>
-      <div style={{background:C.bg,borderBottom:`1px solid ${C.borderL}`,padding:"14px 18px 10px",position:"sticky",top:0,zIndex:10}}>
+      <div style={{background:"rgba(44,48,64,0.85)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",borderBottom:`1px solid rgba(240,242,245,0.08)`,padding:"14px 18px 10px",position:"sticky",top:0,zIndex:10}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
           <div>
             <div style={{fontSize:11,fontFamily:mono,color:C.tx3,letterSpacing:3,marginBottom:2,fontWeight:600}}>FORJA</div>
             <div style={{fontSize:24,fontWeight:900,letterSpacing:-1,lineHeight:1,textTransform:"uppercase"}}>{day?day.l:t.rest}</div>
-            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:1.5,marginTop:2}}>{DF[lang][sel].toUpperCase()}</div>
+            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:1.5,marginTop:2}}>{DF[lang][sel].toUpperCase()} {day?`· ${day.ex.length} ${lang==="es"?"ejercicios":"exercises"}`:""}
+            </div>
           </div>
           <div style={{display:"flex",alignItems:"flex-start",gap:10,paddingTop:2}}>
             {day&&exs.length>0&&(
@@ -2109,7 +2110,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               <div style={{flex:2}}><Btn onClick={()=>setStep(5)} disabled={!level}>{t.next}</Btn></div>
             </div>
           </>)}
-          {step===4&&(<>
+          {step===4&&mode!=="auto"&&(<>
             <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{lang==="es"?"UNIDADES":"UNITS"}</div>
             <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:32,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"Sistema de medida":"Measurement"}</div>
             <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:32}}>
@@ -2180,28 +2181,53 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>
               {lang==="es"?"QUÉ DÍAS":"WHICH DAYS"}
             </div>
-            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:28,lineHeight:1,textTransform:"uppercase"}}>
+            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:8,lineHeight:1,textTransform:"uppercase"}}>
               {lang==="es"?"¿Qué días entrenas?":"Which days?"}
             </div>
-            <div style={{display:"flex",gap:8,justifyContent:"center",marginBottom:8}}>
-              {(lang==="es"?["L","M","X","J","V","S","D"]:["M","T","W","T","F","S","S"]).map((d,i)=>(
-                <button key={i} onClick={()=>{
-                  const ns=selDays.includes(i)?selDays.filter(x=>x!==i):[...selDays,i].slice(0,days);
-                  setSelDays(ns);
-                }} style={{
-                  width:42,height:52,borderRadius:10,
-                  border:`1.5px solid ${selDays.includes(i)?C.tx:C.borderL}`,
-                  background:selDays.includes(i)?C.tx:"transparent",
-                  color:selDays.includes(i)?C.bgDeep:C.tx3,
-                  fontSize:13,fontWeight:700,fontFamily:mono,cursor:"pointer",
-                  transition:"all .15s"
-                }}>{d}</button>
-              ))}
+            <div style={{fontFamily:mono,fontSize:10,color:C.tx3,letterSpacing:1,marginBottom:32,opacity:.7}}>
+              {lang==="es"?`Selecciona ${days} días`:`Select ${days} days`}
             </div>
-            <div style={{fontFamily:mono,fontSize:9,color:C.tx3,letterSpacing:1.5,textAlign:"center",marginBottom:28}}>
-              {selDays.length}/{days} {lang==="es"?"días seleccionados":"days selected"}
+            <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:32}}>
+              {(lang==="es"?["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"]:["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]).map((d,i)=>{
+                const sel=selDays.includes(i);
+                return(
+                  <button key={i} onClick={()=>{
+                    const ns=sel?selDays.filter(x=>x!==i):[...selDays,i].slice(0,days);
+                    setSelDays(ns);
+                  }} style={{
+                    padding:"16px 20px",borderRadius:14,cursor:"pointer",
+                    border:`1.5px solid ${sel?"rgba(240,242,245,0.5)":"rgba(240,242,245,0.08)"}`,
+                    background:sel?"rgba(240,242,245,0.09)":"rgba(66,72,88,0.35)",
+                    backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",
+                    display:"flex",alignItems:"center",justifyContent:"space-between",
+                    transition:"all .2s",outline:"none",
+                  }}>
+                    <div style={{display:"flex",alignItems:"center",gap:14}}>
+                      <div style={{
+                        width:36,height:36,borderRadius:10,
+                        background:sel?"rgba(240,242,245,0.15)":"rgba(240,242,245,0.04)",
+                        display:"flex",alignItems:"center",justifyContent:"center",
+                        fontSize:11,fontFamily:mono,fontWeight:700,
+                        color:sel?"#F0F2F5":"#9aa0b0",letterSpacing:1,
+                        transition:"all .2s",
+                      }}>
+                        {(lang==="es"?["L","M","X","J","V","S","D"]:["M","T","W","T","F","S","S"])[i]}
+                      </div>
+                      <span style={{fontSize:15,fontWeight:sel?700:400,color:sel?"#F0F2F5":"#b8bcc8",transition:"all .15s"}}>{d}</span>
+                    </div>
+                    <div style={{
+                      width:22,height:22,borderRadius:"50%",
+                      background:sel?"#F0F2F5":"transparent",
+                      border:`1.5px solid ${sel?"#F0F2F5":"rgba(240,242,245,0.2)"}`,
+                      display:"flex",alignItems:"center",justifyContent:"center",
+                      fontSize:12,color:sel?"#2c3040":"transparent",
+                      transition:"all .2s",flexShrink:0,
+                    }}>{sel?"✓":""}</div>
+                  </button>
+                );
+              })}
             </div>
-            <div style={{display:"flex",gap:10,marginTop:8}}>
+            <div style={{display:"flex",gap:10,marginTop:"auto"}}>
               <div style={{flex:1}}><Btn ghost onClick={()=>setStep(6)}>{t.back}</Btn></div>
               <div style={{flex:2}}><Btn onClick={finish} disabled={selDays.length!==days}>{t.go}</Btn></div>
             </div>
