@@ -2592,12 +2592,11 @@ function MuscleHeatmap({muscleVol,lang}){
         let r,g,b;
         if(h<0.03){ r=0.68;g=0.70;b=0.74; }
         else{
-          // Color ramp: chrome warm → orange → red-orange → deep red
-          // Matches the Chrome viewer heatmap appearance
+          // Recovery color ramp: green (recovered) → orange → red (fatigued)
           const t=Math.min(1,Math.pow(h,0.45));
-          if(t<0.25){const s=t/0.25; r=0.90+s*0.05;g=0.70-s*0.10;b=0.30-s*0.20;}
-          else if(t<0.55){const s=(t-0.25)/0.30; r=0.96;g=0.60-s*0.32;b=0.10-s*0.05;}
-          else if(t<0.80){const s=(t-0.55)/0.25; r=0.97-s*0.02;g=0.28-s*0.16;b=0.05;}
+          if(t<0.25){const s=t/0.25; r=0.20+s*0.40;g=0.75-s*0.10;b=0.30-s*0.15;}
+          else if(t<0.55){const s=(t-0.25)/0.30; r=0.60+s*0.36;g=0.65-s*0.37;b=0.15-s*0.05;}
+          else if(t<0.80){const s=(t-0.55)/0.25; r=0.96;g=0.28-s*0.16;b=0.10;}
           else{const s=(t-0.80)/0.20; r=0.95;g=0.12-s*0.10;b=0.04-s*0.03;}
         }
         colF[i*3]=r; colF[i*3+1]=g; colF[i*3+2]=b;
@@ -2832,6 +2831,60 @@ function MuscleHeatmap({muscleVol,lang}){
   );
 }
 
+// ── RECOVERY SCORE ─────────────────────────────────────────────────────
+// Returns {muscle: {score:0-1, hoursLeft:N}} where 1.0 = fully recovered
+const RECOVERY_HOURS={
+  "pectoral mayor":48,"tríceps braquial":48,"deltoides anterior":48,
+  "deltoides posterior":48,"bíceps braquial":60,"braquial":60,
+  "braquiorradial":60,"trapecio superior":60,"dorsal ancho":60,
+  "cuádriceps":72,"isquiotibiales":72,"glúteo mayor":72,"gastrocnemio":48,
+  "core (transverso abdominal)":24,
+};
+function computeRecovery(logs,routine){
+  const now=Date.now();
+  // For each muscle, find the most recent log entry and compute fatigue decay
+  const lastHit={};  // muscle → {ts, vol}
+  Object.entries(logs).forEach(([id,entries])=>{
+    entries.forEach(e=>{
+      if(!e.d) return;
+      let nm=id;
+      if(routine) routine.forEach(d=>{if(!d)return;(d.ex||[]).forEach(ex=>{if(ex.id===id)nm=ex.e;});});
+      const md=EXERCISE_MUSCLE_MAP[nm?.toLowerCase()?.trim()];
+      if(!md) return;
+      const vol=(+e.w||0)*(+e.r||0); if(vol<=0) return;
+      const ts=new Date(e.d).getTime();
+      md.p.forEach(m=>{
+        if(!lastHit[m]||ts>lastHit[m].ts) lastHit[m]={ts,vol};
+      });
+      md.s.forEach(m=>{
+        const sv=vol*0.35;
+        if(!lastHit[m]||ts>lastHit[m].ts) lastHit[m]={ts,vol:sv};
+      });
+    });
+  });
+  const result={};
+  Object.entries(lastHit).forEach(([m,{ts}])=>{
+    const hrs=RECOVERY_HOURS[m]||48;
+    const elapsedHrs=(now-ts)/3600000;
+    const score=Math.min(1, elapsedHrs/hrs);
+    const hoursLeft=Math.max(0, Math.round(hrs-elapsedHrs));
+    result[m]={score, hoursLeft};
+  });
+  return result;
+}
+
+// Recovery → heatmap input: fatigued muscles show as red/orange, recovered as green
+function recoveryToHeatmap(recovery){
+  const mv={};
+  Object.entries(recovery).forEach(([m,{score}])=>{
+    // score=1 (recovered)=no heat, score=0 (fresh fatigue)=max heat
+    // We invert so fatigue=high value in heatmap
+    const fatigue=1-score;
+    if(fatigue>0.05) mv[m]=fatigue;
+  });
+  return mv;
+}
+
 function StatsScreen({logs,routine,lang,profile}){
   const C={bg:"#383e4e",bgDeep:"#2c3040",card:"#424858",border:"#525a6e",borderL:"#4a5264",
     tx:"#F0F2F5",tx2:"#C8CDD8",tx3:"#7a8294",
@@ -2886,6 +2939,11 @@ function StatsScreen({logs,routine,lang,profile}){
   const muscleVol=computeWeeklyMuscleVol(logs,routine);
   const mvArr=Object.entries(muscleVol).sort((a,b)=>b[1]-a[1]);
   const totalMV=mvArr.reduce((s,[,v])=>s+v,0)||1;
+  // Recovery score por músculo
+  const recovery=computeRecovery(logs,routine);
+  const recoveryArr=Object.entries(recovery).sort((a,b)=>a[1].score-b[1].score); // most fatigued first
+  // Heatmap driven by fatigue (not weekly vol)
+  const heatmapInput=Object.keys(recovery).length>0?recoveryToHeatmap(recovery):muscleVol;
 
   // Mes actual
   const monthStr=today.toISOString().slice(0,7);
@@ -3046,12 +3104,43 @@ function StatsScreen({logs,routine,lang,profile}){
         </div>
       )}
 
+      {/* ── RECOVERY PANEL ──────────────────────────────────────────── */}
+      {recoveryArr.length>0&&(
+        <div style={{background:C.card,borderRadius:16,padding:"14px 16px",marginBottom:12,border:`1px solid ${C.borderL}`}}>
+          <div style={{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12,textTransform:"uppercase"}}>
+            ⚡ {es?"RECUPERACIÓN MUSCULAR":"MUSCLE RECOVERY"}
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            {recoveryArr.map(([m,{score,hoursLeft}])=>{
+              const pct=Math.round(score*100);
+              const color=score>=0.75?C.green:score>=0.40?"#c0a870":C.red;
+              const label=score>=0.75
+                ?(es?"Listo":"Ready")
+                :score>=0.40
+                  ?(es?`~${hoursLeft}h restantes`:`~${hoursLeft}h left`)
+                  :(es?`~${hoursLeft}h restantes`:`~${hoursLeft}h left`);
+              return(
+                <div key={m}>
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:3,alignItems:"center"}}>
+                    <div style={{fontSize:10,color:C.tx2,textTransform:"capitalize",fontFamily:mono}}>{m}</div>
+                    <div style={{fontSize:9,fontFamily:mono,color,fontWeight:600}}>{label} · {pct}%</div>
+                  </div>
+                  <div style={{height:4,background:C.border,borderRadius:2}}>
+                    <div style={{height:"100%",width:`${pct}%`,background:color,borderRadius:2,transition:"width .6s"}}/>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* ── MUSCLE HEATMAP ──────────────────────────────────────────── */}
       <div style={{background:C.card,borderRadius:16,padding:"16px",marginBottom:12,border:`1px solid ${C.borderL}`,display:"flex",flexDirection:"column",alignItems:"center"}}>
         <div style={{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12,textTransform:"uppercase",alignSelf:"flex-start"}}>
-          💪 {es?"MÚSCULOS ESTA SEMANA":"MUSCLES THIS WEEK"}
+          {recoveryArr.length>0?(es?"FATIGA MUSCULAR":"MUSCLE FATIGUE"):(es?"MÚSCULOS ESTA SEMANA":"MUSCLES THIS WEEK")}
         </div>
-        <MuscleHeatmap muscleVol={muscleVol} totalVol={totalMV} lang={lang}/>
+        <MuscleHeatmap muscleVol={heatmapInput} totalVol={totalMV} lang={lang}/>
         {totalMV===0&&(
           <div style={{fontSize:10,fontFamily:mono,color:C.tx3,marginTop:8,letterSpacing:1}}>
             {es?"entrena para ver el mapa activo":"train to see the active map"}
