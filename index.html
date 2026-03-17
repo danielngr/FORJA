@@ -1913,8 +1913,16 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
     const key=`${days}${level}`;
     const splits=RAW[key]||RAW[`${days}beg`]||Object.values(RAW)[0];
     const sd=selDays.length===days?selDays:[0,1,2,3,4,5].slice(0,days);
-    const r=buildRoutine7(splits,sd,goal);
-    const pf={lang,goal,level,days,age,weight,height,units,selDays:sd,gender};
+    // Filter exercises by available equipment
+    const filteredSplits=splits.map(day=>({
+      ...day,
+      ex:day.ex.filter(ex=>{
+        const needed=EQ_MAP[ex.e?.toLowerCase()]||[];
+        return needed.length===0||needed.every(e=>equipment.includes(e));
+      })
+    }));
+    const r=buildRoutine7(filteredSplits,sd,goal);
+    const pf={lang,goal,level,days,age,weight,height,units,selDays:sd,gender,equipment};
     FStore.saveProfile(pf,r);
     sp(pf);sr(r);setStep(99);
   };
@@ -2174,9 +2182,114 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             </div>
             <div style={{display:"flex",gap:10,marginTop:32}}>
               <div style={{flex:1}}><Btn ghost onClick={()=>setStep(5)}>{t.back}</Btn></div>
-              <div style={{flex:2}}><Btn onClick={()=>setStep(7)} disabled={!days}>{t.next}</Btn></div>
+              <div style={{flex:2}}><Btn onClick={()=>setStep(8)} disabled={!days}>{t.next}</Btn></div>
             </div>
           </>)}
+          {/* ── STEP 8 — EQUIPO ─────────────────────────────────────── */}
+          {step===8&&(<>
+            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>
+              {lang==="es"?"EQUIPAMIENTO":"EQUIPMENT"}
+            </div>
+            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:28,lineHeight:1,textTransform:"uppercase"}}>
+              {lang==="es"?"¿Qué tienes?":"What do you have?"}
+            </div>
+
+            {/* ── 3 PILLS PRESET ── */}
+            <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:24}}>
+              {[
+                {key:"full",  icon:"🏋️", es:"Gym completo",  en:"Full gym",    sub:{es:"Barras, mancuernas, máquinas, poleas",en:"Barbells, dumbbells, machines, cables"},
+                  eq:["barbell","dumbbells","bench","rack","pull_up_bar","dip_bar","cable_machine","machine","leg_press_machine"]},
+                {key:"home",  icon:"🔩", es:"Home gym",       en:"Home gym",    sub:{es:"Barra, mancuernas, banco, dominadas",en:"Barbell, dumbbells, bench, pull-up bar"},
+                  eq:["barbell","dumbbells","bench","rack","pull_up_bar","dip_bar"]},
+                {key:"custom",icon:"✏️", es:"Lo selecciono yo",en:"Custom",     sub:{es:"Elige exactamente lo que tienes",en:"Pick exactly what you have"},
+                  eq:null},
+              ].map(({key,icon,es:esl,en:enl,sub,eq})=>{
+                const active=key!=="custom"&&JSON.stringify([...equipment].sort())===JSON.stringify([...eq].sort());
+                return(
+                  <button key={key} onClick={()=>{
+                    if(eq) setEquipment(eq);
+                    if(key==="custom") setEquipment([]);
+                  }} style={{
+                    padding:"18px 20px",borderRadius:16,cursor:"pointer",
+                    border:`1.5px solid ${active?"rgba(240,242,245,0.5)":"rgba(240,242,245,0.08)"}`,
+                    background:active?"rgba(240,242,245,0.09)":"rgba(66,72,88,0.35)",
+                    backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",
+                    display:"flex",alignItems:"center",gap:16,outline:"none",transition:"all .2s",
+                  }}>
+                    <div style={{fontSize:28,flexShrink:0}}>{icon}</div>
+                    <div style={{textAlign:"left",flex:1}}>
+                      <div style={{fontSize:15,fontWeight:active?700:500,color:active?"#F0F2F5":"#b8bcc8",marginBottom:2,transition:"all .15s"}}>
+                        {lang==="es"?esl:enl}
+                      </div>
+                      <div style={{fontSize:10,fontFamily:mono,color:"#7a8294",letterSpacing:.5}}>
+                        {lang==="es"?sub.es:sub.en}
+                      </div>
+                    </div>
+                    <div style={{width:22,height:22,borderRadius:"50%",flexShrink:0,
+                      background:active?"#F0F2F5":"transparent",
+                      border:`1.5px solid ${active?"#F0F2F5":"rgba(240,242,245,0.2)"}`,
+                      display:"flex",alignItems:"center",justifyContent:"center",
+                      fontSize:12,color:active?"#2c3040":"transparent",transition:"all .2s",
+                    }}>{active?"✓":""}</div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* ── BURBUJAS CUSTOM (solo si no hay preset activo) ── */}
+            {(()=>{
+              const presets=[
+                ["barbell","dumbbells","bench","rack","pull_up_bar","dip_bar","cable_machine","machine","leg_press_machine"],
+                ["barbell","dumbbells","bench","rack","pull_up_bar","dip_bar"],
+              ];
+              const isPreset=presets.some(p=>JSON.stringify([...equipment].sort())===JSON.stringify([...p].sort()));
+              if(isPreset&&equipment.length>0) return null;
+              return(
+                <div style={{marginBottom:24}}>
+                  <div style={{fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:14,textTransform:"uppercase"}}>
+                    {lang==="es"?"Toca lo que tienes":"Tap what you have"}
+                  </div>
+                  {[...new Set(EQ_OPTIONS.map(e=>e.group))].map(grp=>(
+                    <div key={grp} style={{marginBottom:16}}>
+                      <div style={{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:2,textTransform:"uppercase",marginBottom:10,opacity:.6}}>{grp}</div>
+                      <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+                        {EQ_OPTIONS.filter(e=>e.group===grp).map(({id,es:esl,en:enl,icon})=>{
+                          const on=equipment.includes(id);
+                          return(
+                            <button key={id} onClick={()=>setEquipment(on?equipment.filter(x=>x!==id):[...equipment,id])}
+                              style={{
+                                display:"flex",alignItems:"center",gap:6,
+                                padding:"9px 14px",borderRadius:50,cursor:"pointer",
+                                border:`1.5px solid ${on?"rgba(240,242,245,0.5)":"rgba(240,242,245,0.08)"}`,
+                                background:on?"rgba(240,242,245,0.12)":"rgba(66,72,88,0.3)",
+                                backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)",
+                                transition:"all .15s",outline:"none",
+                              }}>
+                              <span style={{fontSize:15}}>{icon}</span>
+                              <span style={{fontSize:11,fontWeight:on?600:400,color:on?"#F0F2F5":"#9aa0b0",fontFamily:mono,whiteSpace:"nowrap"}}>
+                                {lang==="es"?esl:enl}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                  <div style={{fontFamily:mono,fontSize:9,color:C.tx3,letterSpacing:1,marginTop:8,opacity:.7}}>
+                    {(()=>{const avail=Object.keys(EQ_MAP).filter(ex=>hasEquip(ex)).length;
+                      return lang==="es"?`${avail} ejercicios disponibles`:`${avail} exercises available`;
+                    })()}
+                  </div>
+                </div>
+              );
+            })()}
+
+            <div style={{display:"flex",gap:10,marginTop:8}}>
+              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(6)}>{t.back}</Btn></div>
+              <div style={{flex:2}}><Btn onClick={()=>setStep(7)}>{t.next}</Btn></div>
+            </div>
+          </>)}
+
           {step===7&&(<>
             <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>
               {lang==="es"?"QUÉ DÍAS":"WHICH DAYS"}
@@ -2228,7 +2341,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               })}
             </div>
             <div style={{display:"flex",gap:10,marginTop:"auto"}}>
-              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(6)}>{t.back}</Btn></div>
+              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(8)}>{t.back}</Btn></div>
               <div style={{flex:2}}><Btn onClick={finish} disabled={selDays.length!==days}>{t.go}</Btn></div>
             </div>
           </>)}
