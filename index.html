@@ -558,17 +558,35 @@ function adaptExercise(exName, userEquipment){
 
 function buildCelebRoutine(celeb, userEquipment, selDays){
   const r = Array(7).fill(null);
-  const splitKeys = Object.keys(celeb.routine.exercises);
-  const daySeq = selDays.map((_,i)=>splitKeys[i%splitKeys.length]);
+  const exercises = celeb.routine ? celeb.routine.exercises : {};
+  const splitKeys = Object.keys(exercises);
+  if(splitKeys.length === 0) return r;
+
+  // Celebrity-specific series and reps per split
+  const CELEB_PARAMS = {
+    arnold:    {Push:{s:5,r:"10-12"},Pull:{s:5,r:"8-12"},Legs:{s:5,r:"10-15"}},
+    hemsworth: {Upper:{s:4,r:"8-12"},Lower:{s:4,r:"10-15"},Full:{s:4,r:"10-15"}},
+    rock:      {Push:{s:5,r:"12-15"},Pull:{s:5,r:"10-12"},Legs:{s:6,r:"12-15"}},
+    goggins:   {Full:{s:5,r:"max"}},
+    cavill:    {Push:{s:4,r:"6-10"},Pull:{s:4,r:"6-10"},Legs:{s:4,r:"8-12"}},
+    ronaldo:   {Full:{s:4,r:"12-15"}},
+    stallone:  {Upper:{s:5,r:"10-15"},Lower:{s:4,r:"12-15"}},
+    lebron:    {Full:{s:4,r:"10-15"}},
+    zyzz:      {Chest:{s:4,r:"10-12"},Back:{s:4,r:"8-12"},Shoulders:{s:4,r:"12-15"},Legs:{s:4,r:"12-15"},Arms:{s:4,r:"10-12"}},
+  };
+  const celebParams = CELEB_PARAMS[celeb.id] || {};
+
   selDays.forEach((dayIdx, i)=>{
-    const splitName = daySeq[i];
-    const rawExs = celeb.routine.exercises[splitName]||[];
-    const adapted = rawExs.map(exName=>({
+    const splitName = splitKeys[i % splitKeys.length];
+    const rawExs = exercises[splitName] || [];
+    const params = celebParams[splitName] || {s:4, r:"8-12"};
+    const adapted = rawExs.map((exName, j)=>({
       e: adaptExercise(exName, userEquipment),
-      s: 4, r: "8-12",
-      id: `c${dayIdx}${i}`
+      s: params.s,
+      r: params.r,
+      id: `c${dayIdx}${j}`
     }));
-    r[dayIdx]={l:splitName, ex:adapted};
+    r[dayIdx] = {l: splitName, ex: adapted};
   });
   return r;
 }
@@ -2627,15 +2645,15 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                 {id:"rock",      img:IMGS_C.rock,      ac:"#30c870", label:"IRON PARADISE",  name:{es:"THE ROCK",en:"THE ROCK"},             badge:"4AM CLUB",  days:6, split:"PPL + Core",        lvl:{es:"BRUTAL",en:"BRUTAL"},    source:"Instagram @therock · ESPN Body Issue 2019",     desc:{es:"4AM sin excusas. 90 minutos de alta intensidad, énfasis brutal en piernas y core.",en:"4AM no excuses. 90 minutes high intensity, brutal emphasis on legs and core.",
                   routine:{days:6,exercises:{Push:["Press banca","Press inclinado mancuerna","Press militar","Laterales","Tríceps polea"],Pull:["Dominadas","Remo con barra","Jalón polea","Curl barra","Curl martillo"],Legs:["Sentadilla","Extensión","Curl femoral","Pantorrilla","Hip thrust"]}}}},
                 {id:"goggins",   img:IMGS_C.goggins,   ac:"#e09020", label:"NO EXCUSES",     name:{es:"GOGGINS",en:"GOGGINS"},               badge:"CALISTENIA",days:6, split:"Calistenia+Cardio", lvl:{es:"INFERNAL",en:"INFERNAL"},source:"Can't Hurt Me (2018) · YouTube",                desc:{es:"Cuando crees que no puedes más, solo has usado el 40% de tu capacidad.",en:"When you think you can't go on, you've only used 40% of your capacity.",
-                  routine:{days:6,exercises:{Full:["Dominadas","Fondos","Flexiones","Sentadillas peso corporal","Plancha","Curl barra","Press banca","Remo con barra"]}}}},
+                  routine:{days:6,exercises:{"Pull Day":["Dominadas","Remo con barra","Curl barra","Curl martillo","Peso muerto"],"Push Day":["Flexiones","Press banca","Fondos","Press militar","Tríceps polea"],"Leg Day":["Sentadillas peso corporal","Sentadilla","Extensión","Curl femoral","Pantorrilla"]}}}},
                 {id:"cavill",    img:IMGS_C.cavill,    ac:"#c83030", label:"SUPERMAN GRIND", name:{es:"CAVILL",en:"CAVILL"},                 badge:"POWERBUILD",days:5, split:"Powerbuilding",      lvl:{es:"ALTO",en:"HIGH"},        source:"Dave Rienzi (trainer) · Instagram 2013–2023",   desc:{es:"Powerbuilding puro — fuerza base heavy más volumen estético. Press 140kg+ y luego mancuerna.",en:"Pure powerbuilding — heavy base strength plus aesthetic volume. 140kg+ bench then dumbbells.",
                   routine:{days:5,exercises:{Push:["Press banca","Press inclinado","Laterales","Tríceps polea","Fondos"],Pull:["Peso muerto","Dominadas","Remo con barra","Curl barra","Curl martillo"],Legs:["Sentadilla","Extensión","Curl femoral","Pantorrilla","Hip thrust"]}}}},
                 {id:"ronaldo",   img:IMGS_C.ronaldo,   ac:"#d4a820", label:"CR7 CIRCUIT",    name:{es:"RONALDO",en:"RONALDO"},               badge:"ATLÉTICO",  days:5, split:"Athletic Circuit",   lvl:{es:"ALTO",en:"HIGH"},        source:"Entrevistas UEFA · DAZN Documentary 2022",     desc:{es:"Fuerza explosiva, velocidad y resistencia en circuitos sin descanso. El atleta más completo.",en:"Explosive strength, speed and endurance in non-stop circuits. The most complete athlete."},
-                  routine:{days:5,exercises:{Full:["Sentadilla","Peso muerto","Press banca","Dominadas","Remo con barra","Laterales","Curl barra","Fondos","Plancha","Saltos al cajón"]}}},
+                  routine:{days:5,exercises:{"Lower A":["Sentadilla","Extensión","Curl femoral","Pantorrilla","Saltos al cajón"],"Upper A":["Press banca","Dominadas","Press militar","Remo con barra","Curl barra"],"Lower B":["Peso muerto","Sentadilla goblet","Pantorrilla","Extensión","Hip thrust"],"Upper B":["Press inclinado","Remo con mancuerna","Laterales","Tríceps polea","Curl martillo"],"Full":["Sentadilla","Press banca","Dominadas","Plancha","Curl barra","Fondos"]}}},
                 {id:"stallone",  img:IMGS_C.stallone,  ac:"#e88020", label:"ROCKY PREP",     name:{es:"STALLONE",en:"STALLONE"},             badge:"GOLDEN ERA",days:6, split:"Torso / Piernas",    lvl:{es:"ALTO",en:"HIGH"},        source:"DVD Extras Rocky III + IV (1982–1985)",         desc:{es:"El programa real de Rocky III y IV. Alta frecuencia, volumen brutal. Dos sesiones al día.",en:"The real Rocky III and IV program. High frequency, brutal volume. Two sessions a day.",
                   routine:{days:6,exercises:{Upper:["Press banca","Press inclinado","Dominadas","Remo con barra","Press militar","Curl barra","Tríceps polea"],Lower:["Sentadilla","Extensión","Curl femoral","Pantorrilla"]}}}},
                 {id:"lebron",    img:IMGS_C.lebron,    ac:"#f0a818", label:"KING PROTOCOL",  name:{es:"LEBRON",en:"LEBRON"},                 badge:"ATLÉTICO",  days:5, split:"Athletic+Recovery",  lvl:{es:"ALTO",en:"HIGH"},        source:"Sports Illustrated · trainer Mike Mancias",     desc:{es:"LeBron invierte +$1.5M/año en su cuerpo. Explosividad, movilidad y fuerza funcional.",en:"LeBron invests $1.5M+/year in his body. Explosiveness, mobility and functional strength.",
-                  routine:{days:5,exercises:{Full:["Sentadilla","Peso muerto","Press banca","Remo con barra","Hip thrust","Plancha","Curl barra","Laterales"]}}}},
+                  routine:{days:5,exercises:{"Lower Power":["Sentadilla","Peso muerto","Hip thrust","Extensión","Curl femoral","Pantorrilla"],"Upper Push":["Press banca","Press inclinado","Press militar","Laterales","Tríceps polea"],"Upper Pull":["Dominadas","Remo con barra","Curl barra","Curl martillo","Face pull"],"Athletic":["Sentadilla","Press banca","Dominadas","Plancha","Saltos al cajón"]}}}},
                 {id:"zyzz",      img:IMGS_C.zyzz,      ac:"#e050a8", label:"AESTHETICS GOD", name:{es:"ZYZZ",en:"ZYZZ"},                     badge:"BRO SPLIT", days:5, split:"Bro Split",          lvl:{es:"MODERADO",en:"MODERATE"},source:"YouTube original · foros bodybuilding 2009–2011",desc:{es:"El dios de la estética. Volumen controlado, definición máxima. We're all gonna make it.",en:"The aesthetics god. Controlled volume, maximum definition. We're all gonna make it.",
                   routine:{days:5,exercises:{Chest:["Press banca","Press inclinado","Aperturas","Fondos"],Back:["Peso muerto","Dominadas","Remo con barra","Curl barra"],Shoulders:["Press militar","Laterales","Curl martillo"],Legs:["Sentadilla","Extensión","Curl femoral","Pantorrilla"]}}}},
               ];
