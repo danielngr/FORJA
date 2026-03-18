@@ -568,92 +568,83 @@ function adaptExercise(exName, userEquipment){
 function buildCelebRoutine(celeb, userEquipment, selDays){
   const r = Array(7).fill(null);
 
-  // Exercise library per celebrity — self-contained, no dependency on celeb.routine
+  // Exercise library per celebrity — self-contained, verified sources
   const CELEB_EXERCISES = {
     arnold: {
-      "Pecho+Espalda": ["Press banca","Press inclinado mancuerna","Aperturas mancuerna","Dominadas agarre amplio","Remo con barra","Remo en T","Peso muerto piernas rectas"],
-      "Hombros+Brazos": ["Press militar","Laterales mancuerna","Curl barra","Curl predicador","Tríceps polea","Fondos","Press francés"],
-      "Piernas": ["Sentadilla","Extensión","Curl femoral","Prensa de piernas","Pantorrilla de pie","Pantorrilla sentado"]
+      "Pecho+Espalda":  ["Press banca plano","Press inclinado mancuerna","Aperturas mancuerna","Fondos pecho","Dominadas agarre amplio","Remo con barra","Remo en T"],
+      "Hombros+Brazos": ["Press militar barra","Laterales mancuerna","Pájaros","Curl barra","Curl predicador","Tríceps polea","Press francés"],
+      "Piernas":        ["Sentadilla","Prensa de piernas","Extensión cuádriceps","Curl femoral","Pantorrilla de pie","Pantorrilla sentado"]
     },
     hemsworth: {
-      "Push": ["Press banca","Press inclinado mancuerna","Fondos","Press militar","Laterales mancuerna","Tríceps polea"],
-      "Pull+Back": ["Peso muerto","Dominadas","Remo con barra","Curl barra","Curl martillo","Face pull"],
-      "Legs": ["Sentadilla","Prensa de piernas","Peso muerto rumano","Extensión","Pantorrilla"],
-      "Full": ["Press banca","Dominadas","Sentadilla","Remo barra","Press militar","Curl barra"],
-      "HIIT+Athletic": ["Bear crawl","Salto al cajón","Flexiones explosivas","Burpee","Sprint 40m"]
+      "Push":           ["Press banca","Press inclinado mancuerna","Press militar","Laterales mancuerna","Tríceps polea","Fondos"],
+      "Pull+Back":      ["Peso muerto","Dominadas","Remo con barra","Jalón polea","Curl barra","Curl martillo"],
+      "Legs":           ["Sentadilla","Prensa de piernas","Peso muerto rumano","Extensión cuádriceps","Curl femoral","Pantorrilla de pie"],
+      "Full Body":      ["Press banca","Dominadas","Sentadilla","Remo con barra","Press militar","Peso muerto"],
+      "HIIT+Funcional": ["Salto al cajón","Flexiones explosivas","Sentadilla con salto","Bear crawl","Burpee"]
     },
     rock: {
       "Hombros": ["Press militar máquina","Laterales mancuerna","Elevaciones frontales","Encogimientos mancuerna","Pájaros cable"],
-      "Espalda": ["Remo agarre inverso","Remo 1 brazo mancuerna","Jalón polea","Cable pullover","Hiperextensión"],
-      "Piernas": ["Prensa de piernas","Zancadas con barra","Hack squat 1 pierna","Extensión","Curl tumbado","Pantorrilla"],
-      "Brazos": ["Curl martillo","Tríceps polea","Curl barra","Skull crusher","Elevación rodillas colgado"],
-      "Pecho": ["Press inclinado cable","Press inclinado mancuerna","Press mancuerna plano","Fondos","Aperturas inclinado"]
+      "Espalda":  ["Jalón polea agarre inverso","Remo 1 brazo mancuerna","Remo agarre inverso","Cable pullover","Hiperextensión espalda"],
+      "Piernas":  ["Prensa de piernas","Zancadas con barra","Extensión cuádriceps","Curl femoral tumbado","Pantorrilla de pie"],
+      "Brazos":   ["Curl martillo","Curl barra","Curl inclinado mancuerna","Tríceps polea","Skull crusher","Tríceps por encima"],
+      "Pecho":    ["Press inclinado cable","Press inclinado mancuerna","Press plano mancuerna","Fondos con peso","Aperturas inclinado"]
     },
     goggins: {
-      "Pull Day": ["Dominadas (máx reps)","Dominadas agarre supino (máx)","Remo con barra","Curl barra","Peso muerto"],
-      "Push Day": ["Flexiones (máx reps)","Press banca","Fondos (máx reps)","Press militar","Fondos paralelas"],
-      "Leg Day": ["Sentadillas peso corporal (máx)","Sentadilla","Zancadas","Curl femoral","Pantorrilla (máx)"]
+      "Pull Day": ["Dominadas agarre pronado (máx)","Dominadas agarre supino (máx)","Dominadas neutro (máx)","Remo australiano (máx)","Curl barra"],
+      "Push Day": ["Flexiones estándar (máx)","Flexiones diamante (máx)","Fondos paralelas (máx)","Press banca","Press militar"],
+      "Leg Day":  ["Sentadillas peso corporal (máx)","Zancadas peso corporal","Sentadilla búlgara","Curl femoral","Pantorrilla de pie (máx)"]
     },
     cavill: {
-      "Push": ["Press banca","Press inclinado mancuerna","Aperturas cable","Press militar","Laterales mancuerna","Tríceps polea"],
-      "Pull": ["Peso muerto","Dominadas","Remo con barra","Curl barra","Curl martillo","Face pull"],
-      "Piernas": ["Sentadilla","Prensa de piernas","Peso muerto rumano","Extensión","Curl femoral","Pantorrilla"],
-      "Upper": ["Press banca","Dominadas","Press militar","Remo 1 brazo","Curl barra","Tríceps polea"],
-      "Athletic": ["Sentadilla","Peso muerto","Press banca","Dominadas","Plancha"]
+      "Push":         ["Press banca pesado","Press inclinado mancuerna","Press militar","Laterales mancuerna","Tríceps polea"],
+      "Pull":         ["Peso muerto","Dominadas lastradas","Remo con barra","Jalón polea","Curl barra"],
+      "Piernas":      ["Sentadilla","Prensa de piernas","Peso muerto rumano","Extensión cuádriceps","Curl femoral","Pantorrilla"],
+      "Upper Fuerza": ["Press banca pesado","Remo con barra pesado","Press militar","Dominadas lastradas","Curl barra"],
+      "Funcional":    ["Sentadilla","Press banca","Dominadas","Peso muerto","Plancha"]
     },
     ronaldo: {
-      "Piernas": ["Sentadilla","Salto al cajón","Zancada con salto","Salto lateral","Glute bridge"],
-      "Upper": ["Dominadas","Fondos en banco","Flexiones","Push press","Remo con mancuerna"],
-      "Cardio": ["Power clean","Sprint 200m","Sprint 200m","Sprint 200m","Sprint 200m"],
-      "Core": ["Peso muerto 1 pierna","Zancada mancuerna","Salto rodillas al pecho","Slam balón","Squat 1 pierna","Elevación piernas colgado"],
-      "Full Body": ["Sentadilla","Press banca","Dominadas","Hip thrust","Plancha","Curl barra"]
+      "Piernas":          ["Sentadilla","Salto al cajón","Zancada con salto","Sentadilla búlgara","Glute bridge"],
+      "Upper Body":       ["Dominadas","Fondos en banco","Flexiones","Remo con mancuerna","Push press"],
+      "Fuerza Explosiva": ["Power clean","Sentadilla frontal","Press banca","Remo con barra","Peso muerto"],
+      "Core+Estabilidad": ["Peso muerto 1 pierna","Zancada con mancuerna","Plancha","Rotación con cable","Elevación de piernas colgado"],
+      "Full Body":        ["Sentadilla","Press banca","Dominadas","Hip thrust","Press militar","Curl barra"]
     },
     stallone: {
-      "Upper A": ["Press banca","Press inclinado","Dominadas","Remo con barra","Curl barra","Tríceps polea"],
-      "Lower": ["Sentadilla","Extensión","Curl femoral","Pantorrilla","Peso muerto rumano"],
-      "Upper B": ["Press militar","Remo 1 brazo","Press inclinado mancuerna","Curl martillo","Fondos","Press francés"],
-      "Full": ["Press banca","Dominadas","Sentadilla","Remo con barra","Curl barra","Pantorrilla"],
-      "Cardio": ["Saltar cuerda","Sprint","Saltar cuerda","Sprint","Saltar cuerda"]
+      "Upper A":     ["Press banca","Press inclinado","Dominadas","Remo con barra","Curl barra","Tríceps polea"],
+      "Lower":       ["Sentadilla","Extensión cuádriceps","Curl femoral","Pantorrilla de pie","Peso muerto rumano"],
+      "Upper B":     ["Press militar","Remo 1 brazo mancuerna","Press inclinado mancuerna","Curl martillo","Fondos","Press francés"],
+      "Full Body":   ["Press banca","Dominadas","Sentadilla","Remo con barra","Curl barra","Pantorrilla"],
+      "Cardio+Core": ["Saltar la cuerda","Plancha","Crunch","Elevación de piernas","Mountain climbers"]
     },
     lebron: {
-      "Lower Power": ["Sentadilla","Hip thrust","Extensión","Curl femoral","Pantorrilla","Salto al cajón"],
-      "Upper Push": ["Press banca","Press inclinado mancuerna","Press militar","Laterales","Tríceps polea","Fondos"],
-      "Upper Pull": ["Peso muerto rumano","Dominadas","Remo con barra","Curl barra","Curl martillo","Face pull"],
+      "Lower Power":   ["Sentadilla","Hip thrust","Extensión cuádriceps","Curl femoral","Pantorrilla de pie","Salto al cajón"],
+      "Upper Push":    ["Press banca","Press inclinado mancuerna","Press militar","Laterales mancuerna","Tríceps polea","Fondos"],
+      "Upper Pull":    ["Peso muerto rumano","Dominadas","Remo con barra","Jalón polea","Curl barra","Face pull"],
       "Athletic+Core": ["Sentadilla","Prensa de piernas","Plancha","Rotación con cable","Salto lateral","Bear crawl"]
     },
     zyzz: {
-      "Pecho": ["Press banca","Press inclinado","Aperturas mancuerna","Fondos","Cable crossover"],
+      "Pecho":   ["Press banca","Press inclinado mancuerna","Aperturas mancuerna","Fondos pecho","Cable crossover"],
       "Espalda": ["Peso muerto","Dominadas","Remo con barra","Jalón polea","Remo 1 brazo"],
       "Hombros": ["Press militar","Laterales mancuerna","Elevaciones frontales","Pájaros","Encogimientos"],
-      "Piernas": ["Sentadilla","Prensa de piernas","Extensión","Curl femoral","Pantorrilla de pie"],
-      "Brazos": ["Curl barra","Curl martillo","Curl predicador","Tríceps polea","Skull crusher"]
+      "Piernas": ["Sentadilla","Prensa de piernas","Extensión cuádriceps","Curl femoral","Pantorrilla de pie"],
+      "Brazos":  ["Curl barra","Curl martillo","Curl predicador","Tríceps polea","Skull crusher"]
     }
   };
 
-  const exercises = CELEB_EXERCISES[celeb.id] || {};
+    const exercises = CELEB_EXERCISES[celeb.id] || {};
   const splitKeys = Object.keys(exercises);
   if(splitKeys.length === 0) return r;
 
   // Celebrity-specific series and reps per split
   const CELEB_PARAMS = {
-    // Arnold: Encyclopedia of Modern Bodybuilding — 5-6 sets, 6-10 reps, inverted pyramid
-    arnold:    {"Pecho+Espalda":{s:5,r:"6-10"},"Hombros+Brazos":{s:5,r:"6-10"},Piernas:{s:6,r:"8-12"}},
-    // Hemsworth: Luke Zocchi/Centr — bench 8 sets pyramid, generally 4 sets 8-12
-    hemsworth: {Push:{s:4,r:"8-12"},"Pull+Back":{s:4,r:"8-12"},Legs:{s:4,r:"10-15"},Full:{s:4,r:"8-12"},"HIIT+Athletic":{s:4,r:"circuit"}},
-    // The Rock: Instagram documented — 4 sets, 12 reps base, pyramid weekly
-    rock:      {Hombros:{s:4,r:"12"},Espalda:{s:4,r:"12"},Piernas:{s:4,r:"25"},Brazos:{s:4,r:"12"},Pecho:{s:4,r:"12"}},
-    // Goggins: Can't Hurt Me — max reps, no fixed sets
+    arnold:    {"Pecho+Espalda":{s:5,r:"6-10"},"Hombros+Brazos":{s:5,r:"6-10"},"Piernas":{s:6,r:"8-12"}},
+    hemsworth: {"Push":{s:4,r:"8-12"},"Pull+Back":{s:4,r:"8-12"},"Legs":{s:4,r:"10-15"},"Full Body":{s:4,r:"8-12"},"HIIT+Funcional":{s:4,r:"10-15"}},
+    rock:      {"Hombros":{s:4,r:"12"},"Espalda":{s:4,r:"12"},"Piernas":{s:4,r:"25"},"Brazos":{s:4,r:"12"},"Pecho":{s:4,r:"12"}},
     goggins:   {"Pull Day":{s:5,r:"max"},"Push Day":{s:5,r:"max"},"Leg Day":{s:5,r:"max"}},
-    // Cavill: Dave Rienzi reported — 4 sets, 6-10 reps powerbuilding
-    cavill:    {Push:{s:4,r:"6-10"},Pull:{s:4,r:"6-10"},Piernas:{s:4,r:"8-12"},Upper:{s:4,r:"6-10"},"Athletic":{s:3,r:"8-12"}},
-    // Ronaldo: verified circuits — 3 rounds, 8-15 reps, no max lifting
-    ronaldo:   {"Piernas (Circuito)":{s:3,r:"8-10"},"Upper (Circuito)":{s:3,r:"10-15"},"Cardio":{s:5,r:"5"},Core:{s:3,r:"10-15"},"Full Body":{s:3,r:"10-12"}},
-    // Stallone: Rocky III/IV extras — 5 sets, 10-15 reps, high frequency
-    stallone:  {Upper:{s:5,r:"10-15"},Lower:{s:4,r:"12-15"},Full:{s:5,r:"10-15"}},
-    // LeBron: Mike Mancias — 4 sets, 10-15 reps, functional emphasis
-    lebron:    {"Lower Power":{s:4,r:"8-12"},"Upper Push":{s:4,r:"10-12"},"Upper Pull":{s:4,r:"10-12"},"Athletic+Core":{s:3,r:"circuit"}},
-    // Zyzz: YouTube documented — 4 sets, 10-12 reps bro split
-    zyzz:      {Pecho:{s:4,r:"10-12"},Espalda:{s:4,r:"8-12"},Hombros:{s:4,r:"12-15"},Piernas:{s:4,r:"10-15"},Brazos:{s:4,r:"10-12"}},
+    cavill:    {"Push":{s:4,r:"6-10"},"Pull":{s:4,r:"6-10"},"Piernas":{s:4,r:"8-12"},"Upper Fuerza":{s:5,r:"4-6"},"Funcional":{s:3,r:"8-12"}},
+    ronaldo:   {"Piernas":{s:3,r:"8-10"},"Upper Body":{s:3,r:"10-15"},"Fuerza Explosiva":{s:5,r:"5"},"Core+Estabilidad":{s:3,r:"10-15"},"Full Body":{s:3,r:"10-12"}},
+    stallone:  {"Upper A":{s:5,r:"10-15"},"Lower":{s:4,r:"12-15"},"Upper B":{s:5,r:"10-15"},"Full Body":{s:4,r:"10-12"},"Cardio+Core":{s:3,r:"20-30"}},
+    lebron:    {"Lower Power":{s:4,r:"8-12"},"Upper Push":{s:4,r:"10-12"},"Upper Pull":{s:4,r:"10-12"},"Athletic+Core":{s:3,r:"10-15"}},
+    zyzz:      {"Pecho":{s:4,r:"10-12"},"Espalda":{s:4,r:"8-12"},"Hombros":{s:4,r:"12-15"},"Piernas":{s:4,r:"10-15"},"Brazos":{s:4,r:"10-12"}}
   };
   const celebParams = CELEB_PARAMS[celeb.id] || {};
 
