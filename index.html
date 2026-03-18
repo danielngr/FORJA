@@ -375,7 +375,7 @@ const C={
   border:"#525a6e",borderL:"#4a5264",
   tx:"#F0F2F5",tx2:"#C8CDD8",tx3:"#7a8294",
   accent:"#F0F2F5",
-  red:"#d96060",green:"#5faa88",blue:"#6a8fc0",purple:"#8878c0",yellow:"#c0a870",
+  red:"#e05555",green:"#3fcf8e",blue:"#6a8fc0",purple:"#8878c0",yellow:"#f0b429",
   white:"#FFFFFF",
 };
 const mono="'SF Mono','Fira Code','Courier New',monospace";
@@ -1228,9 +1228,9 @@ const EX_META={
 
 function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBack}){
   const exs=day.ex;
-  const C2={bg:"#383e4e",bgD:"#2c3040",card:"#424858",border:"#525a6e",borderL:"#4a5264",
-    tx:"#F0F2F5",tx2:"#C8CDD8",tx3:"#7a8294",
-    green:"#5faa88",blue:"#6a8fc0",yellow:"#c0a870",red:"#d96060",purple:"#8878c0",white:"#FFFFFF"};
+  const C2={bg:"#0d0f14",bgD:"#080a0e",card:"#131720",border:"#1e2535",borderL:"#19202e",
+    tx:"#F0F2F5",tx2:"#9aa3b8",tx3:"#4a5268",
+    green:"#3fcf8e",blue:"#4f8ef7",yellow:"#f0b429",red:"#e05555",purple:"#8b6cf7",white:"#FFFFFF"};
 
   // ── Per-exercise sets state: [{kg,rp,done}] ──
   const[sets,setSets]=useState(()=>exs.map(ex=>{
@@ -1410,7 +1410,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
 
   // Pre-generate confetti so it's stable
   const[confettiPieces]=useState(()=>{
-    const colors=["#5faa88","#6a8fc0","#c0a870","#8878c0","#F0F2F5","#d96060","#f0c040","#60d0d9"];
+    const colors=["#3fcf8e","#6a8fc0","#f0b429","#8878c0","#F0F2F5","#e05555","#f0c040","#60d0d9"];
     return Array.from({length:80},(_,i)=>{
       const sz=3+Math.random()*7;
       const isRect=i%3===0;
@@ -1431,9 +1431,9 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
 
   // ── Completion screen ──
   if(allDone){
-    const confettiColors=["#5faa88","#6a8fc0","#c0a870","#8878c0","#F0F2F5","#d96060"];
+    const confettiColors=["#3fcf8e","#6a8fc0","#f0b429","#8878c0","#F0F2F5","#e05555"];
     return(
-      <div style={{position:"fixed",inset:0,background:C2.bgD,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:"sans-serif",overflow:"hidden"}}>
+      <div style={{position:"fixed",inset:0,background:"#080a0e",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:"sans-serif",overflow:"hidden"}}>
         {/* Confetti — 80 pieces, full screen */}
         <div style={{position:"absolute",inset:0,pointerEvents:"none",overflow:"hidden"}}>
           {confettiPieces.map((p,i)=>(
@@ -1732,7 +1732,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                 {/* Header */}
                 <div style={{display:"grid",gridTemplateColumns:"28px 1fr 1fr 44px",padding:"0 0 5px",borderBottom:"1px solid rgba(82,90,110,.4)"}}>
                   {["SET","KG","REPS","✓"].map((h,i)=>(
-                    <span key={i} style={{fontFamily:mono,fontSize:8,color:C2.tx3,letterSpacing:2,textAlign:i===0?"left":"center"}}>{h}</span>
+                    <span key={i} style={{fontFamily:mono,fontSize:7,color:"rgba(255,255,255,.2)",letterSpacing:3,textAlign:i===0?"left":"center",textTransform:"uppercase"}}>{h}</span>
                   ))}
                 </div>
                 {sets[ei].map((s,si)=>{
@@ -1740,14 +1740,14 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                   const curKg=parseFloat(s.kg)||0;
                   const pKg=prevKg?+prevKg:null;
                   const suggest=pKg&&si===0?(curKg>pKg?"↑":curKg===pKg?"=":"↓"):null;
-                  const suggestColor=suggest==="↑"?C2.green:suggest==="↓"?C2.yellow:C2.tx3;
+                  const suggestColor=suggest==="↑"?"#3fcf8e":suggest==="↓"?"#f0b429":"rgba(255,255,255,.2)";
 
                   return(
                     <div key={si} id={`setrow-${ei}-${si}`}
                       style={{display:"grid",gridTemplateColumns:"28px 1fr 1fr 44px",
                         alignItems:"stretch",minHeight:50,
                         borderBottom:si<sets[ei].length-1?"1px solid rgba(82,90,110,.2)":"none",
-                        background:s.done?"rgba(95,170,136,.06)":"transparent",
+                        background:s.done?"rgba(63,207,142,.05)":"transparent",
                         transition:"background .15s"}}>
                       <div style={{display:"flex",alignItems:"center",fontFamily:mono,fontSize:10,color:s.done?C2.green:C2.tx3,letterSpacing:1}}>
                         {String(si+1).padStart(2,'0')}
@@ -1755,7 +1755,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                       {/* KG */}
                       <div onClick={()=>openNp(ei,si,'kg')} style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:1,cursor:"pointer",borderLeft:"1px solid rgba(82,90,110,.2)",padding:"4px 0",position:"relative"}}>
                         {suggest&&<span style={{position:"absolute",top:4,right:4,fontFamily:mono,fontSize:7,color:suggestColor,opacity:.7}}>{suggest}</span>}
-                        <div style={{fontSize:18,fontWeight:900,color:s.done?C2.green:C2.tx,letterSpacing:-.5,lineHeight:1}}>{s.kg||"—"}</div>
+                        <div style={{fontSize:20,fontWeight:800,color:s.done?"#3fcf8e":C2.tx,letterSpacing:-.5,lineHeight:1}}>{s.kg||"—"}</div>
                         <div style={{fontFamily:mono,fontSize:7,color:C2.tx3,letterSpacing:1.5}}>KG</div>
                       </div>
                       {/* REPS — locked for celebrity challenges */}
@@ -1766,13 +1766,13 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                         </div>
                       ):(
                         <div onClick={()=>openNp(ei,si,'rp')} style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:1,cursor:"pointer",borderLeft:"1px solid rgba(82,90,110,.2)",padding:"4px 0"}}>
-                          <div style={{fontSize:18,fontWeight:900,color:s.done?C2.green:C2.tx,letterSpacing:-.5,lineHeight:1}}>{s.rp||"—"}</div>
+                          <div style={{fontSize:20,fontWeight:800,color:s.done?"#3fcf8e":C2.tx,letterSpacing:-.5,lineHeight:1}}>{s.rp||"—"}</div>
                           <div style={{fontFamily:mono,fontSize:7,color:C2.tx3,letterSpacing:1.5}}>REPS</div>
                         </div>
                       )}
                       {/* CHECK */}
                       <div onClick={()=>toggleDone(ei,si)} style={{display:"flex",alignItems:"center",justifyContent:"center",borderLeft:"1px solid rgba(82,90,110,.2)",cursor:"pointer"}}>
-                        <div id={`chkring-${ei}-${si}`} style={{width:26,height:26,borderRadius:"50%",border:`1.5px solid ${s.done?C2.green:C2.borderL}`,background:s.done?C2.green:"transparent",display:"flex",alignItems:"center",justifyContent:"center",transition:"all .18s"}}>
+                        <div id={`chkring-${ei}-${si}`} style={{width:26,height:26,borderRadius:"50%",border:`1.5px solid ${s.done?"rgba(63,207,142,.8)":"rgba(255,255,255,.08)"}`,background:s.done?"rgba(63,207,142,.15)":"transparent",display:"flex",alignItems:"center",justifyContent:"center",transition:"all .18s"}}>
                           {s.done&&<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6.5L5 9.5L10 3" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
                         </div>
                       </div>
@@ -1797,7 +1797,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
       </div>
 
       {/* Progress bar */}
-      <div style={{height:2,background:"rgba(0,0,0,.2)",flexShrink:0}}>
+      <div style={{height:1,background:"rgba(255,255,255,.04)",flexShrink:0}}>
         <div style={{height:"100%",width:`${totalSets>0?doneSets/totalSets*100:0}%`,background:C2.tx,transition:"width .5s ease"}}/>
       </div>
 
@@ -1876,7 +1876,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
               value={noteText}
               onChange={e=>setNoteText(e.target.value)}
               placeholder={lang==="es"?"Ej: intentar 75kg próxima sesión...":"E.g.: try 75kg next session..."}
-              style={{width:"100%",background:"rgba(255,255,255,.05)",border:`1px solid ${C2.borderL}`,borderRadius:10,padding:"12px 14px",color:C2.tx,fontFamily:mono,fontSize:13,resize:"none",height:90,outline:"none",letterSpacing:.3,lineHeight:1.5}}
+              style={{width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",borderRadius:12,padding:"14px 16px",color:C2.tx,fontFamily:mono,fontSize:13,resize:"none",height:90,outline:"none",letterSpacing:.3,lineHeight:1.6}}
             />
           </div>
         </div>
@@ -1968,12 +1968,12 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   }
 
   return(
-    <div style={{minHeight:"100vh",background:`linear-gradient(160deg,#252936 0%,#2e3448 40%,#383e4e 100%)`,color:C.tx,fontFamily:sans}}>
-      <div style={{background:"rgba(44,48,64,0.75)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",borderBottom:`1px solid rgba(240,242,245,0.08)`,padding:"14px 18px 10px",position:"sticky",top:0,zIndex:10}}>
+    <div style={{minHeight:"100vh",background:"#080a0e",color:C.tx,fontFamily:sans}}>
+      <div style={{background:"rgba(8,10,14,0.92)",backdropFilter:"blur(24px)",WebkitBackdropFilter:"blur(24px)",borderBottom:"1px solid rgba(255,255,255,0.06)",padding:"14px 18px 10px",position:"sticky",top:0,zIndex:10}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
           <div>
-            <div style={{fontSize:11,fontFamily:mono,color:C.tx3,letterSpacing:3,marginBottom:2,fontWeight:600}}>FORJA</div>
-            <div style={{fontSize:24,fontWeight:900,letterSpacing:-1,lineHeight:1,textTransform:"uppercase"}}>{day?day.l:t.rest}</div>
+            <div style={{fontSize:10,fontFamily:mono,color:"rgba(255,255,255,.25)",letterSpacing:5,marginBottom:4,fontWeight:700}}>FORJA</div>
+            <div style={{fontSize:26,fontWeight:900,letterSpacing:-1.2,lineHeight:.9}}>{day?day.l:t.rest}</div>
             <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:1.5,marginTop:2}}>{DF[lang][sel].toUpperCase()} {day?`· ${day.ex.length} ${lang==="es"?"ejercicios":"exercises"}`:""}
             </div>
           </div>
@@ -1982,7 +1982,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
               <div style={{textAlign:"right"}}>
                 <div style={{fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:1,marginBottom:4}}>{dc}/{exs.length}</div>
                 <div style={{width:52,height:2,background:C.borderL,borderRadius:1,overflow:"hidden"}}>
-                  <div style={{height:"100%",background:pct===1?C.green:C.tx,width:`${pct*100}%`,transition:"width 0.4s"}}/>
+                  <div style={{height:"100%",background:`linear-gradient(90deg,${pct===1?"#3fcf8e":"rgba(255,255,255,.7)"},${pct===1?"#2ea878":"rgba(255,255,255,.4)"})`,width:`${pct*100}%`,transition:"width 0.4s"}}/>
                 </div>
               </div>
             )}
@@ -2014,8 +2014,8 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
               return(
                 <button key={i} onClick={()=>{setSel(i);setTab("train");setAddEx(false);setAddF(false);setInWorkout(false);}}
                   style={{flex:1,padding:"10px 0 8px",borderRadius:10,
-                    border:`1.5px solid ${isSel?(cc||C.tx):cp?C.green+"44":d&&cc?cc+"33":C.borderL}`,cursor:"pointer",
-                    background:isSel?(cc||C.tx):cp?C.green+"0D":d&&cc?cc+"0A":"transparent",
+                    border:`1px solid ${isSel?(cc||"rgba(255,255,255,.2)"):cp?"rgba(63,207,142,.3)":d&&cc?cc+"28":"rgba(255,255,255,.05)"}`,cursor:"pointer",
+                    background:isSel?(cc||"rgba(255,255,255,.12)"):cp?"rgba(63,207,142,.06)":d&&cc?cc+"08":"transparent",
                     color:isSel?C.white:cp?C.green:isRest?C.tx3:C.tx2,
                     transition:"all 0.2s",textAlign:"center",position:"relative",overflow:"hidden",
                     boxShadow:isSel&&cc?`0 0 14px ${cc}44`:"none"}}>
@@ -2033,7 +2033,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
         </div>
       </div>
 
-      <div style={{display:"flex",borderBottom:`1px solid ${C.borderL}`,padding:"0 18px",background:C.bg}}>
+      <div style={{display:"flex",borderBottom:"1px solid rgba(255,255,255,0.05)",padding:"0 18px",background:"rgba(8,10,14,0.95)"}}>
         {[{id:"train",l:t.train},{id:"stats",l:t.stats}].map(tb=>(
           <button key={tb.id} onClick={()=>{setTab(tb.id);setAddEx(false);setAddF(false);}}
             style={{padding:"13px 0",marginRight:22,border:"none",
@@ -2474,9 +2474,9 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
 
   const CATALOG=[
     {muscle:lang==="es"?"Pecho":"Chest",      color:"#6a8fc0", exs:["bench press","incline bench press","dumbbell bench press","incline dumbbell press","dumbbell chest fly","cable fly","machine chest press","machine pec fly","push up","decline push up","dips"]},
-    {muscle:lang==="es"?"Espalda":"Back",     color:"#5faa88", exs:["pull up","chin up","barbell row","pendlay row","dumbbell row","cable row","machine neutral row","lat pulldown","machine pulldown","barbell pullover","barbell rack pull","supermans"]},
-    {muscle:lang==="es"?"Hombros":"Shoulders",color:"#c0a870", exs:["overhead press","dumbbell shoulder press","seated overhead press","lateral raise","dumbbell front raise","face pull","cable face pull","machine face pulls","barbell upright row","barbell shrug","dumbbell shrug","reverse fly","dumbbell rear delt fly","dumbbell laying reverse fly"]},
-    {muscle:lang==="es"?"Piernas":"Legs",     color:"#d96060", exs:["squat","front squat","goblet squat","leg press","deadlift","romanian deadlift","bulgarian split squat","dumbbell bulgarian split squat","leg curl","leg extension","calf raise","seated calf raise","hip thrust","box jump","barbell thruster"]},
+    {muscle:lang==="es"?"Espalda":"Back",     color:"#3fcf8e", exs:["pull up","chin up","barbell row","pendlay row","dumbbell row","cable row","machine neutral row","lat pulldown","machine pulldown","barbell pullover","barbell rack pull","supermans"]},
+    {muscle:lang==="es"?"Hombros":"Shoulders",color:"#f0b429", exs:["overhead press","dumbbell shoulder press","seated overhead press","lateral raise","dumbbell front raise","face pull","cable face pull","machine face pulls","barbell upright row","barbell shrug","dumbbell shrug","reverse fly","dumbbell rear delt fly","dumbbell laying reverse fly"]},
+    {muscle:lang==="es"?"Piernas":"Legs",     color:"#e05555", exs:["squat","front squat","goblet squat","leg press","deadlift","romanian deadlift","bulgarian split squat","dumbbell bulgarian split squat","leg curl","leg extension","calf raise","seated calf raise","hip thrust","box jump","barbell thruster"]},
     {muscle:lang==="es"?"Bíceps":"Biceps",    color:"#8878c0", exs:["barbell curl","dumbbell curl","hammer curl","concentration curl","preacher curl","reverse curl"]},
     {muscle:lang==="es"?"Tríceps":"Triceps",  color:"#c07060", exs:["tricep pushdown","overhead tricep extension","skull crusher","bench dips","close grip bench press","diamond push ups"]},
     {muscle:lang==="es"?"Core":"Core",        color:"#70a0c0", exs:["plank","hanging knee raises","machine crunch","mountain climber"]},
@@ -2550,36 +2550,36 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
     const n=String(++_optIdx).padStart(2,"0");
     return(
       <button onClick={onClick} style={{
-        width:"100%",padding:"14px 0",cursor:"pointer",border:"none",
-        background:active?"rgba(240,242,245,0.07)":"transparent",
-        borderBottom:`1px solid ${active?"rgba(240,242,245,0.18)":"rgba(240,242,245,0.08)"}`,
-        borderRadius:active?8:0,
-        display:"flex",alignItems:"center",gap:14,textAlign:"left",
+        width:"100%",padding:"16px 18px",cursor:"pointer",border:"none",
+        background:active?"rgba(255,255,255,.05)":"transparent",
+        borderBottom:"1px solid rgba(255,255,255,.04)",
+        borderRadius:active?12:0,
+        display:"flex",alignItems:"center",gap:16,textAlign:"left",
         transition:"all 0.2s",position:"relative",outline:"none",
-        backdropFilter:active?"blur(12px)":"none",
-        WebkitBackdropFilter:active?"blur(12px)":"none",
       }}>
-        <div style={{width:2,height:active?"100%":"0%",background:C.tx,borderRadius:1,transition:"height 0.2s ease",position:"absolute",left:-14,top:0,bottom:0,margin:"auto"}}/>
-        <span style={{fontSize:9,fontFamily:mono,color:active?"#F0F2F5":"#9aa0b0",letterSpacing:1,minWidth:20,transition:"color 0.15s"}}>{n}</span>
-        <span style={{flex:1,fontSize:14,fontWeight:active?700:500,fontFamily:active?sans:mono,letterSpacing:active?-0.3:1,color:active?"#F0F2F5":"#b8bcc8",textTransform:active?"none":"uppercase",transition:"all 0.15s"}}>{children}</span>
-        <span style={{fontSize:10,fontFamily:mono,color:"#F0F2F5",opacity:active?1:0,transition:"opacity 0.15s"}}>●</span>
+        <div style={{width:2,height:active?"100%":"0%",background:"rgba(240,242,245,.8)",borderRadius:2,transition:"height 0.2s ease",position:"absolute",left:0,top:0,bottom:0}}/>
+        <span style={{fontSize:9,fontFamily:mono,color:active?"rgba(255,255,255,.45)":"rgba(255,255,255,.15)",letterSpacing:1,minWidth:22,transition:"color 0.15s"}}>{n}</span>
+        <span style={{flex:1,fontSize:15,fontWeight:active?700:400,fontFamily:active?sans:mono,letterSpacing:active?-.4:.5,color:active?"#F0F2F5":"rgba(255,255,255,.35)",transition:"all 0.15s"}}>{children}</span>
+        <div style={{width:7,height:7,borderRadius:"50%",background:"#F0F2F5",opacity:active?1:0,transition:"opacity 0.15s"}}/>
       </button>
     );
   };
 
   const Btn=({onClick,disabled,children,ghost})=>(
     <button onClick={onClick} disabled={disabled} style={{
-      width:"100%",padding:"16px 20px",cursor:disabled?"default":"pointer",
-      background:"transparent",border:"none",
-      borderTop:`1px solid ${disabled?C.borderL:ghost?C.borderL:C.tx}`,
-      borderBottom:`1px solid ${disabled?C.borderL:ghost?C.borderL:C.tx}`,
-      color:ghost?C.tx3:disabled?C.tx3:C.tx,
+      width:"100%",padding:"18px 24px",cursor:disabled?"default":"pointer",
+      background:ghost?"transparent":disabled?"rgba(255,255,255,.03)":"rgba(255,255,255,.06)",
+      border:`1px solid ${disabled?"rgba(255,255,255,.06)":ghost?"rgba(255,255,255,.08)":"rgba(255,255,255,.14)"}`,
+      borderRadius:16,
+      color:ghost?"rgba(255,255,255,.3)":disabled?"rgba(255,255,255,.2)":C.tx,
       fontSize:11,fontWeight:700,fontFamily:mono,
-      letterSpacing:4,textTransform:"uppercase",
+      letterSpacing:3,textTransform:"uppercase",
       display:"flex",alignItems:"center",justifyContent:"space-between",
-      transition:"all 0.2s",opacity:disabled?0.3:1,outline:"none"}}>
+      transition:"all 0.2s",opacity:disabled?0.4:1,outline:"none",
+      backdropFilter:ghost?"none":"blur(12px)",
+      WebkitBackdropFilter:ghost?"none":"blur(12px)"}}>
       <span>{children}</span>
-      {!ghost&&!disabled&&<span style={{fontSize:16,letterSpacing:0}}>→</span>}
+      {!ghost&&!disabled&&<span style={{fontSize:14,opacity:.6,letterSpacing:0}}>→</span>}
     </button>
   );
 
@@ -2595,7 +2595,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
   );
 
   return(
-    <div style={{minHeight:"100vh",background:`linear-gradient(160deg,#252936 0%,#2e3448 50%,#383e4e 100%)`,color:C.tx,fontFamily:sans}}>
+    <div style={{minHeight:"100vh",background:"#080a0e",color:C.tx,fontFamily:sans}}>
       {step===0&&(
         <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",justifyContent:"flex-end",padding:"0 26px",paddingBottom:"8vh",animation:"fogIn 0.8s ease",position:"relative",zIndex:1}}>
           {/* Canvas full viewport — partículas llegan al tope */}
@@ -2620,15 +2620,15 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
         </div>
       )}
       {(step>=1&&step<=TOTAL_STEPS||step===15)&&(
-        <div style={{padding:"0 26px",paddingTop:"7vh",paddingBottom:40,animation:"fu 0.4s ease"}}>
+        <div style={{padding:"0 28px",paddingTop:"8vh",paddingBottom:48,animation:"fu 0.5s cubic-bezier(0.16,1,0.3,1)"}}>
           <div style={{display:"flex",gap:6,marginBottom:36}}>
-            {Array.from({length:TOTAL_STEPS},(_,i)=><div key={i} style={{height:2,flex:1,borderRadius:1,background:step>i?C.tx:C.borderL,transition:"all 0.3s"}}/>)}
+            {Array.from({length:TOTAL_STEPS},(_,i)=><div key={i} style={{height:2,flex:1,borderRadius:1,background:step>i?"rgba(255,255,255,.8)":"rgba(255,255,255,.07)",transition:"all 0.4s",borderRadius:2}}/>)}
           </div>
           {step===1&&(<>
-            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>
+            <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,.2)",letterSpacing:4,marginBottom:16,textTransform:"uppercase"}}>
               {lang==="es"?"GÉNERO":"GENDER"}
             </div>
-            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:28,lineHeight:1,textTransform:"uppercase"}}>
+            <div style={{fontSize:36,fontWeight:900,letterSpacing:-1.5,marginBottom:24,lineHeight:.9}}>
               {lang==="es"?"Selecciona tu género":"Select your gender"}
             </div>
             <div style={{display:"flex",gap:12,marginBottom:12}}>
@@ -2682,38 +2682,90 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
 
           {/* ── STEP 15: GYM TYPE ── */}
           {step===15&&(<>
-            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{lang==="es"?"DÓNDE ENTRENAS":"WHERE DO YOU TRAIN"}</div>
-            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:28,lineHeight:1,textTransform:"uppercase"}}>
-              {lang==="es"?"Tu espacio de entrenamiento":"Your training space"}
+            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:3,marginBottom:16}}>{lang==="es"?"DÓNDE ENTRENAS":"WHERE DO YOU TRAIN"}</div>
+            <div style={{fontSize:32,fontWeight:900,letterSpacing:-1,marginBottom:8,lineHeight:1}}>
+              {lang==="es"?"Tu espacio de\nentrenamiento":"Your training\nspace"}
             </div>
-            <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:32}}>
+            <div style={{fontSize:12,color:C.tx3,fontFamily:mono,marginBottom:32,lineHeight:1.6}}>{lang==="es"?"Esto nos ayuda a elegir los ejercicios correctos":"This helps us pick the right exercises"}</div>
+
+            <div style={{display:"flex",flexDirection:"column",gap:14,marginBottom:32}}>
+              {/* GYM COMPLETO */}
               <button onClick={()=>{
                 setGymType("gym");
-                setEquipment(["Rack+Barra","Banco","Mancuernas","Dominadas","Paralelas","Barra Z/EZ","Leg Ext/Curl","Polea","Chaleco","Kettlebell","Bandas","treadmill","jump_rope"]);
+                setEquipment(["Rack+Barra","Banco","Mancuernas","Dominadas","Paralelas","Barra Z/EZ","Leg Ext/Curl","Polea","Chaleco","Kettlebell","Bandas"]);
                 setStep(2);
-              }} style={{padding:"20px 18px",borderRadius:14,cursor:"pointer",border:`1.5px solid rgba(240,242,245,0.12)`,background:"rgba(66,72,88,0.45)",backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",display:"flex",alignItems:"center",gap:16,outline:"none",transition:"all .2s"}}>
-                <div style={{width:42,height:42,borderRadius:12,background:"rgba(95,170,136,.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>GYM</div>
-                <div style={{textAlign:"left"}}>
-                  <div style={{fontSize:15,fontWeight:700,color:C.tx,marginBottom:3}}>{lang==="es"?"Gimnasio completo":"Full gym"}</div>
-                  <div style={{fontSize:11,color:C.tx3,fontFamily:mono}}>{lang==="es"?"Acceso a todo el equipamiento":"Access to full equipment"}</div>
+              }} style={{
+                padding:0,borderRadius:18,cursor:"pointer",
+                border:"1.5px solid rgba(95,170,136,.25)",
+                background:"rgba(95,170,136,.06)",
+                backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",
+                outline:"none",transition:"all .25s",overflow:"hidden",textAlign:"left"
+              }}>
+                <div style={{padding:"22px 20px",display:"flex",alignItems:"center",gap:18}}>
+                  {/* Icon */}
+                  <div style={{width:56,height:56,borderRadius:14,background:"linear-gradient(135deg,rgba(95,170,136,.25),rgba(95,170,136,.08))",border:"1px solid rgba(95,170,136,.3)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                      <rect x="2" y="11" width="4" height="6" rx="2" fill="rgba(95,170,136,.9)"/>
+                      <rect x="22" y="11" width="4" height="6" rx="2" fill="rgba(95,170,136,.9)"/>
+                      <rect x="6" y="9" width="3" height="10" rx="1.5" fill="rgba(95,170,136,.7)"/>
+                      <rect x="19" y="9" width="3" height="10" rx="1.5" fill="rgba(95,170,136,.7)"/>
+                      <rect x="9" y="13" width="10" height="2" rx="1" fill="rgba(95,170,136,1)"/>
+                    </svg>
+                  </div>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:16,fontWeight:800,color:C.tx,marginBottom:4,letterSpacing:-.3}}>{lang==="es"?"Gimnasio completo":"Full gym"}</div>
+                    <div style={{fontSize:11,color:"rgba(95,170,136,.7)",fontFamily:mono,letterSpacing:.5}}>{lang==="es"?"Todo el equipamiento disponible":"All equipment available"}</div>
+                  </div>
+                  <div style={{width:28,height:28,borderRadius:"50%",background:"rgba(95,170,136,.15)",border:"1px solid rgba(95,170,136,.3)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4" stroke="rgba(95,170,136,.9)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </div>
                 </div>
-                <div style={{marginLeft:"auto",fontSize:18,opacity:.4}}>›</div>
+                {/* Tags */}
+                <div style={{padding:"0 20px 18px",display:"flex",gap:6,flexWrap:"wrap"}}>
+                  {["Barras","Mancuernas","Máquinas","Poleas","Peso libre"].map(t=>(
+                    <span key={t} style={{fontSize:9,fontFamily:mono,padding:"3px 8px",borderRadius:6,background:"rgba(95,170,136,.1)",border:"1px solid rgba(95,170,136,.2)",color:"rgba(95,170,136,.8)",letterSpacing:1}}>{t}</span>
+                  ))}
+                </div>
               </button>
-              <button onClick={()=>{setGymType("homegym");setStep(8);}} style={{padding:"20px 18px",borderRadius:14,cursor:"pointer",border:`1.5px solid rgba(240,242,245,0.12)`,background:"rgba(66,72,88,0.45)",backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",display:"flex",alignItems:"center",gap:16,outline:"none",transition:"all .2s"}}>
-                <div style={{width:42,height:42,borderRadius:12,background:"rgba(192,168,112,.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>CASA</div>
-                <div style={{textAlign:"left"}}>
-                  <div style={{fontSize:15,fontWeight:700,color:C.tx,marginBottom:3}}>{lang==="es"?"Gym en casa":"Home gym"}</div>
-                  <div style={{fontSize:11,color:C.tx3,fontFamily:mono}}>{lang==="es"?"Selecciona tu equipamiento":"Select your equipment"}</div>
+
+              {/* GYM EN CASA */}
+              <button onClick={()=>{setGymType("homegym");setStep(8);}} style={{
+                padding:0,borderRadius:18,cursor:"pointer",
+                border:"1.5px solid rgba(192,168,112,.25)",
+                background:"rgba(192,168,112,.06)",
+                backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",
+                outline:"none",transition:"all .25s",overflow:"hidden",textAlign:"left"
+              }}>
+                <div style={{padding:"22px 20px",display:"flex",alignItems:"center",gap:18}}>
+                  {/* Icon */}
+                  <div style={{width:56,height:56,borderRadius:14,background:"linear-gradient(135deg,rgba(192,168,112,.25),rgba(192,168,112,.08))",border:"1px solid rgba(192,168,112,.3)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                      <path d="M14 3L4 10v15h7v-6h6v6h7V10L14 3z" stroke="rgba(192,168,112,.9)" strokeWidth="1.5" strokeLinejoin="round" fill="rgba(192,168,112,.12)"/>
+                      <rect x="11" y="14" width="6" height="6" rx="1" fill="rgba(192,168,112,.3)"/>
+                    </svg>
+                  </div>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:16,fontWeight:800,color:C.tx,marginBottom:4,letterSpacing:-.3}}>{lang==="es"?"Gym en casa":"Home gym"}</div>
+                    <div style={{fontSize:11,color:"rgba(192,168,112,.7)",fontFamily:mono,letterSpacing:.5}}>{lang==="es"?"Selecciona lo que tienes":"Select what you have"}</div>
+                  </div>
+                  <div style={{width:28,height:28,borderRadius:"50%",background:"rgba(192,168,112,.15)",border:"1px solid rgba(192,168,112,.3)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4" stroke="rgba(192,168,112,.9)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </div>
                 </div>
-                <div style={{marginLeft:"auto",fontSize:18,opacity:.4}}>→</div>
+                <div style={{padding:"0 20px 18px",display:"flex",gap:6,flexWrap:"wrap"}}>
+                  {["Rack","Mancuernas","Dominadas","Bandas","Kettlebell"].map(t=>(
+                    <span key={t} style={{fontSize:9,fontFamily:mono,padding:"3px 8px",borderRadius:6,background:"rgba(192,168,112,.1)",border:"1px solid rgba(192,168,112,.2)",color:"rgba(192,168,112,.8)",letterSpacing:1}}>{t}</span>
+                  ))}
+                </div>
               </button>
             </div>
-            <div style={{flex:1}}><Btn ghost onClick={()=>setStep(1)}>{t.back}</Btn></div>
+
+            <Btn ghost onClick={()=>setStep(1)}>{t.back}</Btn>
           </>)}
 
           {step===2&&(<>
-            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{lang==="es"?"RUTINA":"ROUTINE"}</div>
-            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:28,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"¿Cómo la quieres?":"How do you want it?"}</div>
+            <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,.2)",letterSpacing:4,marginBottom:16,textTransform:"uppercase"}}>{lang==="es"?"RUTINA":"ROUTINE"}</div>
+            <div style={{fontSize:36,fontWeight:900,letterSpacing:-1.5,marginBottom:24,lineHeight:.9}}>{lang==="es"?"¿Cómo la quieres?":"How do you want it?"}</div>
             <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:32}}>
               <button onClick={()=>{setMode("auto");setStep(3);}} style={{
                 padding:"20px 18px",borderRadius:14,cursor:"pointer",border:`1.5px solid rgba(240,242,245,0.12)`,
@@ -2752,7 +2804,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             <div style={{flex:1}}><Btn ghost onClick={()=>setStep(15)}>{t.back}</Btn></div>
           </>)}
           {step===3&&(<>
-            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{t.goal}</div>
+            <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,.2)",letterSpacing:4,marginBottom:16,textTransform:"uppercase"}}>{t.goal}</div>
             <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:24,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"¿Qué buscas?":"What's your goal?"}</div>
             <div style={{display:"flex",flexDirection:"column",borderTop:`1px solid rgba(240,242,245,0.12)`}}>
               {[["muscle",t.muscle],["strength",t.strength],["lose",t.lose],["recomp",t.recomp],["general",t.general]].map(([id,lb])=>(
@@ -2765,7 +2817,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             </div>
           </>)}
           {step===4&&mode==="auto"&&(<>
-            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{t.level}</div>
+            <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,.2)",letterSpacing:4,marginBottom:16,textTransform:"uppercase"}}>{t.level}</div>
             <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:24,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"Tu experiencia":"Your experience"}</div>
             <div style={{display:"flex",flexDirection:"column",borderTop:`1px solid rgba(240,242,245,0.12)`}}>
               {[["beg",t.beg],["int",t.int],["adv",t.adv]].map(([id,lb])=>(
@@ -2778,7 +2830,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             </div>
           </>)}
           {step===4&&mode!=="auto"&&(<>
-            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{lang==="es"?"UNIDADES":"UNITS"}</div>
+            <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,.2)",letterSpacing:4,marginBottom:16,textTransform:"uppercase"}}>{lang==="es"?"UNIDADES":"UNITS"}</div>
             <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:32,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"Sistema de medida":"Measurement"}</div>
             <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:32}}>
               {[
@@ -2807,7 +2859,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
           </>)}
           {step===5&&(<>
             <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{lang==="es"?"DATOS FÍSICOS":"BODY DATA"}</div>
-            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:28,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"Tu cuerpo":"Your body"}</div>
+            <div style={{fontSize:36,fontWeight:900,letterSpacing:-1.5,marginBottom:24,lineHeight:.9}}>{lang==="es"?"Tu cuerpo":"Your body"}</div>
             <div style={{display:"flex",flexDirection:"column",gap:20,marginBottom:32}}>
               <Num val={age} set={setAge} min={13} max={80} label={lang==="es"?"EDAD":"AGE"}/>
               <Num
@@ -2991,12 +3043,12 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             {(()=>{
               const EQ_CARDS=[
                 {id:"rack",            n:{es:"Rack + Barra",   en:"Rack + Bar"},    c:"#6a8fc0",ex:24,img:"https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&q=70&fit=crop"},
-                {id:"bench",           n:{es:"Banco",           en:"Bench"},         c:"#c0a870",ex:18,img:"https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=400&q=70&fit=crop"},
-                {id:"dumbbells",       n:{es:"Mancuernas",      en:"Dumbbells"},     c:"#5faa88",ex:20,img:"https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=400&q=70&fit=crop"},
+                {id:"bench",           n:{es:"Banco",           en:"Bench"},         c:"#f0b429",ex:18,img:"https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=400&q=70&fit=crop"},
+                {id:"dumbbells",       n:{es:"Mancuernas",      en:"Dumbbells"},     c:"#3fcf8e",ex:20,img:"https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=400&q=70&fit=crop"},
                 {id:"pull_up_bar",     n:{es:"Dominadas",       en:"Pull-up bar"},   c:"#8878c0",ex:8, img:"https://images.unsplash.com/photo-1601422407692-ec4eeec1d9b3?w=400&q=70&fit=crop"},
                 {id:"dip_bar",         n:{es:"Paralelas",       en:"Dip bars"},      c:"#5faa88",ex:5, img:"https://images.unsplash.com/photo-1576678927484-cc907957088c?w=400&q=70&fit=crop"},
                 {id:"ez_bar",          n:{es:"Barra Z / EZ",    en:"EZ / Curl bar"}, c:"#c0a870",ex:8, img:"https://images.unsplash.com/photo-1581009137042-c552e485697a?w=400&q=70&fit=crop"},
-                {id:"leg_extension",   n:{es:"Leg Ext / Curl",  en:"Leg ext / curl"},c:"#d96060",ex:6, img:"https://images.unsplash.com/photo-1574680178050-55c6a6a96e0a?w=400&q=70&fit=crop"},
+                {id:"leg_extension",   n:{es:"Leg Ext / Curl",  en:"Leg ext / curl"},c:"#e05555",ex:6, img:"https://images.unsplash.com/photo-1574680178050-55c6a6a96e0a?w=400&q=70&fit=crop"},
                 {id:"cable_machine",   n:{es:"Polea",           en:"Cable machine"}, c:"#d96060",ex:12,img:"https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400&q=70&fit=crop"},
                 {id:"weight_vest",     n:{es:"Chaleco lastrado","en":"Weight vest"},  c:"#8878c0",ex:6, img:"https://images.unsplash.com/photo-1609899464726-76e0e6c6aac7?w=400&q=70&fit=crop"},
                 {id:"kettlebell",      n:{es:"Kettlebell",      en:"Kettlebell"},    c:"#5faa88",ex:10,img:"https://images.unsplash.com/photo-1517344884509-a0c97ec11bcc?w=400&q=70&fit=crop"},
@@ -3322,7 +3374,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                             <div style={{display:"flex",flexDirection:"column",gap:6,alignItems:"center",flexShrink:0}}>
                               <button onClick={(e)=>{e.stopPropagation();setDrawerEx(drawerEx===ex?null:ex);}} style={{
                                 padding:"4px 8px",borderRadius:8,fontSize:8,fontFamily:mono,
-                                background:"rgba(106,143,192,0.1)",border:"1px solid rgba(106,143,192,0.2)",
+                                background:"rgba(79,142,247,.08)",border:"1px solid rgba(79,142,247,.15)",
                                 color:C.blue,cursor:"pointer",letterSpacing:.5,
                               }}>INFO</button>
                               <button onClick={()=>{
