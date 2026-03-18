@@ -1772,6 +1772,20 @@ function VideoThumb({src,size=56}){
   );
 }
 
+function EqIcon({id,color}){
+  const c=color||"currentColor";
+  const W="1.5";const S={width:15,height:15};
+  if(id==="rack")      return <svg viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={W} strokeLinecap="round" style={S}><line x1="5" y1="3" x2="5" y2="21"/><line x1="19" y1="3" x2="19" y2="21"/><line x1="3" y1="5" x2="21" y2="5"/><line x1="3" y1="10" x2="8" y2="10"/><line x1="16" y1="10" x2="21" y2="10"/><line x1="1" y1="13" x2="23" y2="13" strokeWidth="2.2"/><rect x="1" y="10.5" width="2" height="5" rx=".5"/><rect x="21" y="10.5" width="2" height="5" rx=".5"/></svg>;
+  if(id==="bench")     return <svg viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={W} strokeLinecap="round" style={S}><rect x="2" y="9" width="20" height="5" rx="2.5"/><line x1="5" y1="14" x2="5" y2="21"/><line x1="19" y1="14" x2="19" y2="21"/><line x1="3" y1="21" x2="7" y2="21"/><line x1="17" y1="21" x2="21" y2="21"/><path d="M2 9 L4 5"/></svg>;
+  if(id==="dumbbells") return <svg viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={W} strokeLinecap="round" style={S}><rect x="1" y="9" width="4" height="6" rx="1.5"/><rect x="19" y="9" width="4" height="6" rx="1.5"/><line x1="5" y1="12" x2="19" y2="12" strokeWidth="2.2"/></svg>;
+  if(id==="cable_machine") return <svg viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={W} strokeLinecap="round" style={S}><rect x="2" y="3" width="11" height="18" rx="2"/><line x1="4" y1="7" x2="11" y2="7" strokeWidth=".8"/><line x1="4" y1="13" x2="11" y2="13" strokeWidth="1.8"/><circle cx="19" cy="5" r="2.5"/><path d="M7 3 Q7 1 19 1" fill="none"/><line x1="19" y1="7.5" x2="19" y2="15"/></svg>;
+  if(id==="pull_up_bar") return <svg viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={W} strokeLinecap="round" style={S}><line x1="3" y1="4" x2="3" y2="20"/><line x1="21" y1="4" x2="21" y2="20"/><line x1="1" y1="6" x2="23" y2="6" strokeWidth="2.5"/><line x1="8" y1="6" x2="8" y2="10" strokeWidth=".9"/><line x1="12" y1="6" x2="12" y2="10" strokeWidth=".9"/><line x1="16" y1="6" x2="16" y2="10" strokeWidth=".9"/></svg>;
+  if(id==="machine")   return <svg viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={W} strokeLinecap="round" style={S}><rect x="2" y="2" width="13" height="20" rx="2"/><rect x="4" y="13" width="7" height="3" rx="1"/><rect x="16" y="4" width="6" height="14" rx="1.5"/><line x1="17" y1="13" x2="21" y2="13" strokeWidth="1.8"/><path d="M7 13 Q11 8 15 6" strokeWidth="1.4"/></svg>;
+  if(id==="dip_bar")   return <svg viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={W} strokeLinecap="round" style={S}><line x1="4" y1="8" x2="4" y2="20"/><line x1="10" y1="8" x2="10" y2="20"/><line x1="14" y1="8" x2="14" y2="20"/><line x1="20" y1="8" x2="20" y2="20"/><line x1="2" y1="8" x2="12" y2="8" strokeWidth="2.5"/><line x1="12" y1="8" x2="22" y2="8" strokeWidth="2.5"/></svg>;
+  if(id==="leg_press_machine") return <svg viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={W} strokeLinecap="round" style={S}><rect x="2" y="14" width="14" height="7" rx="2"/><rect x="4" y="8" width="5" height="6" rx="1.5"/><rect x="14" y="4" width="8" height="12" rx="2"/><line x1="15" y1="10" x2="21" y2="10" strokeWidth="1.8"/><path d="M9 14 L14 8" strokeWidth="1.4"/></svg>;
+  return null;
+}
+
 function Onboard({lang,setLang,step,setStep,sp,sr}){
   const[goal,setGoal]=useState("");
   const[level,setLevel]=useState("");
@@ -2186,110 +2200,6 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               <div style={{flex:2}}><Btn onClick={()=>setStep(8)} disabled={!days}>{t.next}</Btn></div>
             </div>
           </>)}
-          {/* ── STEP 8 — EQUIPO ─────────────────────────────────────── */}
-          {step===8&&(<>
-            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>
-              {lang==="es"?"EQUIPAMIENTO":"EQUIPMENT"}
-            </div>
-            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:28,lineHeight:1,textTransform:"uppercase"}}>
-              {lang==="es"?"¿Qué tienes?":"What do you have?"}
-            </div>
-
-            {/* ── 3 PILLS PRESET ── */}
-            <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:24}}>
-              {[
-                {key:"full",  icon:"🏋️", es:"Gym completo",  en:"Full gym",    sub:{es:"Barras, mancuernas, máquinas, poleas",en:"Barbells, dumbbells, machines, cables"},
-                  eq:["barbell","dumbbells","bench","rack","pull_up_bar","dip_bar","cable_machine","machine","leg_press_machine"]},
-                {key:"home",  icon:"🔩", es:"Home gym",       en:"Home gym",    sub:{es:"Barra, mancuernas, banco, dominadas",en:"Barbell, dumbbells, bench, pull-up bar"},
-                  eq:["barbell","dumbbells","bench","rack","pull_up_bar","dip_bar"]},
-                {key:"custom",icon:"✏️", es:"Lo selecciono yo",en:"Custom",     sub:{es:"Elige exactamente lo que tienes",en:"Pick exactly what you have"},
-                  eq:null},
-              ].map(({key,icon,es:esl,en:enl,sub,eq})=>{
-                const active=eqMode===key;
-                return(
-                  <button key={key} onClick={()=>{
-                    setEqMode(key);
-                    if(eq) setEquipment(eq);
-                    else setEquipment([]);
-                  }} style={{
-                    padding:"18px 20px",borderRadius:16,cursor:"pointer",
-                    border:`1.5px solid ${active?"rgba(240,242,245,0.5)":"rgba(240,242,245,0.08)"}`,
-                    background:active?"rgba(240,242,245,0.09)":"rgba(66,72,88,0.35)",
-                    backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",
-                    display:"flex",alignItems:"center",gap:16,outline:"none",transition:"all .2s",
-                  }}>
-                    <div style={{fontSize:28,flexShrink:0}}>{icon}</div>
-                    <div style={{textAlign:"left",flex:1}}>
-                      <div style={{fontSize:15,fontWeight:active?700:500,color:active?"#F0F2F5":"#b8bcc8",marginBottom:2,transition:"all .15s"}}>
-                        {lang==="es"?esl:enl}
-                      </div>
-                      <div style={{fontSize:10,fontFamily:mono,color:"#7a8294",letterSpacing:.5}}>
-                        {lang==="es"?sub.es:sub.en}
-                      </div>
-                    </div>
-                    <div style={{width:22,height:22,borderRadius:"50%",flexShrink:0,
-                      background:active?"#F0F2F5":"transparent",
-                      border:`1.5px solid ${active?"#F0F2F5":"rgba(240,242,245,0.2)"}`,
-                      display:"flex",alignItems:"center",justifyContent:"center",
-                      fontSize:12,color:active?"#2c3040":"transparent",transition:"all .2s",
-                    }}>{active?"✓":""}</div>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* ── BURBUJAS CUSTOM (solo si no hay preset activo) ── */}
-            {(()=>{
-              const presets=[
-                ["barbell","dumbbells","bench","rack","pull_up_bar","dip_bar","cable_machine","machine","leg_press_machine"],
-                ["barbell","dumbbells","bench","rack","pull_up_bar","dip_bar"],
-              ];
-              const isPreset=presets.some(p=>JSON.stringify([...equipment].sort())===JSON.stringify([...p].sort()));
-              if(isPreset&&equipment.length>0) return null;
-              return(
-                <div style={{marginBottom:24}}>
-                  <div style={{fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:14,textTransform:"uppercase"}}>
-                    {lang==="es"?"Toca lo que tienes":"Tap what you have"}
-                  </div>
-                  {[...new Set(EQ_OPTIONS.map(e=>e.group))].map(grp=>(
-                    <div key={grp} style={{marginBottom:16}}>
-                      <div style={{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:2,textTransform:"uppercase",marginBottom:10,opacity:.6}}>{grp}</div>
-                      <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
-                        {EQ_OPTIONS.filter(e=>e.group===grp).map(({id,es:esl,en:enl,icon})=>{
-                          const on=equipment.includes(id);
-                          return(
-                            <button key={id} onClick={()=>setEquipment(on?equipment.filter(x=>x!==id):[...equipment,id])}
-                              style={{
-                                display:"flex",alignItems:"center",gap:6,
-                                padding:"9px 14px",borderRadius:50,cursor:"pointer",
-                                border:`1.5px solid ${on?"rgba(240,242,245,0.5)":"rgba(240,242,245,0.08)"}`,
-                                background:on?"rgba(240,242,245,0.12)":"rgba(66,72,88,0.3)",
-                                backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)",
-                                transition:"all .15s",outline:"none",
-                              }}>
-                              <span style={{fontSize:15}}>{icon}</span>
-                              <span style={{fontSize:11,fontWeight:on?600:400,color:on?"#F0F2F5":"#9aa0b0",fontFamily:mono,whiteSpace:"nowrap"}}>
-                                {lang==="es"?esl:enl}
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                  <div style={{fontFamily:mono,fontSize:9,color:C.tx3,letterSpacing:1,marginTop:8,opacity:.7}}>
-                    {(()=>{const avail=Object.keys(EQ_MAP).filter(ex=>hasEquip(ex)).length;
-                      return lang==="es"?`${avail} ejercicios disponibles`:`${avail} exercises available`;
-                    })()}
-                  </div>
-                </div>
-              );
-            })()}
-
-            <div style={{display:"flex",gap:10,marginTop:8}}>
-              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(6)}>{t.back}</Btn></div>
-              <div style={{flex:2}}><Btn onClick={()=>setStep(7)}>{t.next}</Btn></div>
-            </div>
           </>)}
 
           {step===7&&(<>
@@ -2351,7 +2261,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
       )}
 
       {/* ── FLUJO MANUAL ── */}
-      {(step===20||step===21||step===22||step===23)&&(
+      {(step===8||step===20||step===21||step===22||step===23)&&(
         <div style={{padding:"0 26px",paddingTop:"7vh",paddingBottom:40,animation:"fu 0.4s ease"}}>
           {/* Step 20 — cuántos días manual */}
           {step===20&&(<>
@@ -2423,89 +2333,96 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             </div>
           </>)}
 
-          {/* Step 22 — equipo manual con pills + burbujas */}
-          {step===22&&(<>
-            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{lang==="es"?"EQUIPAMIENTO":"EQUIPMENT"}</div>
-            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:28,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"¿Qué tienes?":"What do you have?"}</div>
-            {/* 3 pills preset */}
-            <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:24}}>
-              {[
-                {key:"full",  icon:"🏋️", es:"Gym completo",   en:"Full gym",
-                  sub:{es:"Barras, mancuernas, máquinas, poleas",en:"Barbells, dumbbells, machines, cables"},
-                  eq:["barbell","dumbbells","bench","rack","pull_up_bar","dip_bar","cable_machine","machine","leg_press_machine"]},
-                {key:"home",  icon:"🔩", es:"Home gym",        en:"Home gym",
-                  sub:{es:"Barra, mancuernas, banco, dominadas",en:"Barbell, dumbbells, bench, pull-up bar"},
-                  eq:["barbell","dumbbells","bench","rack","pull_up_bar","dip_bar"]},
-                {key:"custom",icon:"✏️", es:"Lo selecciono yo",en:"Custom",
-                  sub:{es:"Elige exactamente lo que tienes",en:"Pick exactly what you have"},
-                  eq:null},
-              ].map(({key,icon,es:esl,en:enl,sub,eq})=>{
-                const active=eqMode===key;
-                return(
-                  <button key={key} onClick={()=>{setEqMode(key);if(eq)setEquipment(eq);else setEquipment([]);}} style={{
-                    padding:"18px 20px",borderRadius:16,cursor:"pointer",
-                    border:`1.5px solid ${active?"rgba(240,242,245,0.5)":"rgba(240,242,245,0.08)"}`,
-                    background:active?"rgba(240,242,245,0.09)":"rgba(66,72,88,0.35)",
-                    backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",
-                    display:"flex",alignItems:"center",gap:16,outline:"none",transition:"all .2s",
-                  }}>
-                    <div style={{fontSize:28,flexShrink:0}}>{icon}</div>
-                    <div style={{flex:1,textAlign:"left"}}>
-                      <div style={{fontSize:15,fontWeight:active?700:500,color:active?"#F0F2F5":"#b8bcc8",marginBottom:2}}>{lang==="es"?esl:enl}</div>
-                      <div style={{fontSize:10,fontFamily:mono,color:"#7a8294",letterSpacing:.5}}>{lang==="es"?sub.es:sub.en}</div>
-                    </div>
-                    <div style={{width:22,height:22,borderRadius:"50%",flexShrink:0,
-                      background:active?"#F0F2F5":"transparent",
-                      border:`1.5px solid ${active?"#F0F2F5":"rgba(240,242,245,0.2)"}`,
-                      display:"flex",alignItems:"center",justifyContent:"center",
-                      fontSize:12,color:active?"#2c3040":"transparent",transition:"all .2s",
-                    }}>{active?"✓":""}</div>
-                  </button>
-                );
-              })}
+          {/* ── EQUIPMENT SELECTOR — glass cards ── */}
+          {(step===22||step===8)&&(<>
+            <div style={{fontSize:10,fontFamily:mono,color:"rgba(255,255,255,.18)",letterSpacing:3,marginBottom:10,textTransform:"uppercase"}}>
+              {lang==="es"?"EQUIPAMIENTO":"EQUIPMENT"}
             </div>
-            {/* Burbujas custom — solo si eqMode==="custom" */}
+            <div style={{fontSize:30,fontWeight:900,letterSpacing:-1.2,marginBottom:6,lineHeight:1,
+              background:"linear-gradient(135deg,rgba(255,255,255,.92) 0%,rgba(255,255,255,.5) 100%)",
+              WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"
+            }}>{lang==="es"?"¿Qué tienes?":"What do you have?"}</div>
+            <div style={{fontFamily:mono,fontSize:9,color:"rgba(255,255,255,.18)",letterSpacing:1.5,marginBottom:20}}>
+              {lang==="es"?"TOCA EL EQUIPO DE TU GYM":"TAP YOUR GYM EQUIPMENT"}
+            </div>
             {(()=>{
-              if(eqMode!=="custom") return null;
-              return(
-                <div style={{marginBottom:24}}>
-                  <div style={{fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:14,textTransform:"uppercase"}}>
-                    {lang==="es"?"Toca lo que tienes":"Tap what you have"}
-                  </div>
-                  {[...new Set(EQ_OPTIONS.map(e=>e.group))].map(grp=>(
-                    <div key={grp} style={{marginBottom:18}}>
-                      <div style={{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:2,textTransform:"uppercase",marginBottom:10,opacity:.6}}>{grp}</div>
-                      <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
-                        {EQ_OPTIONS.filter(e=>e.group===grp).map(({id,es:esl,en:enl,icon})=>{
-                          const on=equipment.includes(id);
-                          return(
-                            <button key={id} onClick={()=>setEquipment(on?equipment.filter(x=>x!==id):[...equipment,id])}
-                              style={{
-                                display:"flex",alignItems:"center",gap:6,padding:"9px 14px",borderRadius:50,cursor:"pointer",
-                                border:`1.5px solid ${on?"rgba(240,242,245,0.5)":"rgba(240,242,245,0.08)"}`,
-                                background:on?"rgba(240,242,245,0.12)":"rgba(66,72,88,0.3)",
-                                backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)",
-                                transition:"all .15s",outline:"none",
-                              }}>
-                              <span style={{fontSize:15}}>{icon}</span>
-                              <span style={{fontSize:11,fontWeight:on?600:400,color:on?"#F0F2F5":"#9aa0b0",fontFamily:mono,whiteSpace:"nowrap"}}>{lang==="es"?esl:enl}</span>
-                            </button>
-                          );
-                        })}
+              const EQ_CARDS=[
+                {id:"rack",              n:{es:"Rack + Barra",en:"Rack + Bar"},   c:"#6a8fc0",ex:24,img:"https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&q=70&fit=crop"},
+                {id:"bench",             n:{es:"Banco",        en:"Bench"},        c:"#c0a870",ex:18,img:"https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=400&q=70&fit=crop"},
+                {id:"dumbbells",         n:{es:"Mancuernas",   en:"Dumbbells"},    c:"#5faa88",ex:20,img:"https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=400&q=70&fit=crop"},
+                {id:"cable_machine",     n:{es:"Polea",         en:"Cable"},        c:"#d96060",ex:12,img:"https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400&q=70&fit=crop"},
+                {id:"pull_up_bar",       n:{es:"Dominadas",     en:"Pull-up bar"},  c:"#8878c0",ex:6, img:"https://images.unsplash.com/photo-1601422407692-ec4eeec1d9b3?w=400&q=70&fit=crop"},
+                {id:"machine",           n:{es:"Máquinas",      en:"Machines"},     c:"#6a8fc0",ex:10,img:"https://images.unsplash.com/photo-1623874514711-0f321325f318?w=400&q=70&fit=crop"},
+                {id:"dip_bar",           n:{es:"Paralelas",     en:"Dip bars"},     c:"#5faa88",ex:5, img:"https://images.unsplash.com/photo-1576678927484-cc907957088c?w=400&q=70&fit=crop"},
+                {id:"leg_press_machine", n:{es:"Leg Press",     en:"Leg press"},    c:"#d96060",ex:3, img:"https://images.unsplash.com/photo-1574680178050-55c6a6a96e0a?w=400&q=70&fit=crop"},
+              ];
+              const tot=[...equipment].reduce((s,id)=>{const c=EQ_CARDS.find(x=>x.id===id);return s+(c?.ex||0);},15);
+              return(<>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:12}}>
+                  {EQ_CARDS.map(({id,n,c,ex,img})=>{
+                    const on=equipment.includes(id);
+                    const cardBg=on?"rgba(255,255,255,.08)":"rgba(255,255,255,.04)";
+                    const cardBorder=on?c:"rgba(255,255,255,.09)";
+                    const cardShadow=on?"0 12px 32px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.12)":"inset 0 1px 0 rgba(255,255,255,.08),0 4px 16px rgba(0,0,0,.25)";
+                    const iconBg=on?"rgba(255,255,255,.12)":"rgba(255,255,255,.06)";
+                    const iconBorder=on?c:"rgba(255,255,255,.1)";
+                    const imgBrightness=on?"brightness(.28) saturate(.6) contrast(1.1)":"brightness(.15) saturate(.25) contrast(1.15)";
+                    return(
+                      <div key={id} onClick={()=>setEquipment(on?equipment.filter(x=>x!==id):[...equipment,id])} style={{
+                        position:"relative",borderRadius:16,overflow:"hidden",cursor:"pointer",aspectRatio:".85",
+                        background:cardBg,
+                        backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",
+                        border:"1.5px solid "+cardBorder,
+                        boxShadow:cardShadow,
+                        transform:on?"translateY(-3px) scale(1.02)":"scale(1)",
+                        transition:"all .25s cubic-bezier(.34,1.56,.64,1)",
+                      }}>
+                        <img src={img} alt="" style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",filter:imgBrightness,transform:"scale(1.06)",transition:"filter .3s"}}/>
+                        <div style={{position:"absolute",inset:0,background:"linear-gradient(135deg,rgba(255,255,255,.05) 0%,transparent 60%)",pointerEvents:"none",zIndex:1}}/>
+                        {on&&<div style={{position:"absolute",inset:0,background:"rgba(255,255,255,.03)",pointerEvents:"none",zIndex:1}}/>}
+                        <div style={{position:"absolute",top:8,left:8,zIndex:3,width:32,height:32,borderRadius:9,display:"flex",alignItems:"center",justifyContent:"center",background:iconBg,border:"1px solid "+iconBorder,backdropFilter:"blur(8px)",color:on?"rgba(255,255,255,.9)":"rgba(255,255,255,.5)",boxShadow:"inset 0 1px 0 rgba(255,255,255,.1)",transition:"all .25s"}}>
+                          <EqIcon id={id} color={on?c:"rgba(255,255,255,.5)"}/>
+                        </div>
+                        <div style={{position:"absolute",top:7,right:7,zIndex:3,width:20,height:20,borderRadius:"50%",background:c,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#fff",fontWeight:700,opacity:on?1:0,transform:on?"scale(1) rotate(0deg)":"scale(0) rotate(-180deg)",transition:"all .3s cubic-bezier(.34,1.56,.64,1)"}}>✓</div>
+                        <div style={{position:"absolute",bottom:0,left:0,right:0,zIndex:2,padding:"20px 10px 10px",background:"linear-gradient(transparent,rgba(5,8,16,.75) 60%,rgba(5,8,16,.88) 100%)"}}>
+                          <div style={{fontSize:10.5,fontWeight:700,color:on?"rgba(255,255,255,.92)":"rgba(255,255,255,.38)",letterSpacing:.2,transition:"color .2s"}}>{lang==="es"?n.es:n.en}</div>
+                          <div style={{fontFamily:mono,fontSize:8,color:on?c:"rgba(255,255,255,.12)",letterSpacing:.5,marginTop:2,transition:"color .2s"}}>{ex}+ {lang==="es"?"ejercicios":"exercises"}</div>
+                        </div>
                       </div>
+                    );
+                  })}
+                  <div style={{position:"relative",borderRadius:16,overflow:"hidden",aspectRatio:".85",opacity:.45,background:"rgba(255,255,255,.04)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",border:"1px solid rgba(200,204,216,.15)",boxShadow:"inset 0 1px 0 rgba(255,255,255,.07)"}}>
+                    <div style={{position:"absolute",inset:0,background:"linear-gradient(135deg,rgba(255,255,255,.02),rgba(255,255,255,.005))"}}/>
+                    <div style={{position:"absolute",top:8,left:8,zIndex:2,width:32,height:32,borderRadius:9,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(255,255,255,.05)",border:"1px solid rgba(255,255,255,.07)",color:"rgba(255,255,255,.35)"}}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" style={{width:15,height:15}}><circle cx="12" cy="4" r="2"/><path d="M12 6 L12 14 M9 9 L15 9 M12 14 L9 21 M12 14 L15 21"/></svg>
                     </div>
-                  ))}
-                  <div style={{fontFamily:mono,fontSize:9,color:C.tx3,letterSpacing:1,marginTop:4,opacity:.7}}>
-                    {(()=>{const avail=Object.keys(EQ_MAP).filter(ex=>hasEquip(ex)).length;
-                      return lang==="es"?`${avail} ejercicios disponibles`:`${avail} exercises available`;
-                    })()}
+                    <div style={{position:"absolute",top:7,right:7,zIndex:2,width:20,height:20,borderRadius:"50%",background:"rgba(200,204,216,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"rgba(255,255,255,.4)",fontWeight:700}}>✓</div>
+                    <div style={{position:"absolute",bottom:0,left:0,right:0,zIndex:2,padding:"20px 10px 10px",background:"linear-gradient(transparent,rgba(5,8,16,.7))"}}>
+                      <div style={{fontSize:10.5,fontWeight:700,color:"rgba(255,255,255,.22)",letterSpacing:.2}}>{lang==="es"?"Peso corporal":"Bodyweight"}</div>
+                      <div style={{fontFamily:mono,fontSize:8,color:"rgba(255,255,255,.1)",letterSpacing:.5,marginTop:2}}>{lang==="es"?"siempre incluido":"always included"}</div>
+                    </div>
                   </div>
                 </div>
-              );
+                <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:5,marginBottom:14}}>
+                  {EQ_CARDS.map(({id,c})=>(<div key={id} style={{width:4,height:4,borderRadius:"50%",background:equipment.includes(id)?c:"rgba(255,255,255,.08)",boxShadow:equipment.includes(id)?`0 0 6px ${c}`:"none",transform:equipment.includes(id)?"scale(1.5)":"scale(1)",transition:"all .3s cubic-bezier(.34,1.56,.64,1)"}}/>))}
+                </div>
+                <div style={{borderRadius:18,overflow:"hidden",marginBottom:16,background:"rgba(255,255,255,.04)",backdropFilter:"blur(24px)",WebkitBackdropFilter:"blur(24px)",border:"1px solid rgba(255,255,255,.07)",boxShadow:"inset 0 1px 0 rgba(255,255,255,.08),0 8px 24px rgba(0,0,0,.3)"}}>
+                  <div style={{padding:"12px 16px",borderBottom:"1px solid rgba(255,255,255,.04)",background:"rgba(255,255,255,.02)",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                    <div style={{fontFamily:mono,fontSize:8,letterSpacing:3,color:"rgba(255,255,255,.18)",textTransform:"uppercase"}}>{lang==="es"?"equipo seleccionado":"selected"}</div>
+                    <div style={{fontFamily:mono,fontSize:10,color:equipment.length>0?"#6a8fc0":"rgba(255,255,255,.15)"}}>{equipment.length>0?`${tot}+ ${lang==="es"?"ejercicios":"exercises"}`:"—"}</div>
+                  </div>
+                  <div style={{padding:"10px 14px 12px",minHeight:44,display:"flex",flexWrap:"wrap",gap:6,alignItems:"center"}}>
+                    {equipment.length===0
+                      ?<div style={{fontFamily:mono,fontSize:9,color:"rgba(255,255,255,.1)",width:"100%",textAlign:"center",letterSpacing:1}}>{lang==="es"?"↑ toca tu equipo arriba":"↑ tap equipment above"}</div>
+                      :equipment.map(id=>{const card=EQ_CARDS.find(x=>x.id===id);return card?(<div key={id} onClick={()=>setEquipment(equipment.filter(x=>x!==id))} style={{display:"inline-flex",alignItems:"center",gap:5,padding:"5px 12px",borderRadius:50,cursor:"pointer",fontFamily:mono,fontSize:9,color:"rgba(255,255,255,.5)",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.07)",backdropFilter:"blur(8px)",transition:"all .15s"}}><div style={{width:5,height:5,borderRadius:"50%",background:card.c,flexShrink:0}}/>{lang==="es"?card.n.es:card.n.en}<span style={{opacity:.25,fontSize:13,marginLeft:2}}>×</span></div>):null;})
+                    }
+                  </div>
+                </div>
+              </>);
             })()}
             <div style={{display:"flex",gap:10}}>
-              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(21)}>{t.back}</Btn></div>
-              <div style={{flex:2}}><Btn onClick={()=>{setCatalogDay(0);setCatalogMuscle("");setStep(23);}}>{lang==="es"?"VER CATÁLOGO →":"CATALOG →"}</Btn></div>
+              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(step===22?21:6)}>{t.back}</Btn></div>
+              <div style={{flex:2}}><Btn onClick={()=>{if(step===22){setCatalogDay(0);setCatalogMuscle("");setStep(23);}else setStep(7);}}>{step===22?(lang==="es"?"VER CATÁLOGO →":"CATALOG →"):t.next}</Btn></div>
             </div>
           </>)}
 
