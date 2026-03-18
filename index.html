@@ -1814,6 +1814,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
 
   // Catálogo de ejercicios agrupado por músculo
   const[equipment,setEquipment]=useState([]); // equipo disponible
+  const[selCeleb,setSelCeleb]=useState(null); // celebrity routine selection
   const[eqMode,setEqMode]=useState(null); // "full" | "home" | "custom" | null
 
   // Mapa equipo por ejercicio
@@ -2477,7 +2478,6 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                   desc:{es:"El programa del dios de la estética. Volumen, definición, posado.",en:"The aesthetics god program. Volume, definition, posing."},
                   routine:{days:5,split:"Chest/Back/Shoulders/Arms/Legs",exercises:{Chest:["Press banca","Press inclinado","Aperturas cable","Fondos"],Back:["Peso muerto","Jalón polea","Remo con barra","Pullover"],Shoulders:["Press militar","Laterales","Pájaros","Face pull"],Arms:["Curl barra EZ","Curl martillo","Tríceps polea","Fondos cerrados"],Legs:["Sentadilla","Extensión","Curl femoral","Pantorrilla"]}}},
               ];
-              const [selCeleb,setSelCeleb]=useState(null);
               return(<>
                 <div style={{fontSize:10,fontFamily:mono,color:"rgba(255,255,255,.18)",letterSpacing:3,marginBottom:10,textTransform:"uppercase"}}>{lang==="es"?"ELIGE TU ATLETA":"CHOOSE YOUR ATHLETE"}</div>
                 <div style={{fontSize:28,fontWeight:900,letterSpacing:-1.2,marginBottom:6,lineHeight:1,background:"linear-gradient(135deg,rgba(255,255,255,.92) 0%,rgba(255,255,255,.5) 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>{lang==="es"?"¿A quién sigues?":"Who do you follow?"}</div>
