@@ -164,6 +164,23 @@ const EXERCISE_MUSCLE_MAP={
   "hanging knee raises":     {p:["core (transverso abdominal)"],s:[]},
   "machine crunch":          {p:["core (transverso abdominal)"],s:[]},
   "supermans":               {p:["isquiotibiales"],           s:["glúteo mayor"]},
+  // Variantes y ejercicios adicionales
+  "bodyweight squat":        {p:["cuádriceps","glúteo mayor"],     s:["isquiotibiales","aductores"]},
+  "dumbbell chest fly":      {p:["pectoral mayor"],                s:["deltoides anterior"]},
+  "dumbbell flyes":          {p:["pectoral mayor"],                s:["deltoides anterior"]},
+  "weighted pull up":        {p:["dorsal ancho"],                  s:["bíceps braquial","romboides"]},
+  "diamond push ups":        {p:["tríceps braquial"],              s:["pectoral mayor","deltoides anterior"]},
+  "barbell pullover":        {p:["dorsal ancho"],                  s:["pectoral mayor","tríceps braquial"]},
+  "dumbbell laying reverse fly":{p:["deltoides posterior"],        s:["romboides","trapecio"]},
+  "seated calf raise":       {p:["sóleo"],                        s:["gastrocnemio"]},
+  "cable face pull":         {p:["deltoides posterior"],           s:["trapecio","manguito rotador"]},
+  "barbell shrug":           {p:["trapecio"],                      s:["deltoides"]},
+  "dumbbell shrug":          {p:["trapecio"],                      s:["deltoides"]},
+  "bench dips":              {p:["tríceps braquial"],              s:["pectoral mayor","deltoides anterior"]},
+  "concentration curl":      {p:["bíceps braquial"],               s:["braquial"]},
+  "dumbbell front raise":    {p:["deltoides anterior"],            s:["pectoral mayor"]},
+  "dumbbell rear delt fly":  {p:["deltoides posterior"],           s:["romboides","trapecio"]},
+  "cable row":               {p:["dorsal ancho","romboides"],      s:["bíceps braquial","trapecio"]},
 };
 
 // Auto-compute weekly muscle volume from logs
@@ -178,7 +195,8 @@ function computeWeeklyMuscleVol(logs,routine){
       if(e.d<weekStr)return;
       let nm=id;
       if(routine)routine.forEach(d=>{if(!d)return;(d.ex||[]).forEach(ex=>{if(ex.id===id)nm=ex.e;});});
-      const md=EXERCISE_MUSCLE_MAP[nm?.toLowerCase()?.trim()];
+      const nmLow=nm?.toLowerCase()?.trim();
+      const md=EXERCISE_MUSCLE_MAP[nmLow]||EXERCISE_MUSCLE_MAP[ES_TO_META[nmLow]];
       if(!md)return;
       const vol=(+e.w||0)*(+e.r||0);if(vol<=0)return;
       md.p.forEach(m=>{mv[m]=(mv[m]||0)+vol;});
@@ -276,8 +294,8 @@ const FStore={
     const today=new Date().toISOString().slice(0,10);
     const exData=exercises.map(ex=>({
       id:ex.id,name:ex.e,
-      muscles_primary:(EXERCISE_MUSCLE_MAP[ex.e?.toLowerCase()]?.p||[]),
-      muscles_secondary:(EXERCISE_MUSCLE_MAP[ex.e?.toLowerCase()]?.s||[])
+      muscles_primary:(EXERCISE_MUSCLE_MAP[ex.e?.toLowerCase()]?.p||EXERCISE_MUSCLE_MAP[ES_TO_META[ex.e?.toLowerCase()]]?.p||[]),
+      muscles_secondary:(EXERCISE_MUSCLE_MAP[ex.e?.toLowerCase()]?.s||EXERCISE_MUSCLE_MAP[ES_TO_META[ex.e?.toLowerCase()]]?.s||[])
     }));
     try{
       const{data,error}=await sb.from('sessions').insert({
@@ -341,7 +359,7 @@ const ES_TO_META={
   "sentadilla con salto":"squat","prensa de piernas":"leg press",
   "extensión cuádriceps":"leg extension","curl femoral":"leg curl",
   "hip thrust":"hip thrust","glute bridge":"hip thrust","pantorrilla de pie":"calf raise",
-  "pantorrilla sentado":"seated calf raise","zancadas":"romanian deadlift",
+  "pantorrilla sentado":"seated calf raise","pantorrilla":"calf raise","zancadas":"romanian deadlift",
   "zancada con mancuerna":"romanian deadlift","zancada con salto":"box jump",
   "curl barra":"barbell curl","curl mancuerna":"dumbbell curl","curl martillo":"hammer curl",
   "curl predicador":"preacher curl","curl concentración":"concentration curl",
@@ -359,6 +377,47 @@ const ES_TO_META={
   "flexiones explosivas":"push up","push press":"overhead press",
   "bear crawl":"mountain climber","burpee":"mountain climber","salto lateral":"box jump",
   "step up al cajón":"box jump","saltar la cuerda":"mountain climber",
+  // Variantes que faltaban
+  "dominadas agarre amplio":"pull up","dominadas agarre supino":"chin up",
+  "dominadas neutro":"pull up","dominadas lastradas":"weighted pull up",
+  "remo invertido":"barbell row","remo australiano":"barbell row",
+  "remo sentado cable":"cable row","remo pendlay":"pendlay row",
+  "flexiones pike":"push up","flexiones diamante":"diamond push ups",
+  "flexiones explosivas":"push up","flexiones lastradas":"push up",
+  "sentadilla peso corporal":"bodyweight squat","sentadillas peso corporal":"bodyweight squat",
+  "zancadas":"romanian deadlift","zancada con mancuerna":"romanian deadlift",
+  "zancada con salto":"box jump","paso al cajón":"box jump",
+  "curl inclinado mancuerna":"dumbbell curl","curl concentración":"concentration curl",
+  "curl inverso":"reverse curl",
+  "press arnold":"dumbbell shoulder press",
+  "pullover cable":"barbell pullover","pullover mancuerna":"barbell pullover",
+  "hiperextensión":"supermans","extensión de espalda":"supermans",
+  "glute bridge":"hip thrust",
+  "aperturas inclinado":"dumbbell chest fly",
+  "encogimientos":"barbell shrug","encogimientos mancuerna":"dumbbell shrug",
+  "pájaros":"dumbbell rear delt fly","pájaros cable":"dumbbell laying reverse fly",
+  "elevaciones frontales":"dumbbell front raise",
+  "rotación con cable":"cable face pull",
+  "press inclinado cable":"cable fly",
+  "tríceps por encima":"overhead tricep extension","tríceps mancuerna":"overhead tricep extension",
+  "fondos en banco":"bench dips","fondos entre bancos":"bench dips",
+  "plancha con rotación":"plank","elevación de piernas":"hanging knee raises",
+  "elevación de piernas colgado":"hanging knee raises",
+  "elevación de rodillas colgado":"hanging knee raises",
+  "elevación piernas colgado":"hanging knee raises",
+  "pantorrilla sentado":"seated calf raise",
+  "peso muerto 1 pierna":"romanian deadlift",
+  "press militar mancuerna":"dumbbell shoulder press",
+  "press banca mancuerna":"dumbbell bench press",
+  "sentadilla goblet":"goblet squat","sentadilla búlgara":"bulgarian split squat",
+  "sentadilla frontal":"front squat","sentadilla con salto":"box jump",
+  "extensión cuádriceps":"leg extension","curl femoral":"leg curl",
+  "prensa de piernas":"leg press",
+  "salto al cajón":"box jump","salto lateral":"box jump",
+  "bear crawl":"mountain climber","burpee":"mountain climber",
+  "step up al cajón":"box jump","push press":"overhead press",
+  "aperturas cable":"cable fly","aperturas mancuerna":"dumbbell chest fly",
+  "jalón polea agarre inverso":"lat pulldown",
 };
 // Helper: resolve exercise name to EX_META key
 function exMetaKey(name){
@@ -3798,7 +3857,8 @@ function computeRecovery(logs,routine){
       if(!e.d||e.d<cutoff) return;
       let nm=id;
       if(routine) routine.forEach(d=>{if(!d)return;(d.ex||[]).forEach(ex=>{if(ex.id===id)nm=ex.e;});});
-      const md=EXERCISE_MUSCLE_MAP[nm?.toLowerCase()?.trim()];
+      const _nmLow=nm?.toLowerCase()?.trim();
+      const md=EXERCISE_MUSCLE_MAP[_nmLow]||EXERCISE_MUSCLE_MAP[ES_TO_META[_nmLow]];
       if(!md) return;
       const vol=(+e.w||0)*(+e.r||0); if(vol<=0) return;
       const ts=new Date(e.d).getTime();
