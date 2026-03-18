@@ -569,64 +569,325 @@ function buildCelebRoutine(celeb, userEquipment, selDays){
   const r = Array(7).fill(null);
 
   // Exercise library per celebrity — self-contained, verified sources
+  // Each exercise: {e: name, s: sets, r: reps}
   const CELEB_EXERCISES = {
     arnold: {
-      "Pecho+Espalda":  ["Press banca plano","Press inclinado mancuerna","Aperturas mancuerna","Fondos pecho","Dominadas agarre amplio","Remo con barra","Remo en T"],
-      "Hombros+Brazos": ["Press militar barra","Laterales mancuerna","Pájaros","Curl barra","Curl predicador","Tríceps polea","Press francés"],
-      "Piernas":        ["Sentadilla","Prensa de piernas","Extensión cuádriceps","Curl femoral","Pantorrilla de pie","Pantorrilla sentado"]
+      "Pecho+Espalda": [
+        {e:"Press banca plano",         s:5, r:"6-10"},
+        {e:"Press inclinado mancuerna", s:5, r:"8-10"},
+        {e:"Aperturas mancuerna",       s:5, r:"10-12"},
+        {e:"Dominadas agarre amplio",   s:6, r:"fallo"},
+        {e:"Remo con barra",            s:5, r:"6-10"},
+        {e:"Remo en T",                 s:5, r:"6-10"},
+        {e:"Peso muerto piernas rectas",s:6, r:"15"}
+      ],
+      "Hombros+Brazos": [
+        {e:"Press militar barra",  s:5, r:"6-10"},
+        {e:"Laterales mancuerna",  s:5, r:"10-12"},
+        {e:"Pájaros",              s:5, r:"10-12"},
+        {e:"Curl barra",           s:6, r:"8-12"},
+        {e:"Curl predicador",      s:5, r:"8-10"},
+        {e:"Tríceps polea",        s:6, r:"10-12"},
+        {e:"Press francés",        s:5, r:"8-10"}
+      ],
+      "Piernas": [
+        {e:"Sentadilla",           s:6, r:"8-12"},
+        {e:"Prensa de piernas",    s:6, r:"8-12"},
+        {e:"Extensión cuádriceps", s:6, r:"12-15"},
+        {e:"Curl femoral",         s:6, r:"10-12"},
+        {e:"Pantorrilla de pie",   s:10,r:"10"},
+        {e:"Pantorrilla sentado",  s:8, r:"15"}
+      ]
     },
     hemsworth: {
-      "Push":           ["Press banca","Press inclinado mancuerna","Press militar","Laterales mancuerna","Tríceps polea","Fondos"],
-      "Pull+Back":      ["Peso muerto","Dominadas","Remo con barra","Jalón polea","Curl barra","Curl martillo"],
-      "Legs":           ["Sentadilla","Prensa de piernas","Peso muerto rumano","Extensión cuádriceps","Curl femoral","Pantorrilla de pie"],
-      "Full Body":      ["Press banca","Dominadas","Sentadilla","Remo con barra","Press militar","Peso muerto"],
-      "HIIT+Funcional": ["Salto al cajón","Flexiones explosivas","Sentadilla con salto","Bear crawl","Burpee"]
+      "Push": [
+        {e:"Press banca",              s:8, r:"12-4"},
+        {e:"Press inclinado mancuerna",s:4, r:"10-12"},
+        {e:"Press militar",            s:4, r:"8-10"},
+        {e:"Laterales mancuerna",      s:4, r:"12-15"},
+        {e:"Tríceps polea",            s:3, r:"12-15"},
+        {e:"Fondos",                   s:3, r:"10-12"}
+      ],
+      "Pull+Back": [
+        {e:"Peso muerto",     s:4, r:"6-8"},
+        {e:"Dominadas",       s:4, r:"8-10"},
+        {e:"Remo con barra",  s:4, r:"8-10"},
+        {e:"Jalón polea",     s:3, r:"10-12"},
+        {e:"Curl barra",      s:3, r:"10-12"},
+        {e:"Curl martillo",   s:3, r:"12"}
+      ],
+      "Legs": [
+        {e:"Sentadilla",           s:4, r:"8-10"},
+        {e:"Prensa de piernas",    s:4, r:"12-15"},
+        {e:"Peso muerto rumano",   s:4, r:"10-12"},
+        {e:"Extensión cuádriceps", s:3, r:"12-15"},
+        {e:"Curl femoral",         s:3, r:"12-15"},
+        {e:"Pantorrilla de pie",   s:4, r:"15-20"}
+      ],
+      "Full Body": [
+        {e:"Press banca",    s:4, r:"8-10"},
+        {e:"Dominadas",      s:4, r:"8-10"},
+        {e:"Sentadilla",     s:4, r:"8-10"},
+        {e:"Remo con barra", s:4, r:"8-10"},
+        {e:"Press militar",  s:3, r:"10-12"},
+        {e:"Peso muerto",    s:3, r:"8"}
+      ],
+      "HIIT+Funcional": [
+        {e:"Salto al cajón",        s:4, r:"10"},
+        {e:"Flexiones explosivas",  s:4, r:"12-15"},
+        {e:"Sentadilla con salto",  s:4, r:"15"},
+        {e:"Bear crawl",            s:4, r:"20m"},
+        {e:"Burpee",                s:4, r:"10"}
+      ]
     },
     rock: {
-      "Hombros": ["Press militar máquina","Laterales mancuerna","Elevaciones frontales","Encogimientos mancuerna","Pájaros cable"],
-      "Espalda":  ["Jalón polea agarre inverso","Remo 1 brazo mancuerna","Remo agarre inverso","Cable pullover","Hiperextensión espalda"],
-      "Piernas":  ["Prensa de piernas","Zancadas con barra","Extensión cuádriceps","Curl femoral tumbado","Pantorrilla de pie"],
-      "Brazos":   ["Curl martillo","Curl barra","Curl inclinado mancuerna","Tríceps polea","Skull crusher","Tríceps por encima"],
-      "Pecho":    ["Press inclinado cable","Press inclinado mancuerna","Press plano mancuerna","Fondos con peso","Aperturas inclinado"]
+      "Hombros": [
+        {e:"Press militar máquina",     s:4, r:"12"},
+        {e:"Laterales mancuerna",       s:4, r:"12"},
+        {e:"Elevaciones frontales",     s:3, r:"12"},
+        {e:"Encogimientos mancuerna",   s:4, r:"fallo"},
+        {e:"Pájaros cable",             s:3, r:"15"}
+      ],
+      "Espalda": [
+        {e:"Jalón polea agarre inverso",s:5, r:"12"},
+        {e:"Remo 1 brazo mancuerna",    s:3, r:"12"},
+        {e:"Remo agarre inverso",       s:4, r:"8-12"},
+        {e:"Cable pullover",            s:4, r:"12"},
+        {e:"Hiperextensión espalda",    s:3, r:"15"}
+      ],
+      "Piernas": [
+        {e:"Prensa de piernas",        s:4, r:"25"},
+        {e:"Prensa de piernas vertical",s:3,r:"20"},
+        {e:"Zancadas con barra",       s:4, r:"20"},
+        {e:"Extensión cuádriceps",     s:4, r:"15"},
+        {e:"Curl femoral tumbado",     s:4, r:"15"},
+        {e:"Pantorrilla de pie",       s:5, r:"75"}
+      ],
+      "Brazos": [
+        {e:"Curl martillo",         s:4, r:"12"},
+        {e:"Curl barra",            s:4, r:"12"},
+        {e:"Curl inclinado mancuerna",s:3,r:"12"},
+        {e:"Tríceps polea",         s:7, r:"8-12"},
+        {e:"Skull crusher",         s:4, r:"8-12"},
+        {e:"Tríceps por encima",    s:7, r:"8-12"}
+      ],
+      "Pecho": [
+        {e:"Press inclinado cable",     s:7, r:"15"},
+        {e:"Press inclinado mancuerna", s:4, r:"12"},
+        {e:"Press plano mancuerna",     s:3, r:"8-12"},
+        {e:"Fondos con cadenas",        s:3, r:"fallo"},
+        {e:"Aperturas inclinado",       s:4, r:"12"}
+      ]
     },
     goggins: {
-      "Pull Day": ["Dominadas agarre pronado (máx)","Dominadas agarre supino (máx)","Dominadas neutro (máx)","Remo australiano (máx)","Curl barra"],
-      "Push Day": ["Flexiones estándar (máx)","Flexiones diamante (máx)","Fondos paralelas (máx)","Press banca","Press militar"],
-      "Leg Day":  ["Sentadillas peso corporal (máx)","Zancadas peso corporal","Sentadilla búlgara","Curl femoral","Pantorrilla de pie (máx)"]
+      "Pull Day": [
+        {e:"Dominadas agarre pronado",  s:5, r:"max"},
+        {e:"Dominadas agarre supino",   s:5, r:"max"},
+        {e:"Dominadas neutro",          s:5, r:"max"},
+        {e:"Remo australiano",          s:5, r:"max"},
+        {e:"Curl barra",                s:4, r:"12"}
+      ],
+      "Push Day": [
+        {e:"Flexiones estándar",        s:5, r:"max"},
+        {e:"Flexiones diamante",        s:5, r:"max"},
+        {e:"Fondos paralelas",          s:5, r:"max"},
+        {e:"Press banca",               s:4, r:"10-12"},
+        {e:"Press militar",             s:4, r:"10-12"}
+      ],
+      "Leg Day": [
+        {e:"Sentadillas peso corporal", s:5, r:"max"},
+        {e:"Zancadas peso corporal",    s:5, r:"20"},
+        {e:"Sentadilla búlgara",        s:4, r:"15"},
+        {e:"Curl femoral",              s:4, r:"12"},
+        {e:"Pantorrilla de pie",        s:5, r:"max"}
+      ]
     },
     cavill: {
-      "Push":         ["Press banca pesado","Press inclinado mancuerna","Press militar","Laterales mancuerna","Tríceps polea"],
-      "Pull":         ["Peso muerto","Dominadas lastradas","Remo con barra","Jalón polea","Curl barra"],
-      "Piernas":      ["Sentadilla","Prensa de piernas","Peso muerto rumano","Extensión cuádriceps","Curl femoral","Pantorrilla"],
-      "Upper Fuerza": ["Press banca pesado","Remo con barra pesado","Press militar","Dominadas lastradas","Curl barra"],
-      "Funcional":    ["Sentadilla","Press banca","Dominadas","Peso muerto","Plancha"]
+      "Push": [
+        {e:"Press banca pesado",        s:4, r:"5-6"},
+        {e:"Press inclinado mancuerna", s:4, r:"8-10"},
+        {e:"Press militar",             s:4, r:"6-8"},
+        {e:"Laterales mancuerna",       s:4, r:"12-15"},
+        {e:"Tríceps polea",             s:3, r:"10-12"}
+      ],
+      "Pull": [
+        {e:"Peso muerto",               s:4, r:"5"},
+        {e:"Dominadas lastradas",       s:4, r:"6-8"},
+        {e:"Remo con barra",            s:4, r:"6-8"},
+        {e:"Jalón polea",               s:3, r:"10-12"},
+        {e:"Curl barra",                s:4, r:"8-10"}
+      ],
+      "Piernas": [
+        {e:"Sentadilla",                s:4, r:"6-8"},
+        {e:"Prensa de piernas",         s:4, r:"10-12"},
+        {e:"Peso muerto rumano",        s:4, r:"8-10"},
+        {e:"Extensión cuádriceps",      s:3, r:"12-15"},
+        {e:"Curl femoral",              s:3, r:"12-15"},
+        {e:"Pantorrilla",               s:4, r:"15-20"}
+      ],
+      "Upper Fuerza": [
+        {e:"Press banca pesado",        s:5, r:"3-5"},
+        {e:"Remo con barra pesado",     s:5, r:"4-6"},
+        {e:"Press militar",             s:4, r:"5-6"},
+        {e:"Dominadas lastradas",       s:4, r:"5-6"},
+        {e:"Curl barra",                s:3, r:"8"}
+      ],
+      "Funcional": [
+        {e:"Sentadilla",  s:3, r:"8-10"},
+        {e:"Press banca", s:3, r:"8-10"},
+        {e:"Dominadas",   s:3, r:"8-10"},
+        {e:"Peso muerto", s:3, r:"6-8"},
+        {e:"Plancha",     s:3, r:"60s"}
+      ]
     },
     ronaldo: {
-      "Piernas":          ["Sentadilla","Salto al cajón","Zancada con salto","Sentadilla búlgara","Glute bridge"],
-      "Upper Body":       ["Dominadas","Fondos en banco","Flexiones","Remo con mancuerna","Push press"],
-      "Potencia+Cardio":  ["Sentadilla con salto","Zancada explosiva","Step up al cajón","Press militar ligero","Plancha con rotación"],
-      "Core+Estabilidad": ["Peso muerto 1 pierna","Zancada con mancuerna","Plancha","Rotación con cable","Elevación de piernas colgado"],
-      "Full Body":        ["Sentadilla","Press banca","Dominadas","Hip thrust","Press militar","Curl barra"]
+      "Piernas": [
+        {e:"Sentadilla",        s:3, r:"8"},
+        {e:"Salto al cajón",    s:3, r:"10"},
+        {e:"Zancada con salto", s:3, r:"8"},
+        {e:"Sentadilla búlgara",s:2, r:"10"},
+        {e:"Glute bridge",      s:2, r:"12"}
+      ],
+      "Upper Body": [
+        {e:"Dominadas",          s:3, r:"10-15"},
+        {e:"Fondos en banco",    s:3, r:"20"},
+        {e:"Flexiones",          s:3, r:"20-30"},
+        {e:"Remo con mancuerna", s:3, r:"12"},
+        {e:"Push press",         s:3, r:"10"}
+      ],
+      "Potencia+Cardio": [
+        {e:"Sentadilla con salto",   s:3, r:"12"},
+        {e:"Zancada explosiva",      s:3, r:"10"},
+        {e:"Step up al cajón",       s:3, r:"10"},
+        {e:"Press militar ligero",   s:3, r:"15"},
+        {e:"Plancha con rotación",   s:3, r:"30s"}
+      ],
+      "Core+Estabilidad": [
+        {e:"Peso muerto 1 pierna",         s:2, r:"10"},
+        {e:"Zancada con mancuerna",        s:3, r:"12"},
+        {e:"Plancha",                      s:3, r:"60s"},
+        {e:"Rotación con cable",           s:3, r:"15"},
+        {e:"Elevación de piernas colgado", s:3, r:"15"}
+      ],
+      "Full Body": [
+        {e:"Sentadilla",  s:3, r:"10"},
+        {e:"Press banca", s:3, r:"12"},
+        {e:"Dominadas",   s:3, r:"10"},
+        {e:"Hip thrust",  s:3, r:"12"},
+        {e:"Press militar",s:3,r:"12"},
+        {e:"Curl barra",  s:3, r:"15"}
+      ]
     },
     stallone: {
-      "Upper A":     ["Press banca","Press inclinado","Dominadas","Remo con barra","Curl barra","Tríceps polea"],
-      "Lower":       ["Sentadilla","Extensión cuádriceps","Curl femoral","Pantorrilla de pie","Peso muerto rumano"],
-      "Upper B":     ["Press militar","Remo 1 brazo mancuerna","Press inclinado mancuerna","Curl martillo","Fondos","Press francés"],
-      "Full Body":   ["Press banca","Dominadas","Sentadilla","Remo con barra","Curl barra","Pantorrilla"],
-      "Cardio+Core": ["Saltar la cuerda","Plancha","Crunch","Elevación de piernas","Mountain climbers"]
+      "Upper A": [
+        {e:"Press banca",    s:5, r:"10-12"},
+        {e:"Press inclinado",s:5, r:"10-12"},
+        {e:"Dominadas",      s:5, r:"max"},
+        {e:"Remo con barra", s:5, r:"10"},
+        {e:"Curl barra",     s:5, r:"12"},
+        {e:"Tríceps polea",  s:5, r:"12"}
+      ],
+      "Lower": [
+        {e:"Sentadilla",           s:4, r:"12"},
+        {e:"Extensión cuádriceps", s:4, r:"15"},
+        {e:"Curl femoral",         s:4, r:"12"},
+        {e:"Pantorrilla de pie",   s:5, r:"20"},
+        {e:"Peso muerto rumano",   s:4, r:"12"}
+      ],
+      "Upper B": [
+        {e:"Press militar",          s:5, r:"10-12"},
+        {e:"Remo 1 brazo mancuerna", s:5, r:"12"},
+        {e:"Press inclinado mancuerna",s:4,r:"10-12"},
+        {e:"Curl martillo",          s:5, r:"12"},
+        {e:"Fondos",                 s:5, r:"max"},
+        {e:"Press francés",          s:4, r:"12"}
+      ],
+      "Full Body": [
+        {e:"Press banca",    s:4, r:"10"},
+        {e:"Dominadas",      s:4, r:"max"},
+        {e:"Sentadilla",     s:4, r:"12"},
+        {e:"Remo con barra", s:4, r:"10"},
+        {e:"Curl barra",     s:4, r:"12"},
+        {e:"Pantorrilla",    s:4, r:"20"}
+      ],
+      "Cardio+Core": [
+        {e:"Saltar la cuerda",      s:5, r:"2min"},
+        {e:"Plancha",               s:3, r:"60s"},
+        {e:"Crunch",                s:3, r:"25"},
+        {e:"Elevación de piernas",  s:3, r:"20"},
+        {e:"Mountain climbers",     s:3, r:"30"}
+      ]
     },
     lebron: {
-      "Lower Power":   ["Sentadilla","Hip thrust","Extensión cuádriceps","Curl femoral","Pantorrilla de pie","Salto al cajón"],
-      "Upper Push":    ["Press banca","Press inclinado mancuerna","Press militar","Laterales mancuerna","Tríceps polea","Fondos"],
-      "Upper Pull":    ["Peso muerto rumano","Dominadas","Remo con barra","Jalón polea","Curl barra","Face pull"],
-      "Athletic+Core": ["Sentadilla","Prensa de piernas","Plancha","Rotación con cable","Salto lateral","Bear crawl"]
+      "Lower Power": [
+        {e:"Sentadilla",           s:4, r:"8-10"},
+        {e:"Hip thrust",           s:4, r:"10-12"},
+        {e:"Extensión cuádriceps", s:3, r:"12-15"},
+        {e:"Curl femoral",         s:3, r:"12-15"},
+        {e:"Pantorrilla de pie",   s:4, r:"15-20"},
+        {e:"Salto al cajón",       s:3, r:"8"}
+      ],
+      "Upper Push": [
+        {e:"Press banca",              s:4, r:"10-12"},
+        {e:"Press inclinado mancuerna",s:4, r:"10-12"},
+        {e:"Press militar",            s:3, r:"10-12"},
+        {e:"Laterales mancuerna",      s:3, r:"12-15"},
+        {e:"Tríceps polea",            s:3, r:"12-15"},
+        {e:"Fondos",                   s:3, r:"10-12"}
+      ],
+      "Upper Pull": [
+        {e:"Peso muerto rumano",  s:4, r:"8-10"},
+        {e:"Dominadas",           s:4, r:"8-10"},
+        {e:"Remo con barra",      s:4, r:"10-12"},
+        {e:"Jalón polea",         s:3, r:"12"},
+        {e:"Curl barra",          s:3, r:"12"},
+        {e:"Face pull",           s:3, r:"15"}
+      ],
+      "Athletic+Core": [
+        {e:"Sentadilla",         s:3, r:"10"},
+        {e:"Prensa de piernas",  s:3, r:"15"},
+        {e:"Plancha",            s:3, r:"60s"},
+        {e:"Rotación con cable", s:3, r:"15"},
+        {e:"Salto lateral",      s:3, r:"10"},
+        {e:"Bear crawl",         s:3, r:"20m"}
+      ]
     },
     zyzz: {
-      "Pecho":   ["Press banca","Press inclinado mancuerna","Aperturas mancuerna","Fondos pecho","Cable crossover"],
-      "Espalda": ["Peso muerto","Dominadas","Remo con barra","Jalón polea","Remo 1 brazo"],
-      "Hombros": ["Press militar","Laterales mancuerna","Elevaciones frontales","Pájaros","Encogimientos"],
-      "Piernas": ["Sentadilla","Prensa de piernas","Extensión cuádriceps","Curl femoral","Pantorrilla de pie"],
-      "Brazos":  ["Curl barra","Curl martillo","Curl predicador","Tríceps polea","Skull crusher"]
+      "Pecho": [
+        {e:"Press banca",              s:4, r:"8-10"},
+        {e:"Press inclinado mancuerna",s:4, r:"10-12"},
+        {e:"Aperturas mancuerna",      s:3, r:"12-15"},
+        {e:"Fondos pecho",             s:3, r:"max"},
+        {e:"Cable crossover",          s:3, r:"15"}
+      ],
+      "Espalda": [
+        {e:"Peso muerto",   s:4, r:"6-8"},
+        {e:"Dominadas",     s:4, r:"8-10"},
+        {e:"Remo con barra",s:4, r:"8-10"},
+        {e:"Jalón polea",   s:3, r:"10-12"},
+        {e:"Remo 1 brazo",  s:3, r:"10-12"}
+      ],
+      "Hombros": [
+        {e:"Press militar",         s:4, r:"8-10"},
+        {e:"Laterales mancuerna",   s:4, r:"12-15"},
+        {e:"Elevaciones frontales", s:3, r:"12"},
+        {e:"Pájaros",               s:3, r:"12-15"},
+        {e:"Encogimientos",         s:4, r:"15-20"}
+      ],
+      "Piernas": [
+        {e:"Sentadilla",           s:4, r:"8-10"},
+        {e:"Prensa de piernas",    s:4, r:"12-15"},
+        {e:"Extensión cuádriceps", s:3, r:"12-15"},
+        {e:"Curl femoral",         s:3, r:"12-15"},
+        {e:"Pantorrilla de pie",   s:4, r:"15-20"}
+      ],
+      "Brazos": [
+        {e:"Curl barra",      s:4, r:"8-10"},
+        {e:"Curl martillo",   s:4, r:"10-12"},
+        {e:"Curl predicador", s:3, r:"10-12"},
+        {e:"Tríceps polea",   s:4, r:"10-12"},
+        {e:"Skull crusher",   s:3, r:"10-12"}
+      ]
     }
   };
 
@@ -635,29 +896,24 @@ function buildCelebRoutine(celeb, userEquipment, selDays){
   if(splitKeys.length === 0) return r;
 
   // Celebrity-specific series and reps per split
-  const CELEB_PARAMS = {
-    arnold:    {"Pecho+Espalda":{s:5,r:"6-10"},"Hombros+Brazos":{s:5,r:"6-10"},"Piernas":{s:6,r:"8-12"}},
-    hemsworth: {"Push":{s:4,r:"8-12"},"Pull+Back":{s:4,r:"8-12"},"Legs":{s:4,r:"10-15"},"Full Body":{s:4,r:"8-12"},"HIIT+Funcional":{s:4,r:"10-15"}},
-    rock:      {"Hombros":{s:4,r:"12"},"Espalda":{s:4,r:"12"},"Piernas":{s:4,r:"25"},"Brazos":{s:4,r:"12"},"Pecho":{s:4,r:"12"}},
-    goggins:   {"Pull Day":{s:5,r:"max"},"Push Day":{s:5,r:"max"},"Leg Day":{s:5,r:"max"}},
-    cavill:    {"Push":{s:4,r:"6-10"},"Pull":{s:4,r:"6-10"},"Piernas":{s:4,r:"8-12"},"Upper Fuerza":{s:5,r:"4-6"},"Funcional":{s:3,r:"8-12"}},
-    ronaldo:   {"Piernas":{s:3,r:"8-10"},"Upper Body":{s:3,r:"10-15"},"Potencia+Cardio":{s:3,r:"10-12"},"Core+Estabilidad":{s:3,r:"10-15"},"Full Body":{s:3,r:"10-12"}},
-    stallone:  {"Upper A":{s:5,r:"10-15"},"Lower":{s:4,r:"12-15"},"Upper B":{s:5,r:"10-15"},"Full Body":{s:4,r:"10-12"},"Cardio+Core":{s:3,r:"20-30"}},
-    lebron:    {"Lower Power":{s:4,r:"8-12"},"Upper Push":{s:4,r:"10-12"},"Upper Pull":{s:4,r:"10-12"},"Athletic+Core":{s:3,r:"10-15"}},
-    zyzz:      {"Pecho":{s:4,r:"10-12"},"Espalda":{s:4,r:"8-12"},"Hombros":{s:4,r:"12-15"},"Piernas":{s:4,r:"10-15"},"Brazos":{s:4,r:"10-12"}}
-  };
-  const celebParams = CELEB_PARAMS[celeb.id] || {};
+  // CELEB_PARAMS removed — each exercise now has its own s/r
+
 
   selDays.forEach((dayIdx, i)=>{
     const splitName = splitKeys[i % splitKeys.length];
     const rawExs = exercises[splitName] || [];
-    const params = celebParams[splitName] || {s:4, r:"8-12"};
-    const adapted = rawExs.map((exName, j)=>({
-      e: adaptExercise(exName, userEquipment),
-      s: params.s,
-      r: params.r,
-      id: `c${dayIdx}${j}`
-    }));
+    const adapted = rawExs.map((ex, j)=>{
+      // ex can be {e,s,r} object or plain string (fallback)
+      const exName = typeof ex === "string" ? ex : ex.e;
+      const exS    = typeof ex === "string" ? 4   : ex.s;
+      const exR    = typeof ex === "string" ? "8-12" : ex.r;
+      return {
+        e: adaptExercise(exName, userEquipment),
+        s: exS,
+        r: exR,
+        id: `c${dayIdx}${j}`
+      };
+    });
     r[dayIdx] = {l: splitName, ex: adapted};
   });
   return r;
