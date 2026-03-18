@@ -1102,6 +1102,51 @@ const epley=(w,r)=>r===1?+w:Math.round(+w*(1+0.0333*+r));
 const ARC_C=2*Math.PI*18; // circumference r=18
 
 // Metadata de ejercicios — músculos, dificultad, técnica
+// Spanish → EX_META key (English lowercase)
+const ES_TO_META={
+  "press banca":"bench press","press banca mancuerna":"dumbbell bench press",
+  "press inclinado":"incline bench press","press inclinado mancuerna":"incline dumbbell press",
+  "press inclinado cable":"incline bench press","press militar":"overhead press",
+  "press militar mancuerna":"dumbbell shoulder press","press francés":"skull crusher",
+  "aperturas mancuerna":"dumbbell chest fly","aperturas cable":"cable fly",
+  "fondos":"dips","fondos en banco":"bench dips","pullover cable":"barbell pullover",
+  "peso muerto":"deadlift","peso muerto rumano":"romanian deadlift",
+  "peso muerto piernas rectas":"romanian deadlift","peso muerto 1 pierna":"romanian deadlift",
+  "dominadas":"pull up","dominadas agarre supino":"chin up","dominadas lastradas":"pull up",
+  "jalón polea":"lat pulldown","remo con barra":"barbell row","remo con mancuerna":"dumbbell row",
+  "remo sentado cable":"cable row","remo pendlay":"pendlay row","remo en t":"barbell row",
+  "remo australiano":"barbell row","hiperextensión":"supermans",
+  "press banca mancuerna":"dumbbell bench press","press militar mancuerna":"dumbbell shoulder press",
+  "sentadilla":"squat","sentadilla frontal":"front squat","sentadilla goblet":"goblet squat",
+  "sentadilla búlgara":"bulgarian split squat","sentadilla peso corporal":"squat",
+  "sentadilla con salto":"squat","prensa de piernas":"leg press",
+  "extensión cuádriceps":"leg extension","curl femoral":"leg curl",
+  "hip thrust":"hip thrust","glute bridge":"hip thrust","pantorrilla de pie":"calf raise",
+  "pantorrilla sentado":"seated calf raise","zancadas":"romanian deadlift",
+  "zancada con mancuerna":"romanian deadlift","zancada con salto":"box jump",
+  "curl barra":"barbell curl","curl mancuerna":"dumbbell curl","curl martillo":"hammer curl",
+  "curl predicador":"preacher curl","curl concentración":"concentration curl",
+  "curl inclinado mancuerna":"dumbbell curl","curl inverso":"reverse curl",
+  "tríceps polea":"tricep pushdown","tríceps por encima":"overhead tricep extension",
+  "skull crusher":"skull crusher","press francés":"skull crusher",
+  "laterales mancuerna":"lateral raise","elevaciones frontales":"dumbbell front raise",
+  "pájaros":"dumbbell rear delt fly","pájaros cable":"dumbbell laying reverse fly",
+  "encogimientos":"dumbbell shrug","face pull":"face pull",
+  "plancha":"plank","plancha con rotación":"plank","mountain climbers":"mountain climber",
+  "crunch":"machine crunch","elevación de piernas":"hanging knee raises",
+  "elevación de piernas colgado":"hanging knee raises",
+  "elevación de rodillas colgado":"hanging knee raises","rotación con cable":"cable face pull",
+  "salto al cajón":"box jump","flexiones":"push up","flexiones diamante":"diamond push ups",
+  "flexiones explosivas":"push up","push press":"overhead press",
+  "bear crawl":"mountain climber","burpee":"mountain climber","salto lateral":"box jump",
+  "step up al cajón":"box jump","saltar la cuerda":"mountain climber",
+};
+// Helper: resolve exercise name to EX_META key
+function exMetaKey(name){
+  if(!name) return null;
+  const low = name.toLowerCase();
+  return ES_TO_META[low] || low;
+}
 const EX_META={
     "bench press":{"p":["pectoral mayor"],"s":["tríceps", "deltoides anterior"],"diff":"intermediate","mec":"compound","force":"push","steps":["Acuéstate en el banco, pies planos en el suelo. Agarra la barra a poco más del ancho de hombros.", "Baja la barra de forma controlada hasta rozar el pecho medio.", "Empuja explosivamente hasta extender los codos sin bloquearlos."]},
     "incline bench press":{"p":["pectoral mayor (superior)"],"s":["tríceps", "deltoides anterior"],"diff":"intermediate","mec":"compound","force":"push","steps":["Ajusta el banco a 30-45°. Agarra la barra ligeramente más ancha que los hombros.", "Baja la barra hacia la parte superior del pecho de forma controlada.", "Empuja hasta extender los brazos manteniendo los omóplatos retraídos."]},
@@ -1603,9 +1648,9 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
               <div style={{padding:"14px 20px 0"}}>
                 <div style={{fontFamily:mono,fontSize:9,color:C2.tx3,letterSpacing:2,marginBottom:4}}>
                   {String(ei+1).padStart(2,'0')} / {String(exs.length).padStart(2,'0')}
-                  {EX_META[ex.e?.toLowerCase()]?.mec&&(
-                    <span style={{marginLeft:8,color:EX_META[ex.e?.toLowerCase()]?.mec==="compound"?C2.blue:C2.purple}}>
-                      · {lang==="es"?EX_META[ex.e?.toLowerCase()]?.mec==="compound"?"COMPUESTO":"AISLAMIENTO":EX_META[ex.e?.toLowerCase()]?.mec?.toUpperCase()}
+                  {EX_META[exMetaKey(ex.e)]?.mec&&(
+                    <span style={{marginLeft:8,color:EX_META[exMetaKey(ex.e)]?.mec==="compound"?C2.blue:C2.purple}}>
+                      · {lang==="es"?EX_META[exMetaKey(ex.e)]?.mec==="compound"?"COMPUESTO":"AISLAMIENTO":EX_META[exMetaKey(ex.e)]?.mec?.toUpperCase()}
                     </span>
                   )}
                 </div>
@@ -1613,12 +1658,12 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                   <div>
                     <div style={{fontSize:24,fontWeight:900,letterSpacing:-1,textTransform:"uppercase",color:C2.tx,lineHeight:1}}>{ex.e}</div>
                     {/* Músculos debajo del nombre */}
-                    {EX_META[ex.e?.toLowerCase()]&&(
+                    {EX_META[exMetaKey(ex.e)]&&(
                       <div style={{display:"flex",gap:5,flexWrap:"wrap",marginTop:5}}>
-                        {EX_META[ex.e?.toLowerCase()].p.map(m=>(
+                        {EX_META[exMetaKey(ex.e)].p.map(m=>(
                           <span key={m} style={{padding:"2px 7px",borderRadius:8,fontSize:8,fontFamily:mono,background:"rgba(95,170,136,.12)",color:C2.green,border:"1px solid rgba(95,170,136,.25)"}}>{m}</span>
                         ))}
-                        {EX_META[ex.e?.toLowerCase()].s.slice(0,2).map(m=>(
+                        {EX_META[exMetaKey(ex.e)].s.slice(0,2).map(m=>(
                           <span key={m} style={{padding:"2px 7px",borderRadius:8,fontSize:8,fontFamily:mono,background:"rgba(136,120,192,.08)",color:C2.purple,border:"1px solid rgba(136,120,192,.2)"}}>{m}</span>
                         ))}
                       </div>
@@ -1626,7 +1671,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                   </div>
                   <div style={{display:"flex",gap:6,alignItems:"center",flexShrink:0,marginLeft:8}}>
                     {/* Botón TÉCNICA */}
-                    {EX_META[ex.e?.toLowerCase()]&&(
+                    {EX_META[exMetaKey(ex.e)]&&(
                       <button onClick={()=>setTechOpen(techOpen===ei?null:ei)}
                         style={{padding:"4px 8px",borderRadius:7,border:"1px solid rgba(106,143,192,.3)",background:"rgba(106,143,192,.08)",color:C2.blue,fontSize:8,fontFamily:mono,letterSpacing:.5,cursor:"pointer",whiteSpace:"nowrap"}}>
                         TÉCNICA
@@ -1642,10 +1687,10 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                   </div>
                 </div>
                 {/* Panel de técnica expandible */}
-                {techOpen===ei&&EX_META[ex.e?.toLowerCase()]&&(
+                {techOpen===ei&&EX_META[exMetaKey(ex.e)]&&(
                   <div style={{background:C2.bgD,borderRadius:10,padding:12,marginTop:10,animation:"fu .2s ease"}}>
                     <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                      {EX_META[ex.e?.toLowerCase()].steps.map((s,si)=>(
+                      {EX_META[exMetaKey(ex.e)].steps.map((s,si)=>(
                         <div key={si} style={{display:"flex",gap:8,alignItems:"flex-start"}}>
                           <div style={{width:18,height:18,borderRadius:"50%",background:"#424858",display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,color:C2.tx3,flexShrink:0,fontFamily:mono}}>{si+1}</div>
                           <div style={{fontSize:11,color:C2.tx2,lineHeight:1.5}}>{s}</div>
