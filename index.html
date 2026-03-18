@@ -320,6 +320,53 @@ const IMGS_C={
 };
 
 </script>
+<script>
+// Spanish → EX_META key (English lowercase)
+const ES_TO_META={
+  "press banca":"bench press","press banca mancuerna":"dumbbell bench press",
+  "press inclinado":"incline bench press","press inclinado mancuerna":"incline dumbbell press",
+  "press inclinado cable":"incline bench press","press militar":"overhead press",
+  "press militar mancuerna":"dumbbell shoulder press","press francés":"skull crusher",
+  "aperturas mancuerna":"dumbbell chest fly","aperturas cable":"cable fly",
+  "fondos":"dips","fondos en banco":"bench dips","pullover cable":"barbell pullover",
+  "peso muerto":"deadlift","peso muerto rumano":"romanian deadlift",
+  "peso muerto piernas rectas":"romanian deadlift","peso muerto 1 pierna":"romanian deadlift",
+  "dominadas":"pull up","dominadas agarre supino":"chin up","dominadas lastradas":"pull up",
+  "jalón polea":"lat pulldown","remo con barra":"barbell row","remo con mancuerna":"dumbbell row",
+  "remo sentado cable":"cable row","remo pendlay":"pendlay row","remo en t":"barbell row",
+  "remo australiano":"barbell row","hiperextensión":"supermans",
+  "press banca mancuerna":"dumbbell bench press","press militar mancuerna":"dumbbell shoulder press",
+  "sentadilla":"squat","sentadilla frontal":"front squat","sentadilla goblet":"goblet squat",
+  "sentadilla búlgara":"bulgarian split squat","sentadilla peso corporal":"squat",
+  "sentadilla con salto":"squat","prensa de piernas":"leg press",
+  "extensión cuádriceps":"leg extension","curl femoral":"leg curl",
+  "hip thrust":"hip thrust","glute bridge":"hip thrust","pantorrilla de pie":"calf raise",
+  "pantorrilla sentado":"seated calf raise","zancadas":"romanian deadlift",
+  "zancada con mancuerna":"romanian deadlift","zancada con salto":"box jump",
+  "curl barra":"barbell curl","curl mancuerna":"dumbbell curl","curl martillo":"hammer curl",
+  "curl predicador":"preacher curl","curl concentración":"concentration curl",
+  "curl inclinado mancuerna":"dumbbell curl","curl inverso":"reverse curl",
+  "tríceps polea":"tricep pushdown","tríceps por encima":"overhead tricep extension",
+  "skull crusher":"skull crusher","press francés":"skull crusher",
+  "laterales mancuerna":"lateral raise","elevaciones frontales":"dumbbell front raise",
+  "pájaros":"dumbbell rear delt fly","pájaros cable":"dumbbell laying reverse fly",
+  "encogimientos":"dumbbell shrug","face pull":"face pull",
+  "plancha":"plank","plancha con rotación":"plank","mountain climbers":"mountain climber",
+  "crunch":"machine crunch","elevación de piernas":"hanging knee raises",
+  "elevación de piernas colgado":"hanging knee raises",
+  "elevación de rodillas colgado":"hanging knee raises","rotación con cable":"cable face pull",
+  "salto al cajón":"box jump","flexiones":"push up","flexiones diamante":"diamond push ups",
+  "flexiones explosivas":"push up","push press":"overhead press",
+  "bear crawl":"mountain climber","burpee":"mountain climber","salto lateral":"box jump",
+  "step up al cajón":"box jump","saltar la cuerda":"mountain climber",
+};
+// Helper: resolve exercise name to EX_META key
+function exMetaKey(name){
+  if(!name) return null;
+  const low = name.toLowerCase();
+  return ES_TO_META[low] || low;
+}
+</script>
 <script type="text/babel">
 const {useState,useEffect,useCallback,useRef}=React;
 
@@ -1102,51 +1149,7 @@ const epley=(w,r)=>r===1?+w:Math.round(+w*(1+0.0333*+r));
 const ARC_C=2*Math.PI*18; // circumference r=18
 
 // Metadata de ejercicios — músculos, dificultad, técnica
-// Spanish → EX_META key (English lowercase)
-const ES_TO_META={
-  "press banca":"bench press","press banca mancuerna":"dumbbell bench press",
-  "press inclinado":"incline bench press","press inclinado mancuerna":"incline dumbbell press",
-  "press inclinado cable":"incline bench press","press militar":"overhead press",
-  "press militar mancuerna":"dumbbell shoulder press","press francés":"skull crusher",
-  "aperturas mancuerna":"dumbbell chest fly","aperturas cable":"cable fly",
-  "fondos":"dips","fondos en banco":"bench dips","pullover cable":"barbell pullover",
-  "peso muerto":"deadlift","peso muerto rumano":"romanian deadlift",
-  "peso muerto piernas rectas":"romanian deadlift","peso muerto 1 pierna":"romanian deadlift",
-  "dominadas":"pull up","dominadas agarre supino":"chin up","dominadas lastradas":"pull up",
-  "jalón polea":"lat pulldown","remo con barra":"barbell row","remo con mancuerna":"dumbbell row",
-  "remo sentado cable":"cable row","remo pendlay":"pendlay row","remo en t":"barbell row",
-  "remo australiano":"barbell row","hiperextensión":"supermans",
-  "press banca mancuerna":"dumbbell bench press","press militar mancuerna":"dumbbell shoulder press",
-  "sentadilla":"squat","sentadilla frontal":"front squat","sentadilla goblet":"goblet squat",
-  "sentadilla búlgara":"bulgarian split squat","sentadilla peso corporal":"squat",
-  "sentadilla con salto":"squat","prensa de piernas":"leg press",
-  "extensión cuádriceps":"leg extension","curl femoral":"leg curl",
-  "hip thrust":"hip thrust","glute bridge":"hip thrust","pantorrilla de pie":"calf raise",
-  "pantorrilla sentado":"seated calf raise","zancadas":"romanian deadlift",
-  "zancada con mancuerna":"romanian deadlift","zancada con salto":"box jump",
-  "curl barra":"barbell curl","curl mancuerna":"dumbbell curl","curl martillo":"hammer curl",
-  "curl predicador":"preacher curl","curl concentración":"concentration curl",
-  "curl inclinado mancuerna":"dumbbell curl","curl inverso":"reverse curl",
-  "tríceps polea":"tricep pushdown","tríceps por encima":"overhead tricep extension",
-  "skull crusher":"skull crusher","press francés":"skull crusher",
-  "laterales mancuerna":"lateral raise","elevaciones frontales":"dumbbell front raise",
-  "pájaros":"dumbbell rear delt fly","pájaros cable":"dumbbell laying reverse fly",
-  "encogimientos":"dumbbell shrug","face pull":"face pull",
-  "plancha":"plank","plancha con rotación":"plank","mountain climbers":"mountain climber",
-  "crunch":"machine crunch","elevación de piernas":"hanging knee raises",
-  "elevación de piernas colgado":"hanging knee raises",
-  "elevación de rodillas colgado":"hanging knee raises","rotación con cable":"cable face pull",
-  "salto al cajón":"box jump","flexiones":"push up","flexiones diamante":"diamond push ups",
-  "flexiones explosivas":"push up","push press":"overhead press",
-  "bear crawl":"mountain climber","burpee":"mountain climber","salto lateral":"box jump",
-  "step up al cajón":"box jump","saltar la cuerda":"mountain climber",
-};
-// Helper: resolve exercise name to EX_META key
-function exMetaKey(name){
-  if(!name) return null;
-  const low = name.toLowerCase();
-  return ES_TO_META[low] || low;
-}
+
 const EX_META={
     "bench press":{"p":["pectoral mayor"],"s":["tríceps", "deltoides anterior"],"diff":"intermediate","mec":"compound","force":"push","steps":["Acuéstate en el banco, pies planos en el suelo. Agarra la barra a poco más del ancho de hombros.", "Baja la barra de forma controlada hasta rozar el pecho medio.", "Empuja explosivamente hasta extender los codos sin bloquearlos."]},
     "incline bench press":{"p":["pectoral mayor (superior)"],"s":["tríceps", "deltoides anterior"],"diff":"intermediate","mec":"compound","force":"push","steps":["Ajusta el banco a 30-45°. Agarra la barra ligeramente más ancha que los hombros.", "Baja la barra hacia la parte superior del pecho de forma controlada.", "Empuja hasta extender los brazos manteniendo los omóplatos retraídos."]},
