@@ -896,9 +896,12 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
   // ── Per-exercise sets state: [{kg,rp,done}] ──
   const[sets,setSets]=useState(()=>exs.map(ex=>{
     const h=logs[ex.id];
-    const kg=h&&h[0]?String(h[0].w):"";
-    const rp=h&&h[0]?String(h[0].r):"";
-    return [{kg,rp,done:false}];
+    const numSets=ex.s||1;
+    return Array.from({length:numSets},(_,si)=>{
+      const kg=h&&h[si]?String(h[si].w):h&&h[0]?String(h[0].w):"";
+      const rp=h&&h[si]?String(h[si].r):h&&h[0]?String(h[0].r):"";
+      return {kg,rp,done:false};
+    });
   }));
   const[notes,setNotes]=useState({});
   const[noteOpen,setNoteOpen]=useState(null); // ei
