@@ -453,42 +453,59 @@ function applyGoal(ex,goal){
 // Maps each exercise to the equipment it needs
 const CELEB_EQ_NEEDS={
   // Barbell exercises
-  "Press banca":["rack","bench"],"Press inclinado":["rack","bench"],"Press banca pesado":["rack","bench"],
-  "Press militar":["rack"],"Sentadilla":["rack"],"Sentadilla frontal":["rack"],"Sentadilla hack":["rack"],
-  "Peso muerto":["rack"],"Peso muerto rumano":["rack"],"Remo con barra":["rack"],
-  "Curl barra":["rack"],"Curl barra EZ":["ez_bar"],"Skull crusher":["rack","bench"],
+  "Press banca plano":["rack","bench"],"Press banca":["rack","bench"],"Press banca pesado":["rack","bench"],
+  "Press inclinado":["rack","bench"],"Press militar barra":["rack"],"Press militar":["rack"],
+  "Sentadilla":["rack"],"Sentadilla frontal":["rack"],"Sentadilla hack":["rack"],
+  "Peso muerto":["rack"],"Peso muerto piernas rectas":["rack"],
+  "Remo con barra":["rack"],"Remo en T":["rack"],
+  "Curl barra":["rack"],"Curl barra EZ":["ez_bar"],
+  "Skull crusher":["rack","bench"],"Press francés":["rack","bench"],
+  "Power clean":["rack"],"Zancadas con barra":["rack"],
   // Dumbbell exercises
-  "Press inclinado mancuerna":["bench","dumbbells"],"Aperturas":["bench","dumbbells"],
-  "Press hombro máquina":["machine"],"Remo con mancuerna":["dumbbells"],
-  "Laterales mancuerna":["dumbbells"],"Laterales":["dumbbells"],"Curl martillo":["dumbbells"],
-  "Curl mancuerna":["dumbbells"],"Press Arnold":["dumbbells"],"Pullover":["dumbbells","bench"],
+  "Press inclinado mancuerna":["bench","dumbbells"],
+  "Aperturas mancuerna":["bench","dumbbells"],"Aperturas":["bench","dumbbells"],
+  "Remo con mancuerna":["dumbbells"],"Remo 1 brazo mancuerna":["dumbbells"],
+  "Laterales mancuerna":["dumbbells"],"Laterales":["dumbbells"],
+  "Elevaciones frontales":["dumbbells"],"Pájaros":["dumbbells"],
+  "Curl martillo":["dumbbells"],"Curl mancuerna":["dumbbells"],
+  "Curl predicador":["bench","dumbbells"],"Curl inclinado mancuerna":["bench","dumbbells"],
+  "Press Arnold":["dumbbells"],"Pullover":["dumbbells","bench"],
+  "Encogimientos mancuerna":["dumbbells"],"Encogimientos":["dumbbells"],
+  "Peso muerto rumano":["rack"],"Peso muerto rumano mancuerna":["dumbbells"],
+  "Peso muerto 1 pierna":["dumbbells"],"Zancada con mancuerna":["dumbbells"],
+  "Hip thrust":["bench"],"Sentadilla goblet":["dumbbells"],
+  "Sentadilla búlgara":["bench"],"Step up al cajón":[],
   // Cable / machine
-  "Tríceps polea":["cable_machine"],"Tríceps cuerda":["cable_machine"],
-  "Jalón al pecho":["cable_machine"],"Jalón polea":["cable_machine"],
-  "Remo sentado":["cable_machine"],"Face pull":["cable_machine"],
-  "Cable crossover":["cable_machine"],"Aperturas cable":["cable_machine"],
-  "Prensa pierna":["leg_press_machine"],"Prensa":["leg_press_machine"],
-  "Extensión":["leg_extension"],"Extensión pierna":["leg_extension"],
-  "Curl femoral":["leg_extension"],"Leg press":["leg_press_machine"],
-  "Press hombro máquina":["machine"],"Encogimientos":["dumbbells"],
+  "Tríceps polea":["cable_machine"],"Tríceps por encima":["cable_machine"],
+  "Jalón polea":["cable_machine"],"Jalón polea agarre inverso":["cable_machine"],
+  "Remo agarre inverso":["cable_machine"],"Remo sentado":["cable_machine"],
+  "Face pull":["cable_machine"],"Cable crossover":["cable_machine"],
+  "Aperturas cable":["cable_machine"],"Press inclinado cable":["cable_machine"],
+  "Cable pullover":["cable_machine"],"Rotación con cable":["cable_machine"],
+  "Prensa de piernas":["leg_extension"],"Prensa pierna":["leg_extension"],
+  "Extensión cuádriceps":["leg_extension"],"Extensión":["leg_extension"],
+  "Curl femoral":["leg_extension"],"Curl femoral tumbado":["leg_extension"],
+  "Hiperextensión espalda":[],"Hiperextensión":[],"Extensión de espalda":[],
+  "Press militar máquina":["cable_machine"],"Pájaros cable":["cable_machine"],
   // Pull up / dip
-  "Dominadas":["pull_up_bar"],"Dominadas lastradas":["pull_up_bar","weight_vest"],
-  "Fondos":["dip_bar"],"Fondos paralelas":["dip_bar"],"Fondos cerrados":["dip_bar"],
-  // Bench only
-  "Hip thrust":["bench"],"Sentadilla goblet":["dumbbells"],"Pájaros":["dumbbells"],
-  // Cardio equipment
-  "Sprint 200m":["treadmill"],
-  "Sprint en caminadora":["treadmill"],
-  "Power clean":["rack"],
-  // Bodyweight / no equip
-  "Plancha":[],"Plank":[],"Flexiones":[],"Burpees con salto":[],"Sentadillas peso corporal":[],
-  "Abdominales":[],"Saltos al cajón":[],"Saltos":[],"Mountain climber":[],
-  // Vest
-  "Dominadas máximas":["pull_up_bar"],"Clean and press":["rack"],
-  "Sentadilla con salto":[],"Pantorrilla":["rack"],"Pantorrilla sentado":["bench"],
-  "Pantorrilla de pie":[],"Encogimientos":[],"Jalón polea":["cable_machine"],
+  "Dominadas":["pull_up_bar"],"Dominadas agarre amplio":["pull_up_bar"],
+  "Dominadas agarre pronado":["pull_up_bar"],"Dominadas agarre supino":["pull_up_bar"],
+  "Dominadas neutro":["pull_up_bar"],"Dominadas lastradas":["pull_up_bar","weight_vest"],
+  "Remo australiano":["pull_up_bar"],
+  "Fondos":["dip_bar"],"Fondos paralelas":["dip_bar"],"Fondos pecho":["dip_bar"],
+  "Fondos con peso":["dip_bar"],"Fondos con cadenas":["dip_bar"],
+  // Bodyweight / no equip needed
+  "Flexiones":[],"Flexiones estándar":[],"Flexiones diamante":[],"Flexiones explosivas":[],
+  "Flexiones inclinadas":[],"Fondos en banco":["bench"],
+  "Plancha":[],"Plancha con rotación":[],"Mountain climbers":[],
+  "Sentadillas peso corporal":[],"Zancadas peso corporal":[],
+  "Salto al cajón":[],"Saltos al cajón":[],"Sentadilla con salto":[],"Zancada con salto":[],
+  "Zancada explosiva":[],"Glute bridge":[],"Bear crawl":[],"Burpee":[],
+  "Saltar la cuerda":[],"Crunch":[],"Elevación de piernas":[],"Elevación de piernas colgado":["pull_up_bar"],
+  "Elevación piernas colgado":["pull_up_bar"],"Salto lateral":[],
+  "Push press":["rack"],"Pantorrilla de pie":[],"Pantorrilla sentado":["bench"],
+  "Press militar ligero":["rack"],
 };
-
 // Substitution map: if exercise can't be done, replace with this list (try in order)
 const CELEB_SUBS={
   // Can't do barbell → dumbbell / bodyweight
@@ -547,21 +564,37 @@ const CELEB_SUB_EQ={
   "Laterales posteriores mancuerna":["dumbbells"],"Buenos días":["rack"],
 };
 
-function canDo(exName, userEquipment){
+function canDo(exName, eq){
   const needed = CELEB_EQ_NEEDS[exName];
-  if(needed===undefined) return true; // unknown = assume bodyweight, always ok
-  if(needed.length===0) return true;  // bodyweight
-  return needed.every(e=>userEquipment.includes(e));
+  if(needed===undefined) return true;
+  if(needed.length===0) return true;
+  return needed.every(e=>eq.includes(e));
+}
+
+// Map UI equipment names → internal keys used by CELEB_EQ_NEEDS
+const EQ_MAP={
+  "Rack+Barra":"rack","Banco":"bench","Mancuernas":"dumbbells",
+  "Dominadas":"pull_up_bar","Paralelas":"dip_bar","Barra Z/EZ":"ez_bar",
+  "Leg Ext/Curl":"leg_extension","Polea":"cable_machine",
+  "Chaleco":"weight_vest","Kettlebell":"kettlebell","Bandas":"bands",
+  // also accept internal keys directly
+  "rack":"rack","bench":"bench","dumbbells":"dumbbells","pull_up_bar":"pull_up_bar",
+  "dip_bar":"dip_bar","ez_bar":"ez_bar","leg_extension":"leg_extension",
+  "cable_machine":"cable_machine","weight_vest":"weight_vest"
+};
+
+function normEq(userEquipment){
+  return userEquipment.map(e=>EQ_MAP[e]||e);
 }
 
 function adaptExercise(exName, userEquipment){
-  if(canDo(exName, userEquipment)) return exName;
+  const eq = normEq(userEquipment);
+  if(canDo(exName, eq)) return exName;
   const subs = CELEB_SUBS[exName]||[];
   for(const sub of subs){
     const subNeeds = CELEB_SUB_EQ[sub]||[];
-    if(subNeeds.length===0||subNeeds.every(e=>userEquipment.includes(e))) return sub;
+    if(subNeeds.length===0||subNeeds.every(e=>eq.includes(e))) return sub;
   }
-  // Last resort — return a bodyweight fallback
   return "Flexiones";
 }
 
