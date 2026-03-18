@@ -1141,7 +1141,11 @@ const VID={
   "supermans":                      BASE+"supermans.mp4",
   "machine crunch":                 BASE+"machine-crunch.mp4",
 };
-const getVid=name=>VID[name.toLowerCase().trim()]||null;
+const getVid=name=>{
+  if(!name) return null;
+  const low=name.toLowerCase().trim();
+  return VID[low]||VID[ES_TO_META[low]]||null;
+};
 
 
 // ── Utilidades ──
