@@ -2107,6 +2107,17 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                   <div style={{fontSize:11,color:C.tx3,fontFamily:mono}}>{lang==="es"?"Elige ejercicios por día desde el catálogo":"Pick exercises per day from the catalog"}</div>
                 </div>
               </button>
+              <button onClick={()=>{setMode("celebrity");setStep(25);}} style={{
+                padding:"20px 18px",borderRadius:14,cursor:"pointer",border:`1.5px solid rgba(240,242,245,0.12)`,
+                background:"rgba(66,72,88,0.45)",backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",
+                display:"flex",alignItems:"center",gap:16,outline:"none",transition:"all .2s",
+              }}>
+                <div style={{width:42,height:42,borderRadius:12,background:"rgba(192,168,112,.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>🏆</div>
+                <div style={{textAlign:"left"}}>
+                  <div style={{fontSize:15,fontWeight:700,color:C.tx,marginBottom:3}}>{lang==="es"?"Rutina de un famoso":"Train like a celebrity"}</div>
+                  <div style={{fontSize:11,color:C.tx3,fontFamily:mono}}>{lang==="es"?"Elige un atleta y sigue su programa":"Pick an athlete and follow their program"}</div>
+                </div>
+              </button>
             </div>
             <div style={{flex:1}}><Btn ghost onClick={()=>setStep(1)}>{t.back}</Btn></div>
           </>)}
@@ -2263,7 +2274,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
       )}
 
       {/* ── FLUJO MANUAL ── */}
-      {(step===8||step===20||step===21||step===22||step===23)&&(
+      {(step===8||step===20||step===21||step===22||step===23||step===25)&&(
         <div style={{padding:"0 26px",paddingTop:"7vh",paddingBottom:40,animation:"fu 0.4s ease"}}>
           {/* Step 20 — cuántos días manual */}
           {step===20&&(<>
@@ -2432,6 +2443,92 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
           </>)}
 
           {/* Step 23 — catálogo rediseñado */}
+          {step===25&&(<>
+            {(()=>{
+              const CELEBS=[
+                {id:"arnold",    name:"Arnold Schwarzenegger", sport:{es:"Culturismo",en:"Bodybuilding"},  era:"1970s–80s", days:6, split:"PPL doble",   c:"#d96060",
+                  desc:{es:"El programa original de Golden Era. Volumen extremo, 6 días, doble PPL.",en:"Original Golden Era program. Extreme volume, 6 days, double PPL."},
+                  routine:{days:6,split:"PPL",exercises:{Push:["Press banca","Press inclinado","Aperturas","Press militar","Laterales","Tríceps polea"],Pull:["Jalón al pecho","Remo con barra","Curl barra","Curl martillo","Encogimientos"],Legs:["Sentadilla","Prensa","Extensión","Curl femoral","Pantorrilla sentado"]}}},
+                {id:"hemsworth", name:"Chris Hemsworth",        sport:{es:"Funcional + Fuerza",en:"Functional + Strength"}, era:"2011–presente", days:5, split:"Full body + Upper/Lower", c:"#6a8fc0",
+                  desc:{es:"Programa de Thor. Funcional, explosivo, combina fuerza y cardio.",en:"Thor program. Functional, explosive, combines strength and cardio."},
+                  routine:{days:5,split:"Upper/Lower/Full",exercises:{Upper:["Press banca","Dominadas","Press militar","Remo con mancuerna","Curl barra","Tríceps polea"],Lower:["Sentadilla","Peso muerto","Prensa","Extensión","Curl femoral","Pantorrilla"],Full:["Clean and press","Burpees con salto","Sentadilla con salto","Remo con barra","Dominadas"]}}},
+                {id:"rock",      name:"Dwayne Johnson",         sport:{es:"Culturismo funcional",en:"Functional Bodybuilding"}, era:"2010s–presente", days:6, split:"Push/Pull/Legs + Core", c:"#5faa88",
+                  desc:{es:"El programa de La Roca. Alta intensidad, énfasis en piernas y core.",en:"The Rock's program. High intensity, emphasis on legs and core."},
+                  routine:{days:6,split:"PPL",exercises:{Push:["Press banca","Press inclinado mancuerna","Press hombro máquina","Aperturas cable","Tríceps cuerda"],Pull:["Jalón polea","Remo sentado","Face pull","Curl barra EZ","Curl martillo"],Legs:["Sentadilla hack","Prensa pierna","Extensión","Curl femoral","Pantorrilla de pie","Hip thrust"]}}},
+                {id:"cavill",    name:"Henry Cavill",           sport:{es:"Fuerza + Estética",en:"Strength + Aesthetics"}, era:"2013–presente", days:5, split:"Powerbuilding", c:"#8878c0",
+                  desc:{es:"Rutina de Superman. Powerbuilding — fuerza base más volumen estético.",en:"Superman routine. Powerbuilding — base strength plus aesthetic volume."},
+                  routine:{days:5,split:"Push/Pull/Legs/Upper/Lower",exercises:{Push:["Press banca pesado","Press inclinado","Fondos paralelas","Laterales mancuerna","Tríceps cuerda"],Pull:["Peso muerto","Dominadas lastradas","Remo con barra","Curl barra","Face pull"],Legs:["Sentadilla frontal","Peso muerto rumano","Prensa","Extensión","Curl femoral"]}}},
+                {id:"ronaldo",   name:"Cristiano Ronaldo",      sport:{es:"Fútbol + Atletismo",en:"Football + Athletics"}, era:"2000s–presente", days:5, split:"Athletic conditioning", c:"#d96060",
+                  desc:{es:"Fuerza explosiva, agilidad y resistencia. Sin máquinas, funcional.",en:"Explosive strength, agility and endurance. No machines, functional."},
+                  routine:{days:5,split:"Full body",exercises:{Full:["Sentadilla","Peso muerto","Press banca","Dominadas","Remo con barra","Pantorrilla","Plancha","Saltos al cajón"]}}},
+                {id:"goggins",   name:"David Goggins",          sport:{es:"Resistencia mental",en:"Mental endurance"}, era:"2000s–presente", days:6, split:"Calistenia + Cardio", c:"#5faa88",
+                  desc:{es:"Sin excusas. Alta intensidad, peso corporal, resistencia brutal.",en:"No excuses. High intensity, bodyweight, brutal endurance."},
+                  routine:{days:6,split:"Full body",exercises:{Full:["Dominadas máximas","Fondos paralelas","Flexiones","Sentadillas peso corporal","Abdominales","Plancha larga"]}}},
+                {id:"lebron",    name:"LeBron James",           sport:{es:"Baloncesto + Fuerza",en:"Basketball + Strength"}, era:"2003–presente", days:5, split:"Athletic + Recovery", c:"#c0a870",
+                  desc:{es:"Explosividad, movilidad y fuerza. Mucho trabajo de core y cadera.",en:"Explosiveness, mobility and strength. Heavy core and hip work."},
+                  routine:{days:5,split:"Full body",exercises:{Full:["Sentadilla","Peso muerto","Press banca","Remo con barra","Hip thrust","Plancha","Saltos","Curl barra"]}}},
+                {id:"stallone",  name:"Sylvester Stallone",     sport:{es:"Culturismo clásico",en:"Classic Bodybuilding"}, era:"1976–1985", days:6, split:"Torso/Piernas", c:"#8878c0",
+                  desc:{es:"Rutina de Rocky y Rambo. Clásico Golden Era, alta frecuencia.",en:"Rocky and Rambo routine. Classic Golden Era, high frequency."},
+                  routine:{days:6,split:"Upper/Lower",exercises:{Upper:["Press banca","Press inclinado","Dominadas","Remo con barra","Press militar","Curl barra","Tríceps polea"],Lower:["Sentadilla","Extensión","Curl femoral","Prensa","Pantorrilla"]}}},
+                {id:"phelps",    name:"Michael Phelps",         sport:{es:"Natación + Fuerza",en:"Swimming + Strength"}, era:"2000–2016", days:6, split:"Upper body + Core", c:"#6a8fc0",
+                  desc:{es:"Hombros, espalda y core. El programa de 23 medallas olímpicas.",en:"Shoulders, back and core. The 23 Olympic medals program."},
+                  routine:{days:6,split:"Push/Pull",exercises:{Push:["Press banca","Press militar","Aperturas","Fondos","Laterales"],Pull:["Remo con barra","Jalón polea","Dominadas","Face pull","Curl martillo","Encogimientos"]}}},
+                {id:"zyzz",      name:"Zyzz",                   sport:{es:"Estética pura",en:"Pure aesthetics"}, era:"2008–2011", days:5, split:"Bro split", c:"#d96060",
+                  desc:{es:"El programa del dios de la estética. Volumen, definición, posado.",en:"The aesthetics god program. Volume, definition, posing."},
+                  routine:{days:5,split:"Chest/Back/Shoulders/Arms/Legs",exercises:{Chest:["Press banca","Press inclinado","Aperturas cable","Fondos"],Back:["Peso muerto","Jalón polea","Remo con barra","Pullover"],Shoulders:["Press militar","Laterales","Pájaros","Face pull"],Arms:["Curl barra EZ","Curl martillo","Tríceps polea","Fondos cerrados"],Legs:["Sentadilla","Extensión","Curl femoral","Pantorrilla"]}}},
+              ];
+              const [selCeleb,setSelCeleb]=useState(null);
+              return(<>
+                <div style={{fontSize:10,fontFamily:mono,color:"rgba(255,255,255,.18)",letterSpacing:3,marginBottom:10,textTransform:"uppercase"}}>{lang==="es"?"ELIGE TU ATLETA":"CHOOSE YOUR ATHLETE"}</div>
+                <div style={{fontSize:28,fontWeight:900,letterSpacing:-1.2,marginBottom:6,lineHeight:1,background:"linear-gradient(135deg,rgba(255,255,255,.92) 0%,rgba(255,255,255,.5) 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>{lang==="es"?"¿A quién sigues?":"Who do you follow?"}</div>
+                <div style={{fontFamily:mono,fontSize:9,color:"rgba(255,255,255,.2)",letterSpacing:1,marginBottom:18}}>{lang==="es"?"RUTINAS PÚBLICAS VERIFICADAS":"VERIFIED PUBLIC ROUTINES"}</div>
+                <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16}}>
+                  {CELEBS.map(({id,name,sport,era,days,split,c,desc})=>{
+                    const on=selCeleb===id;
+                    return(
+                      <div key={id} onClick={()=>setSelCeleb(on?null:id)} style={{
+                        borderRadius:14,overflow:"hidden",cursor:"pointer",
+                        background:on?"rgba(255,255,255,.07)":"rgba(255,255,255,.03)",
+                        backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",
+                        border:"1.5px solid "+(on?c:"rgba(255,255,255,.07)"),
+                        boxShadow:on?"0 8px 24px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.1)":"inset 0 1px 0 rgba(255,255,255,.05)",
+                        transition:"all .2s cubic-bezier(.34,1.56,.64,1)",
+                        transform:on?"scale(1.01)":"scale(1)",
+                      }}>
+                        <div style={{display:"flex",alignItems:"center",gap:12,padding:"14px 14px"}}>
+                          <div style={{width:38,height:38,borderRadius:10,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",background:on?"rgba(255,255,255,.1)":"rgba(255,255,255,.04)",border:"1px solid "+(on?c:"rgba(255,255,255,.06)"),fontSize:18}}>
+                            {id==="arnold"?"💪":id==="hemsworth"?"⚡":id==="rock"?"🏋️":id==="cavill"?"🦸":id==="ronaldo"?"⚽":id==="goggins"?"🔥":id==="lebron"?"🏀":id==="stallone"?"🥊":id==="phelps"?"🏊":id==="zyzz"?"✨":"🏆"}
+                          </div>
+                          <div style={{flex:1,minWidth:0}}>
+                            <div style={{fontSize:13,fontWeight:700,color:on?"rgba(255,255,255,.95)":"rgba(255,255,255,.5)",letterSpacing:.1,marginBottom:2,transition:"color .2s"}}>{name}</div>
+                            <div style={{display:"flex",alignItems:"center",gap:6}}>
+                              <div style={{fontFamily:mono,fontSize:8,color:on?c:"rgba(255,255,255,.18)",letterSpacing:.5,transition:"color .2s"}}>{lang==="es"?sport.es:sport.en}</div>
+                              <div style={{width:2,height:2,borderRadius:"50%",background:"rgba(255,255,255,.15)"}}/>
+                              <div style={{fontFamily:mono,fontSize:8,color:"rgba(255,255,255,.18)",letterSpacing:.5}}>{days}d · {split}</div>
+                            </div>
+                          </div>
+                          <div style={{width:20,height:20,borderRadius:"50%",background:on?c:"rgba(255,255,255,.06)",border:"1.5px solid "+(on?c:"rgba(255,255,255,.1)"),display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#fff",fontWeight:700,opacity:on?1:.4,transform:on?"scale(1)":"scale(.8)",transition:"all .25s cubic-bezier(.34,1.56,.64,1)",flexShrink:0}}>✓</div>
+                        </div>
+                        {on&&<div style={{padding:"0 14px 12px",borderTop:"1px solid rgba(255,255,255,.05)"}}>
+                          <div style={{fontFamily:mono,fontSize:9,color:"rgba(255,255,255,.35)",lineHeight:1.5,paddingTop:8}}>{lang==="es"?desc.es:desc.en}</div>
+                        </div>}
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{display:"flex",gap:10}}>
+                  <div style={{flex:1}}><Btn ghost onClick={()=>setStep(2)}>{t.back}</Btn></div>
+                  <div style={{flex:2}}><Btn disabled={!selCeleb} onClick={()=>{
+                    const cel=CELEBS.find(x=>x.id===selCeleb);
+                    if(!cel)return;
+                    setDays(cel.days);
+                    setStep(8);
+                  }}>{lang==="es"?"ELEGIR EQUIPO →":"SELECT EQUIPMENT →"}</Btn></div>
+                </div>
+              </>);
+            })()}
+          </>)}
+
           {step===23&&(<>
             {/* Header sticky con días */}
             <div style={{position:"sticky",top:0,zIndex:5,background:"rgba(44,48,64,0.92)",backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",marginBottom:16,paddingBottom:12,borderBottom:"1px solid rgba(240,242,245,0.07)"}}>
