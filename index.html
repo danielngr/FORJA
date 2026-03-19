@@ -2917,107 +2917,96 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
         </div>
       )}
 
+
+      {/* ═══════════════════════════════════════════════ */}
+      {/* STEP 2 — ROUTINE TYPE                           */}
+      {/* ═══════════════════════════════════════════════ */}
+      {step===2&&(<>
+        <div style={{padding:"0 28px",paddingTop:"8vh",paddingBottom:48,
+          animation:"forjaFadeSlide 0.4s cubic-bezier(0.16,1,0.3,1)"}}>
+          <div style={{fontFamily:mono,fontSize:9,letterSpacing:4,color:"rgba(238,234,227,.22)",
+            textTransform:"uppercase",marginBottom:14,display:"flex",alignItems:"center",gap:10}}>
+            <span style={{width:18,height:1,background:"rgba(238,234,227,.1)",display:"block"}}/>
+            {lang==="es"?"PROGRAMA":"PROGRAM"}
+            <span style={{width:18,height:1,background:"rgba(238,234,227,.1)",display:"block"}}/>
+          </div>
+          <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:52,letterSpacing:2,lineHeight:.92,marginBottom:6}}>
+            {lang==="es"?"TU":"YOUR"}<br/><span style={{color:"#BFA98A"}}>{lang==="es"?"PROGRAMA":"PROGRAM"}</span>
+          </div>
+          <div style={{fontSize:12,color:"rgba(238,234,227,.3)",letterSpacing:.3,lineHeight:1.65,marginBottom:28}}>
+            {lang==="es"?"Elige cómo estructurar tu entrenamiento":"Choose how to structure your training"}
+          </div>
+          {/* AI */}
+          <div onClick={()=>{setMode("auto");setStep(3);}} style={{
+            borderRadius:18,marginBottom:10,cursor:"pointer",
+            border:"1.5px solid rgba(106,143,192,.22)",
+            background:"rgba(106,143,192,.04)",
+            padding:"20px 20px",display:"flex",alignItems:"center",gap:16,
+          }}>
+            <div style={{width:50,height:50,borderRadius:14,flexShrink:0,
+              background:"rgba(106,143,192,.15)",border:"1px solid rgba(106,143,192,.2)",
+              display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                <path d="M11 2l2.4 5.5 5.6.4-4.2 3.8 1.3 5.6L11 14.5l-5.1 2.8 1.3-5.6L3 7.9l5.6-.4L11 2z" fill="rgba(106,143,192,.85)"/>
+              </svg>
+            </div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:16,fontWeight:800,color:"rgba(238,234,227,.95)",marginBottom:3,letterSpacing:-.3}}>{lang==="es"?"Rutina inteligente":"AI-generated"}</div>
+              <div style={{fontSize:11,color:"rgba(106,143,192,.65)",fontFamily:mono,letterSpacing:.3}}>{lang==="es"?"Generada y optimizada para ti":"Optimized for your goal and level"}</div>
+            </div>
+            <svg style={{opacity:.3}} width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5.5L1 11" stroke="rgba(238,234,227,.8)" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </div>
+          {/* ELITE */}
+          <div onClick={()=>{setMode("celebrity");setStep(25);}} style={{
+            borderRadius:18,marginBottom:10,cursor:"pointer",
+            border:"1.5px solid rgba(192,168,112,.2)",
+            background:"rgba(192,168,112,.04)",
+            padding:"20px 20px",display:"flex",alignItems:"center",gap:16,
+          }}>
+            <div style={{width:50,height:50,borderRadius:14,flexShrink:0,
+              background:"rgba(192,168,112,.12)",border:"1px solid rgba(192,168,112,.2)",
+              display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                <circle cx="11" cy="7.5" r="3.5" stroke="rgba(192,168,112,.85)" strokeWidth="1.4" fill="none"/>
+                <path d="M4 19c0-3.9 3.1-7 7-7h.4c3.8.1 6.6 3.1 6.6 7" stroke="rgba(192,168,112,.85)" strokeWidth="1.4" strokeLinecap="round" fill="none"/>
+                <path d="M14.5 3.5l.8 2 2 .2-1.5 1.3.4 2-1.7-1-1.7 1 .4-2L11.7 5.7l2-.2.8-2z" fill="rgba(192,168,112,.55)"/>
+              </svg>
+            </div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:16,fontWeight:800,color:"rgba(238,234,227,.95)",marginBottom:3,letterSpacing:-.3}}>{lang==="es"?"Rutina de élite":"Elite routine"}</div>
+              <div style={{fontSize:11,color:"rgba(192,168,112,.65)",fontFamily:mono,letterSpacing:.3}}>Arnold · Hemsworth · LeBron · Zyzz...</div>
+            </div>
+            <svg style={{opacity:.3}} width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5.5L1 11" stroke="rgba(238,234,227,.8)" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </div>
+          {/* MANUAL */}
+          <div onClick={()=>{setMode("manual");setStep(20);}} style={{
+            borderRadius:18,cursor:"pointer",
+            border:"1.5px solid rgba(238,234,227,.07)",
+            background:"rgba(238,234,227,.02)",
+            padding:"20px 20px",display:"flex",alignItems:"center",gap:16,
+          }}>
+            <div style={{width:50,height:50,borderRadius:14,flexShrink:0,
+              background:"rgba(238,234,227,.05)",border:"1px solid rgba(238,234,227,.08)",
+              display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M3 17h14M5 13l7-10 3 2-7 10H5z" stroke="rgba(238,234,227,.4)" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:16,fontWeight:800,color:"rgba(238,234,227,.5)",marginBottom:3,letterSpacing:-.3}}>{lang==="es"?"Personalizada":"Custom build"}</div>
+              <div style={{fontSize:11,color:"rgba(238,234,227,.22)",fontFamily:mono,letterSpacing:.3}}>{lang==="es"?"Diseña tu rutina desde cero":"Design your own routine from scratch"}</div>
+            </div>
+            <svg style={{opacity:.2}} width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5.5L1 11" stroke="rgba(238,234,227,.8)" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </div>
+        </div>
+      </>)}
+
       {/* ── STEPS 2-5 (goal, level, body data) ────────── */}
-      {(step>=2&&step<=5)&&(
+      {(step>=3&&step<=5)&&(
         <div style={{padding:"0 28px",paddingTop:"8vh",paddingBottom:48,animation:"forjaFadeSlide 0.4s cubic-bezier(0.16,1,0.3,1)"}}>
           <div style={{display:"flex",gap:6,marginBottom:36}}>
             {Array.from({length:TOTAL_STEPS},(_,i)=><div key={i} style={{height:2,flex:1,borderRadius:1,background:i<step-1?"#BFA98A":"rgba(238,234,227,.12)",transition:"background .4s"}}/>)}
           </div>
-step===2&&(<>
-            <button onClick={()=>setStep(15)} style={{
-              position:"fixed",top:20,left:20,zIndex:10,
-              width:38,height:38,borderRadius:"50%",
-              background:"rgba(255,255,255,.06)",border:"1px solid rgba(255,255,255,.1)",
-              display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",outline:"none",
-            }}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M10 3L5 8l5 5" stroke="rgba(240,242,245,.7)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </button>
-            <div style={{paddingTop:80,paddingBottom:32}}>
-              <div style={{fontSize:9,fontFamily:"'SF Mono','Courier New',monospace",
-                color:"rgba(240,242,245,.3)",letterSpacing:5,marginBottom:12,textTransform:"uppercase"}}>
-                {lang==="es"?"PROGRAMA":"PROGRAM"}
-              </div>
-              <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:4,lineHeight:1,color:"rgba(240,242,245,.95)"}}>
-                {lang==="es"?"¿Cómo entrenas?":"How do you train?"}
-              </div>
-              <div style={{fontSize:12,color:"rgba(255,255,255,.28)",fontFamily:"'SF Mono','Courier New',monospace",marginBottom:28}}>
-                {lang==="es"?"Elige tu estilo":"Choose your style"}
-              </div>
-              <div onClick={()=>{setMode("auto");setStep(3);}} style={{
-                borderRadius:20,marginBottom:10,cursor:"pointer",
-                border:"1.5px solid rgba(106,143,192,.25)",
-                background:"linear-gradient(135deg,rgba(106,143,192,.1) 0%,rgba(8,10,14,.98) 75%)",
-                padding:"22px 22px",display:"flex",alignItems:"center",gap:16,
-              }}>
-                <div style={{width:50,height:50,borderRadius:14,flexShrink:0,
-                  background:"rgba(106,143,192,.15)",border:"1px solid rgba(106,143,192,.22)",
-                  display:"flex",alignItems:"center",justifyContent:"center"}}>
-                  <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-                    <path d="M11 2l2.5 6.5H20l-5.5 4 2 6.5L11 15l-5.5 4 2-6.5L2 8.5h6.5L11 2z" fill="rgba(106,143,192,.85)"/>
-                  </svg>
-                </div>
-                <div style={{flex:1}}>
-                  <div style={{fontSize:17,fontWeight:800,color:"rgba(240,242,245,.95)",marginBottom:4,letterSpacing:-.3}}>
-                    {lang==="es"?"Rutina inteligente":"Smart routine"}
-                  </div>
-                  <div style={{fontSize:11,color:"rgba(106,143,192,.6)",fontFamily:"'SF Mono','Courier New',monospace"}}>
-                    {lang==="es"?"Generada y optimizada para ti":"AI-generated and optimized for you"}
-                  </div>
-                </div>
-                <svg width="7" height="12" viewBox="0 0 7 12" fill="none">
-                  <path d="M1 1l5 5-5 5" stroke="rgba(106,143,192,.45)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
-              <div onClick={()=>{setMode("celebrity");setStep(25);}} style={{
-                borderRadius:20,marginBottom:10,cursor:"pointer",
-                border:"1.5px solid rgba(192,168,112,.22)",
-                background:"linear-gradient(135deg,rgba(192,168,112,.09) 0%,rgba(8,10,14,.98) 75%)",
-                padding:"22px 22px",display:"flex",alignItems:"center",gap:16,
-              }}>
-                <div style={{width:50,height:50,borderRadius:14,flexShrink:0,
-                  background:"rgba(192,168,112,.1)",border:"1px solid rgba(192,168,112,.2)",
-                  display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}>🏆</div>
-                <div style={{flex:1}}>
-                  <div style={{fontSize:17,fontWeight:800,color:"rgba(240,242,245,.95)",marginBottom:4,letterSpacing:-.3}}>
-                    {lang==="es"?"Rutina de élite":"Elite routine"}
-                  </div>
-                  <div style={{fontSize:11,color:"rgba(192,168,112,.6)",fontFamily:"'SF Mono','Courier New',monospace"}}>
-                    Arnold · Hemsworth · LeBron · Zyzz...
-                  </div>
-                </div>
-                <svg width="7" height="12" viewBox="0 0 7 12" fill="none">
-                  <path d="M1 1l5 5-5 5" stroke="rgba(192,168,112,.45)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
-              <div onClick={()=>{setMode("manual");setStep(20);}} style={{
-                borderRadius:20,cursor:"pointer",
-                border:"1.5px solid rgba(255,255,255,.06)",
-                background:"rgba(255,255,255,.01)",
-                padding:"22px 22px",display:"flex",alignItems:"center",gap:16,
-              }}>
-                <div style={{width:50,height:50,borderRadius:14,flexShrink:0,
-                  background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.07)",
-                  display:"flex",alignItems:"center",justifyContent:"center"}}>
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                    <path d="M3 17h14M5 13l7-10 3 2-7 10H5z" stroke="rgba(255,255,255,.35)" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </div>
-                <div style={{flex:1}}>
-                  <div style={{fontSize:17,fontWeight:800,color:"rgba(240,242,245,.45)",marginBottom:4,letterSpacing:-.3}}>
-                    {lang==="es"?"Personalizada":"Custom build"}
-                  </div>
-                  <div style={{fontSize:11,color:"rgba(255,255,255,.2)",fontFamily:"'SF Mono','Courier New',monospace"}}>
-                    {lang==="es"?"Diseña tu propia rutina":"Build your own routine"}
-                  </div>
-                </div>
-                <svg width="7" height="12" viewBox="0 0 7 12" fill="none">
-                  <path d="M1 1l5 5-5 5" stroke="rgba(255,255,255,.15)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
-            </div>
-          </>)}
           {step===3&&(<>
             <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,.2)",letterSpacing:4,marginBottom:16,textTransform:"uppercase"}}>{t.goal}</div>
             <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:24,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"¿Qué buscas?":"What's your goal?"}</div>
