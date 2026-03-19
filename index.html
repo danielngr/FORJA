@@ -2513,6 +2513,24 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
   const[selCeleb,setSelCeleb]=useState(null);
   const[gymType,setGymType]=useState(null); // 'gym' | 'homegym' // celebrity routine selection
   const[celebData,setCelebData]=useState(null); // full celebrity object
+
+  // EQ_CARDS hoisted for use in step 15
+  const EQ_CARDS=[
+    {id:"rack",            n:{es:"Rack + Barra",   en:"Rack + Bar"},    c:"#6a8fc0",ex:24,img:"https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&q=70&fit=crop"},
+    {id:"bench",           n:{es:"Banco",           en:"Bench"},         c:"#f0b429",ex:18,img:"https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=400&q=70&fit=crop"},
+    {id:"dumbbells",       n:{es:"Mancuernas",      en:"Dumbbells"},     c:"#3fcf8e",ex:20,img:"https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=400&q=70&fit=crop"},
+    {id:"pull_up_bar",     n:{es:"Dominadas",       en:"Pull-up bar"},   c:"#8878c0",ex:8, img:"https://images.unsplash.com/photo-1601422407692-ec4eeec1d9b3?w=400&q=70&fit=crop"},
+    {id:"dip_bar",         n:{es:"Paralelas",       en:"Dip bars"},      c:"#5faa88",ex:5, img:"https://images.unsplash.com/photo-1576678927484-cc907957088c?w=400&q=70&fit=crop"},
+    {id:"ez_bar",          n:{es:"Barra Z / EZ",    en:"EZ / Curl bar"}, c:"#c0a870",ex:8, img:"https://images.unsplash.com/photo-1581009137042-c552e485697a?w=400&q=70&fit=crop"},
+    {id:"leg_extension",   n:{es:"Leg Ext / Curl",  en:"Leg ext / curl"},c:"#e05555",ex:6, img:"https://images.unsplash.com/photo-1574680178050-55c6a6a96e0a?w=400&q=70&fit=crop"},
+    {id:"cable_machine",   n:{es:"Polea",           en:"Cable machine"}, c:"#d96060",ex:12,img:"https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400&q=70&fit=crop"},
+    {id:"weight_vest",     n:{es:"Chaleco lastrado","en":"Weight vest"},  c:"#8878c0",ex:6, img:"https://images.unsplash.com/photo-1609899464726-76e0e6c6aac7?w=400&q=70&fit=crop"},
+    {id:"kettlebell",      n:{es:"Kettlebell",      en:"Kettlebell"},    c:"#5faa88",ex:10,img:"https://images.unsplash.com/photo-1517344884509-a0c97ec11bcc?w=400&q=70&fit=crop"},
+    {id:"resistance_band", n:{es:"Bandas",          en:"Bands"},         c:"#6a8fc0",ex:8, img:"https://images.unsplash.com/photo-1598289431512-b97b0917affc?w=400&q=70&fit=crop"},
+          {id:"treadmill",        n:{es:"Caminadora",      en:"Treadmill"},     c:"#5faa88",ex:0, img:"https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=70&fit=crop"},
+          {id:"jump_rope",        n:{es:"Cuerda saltar",   en:"Jump Rope"},     c:"#c0a870",ex:0, img:"https://images.unsplash.com/photo-1599058918144-1ffabb6ab9a0?w=400&q=70&fit=crop"},
+];
+
   const[eqMode,setEqMode]=useState(null); // "full" | "home" | "custom" | null
 
   // Mapa equipo por ejercicio
@@ -2726,56 +2744,76 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             {Array.from({length:TOTAL_STEPS},(_,i)=><div key={i} style={{height:2,flex:1,borderRadius:1,background:step>i?"rgba(255,255,255,.8)":"rgba(255,255,255,.07)",transition:"all 0.4s",borderRadius:2}}/>)}
           </div>
           {step===1&&(<>
-            <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,.2)",letterSpacing:4,marginBottom:16,textTransform:"uppercase"}}>
-              {lang==="es"?"GÉNERO":"GENDER"}
+            {/* ── GENDER ── */}
+            <div style={{marginBottom:8,display:"flex",alignItems:"center",gap:8}}>
+              <div style={{height:1,flex:1,background:"linear-gradient(to right,rgba(255,255,255,.12),transparent)"}}/>
+              <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,.3)",letterSpacing:4,textTransform:"uppercase"}}>
+                {lang==="es"?"SOBRE TI":"ABOUT YOU"}
+              </div>
+              <div style={{height:1,flex:1,background:"linear-gradient(to left,rgba(255,255,255,.12),transparent)"}}/>
             </div>
-            <div style={{fontSize:36,fontWeight:900,letterSpacing:-1.5,marginBottom:24,lineHeight:.9}}>
-              {lang==="es"?"Selecciona tu género":"Select your gender"}
+            <div style={{fontSize:38,fontWeight:900,letterSpacing:-2,marginBottom:6,lineHeight:.95,marginTop:16}}>
+              {lang==="es"?"¿Quién":"Who"}
+              <br/>
+              <span style={{WebkitTextFillColor:"transparent",WebkitBackgroundClip:"text",backgroundClip:"text",
+                background:"linear-gradient(135deg,#F0F2F5 0%,rgba(240,242,245,.45) 100%)"}}>
+                {lang==="es"?"entrena?":"trains?"}
+              </span>
             </div>
-            <div style={{display:"flex",gap:12,marginBottom:12}}>
+            <div style={{fontSize:12,color:"rgba(255,255,255,.3)",fontFamily:mono,marginBottom:36,letterSpacing:.5}}>
+              {lang==="es"?"Personalizamos tu experiencia":"We personalize your experience"}
+            </div>
+            <div style={{display:"flex",gap:14,marginBottom:36}}>
               {[
-                {key:"male",   label:lang==="es"?"Hombre":"Man",
+                {key:"male", es:"Hombre", en:"Man",
                   img:"https://forjavideos.b-cdn.net/Firefly%20silver%20chrome%20muscular%20man%20sitting%20in%20lotus%20meditation%20pose%2C%20pure%20solid%20black%20background%2C%20no.jpg"},
-                {key:"female", label:lang==="es"?"Mujer":"Woman",
+                {key:"female", es:"Mujer", en:"Woman",
                   img:"https://forjavideos.b-cdn.net/Firefly%20silver%20chrome%20athletic%20female%20figure%20sitting%20in%20lotus%20meditation%20pose%2C%20pure%20solid%20black%20back.jpg"},
-              ].map(({key,label,img})=>(
+              ].map(({key,es:esl,en:enl,img})=>{
+                const sel=gender===key;
+                return(
                 <button key={key} onClick={()=>setGender(key)} style={{
-                  flex:1,borderRadius:14,overflow:"hidden",cursor:"pointer",padding:0,
-                  border:`2px solid ${gender===key?C.tx:C.borderL}`,
-                  background:"transparent",position:"relative",
-                  transition:"border-color .2s",outline:"none",
+                  flex:1,borderRadius:20,overflow:"hidden",cursor:"pointer",padding:0,
+                  border:`1.5px solid ${sel?"rgba(240,242,245,.55)":"rgba(240,242,245,.07)"}`,
+                  background:"transparent",position:"relative",outline:"none",
+                  boxShadow:sel?"0 0 40px rgba(240,242,245,.08)":"none",
+                  transition:"all .25s",
                 }}>
-                  <img src={img} alt={label} style={{width:"100%",aspectRatio:"1/1",objectFit:"cover",objectPosition:"center top",display:"block"}}/>
+                  <img src={img} alt={lang==="es"?esl:enl} style={{
+                    width:"100%",aspectRatio:"3/4",objectFit:"cover",
+                    objectPosition:"center top",display:"block",
+                    filter:sel?"brightness(1.05)":"brightness(.7) saturate(.8)",
+                    transition:"filter .25s",
+                  }}/>
+                  <div style={{
+                    position:"absolute",inset:0,
+                    background:sel
+                      ?"linear-gradient(180deg,transparent 40%,rgba(8,10,14,.92) 100%)"
+                      :"linear-gradient(180deg,transparent 35%,rgba(8,10,14,.97) 100%)",
+                    transition:"background .25s",
+                  }}/>
+                  {sel&&<div style={{
+                    position:"absolute",top:12,right:12,
+                    width:22,height:22,borderRadius:"50%",
+                    background:"rgba(240,242,245,1)",
+                    display:"flex",alignItems:"center",justifyContent:"center",
+                  }}>
+                    <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+                      <path d="M2 5.5L4.5 8L9 3" stroke="#080a0e" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>}
                   <div style={{
                     position:"absolute",bottom:0,left:0,right:0,
-                    background:"linear-gradient(transparent,rgba(20,24,36,.88))",
-                    padding:"16px 0 10px",
-                    fontSize:10,fontWeight:700,fontFamily:mono,letterSpacing:2,
-                    color:gender===key?C.tx:C.tx2,textTransform:"uppercase",
-                    transition:"color .2s",
-                  }}>{label}</div>
-                  {gender===key&&(
-                    <div style={{position:"absolute",top:8,right:8,width:18,height:18,borderRadius:"50%",background:C.tx,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10}}>✓</div>
-                  )}
+                    padding:"0 16px 18px",
+                  }}>
+                    <div style={{fontSize:17,fontWeight:800,color:sel?"rgba(240,242,245,1)":"rgba(240,242,245,.45)",letterSpacing:-.3,transition:"color .25s"}}>
+                      {lang==="es"?esl:enl}
+                    </div>
+                  </div>
                 </button>
-              ))}
+              )})}
             </div>
-            {/* Opción no-binaria — diseño de fila de texto */}
-            <button onClick={()=>setGender("nonbinary")} style={{
-              width:"100%",padding:"14px 18px",borderRadius:14,cursor:"pointer",
-              border:`2px solid ${gender==="nonbinary"?C.tx:C.borderL}`,
-              background:gender==="nonbinary"?"rgba(240,242,245,.06)":"transparent",
-              display:"flex",alignItems:"center",justifyContent:"space-between",
-              transition:"all .2s",outline:"none",marginBottom:28,
-            }}>
-              <span style={{fontSize:13,fontWeight:600,color:gender==="nonbinary"?C.tx:C.tx2,fontFamily:sans}}>
-                {lang==="es"?"Prefiero no definir":"Prefer not to say"}
-              </span>
-              {gender==="nonbinary"&&(
-                <div style={{width:18,height:18,borderRadius:"50%",background:C.tx,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10}}>✓</div>
-              )}
-            </button>
-            <div style={{display:"flex",gap:10}}>
+            <div style={{display:"flex",gap:10,marginBottom:12}}>
               <div style={{flex:1}}><Btn ghost onClick={()=>setStep(0)}>{t.back}</Btn></div>
               <div style={{flex:2}}><Btn onClick={()=>setStep(15)} disabled={!gender}>{t.next}</Btn></div>
             </div>
@@ -2783,125 +2821,267 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
 
           {/* ── STEP 15: GYM TYPE ── */}
           {step===15&&(<>
-            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:3,marginBottom:16}}>{lang==="es"?"DÓNDE ENTRENAS":"WHERE DO YOU TRAIN"}</div>
-            <div style={{fontSize:32,fontWeight:900,letterSpacing:-1,marginBottom:8,lineHeight:1}}>
-              {lang==="es"?"Tu espacio de\nentrenamiento":"Your training\nspace"}
+            {/* ── TRAINING SPACE ── */}
+            <div style={{marginBottom:8,display:"flex",alignItems:"center",gap:8}}>
+              <div style={{height:1,flex:1,background:"linear-gradient(to right,rgba(255,255,255,.12),transparent)"}}/>
+              <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,.3)",letterSpacing:4,textTransform:"uppercase"}}>
+                {lang==="es"?"EQUIPAMIENTO":"EQUIPMENT"}
+              </div>
+              <div style={{height:1,flex:1,background:"linear-gradient(to left,rgba(255,255,255,.12),transparent)"}}/>
             </div>
-            <div style={{fontSize:12,color:C.tx3,fontFamily:mono,marginBottom:32,lineHeight:1.6}}>{lang==="es"?"Esto nos ayuda a elegir los ejercicios correctos":"This helps us pick the right exercises"}</div>
+            <div style={{fontSize:38,fontWeight:900,letterSpacing:-2,marginBottom:6,lineHeight:.95,marginTop:16}}>
+              {lang==="es"?"¿Dónde":"Where do"}
+              <br/>
+              <span style={{WebkitTextFillColor:"transparent",WebkitBackgroundClip:"text",backgroundClip:"text",
+                background:"linear-gradient(135deg,#F0F2F5 0%,rgba(240,242,245,.45) 100%)"}}>
+                {lang==="es"?"entrenas?":"you train?"}
+              </span>
+            </div>
+            <div style={{fontSize:12,color:"rgba(255,255,255,.3)",fontFamily:mono,marginBottom:32,letterSpacing:.5}}>
+              {lang==="es"?"El sistema adapta cada ejercicio a tu equipo":"The system adapts every exercise to your gear"}
+            </div>
 
-            <div style={{display:"flex",flexDirection:"column",gap:14,marginBottom:32}}>
+            <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:32}}>
+
               {/* GYM COMPLETO */}
               <button onClick={()=>{
                 setGymType("gym");
+                setEqMode("full");
                 setEquipment(["Rack+Barra","Banco","Mancuernas","Dominadas","Paralelas","Barra Z/EZ","Leg Ext/Curl","Polea","Chaleco","Kettlebell","Bandas"]);
                 setStep(2);
               }} style={{
                 padding:0,borderRadius:18,cursor:"pointer",
-                border:"1.5px solid rgba(95,170,136,.25)",
-                background:"rgba(95,170,136,.06)",
-                backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",
-                outline:"none",transition:"all .25s",overflow:"hidden",textAlign:"left"
+                border:"1.5px solid rgba(95,170,136,.22)",
+                background:"rgba(95,170,136,.05)",
+                outline:"none",transition:"all .2s",overflow:"hidden",
               }}>
-                <div style={{padding:"22px 20px",display:"flex",alignItems:"center",gap:18}}>
-                  {/* Icon */}
-                  <div style={{width:56,height:56,borderRadius:14,background:"linear-gradient(135deg,rgba(95,170,136,.25),rgba(95,170,136,.08))",border:"1px solid rgba(95,170,136,.3)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-                      <rect x="2" y="11" width="4" height="6" rx="2" fill="rgba(95,170,136,.9)"/>
-                      <rect x="22" y="11" width="4" height="6" rx="2" fill="rgba(95,170,136,.9)"/>
-                      <rect x="6" y="9" width="3" height="10" rx="1.5" fill="rgba(95,170,136,.7)"/>
-                      <rect x="19" y="9" width="3" height="10" rx="1.5" fill="rgba(95,170,136,.7)"/>
-                      <rect x="9" y="13" width="10" height="2" rx="1" fill="rgba(95,170,136,1)"/>
+                <div style={{padding:"20px 20px 16px",display:"flex",alignItems:"center",gap:16}}>
+                  <div style={{
+                    width:52,height:52,borderRadius:14,flexShrink:0,
+                    background:"linear-gradient(135deg,rgba(95,170,136,.2) 0%,rgba(95,170,136,.06) 100%)",
+                    border:"1px solid rgba(95,170,136,.25)",
+                    display:"flex",alignItems:"center",justifyContent:"center",
+                  }}>
+                    <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+                      <rect x="1" y="10" width="4" height="6" rx="2" fill="rgba(95,170,136,.9)"/>
+                      <rect x="21" y="10" width="4" height="6" rx="2" fill="rgba(95,170,136,.9)"/>
+                      <rect x="5" y="8" width="3" height="10" rx="1.5" fill="rgba(95,170,136,.65)"/>
+                      <rect x="18" y="8" width="3" height="10" rx="1.5" fill="rgba(95,170,136,.65)"/>
+                      <rect x="8" y="12" width="10" height="2" rx="1" fill="rgba(95,170,136,1)"/>
                     </svg>
                   </div>
-                  <div style={{flex:1}}>
-                    <div style={{fontSize:16,fontWeight:800,color:C.tx,marginBottom:4,letterSpacing:-.3}}>{lang==="es"?"Gimnasio completo":"Full gym"}</div>
-                    <div style={{fontSize:11,color:"rgba(95,170,136,.7)",fontFamily:mono,letterSpacing:.5}}>{lang==="es"?"Todo el equipamiento disponible":"All equipment available"}</div>
+                  <div style={{flex:1,textAlign:"left"}}>
+                    <div style={{fontSize:16,fontWeight:800,color:"rgba(240,242,245,.95)",marginBottom:3,letterSpacing:-.3}}>
+                      {lang==="es"?"Gimnasio completo":"Full gym"}
+                    </div>
+                    <div style={{fontSize:11,color:"rgba(95,170,136,.65)",fontFamily:mono,letterSpacing:.3}}>
+                      {lang==="es"?"Acceso a todo el equipamiento":"Access to all equipment"}
+                    </div>
                   </div>
-                  <div style={{width:28,height:28,borderRadius:"50%",background:"rgba(95,170,136,.15)",border:"1px solid rgba(95,170,136,.3)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4" stroke="rgba(95,170,136,.9)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                  </div>
+                  <svg width="7" height="12" viewBox="0 0 7 12" fill="none" style={{flexShrink:0}}>
+                    <path d="M1 1l5 5-5 5" stroke="rgba(95,170,136,.6)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
                 </div>
-                {/* Tags */}
-                <div style={{padding:"0 20px 18px",display:"flex",gap:6,flexWrap:"wrap"}}>
-                  {["Barras","Mancuernas","Máquinas","Poleas","Peso libre"].map(t=>(
-                    <span key={t} style={{fontSize:9,fontFamily:mono,padding:"3px 8px",borderRadius:6,background:"rgba(95,170,136,.1)",border:"1px solid rgba(95,170,136,.2)",color:"rgba(95,170,136,.8)",letterSpacing:1}}>{t}</span>
+                <div style={{padding:"0 20px 14px",display:"flex",gap:5,flexWrap:"wrap"}}>
+                  {(lang==="es"?["Barras","Mancuernas","Máquinas","Poleas","Peso libre"]:["Barbells","Dumbbells","Machines","Cables","Free weights"]).map(tag=>(
+                    <span key={tag} style={{fontSize:8,fontFamily:mono,padding:"2px 7px",borderRadius:5,
+                      background:"rgba(95,170,136,.08)",border:"1px solid rgba(95,170,136,.18)",
+                      color:"rgba(95,170,136,.7)",letterSpacing:.8,textTransform:"uppercase"}}>{tag}</span>
                   ))}
                 </div>
               </button>
 
               {/* GYM EN CASA */}
-              <button onClick={()=>{setGymType("homegym");setStep(8);}} style={{
+              <button onClick={()=>{setGymType("homegym");setEqMode("home");}} style={{
                 padding:0,borderRadius:18,cursor:"pointer",
-                border:"1.5px solid rgba(192,168,112,.25)",
-                background:"rgba(192,168,112,.06)",
-                backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",
-                outline:"none",transition:"all .25s",overflow:"hidden",textAlign:"left"
+                border:`1.5px solid ${gymType==="homegym"?"rgba(192,168,112,.45)":"rgba(192,168,112,.18)"}`,
+                background:gymType==="homegym"?"rgba(192,168,112,.08)":"rgba(192,168,112,.03)",
+                outline:"none",transition:"all .2s",overflow:"hidden",
               }}>
-                <div style={{padding:"22px 20px",display:"flex",alignItems:"center",gap:18}}>
-                  {/* Icon */}
-                  <div style={{width:56,height:56,borderRadius:14,background:"linear-gradient(135deg,rgba(192,168,112,.25),rgba(192,168,112,.08))",border:"1px solid rgba(192,168,112,.3)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-                      <path d="M14 3L4 10v15h7v-6h6v6h7V10L14 3z" stroke="rgba(192,168,112,.9)" strokeWidth="1.5" strokeLinejoin="round" fill="rgba(192,168,112,.12)"/>
-                      <rect x="11" y="14" width="6" height="6" rx="1" fill="rgba(192,168,112,.3)"/>
+                <div style={{padding:"20px 20px 16px",display:"flex",alignItems:"center",gap:16}}>
+                  <div style={{
+                    width:52,height:52,borderRadius:14,flexShrink:0,
+                    background:"linear-gradient(135deg,rgba(192,168,112,.2) 0%,rgba(192,168,112,.05) 100%)",
+                    border:"1px solid rgba(192,168,112,.25)",
+                    display:"flex",alignItems:"center",justifyContent:"center",
+                  }}>
+                    <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+                      <path d="M13 2L3 9v14h7v-6h6v6h7V9L13 2z" stroke="rgba(192,168,112,.85)" strokeWidth="1.4" strokeLinejoin="round" fill="rgba(192,168,112,.1)"/>
+                      <rect x="10.5" y="13" width="5" height="5" rx="1" fill="rgba(192,168,112,.25)"/>
                     </svg>
                   </div>
-                  <div style={{flex:1}}>
-                    <div style={{fontSize:16,fontWeight:800,color:C.tx,marginBottom:4,letterSpacing:-.3}}>{lang==="es"?"Gym en casa":"Home gym"}</div>
-                    <div style={{fontSize:11,color:"rgba(192,168,112,.7)",fontFamily:mono,letterSpacing:.5}}>{lang==="es"?"Selecciona lo que tienes":"Select what you have"}</div>
+                  <div style={{flex:1,textAlign:"left"}}>
+                    <div style={{fontSize:16,fontWeight:800,color:"rgba(240,242,245,.95)",marginBottom:3,letterSpacing:-.3}}>
+                      {lang==="es"?"Gym en casa":"Home gym"}
+                    </div>
+                    <div style={{fontSize:11,color:"rgba(192,168,112,.6)",fontFamily:mono,letterSpacing:.3}}>
+                      {lang==="es"?"Dinos qué tienes y adaptamos todo":"Tell us what you have and we adapt"}
+                    </div>
                   </div>
-                  <div style={{width:28,height:28,borderRadius:"50%",background:"rgba(192,168,112,.15)",border:"1px solid rgba(192,168,112,.3)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4" stroke="rgba(192,168,112,.9)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  <svg width="7" height="12" viewBox="0 0 7 12" fill="none" style={{flexShrink:0}}>
+                    <path d="M1 1l5 5-5 5" stroke="rgba(192,168,112,.5)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+
+                {/* Equipment panel — expands when homegym selected */}
+                {gymType==="homegym"&&(
+                <div style={{borderTop:"1px solid rgba(192,168,112,.12)",padding:"16px 20px 20px"}}>
+                  <div style={{fontSize:9,fontFamily:mono,color:"rgba(192,168,112,.6)",letterSpacing:3,marginBottom:14,textTransform:"uppercase"}}>
+                    {lang==="es"?"¿Qué tienes?":"What do you have?"}
+                  </div>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+                    {EQ_CARDS.map(eq=>{
+                      const sel=gymType==="gym"||equipment.includes(eq.id);
+                      return(
+                      <button key={eq.id} onClick={(e)=>{
+                        e.stopPropagation();
+                        setEquipment(p=>sel?p.filter(x=>x!==eq.id):[...p,eq.id]);
+                      }} style={{
+                        display:"flex",alignItems:"center",gap:6,
+                        padding:"7px 12px",borderRadius:30,cursor:"pointer",
+                        border:`1px solid ${sel?"rgba(192,168,112,.55)":"rgba(255,255,255,.1)"}`,
+                        background:sel?"rgba(192,168,112,.12)":"rgba(255,255,255,.03)",
+                        color:sel?"rgba(192,168,112,.95)":"rgba(255,255,255,.35)",
+                        fontSize:10,fontFamily:mono,letterSpacing:.5,
+                        transition:"all .15s",outline:"none",
+                      }}>
+                        <span>{lang==="es"?eq.n.es:eq.n.en}</span>
+                        {sel&&<span style={{marginLeft:2,opacity:.7}}>✓</span>}
+                      </button>
+                    )})}
                   </div>
                 </div>
-                <div style={{padding:"0 20px 18px",display:"flex",gap:6,flexWrap:"wrap"}}>
-                  {["Rack","Mancuernas","Dominadas","Bandas","Kettlebell"].map(t=>(
-                    <span key={t} style={{fontSize:9,fontFamily:mono,padding:"3px 8px",borderRadius:6,background:"rgba(192,168,112,.1)",border:"1px solid rgba(192,168,112,.2)",color:"rgba(192,168,112,.8)",letterSpacing:1}}>{t}</span>
-                  ))}
-                </div>
+                )}
               </button>
             </div>
 
-            <Btn ghost onClick={()=>setStep(1)}>{t.back}</Btn>
+            <div style={{display:"flex",gap:10}}>
+              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(1)}>{t.back}</Btn></div>
+              <div style={{flex:2}}><Btn onClick={()=>{
+                if(gymType==="homegym"&&equipment.length===0) return;
+                setStep(2);
+              }} disabled={!gymType||(gymType==="homegym"&&equipment.length===0)}>{t.next}</Btn></div>
+            </div>
           </>)}
 
           {step===2&&(<>
-            <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,.2)",letterSpacing:4,marginBottom:16,textTransform:"uppercase"}}>{lang==="es"?"RUTINA":"ROUTINE"}</div>
-            <div style={{fontSize:36,fontWeight:900,letterSpacing:-1.5,marginBottom:24,lineHeight:.9}}>{lang==="es"?"¿Cómo la quieres?":"How do you want it?"}</div>
-            <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:32}}>
+            <div style={{marginBottom:8,display:"flex",alignItems:"center",gap:8}}>
+              <div style={{height:1,flex:1,background:"linear-gradient(to right,rgba(255,255,255,.12),transparent)"}}/>
+              <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,.3)",letterSpacing:4,textTransform:"uppercase"}}>
+                {lang==="es"?"PROGRAMA":"PROGRAM"}
+              </div>
+              <div style={{height:1,flex:1,background:"linear-gradient(to left,rgba(255,255,255,.12),transparent)"}}/>
+            </div>
+            <div style={{fontSize:38,fontWeight:900,letterSpacing:-2,marginBottom:6,lineHeight:.95,marginTop:16}}>
+              {lang==="es"?"Tu":"Your"}
+              <br/>
+              <span style={{WebkitTextFillColor:"transparent",WebkitBackgroundClip:"text",backgroundClip:"text",
+                background:"linear-gradient(135deg,#F0F2F5 0%,rgba(240,242,245,.45) 100%)"}}>
+                {lang==="es"?"programa":"program"}
+              </span>
+            </div>
+            <div style={{fontSize:12,color:"rgba(255,255,255,.3)",fontFamily:mono,marginBottom:32,letterSpacing:.5}}>
+              {lang==="es"?"Elige cómo quieres estructurar tu entrenamiento":"Choose how to structure your training"}
+            </div>
+
+            <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:32}}>
+
+              {/* AUTO */}
               <button onClick={()=>{setMode("auto");setStep(3);}} style={{
-                padding:"20px 18px",borderRadius:14,cursor:"pointer",border:`1.5px solid rgba(240,242,245,0.12)`,
-                background:"rgba(66,72,88,0.45)",backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",
-                display:"flex",alignItems:"center",gap:16,outline:"none",transition:"all .2s",
+                padding:"20px 20px",borderRadius:18,cursor:"pointer",
+                border:"1.5px solid rgba(106,143,192,.2)",
+                background:"rgba(106,143,192,.04)",
+                outline:"none",transition:"all .2s",
+                display:"flex",alignItems:"center",gap:16,
               }}>
-                <div style={{width:42,height:42,borderRadius:12,background:"rgba(106,143,192,.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>⚡</div>
-                <div style={{textAlign:"left"}}>
-                  <div style={{fontSize:15,fontWeight:700,color:C.tx,marginBottom:3}}>{lang==="es"?"El sistema la genera":"System generates it"}</div>
-                  <div style={{fontSize:11,color:C.tx3,fontFamily:mono}}>{lang==="es"?"Rutina optimizada según tu objetivo y nivel":"Optimized for your goal and level"}</div>
+                <div style={{
+                  width:50,height:50,borderRadius:14,flexShrink:0,
+                  background:"linear-gradient(135deg,rgba(106,143,192,.22) 0%,rgba(106,143,192,.06) 100%)",
+                  border:"1px solid rgba(106,143,192,.2)",
+                  display:"flex",alignItems:"center",justifyContent:"center",
+                }}>
+                  <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                    <path d="M11 2l2.4 5.5 5.6.4-4.2 3.8 1.3 5.6L11 14.5l-5.1 2.8 1.3-5.6L3 7.9l5.6-.4L11 2z" fill="rgba(106,143,192,.85)" stroke="none"/>
+                  </svg>
                 </div>
-              </button>
-              <button onClick={()=>{setMode("manual");setStep(20);}} style={{
-                padding:"20px 18px",borderRadius:14,cursor:"pointer",border:`1.5px solid rgba(240,242,245,0.12)`,
-                background:"rgba(66,72,88,0.45)",backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",
-                display:"flex",alignItems:"center",gap:16,outline:"none",transition:"all .2s",
-              }}>
-                <div style={{width:42,height:42,borderRadius:12,background:"rgba(95,170,136,.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>✏️</div>
-                <div style={{textAlign:"left"}}>
-                  <div style={{fontSize:15,fontWeight:700,color:C.tx,marginBottom:3}}>{lang==="es"?"Yo la creo":"I'll build it"}</div>
-                  <div style={{fontSize:11,color:C.tx3,fontFamily:mono}}>{lang==="es"?"Elige ejercicios por día desde el catálogo":"Pick exercises per day from the catalog"}</div>
+                <div style={{flex:1,textAlign:"left"}}>
+                  <div style={{fontSize:16,fontWeight:800,color:"rgba(240,242,245,.95)",marginBottom:3,letterSpacing:-.3}}>
+                    {lang==="es"?"Generada por IA":"AI-generated"}
+                  </div>
+                  <div style={{fontSize:11,color:"rgba(106,143,192,.65)",fontFamily:mono,letterSpacing:.3}}>
+                    {lang==="es"?"Rutina optimizada para tu objetivo y nivel":"Optimized for your goal and fitness level"}
+                  </div>
                 </div>
+                <svg width="7" height="12" viewBox="0 0 7 12" fill="none" style={{flexShrink:0}}>
+                  <path d="M1 1l5 5-5 5" stroke="rgba(106,143,192,.5)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
               </button>
+
+              {/* CELEBRITY */}
               <button onClick={()=>{setMode("celebrity");setStep(25);}} style={{
-                padding:"20px 18px",borderRadius:14,cursor:"pointer",border:`1.5px solid rgba(240,242,245,0.12)`,
-                background:"rgba(66,72,88,0.45)",backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",
-                display:"flex",alignItems:"center",gap:16,outline:"none",transition:"all .2s",
+                padding:"20px 20px",borderRadius:18,cursor:"pointer",
+                border:"1.5px solid rgba(192,168,112,.2)",
+                background:"rgba(192,168,112,.04)",
+                outline:"none",transition:"all .2s",
+                display:"flex",alignItems:"center",gap:16,
               }}>
-                <div style={{width:42,height:42,borderRadius:12,background:"rgba(192,168,112,.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>🏆</div>
-                <div style={{textAlign:"left"}}>
-                  <div style={{fontSize:15,fontWeight:700,color:C.tx,marginBottom:3}}>{lang==="es"?"Rutina de un famoso":"Train like a celebrity"}</div>
-                  <div style={{fontSize:11,color:C.tx3,fontFamily:mono}}>{lang==="es"?"Elige un atleta y sigue su programa":"Pick an athlete and follow their program"}</div>
+                <div style={{
+                  width:50,height:50,borderRadius:14,flexShrink:0,
+                  background:"linear-gradient(135deg,rgba(192,168,112,.22) 0%,rgba(192,168,112,.06) 100%)",
+                  border:"1px solid rgba(192,168,112,.2)",
+                  display:"flex",alignItems:"center",justifyContent:"center",
+                }}>
+                  <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                    <circle cx="11" cy="8" r="3.5" stroke="rgba(192,168,112,.85)" strokeWidth="1.5" fill="none"/>
+                    <path d="M4 19c0-3.9 3.1-7 7-7h.4c3.8.1 6.6 3.1 6.6 7" stroke="rgba(192,168,112,.85)" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+                    <path d="M14 4l1 2.5 2.5.2-1.9 1.7.6 2.6L14 9.7l-2.2 1.3.6-2.6L10.5 6.7l2.5-.2L14 4z" fill="rgba(192,168,112,.6)"/>
+                  </svg>
                 </div>
+                <div style={{flex:1,textAlign:"left"}}>
+                  <div style={{fontSize:16,fontWeight:800,color:"rgba(240,242,245,.95)",marginBottom:3,letterSpacing:-.3}}>
+                    {lang==="es"?"Rutina de élite":"Elite routine"}
+                  </div>
+                  <div style={{fontSize:11,color:"rgba(192,168,112,.65)",fontFamily:mono,letterSpacing:.3}}>
+                    {lang==="es"?"Entrena como Arnold, Hemsworth, LeBron...":"Train like Arnold, Hemsworth, LeBron..."}
+                  </div>
+                </div>
+                <svg width="7" height="12" viewBox="0 0 7 12" fill="none" style={{flexShrink:0}}>
+                  <path d="M1 1l5 5-5 5" stroke="rgba(192,168,112,.5)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+
+              {/* MANUAL */}
+              <button onClick={()=>{setMode("manual");setStep(20);}} style={{
+                padding:"20px 20px",borderRadius:18,cursor:"pointer",
+                border:"1.5px solid rgba(255,255,255,.07)",
+                background:"rgba(255,255,255,.02)",
+                outline:"none",transition:"all .2s",
+                display:"flex",alignItems:"center",gap:16,
+              }}>
+                <div style={{
+                  width:50,height:50,borderRadius:14,flexShrink:0,
+                  background:"rgba(255,255,255,.05)",
+                  border:"1px solid rgba(255,255,255,.08)",
+                  display:"flex",alignItems:"center",justifyContent:"center",
+                }}>
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M3 17h14M5 13l7-10 3 2-7 10H5z" stroke="rgba(255,255,255,.5)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+                <div style={{flex:1,textAlign:"left"}}>
+                  <div style={{fontSize:16,fontWeight:800,color:"rgba(240,242,245,.65)",marginBottom:3,letterSpacing:-.3}}>
+                    {lang==="es"?"Personalizada":"Custom build"}
+                  </div>
+                  <div style={{fontSize:11,color:"rgba(255,255,255,.25)",fontFamily:mono,letterSpacing:.3}}>
+                    {lang==="es"?"Diseña tu rutina desde cero":"Design your own routine from scratch"}
+                  </div>
+                </div>
+                <svg width="7" height="12" viewBox="0 0 7 12" fill="none" style={{flexShrink:0}}>
+                  <path d="M1 1l5 5-5 5" stroke="rgba(255,255,255,.2)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
               </button>
             </div>
+
             <div style={{flex:1}}><Btn ghost onClick={()=>setStep(15)}>{t.back}</Btn></div>
           </>)}
           {step===3&&(<>
@@ -2982,75 +3162,130 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             </div>
           </>)}
           {step===6&&(<>
-            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{t.days}</div>
-            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:32,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"¿Cuántos días?":"How many days?"}</div>
-            <div style={{display:"flex",gap:10,justifyContent:"center"}}>
-              {[3,4,5,6].map(n=>(
-                <button key={n} onClick={()=>{setDays(n);setSelDays([]);}} style={{width:68,height:84,borderRadius:14,
-                  border:`1.5px solid ${days===n?C.tx:C.borderL}`,cursor:"pointer",
-                  background:days===n?C.tx:"transparent",color:days===n?C.white:C.tx3,
-                  fontSize:32,fontWeight:900,fontFamily:sans,transition:"all 0.2s"}}>{n}</button>
-              ))}
+            {/* ── HOW MANY DAYS ── */}
+            <div style={{marginBottom:8,display:"flex",alignItems:"center",gap:8}}>
+              <div style={{height:1,flex:1,background:"linear-gradient(to right,rgba(255,255,255,.12),transparent)"}}/>
+              <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,.3)",letterSpacing:4,textTransform:"uppercase"}}>
+                {lang==="es"?"FRECUENCIA":"FREQUENCY"}
+              </div>
+              <div style={{height:1,flex:1,background:"linear-gradient(to left,rgba(255,255,255,.12),transparent)"}}/>
+            </div>
+            <div style={{fontSize:38,fontWeight:900,letterSpacing:-2,marginBottom:6,lineHeight:.95,marginTop:16}}>
+              {lang==="es"?"¿Cuántos":"How many"}
+              <br/>
+              <span style={{WebkitTextFillColor:"transparent",WebkitBackgroundClip:"text",backgroundClip:"text",
+                background:"linear-gradient(135deg,#F0F2F5 0%,rgba(240,242,245,.45) 100%)"}}>
+                {lang==="es"?"días/semana?":"days/week?"}
+              </span>
+            </div>
+            <div style={{fontSize:12,color:"rgba(255,255,255,.3)",fontFamily:mono,marginBottom:40,letterSpacing:.5}}>
+              {lang==="es"?"La constancia es más importante que la intensidad":"Consistency beats intensity every time"}
+            </div>
+            <div style={{display:"flex",gap:10,marginBottom:12}}>
+              {[3,4,5,6].map(n=>{
+                const sel=days===n;
+                const labels={
+                  3:{es:"Tri-semanal",en:"3x/week",sub:{es:"Ideal para empezar",en:"Great to start"}},
+                  4:{es:"4 días",en:"4x/week",sub:{es:"Balance óptimo",en:"Optimal balance"}},
+                  5:{es:"5 días",en:"5x/week",sub:{es:"Nivel avanzado",en:"Advanced level"}},
+                  6:{es:"6 días",en:"6x/week",sub:{es:"Atleta de élite",en:"Elite athlete"}},
+                };
+                return(
+                <button key={n} onClick={()=>{setDays(n);setSelDays([]);}} style={{
+                  flex:1,borderRadius:16,cursor:"pointer",padding:"16px 8px 14px",
+                  border:`1.5px solid ${sel?"rgba(240,242,245,.5)":"rgba(240,242,245,.07)"}`,
+                  background:sel?"rgba(240,242,245,.07)":"transparent",
+                  outline:"none",transition:"all .2s",textAlign:"center",
+                  boxShadow:sel?"0 0 24px rgba(240,242,245,.06)":"none",
+                }}>
+                  <div style={{fontSize:36,fontWeight:900,color:sel?"rgba(240,242,245,1)":"rgba(240,242,245,.3)",letterSpacing:-2,lineHeight:1,fontFamily:sans,transition:"color .2s"}}>{n}</div>
+                  <div style={{fontSize:8,fontFamily:mono,color:sel?"rgba(240,242,245,.7)":"rgba(240,242,245,.2)",letterSpacing:1,marginTop:8,textTransform:"uppercase",transition:"color .2s",lineHeight:1.4}}>
+                    {lang==="es"?labels[n].es:labels[n].en}<br/>
+                    <span style={{opacity:.6,fontSize:7}}>{lang==="es"?labels[n].sub.es:labels[n].sub.en}</span>
+                  </div>
+                </button>
+              )})}
             </div>
             <div style={{display:"flex",gap:10,marginTop:32}}>
               <div style={{flex:1}}><Btn ghost onClick={()=>setStep(5)}>{t.back}</Btn></div>
-              <div style={{flex:2}}><Btn onClick={()=>setStep(8)} disabled={!days}>{t.next}</Btn></div>
+              <div style={{flex:2}}><Btn onClick={()=>setStep(gymType==="gym"?9:8)} disabled={!days}>{t.next}</Btn></div>
             </div>
           </>)}
 
           {step===7&&(<>
-            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>
-              {lang==="es"?"QUÉ DÍAS":"WHICH DAYS"}
+            {/* ── WHICH DAYS ── */}
+            <div style={{marginBottom:8,display:"flex",alignItems:"center",gap:8}}>
+              <div style={{height:1,flex:1,background:"linear-gradient(to right,rgba(255,255,255,.12),transparent)"}}/>
+              <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,.3)",letterSpacing:4,textTransform:"uppercase"}}>
+                {lang==="es"?"HORARIO":"SCHEDULE"}
+              </div>
+              <div style={{height:1,flex:1,background:"linear-gradient(to left,rgba(255,255,255,.12),transparent)"}}/>
             </div>
-            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:8,lineHeight:1,textTransform:"uppercase"}}>
-              {lang==="es"?"¿Qué días entrenas?":"Which days?"}
+            <div style={{fontSize:38,fontWeight:900,letterSpacing:-2,marginBottom:6,lineHeight:.95,marginTop:16}}>
+              {lang==="es"?"¿Qué días":"Which days"}
+              <br/>
+              <span style={{WebkitTextFillColor:"transparent",WebkitBackgroundClip:"text",backgroundClip:"text",
+                background:"linear-gradient(135deg,#F0F2F5 0%,rgba(240,242,245,.45) 100%)"}}>
+                {lang==="es"?"entrenas?":"do you train?"}
+              </span>
             </div>
-            <div style={{fontFamily:mono,fontSize:10,color:C.tx3,letterSpacing:1,marginBottom:32,opacity:.7}}>
-              {lang==="es"?`Selecciona ${days} días`:`Select ${days} days`}
+            <div style={{fontSize:12,color:"rgba(255,255,255,.3)",fontFamily:mono,marginBottom:8,letterSpacing:.5}}>
+              {lang==="es"?`Elige ${days} días`:`Choose ${days} days`}
             </div>
-            <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:32}}>
-              {(lang==="es"?["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"]:["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]).map((d,i)=>{
+            <div style={{display:"flex",justifyContent:"center",gap:6,marginBottom:28}}>
+              {Array.from({length:days}).map((_,i)=>(
+                <div key={i} style={{width:6,height:6,borderRadius:"50%",
+                  background:selDays.length>i?"rgba(240,242,245,.8)":"rgba(240,242,245,.12)",
+                  transition:"background .2s"}}/>
+              ))}
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:32}}>
+              {(lang==="es"
+                ?["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"]
+                :["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
+              ).map((d,i)=>{
                 const sel=selDays.includes(i);
+                const canAdd=!sel&&selDays.length<days;
+                const dayAbbr=(lang==="es"?["L","M","X","J","V","S","D"]:["M","T","W","T","F","S","S"])[i];
                 return(
-                  <button key={i} onClick={()=>{
-                    const ns=sel?selDays.filter(x=>x!==i):[...selDays,i].slice(0,days);
-                    setSelDays(ns);
-                  }} style={{
-                    padding:"16px 20px",borderRadius:14,cursor:"pointer",
-                    border:`1.5px solid ${sel?"rgba(240,242,245,0.5)":"rgba(240,242,245,0.08)"}`,
-                    background:sel?"rgba(240,242,245,0.09)":"rgba(66,72,88,0.35)",
-                    backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",
-                    display:"flex",alignItems:"center",justifyContent:"space-between",
-                    transition:"all .2s",outline:"none",
+                <button key={i} onClick={()=>{
+                  if(sel) setSelDays(p=>p.filter(x=>x!==i));
+                  else if(canAdd) setSelDays(p=>[...p,i]);
+                }} disabled={!sel&&!canAdd} style={{
+                  padding:"14px 18px",borderRadius:14,cursor:sel||canAdd?"pointer":"default",
+                  border:`1px solid ${sel?"rgba(240,242,245,.35)":"rgba(240,242,245,.06)"}`,
+                  background:sel?"rgba(240,242,245,.06)":"transparent",
+                  display:"flex",alignItems:"center",gap:14,
+                  transition:"all .15s",outline:"none",
+                  opacity:!sel&&!canAdd?.35:1,
+                }}>
+                  <div style={{
+                    width:38,height:38,borderRadius:10,flexShrink:0,
+                    background:sel?"rgba(240,242,245,.1)":"rgba(240,242,245,.03)",
+                    border:`1px solid ${sel?"rgba(240,242,245,.2)":"rgba(240,242,245,.06)"}`,
+                    display:"flex",alignItems:"center",justifyContent:"center",
+                    fontSize:13,fontWeight:800,fontFamily:mono,
+                    color:sel?"rgba(240,242,245,.9)":"rgba(240,242,245,.2)",
+                    transition:"all .15s",
+                  }}>{dayAbbr}</div>
+                  <div style={{flex:1,textAlign:"left"}}>
+                    <div style={{fontSize:15,fontWeight:700,color:sel?"rgba(240,242,245,.9)":"rgba(240,242,245,.35)",letterSpacing:-.2,transition:"color .15s"}}>{d}</div>
+                  </div>
+                  {sel&&<div style={{
+                    width:22,height:22,borderRadius:"50%",
+                    background:"rgba(240,242,245,1)",
+                    display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,
                   }}>
-                    <div style={{display:"flex",alignItems:"center",gap:14}}>
-                      <div style={{
-                        width:36,height:36,borderRadius:10,
-                        background:sel?"rgba(240,242,245,0.15)":"rgba(240,242,245,0.04)",
-                        display:"flex",alignItems:"center",justifyContent:"center",
-                        fontSize:11,fontFamily:mono,fontWeight:700,
-                        color:sel?"#F0F2F5":"#9aa0b0",letterSpacing:1,
-                        transition:"all .2s",
-                      }}>
-                        {(lang==="es"?["L","M","X","J","V","S","D"]:["M","T","W","T","F","S","S"])[i]}
-                      </div>
-                      <span style={{fontSize:15,fontWeight:sel?700:400,color:sel?"#F0F2F5":"#b8bcc8",transition:"all .15s"}}>{d}</span>
-                    </div>
-                    <div style={{
-                      width:22,height:22,borderRadius:"50%",
-                      background:sel?"#F0F2F5":"transparent",
-                      border:`1.5px solid ${sel?"#F0F2F5":"rgba(240,242,245,0.2)"}`,
-                      display:"flex",alignItems:"center",justifyContent:"center",
-                      fontSize:12,color:sel?"#2c3040":"transparent",
-                      transition:"all .2s",flexShrink:0,
-                    }}>{sel?"✓":""}</div>
-                  </button>
-                );
-              })}
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                      <path d="M2 5l2.5 2.5L8 2.5" stroke="#080a0e" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>}
+                </button>
+              )})}
             </div>
-            <div style={{display:"flex",gap:10,marginTop:"auto"}}>
-              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(8)}>{t.back}</Btn></div>
-              <div style={{flex:2}}><Btn onClick={finish} disabled={selDays.length!==days}>{t.go}</Btn></div>
+            <div style={{display:"flex",gap:10}}>
+              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(6)}>{t.back}</Btn></div>
+              <div style={{flex:2}}><Btn onClick={()=>setStep(9)} disabled={selDays.length!==days}>{t.next}</Btn></div>
             </div>
           </>)}
         </div>
@@ -3142,21 +3377,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               {lang==="es"?"TOCA EL EQUIPO DE TU GYM":"TAP YOUR GYM EQUIPMENT"}
             </div>
             {(()=>{
-              const EQ_CARDS=[
-                {id:"rack",            n:{es:"Rack + Barra",   en:"Rack + Bar"},    c:"#6a8fc0",ex:24,img:"https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&q=70&fit=crop"},
-                {id:"bench",           n:{es:"Banco",           en:"Bench"},         c:"#f0b429",ex:18,img:"https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=400&q=70&fit=crop"},
-                {id:"dumbbells",       n:{es:"Mancuernas",      en:"Dumbbells"},     c:"#3fcf8e",ex:20,img:"https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=400&q=70&fit=crop"},
-                {id:"pull_up_bar",     n:{es:"Dominadas",       en:"Pull-up bar"},   c:"#8878c0",ex:8, img:"https://images.unsplash.com/photo-1601422407692-ec4eeec1d9b3?w=400&q=70&fit=crop"},
-                {id:"dip_bar",         n:{es:"Paralelas",       en:"Dip bars"},      c:"#5faa88",ex:5, img:"https://images.unsplash.com/photo-1576678927484-cc907957088c?w=400&q=70&fit=crop"},
-                {id:"ez_bar",          n:{es:"Barra Z / EZ",    en:"EZ / Curl bar"}, c:"#c0a870",ex:8, img:"https://images.unsplash.com/photo-1581009137042-c552e485697a?w=400&q=70&fit=crop"},
-                {id:"leg_extension",   n:{es:"Leg Ext / Curl",  en:"Leg ext / curl"},c:"#e05555",ex:6, img:"https://images.unsplash.com/photo-1574680178050-55c6a6a96e0a?w=400&q=70&fit=crop"},
-                {id:"cable_machine",   n:{es:"Polea",           en:"Cable machine"}, c:"#d96060",ex:12,img:"https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400&q=70&fit=crop"},
-                {id:"weight_vest",     n:{es:"Chaleco lastrado","en":"Weight vest"},  c:"#8878c0",ex:6, img:"https://images.unsplash.com/photo-1609899464726-76e0e6c6aac7?w=400&q=70&fit=crop"},
-                {id:"kettlebell",      n:{es:"Kettlebell",      en:"Kettlebell"},    c:"#5faa88",ex:10,img:"https://images.unsplash.com/photo-1517344884509-a0c97ec11bcc?w=400&q=70&fit=crop"},
-                {id:"resistance_band", n:{es:"Bandas",          en:"Bands"},         c:"#6a8fc0",ex:8, img:"https://images.unsplash.com/photo-1598289431512-b97b0917affc?w=400&q=70&fit=crop"},
-          {id:"treadmill",        n:{es:"Caminadora",      en:"Treadmill"},     c:"#5faa88",ex:0, img:"https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=70&fit=crop"},
-          {id:"jump_rope",        n:{es:"Cuerda saltar",   en:"Jump Rope"},     c:"#c0a870",ex:0, img:"https://images.unsplash.com/photo-1599058918144-1ffabb6ab9a0?w=400&q=70&fit=crop"},
-              ];
+              // EQ_CARDS defined above
               const tot=[...equipment].reduce((s,id)=>{const c=EQ_CARDS.find(x=>x.id===id);return s+(c?.ex||0);},15);
               return(<>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:12}}>
@@ -3332,8 +3553,13 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                     if(!cel)return;
                     setDays(cel.days);
                     setCelebData(cel);
-                    setStep(8);
-                  }}>{lang==="es"?"ELEGIR EQUIPO →":"SELECT EQUIPMENT →"}</Btn></div>
+                    if(gymType==="gym"){
+                      // Gym completo: skip equipment, go to day builder
+                      setStep(23);
+                    } else {
+                      setStep(8);
+                    }
+                  }}>{lang==="es"?(gymType==="gym"?"ELEGIR ESTA RUTINA →":"ELEGIR EQUIPO →"):(gymType==="gym"?"SELECT THIS ROUTINE →":"SELECT EQUIPMENT →")}</Btn></div>
                 </div>
               </>);
             })()}
