@@ -2753,7 +2753,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             textShadow:"0 0 80px rgba(191,169,138,.1)",marginBottom:6}}>FORJA</div>
           <div style={{width:28,height:1,background:"#BFA98A",opacity:.4,margin:"0 auto",marginBottom:30}}/>
           <div style={{fontFamily:mono,fontSize:9,letterSpacing:4,color:"rgba(238,234,227,.22)",
-            textTransform:"uppercase",marginBottom:18,textAlign:"center"}}>
+            textTransform:"uppercase",marginBottom:18,textAlign:"center",color:"rgba(238,234,227,.65)"}}>
             Elige tu idioma · Choose your language
           </div>
           <div style={{display:"flex",gap:10}}>
@@ -2783,7 +2783,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
       {/* ═══════════════════════════════════════════════ */}
       {step===1&&(
         <div style={{position:"fixed",inset:0,display:"flex",overflow:"hidden"}}>
-          <div style={{position:"absolute",top:0,bottom:0,left:"50%",width:1,background:"rgba(255,255,255,.07)",zIndex:10,pointerEvents:"none"}}/>
+          <div style={{position:"absolute",top:0,bottom:0,left:"50%",width:1,background:"linear-gradient(to bottom, transparent 0%, rgba(255,255,255,.06) 30%, rgba(255,255,255,.06) 70%, transparent 100%)",zIndex:10,pointerEvents:"none"}}/>
           {[
             {key:"male",  label:lang==="es"?"HOMBRE":"MAN",
               img:"https://forjavideos.b-cdn.net/Firefly%20silver%20chrome%20muscular%20man%20sitting%20in%20lotus%20meditation%20pose%2C%20pure%20solid%20black%20background%2C%20no.jpg"},
@@ -2814,10 +2814,10 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               </div>
             </div>
           )})}
-          <div style={{position:"fixed",bottom:0,left:0,right:0,padding:"16px 24px 38px",zIndex:20,
-            background:"linear-gradient(transparent,rgba(7,8,10,.88) 35%)",
-            display:"flex",flexDirection:"column",alignItems:"flex-end",gap:10}}>
-            <div style={{opacity:gender?1:0,pointerEvents:gender?"all":"none",transition:"opacity .3s"}}>
+          <div style={{position:"fixed",bottom:0,left:0,right:0,padding:"12px 24px 44px",zIndex:20,
+            background:"linear-gradient(transparent 0%, rgba(7,8,10,.7) 20%, rgba(7,8,10,.95) 60%)",
+            display:"flex",flexDirection:"column",alignItems:"center",gap:8}}>
+            <div style={{opacity:gender?1:0,pointerEvents:gender?"all":"none",transition:"opacity .3s",width:"100%",display:"flex",justifyContent:"flex-end"}}>
               <button onClick={()=>setStep(15)} style={{display:"inline-flex",alignItems:"center",gap:9,
                 padding:"16px 30px",borderRadius:14,background:"#EEEAE3",color:"#07080a",border:"none",
                 cursor:"pointer",fontFamily:mono,fontSize:11,fontWeight:500,letterSpacing:2,textTransform:"uppercase"}}>
