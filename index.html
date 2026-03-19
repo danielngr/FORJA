@@ -2854,16 +2854,30 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
   };
 
   return(
-    <div style={{minHeight:"100vh",background:"#07080a",color:"#EEEAE3",fontFamily:"'DM Sans',sans-serif",position:"relative"}}>
+    <div style={{minHeight:"100vh",background:"#07080a",color:"#EEEAE3",
+      fontFamily:"'DM Sans',sans-serif",position:"relative",overflowX:"hidden"}}>
 
-      <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:9997,opacity:.03,backgroundImage:"url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")"}}/>
-
-      {step>0&&step<99&&<div style={{position:"fixed",top:0,left:0,right:0,height:"1.5px",background:"rgba(238,234,227,.1)",zIndex:200}}>
-        <div style={{height:"100%",background:"#BFA98A",transition:"width .5s ease",width:step===1?"10%":step===15?"20%":step===2?"30%":step===3?"38%":step===4?"46%":step===5?"54%":step===6?"62%":step===7?"70%":step===8?"78%":step===20?"30%":step===21?"40%":step===22?"50%":step===23?"60%":step===25?"35%":step===26?"70%":"0%"}}/>
+      {step>0&&step<99&&<div style={{position:"fixed",top:0,left:0,right:0,
+        height:"1.5px",background:"rgba(238,234,227,.1)",zIndex:200}}>
+        <div style={{height:"100%",background:"#BFA98A",transition:"width .5s ease",
+          width:step===1?"10%":step===15?"20%":step===2?"30%":step===3?"38%":
+            step===4?"46%":step===5?"54%":step===6?"62%":step===7?"70%":
+            step===8?"78%":step===20?"30%":step===21?"40%":step===22?"50%":
+            step===23?"60%":step===25?"35%":step===26?"70%":"0%"}}/>
       </div>}
 
-      {step>0&&step!==99&&<button onClick={()=>{const map={1:0,15:1,2:15,3:2,4:3,5:4,6:5,7:6,8:7,20:2,21:20,22:21,23:22,25:2,26:25};if(map[step]!==undefined)setStep(map[step]);}} style={{position:"fixed",top:18,left:18,zIndex:300,width:34,height:34,borderRadius:"50%",border:"1px solid rgba(238,234,227,.12)",background:"rgba(7,8,10,.8)",backdropFilter:"blur(12px)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
-        <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M9.5 2.5L5 7.5l4.5 5" stroke="rgba(238,234,227,.7)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      {step>0&&step!==99&&<button onClick={()=>{
+        const map={1:0,15:1,2:15,3:2,4:3,5:4,6:5,7:6,8:7,
+                   20:2,21:20,22:21,23:22,25:2,26:25};
+        if(map[step]!==undefined) setStep(map[step]);
+      }} style={{position:"fixed",top:18,left:18,zIndex:300,width:34,height:34,
+        borderRadius:"50%",border:"1px solid rgba(238,234,227,.12)",
+        background:"rgba(7,8,10,.8)",backdropFilter:"blur(12px)",
+        display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+          <path d="M9.5 2.5L5 7.5l4.5 5" stroke="rgba(238,234,227,.7)"
+            strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
       </button>}
 
       {step===0&&(
@@ -3065,7 +3079,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             </div>
           </>)}
         </div>
-      )}
+      )}}
 
       {step===6&&(
         <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"0 28px"}}>
@@ -3135,7 +3149,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
         </div>
       )}
 
-                {(step===22||step===8)&&(<>
+      {(step===22||step===8)&&(<>
             <div style={{fontSize:10,fontFamily:mono,color:"rgba(255,255,255,.18)",letterSpacing:3,marginBottom:10,textTransform:"uppercase"}}>
               {lang==="es"?"EQUIPAMIENTO":"EQUIPMENT"}
             </div>
@@ -3233,7 +3247,8 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               }}>{mode==="celebrity"?(lang==="es"?"EMPEZAR →":"START →"):step===22?(lang==="es"?"VER CATÁLOGO →":"CATALOG →"):t.next}</Btn></div>
             </div>
           </>)}
-                {step===20&&(<>
+
+      {step===20&&(<>
             <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{lang==="es"?"DÍAS / SEMANA":"DAYS / WEEK"}</div>
             <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:32,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"¿Cuántos días?":"How many days?"}</div>
             <div style={{display:"flex",gap:10,justifyContent:"center"}}>
@@ -3250,7 +3265,8 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               <div style={{flex:2}}><Btn onClick={()=>setStep(21)} disabled={!manualDays}>{t.next}</Btn></div>
             </div>
           </>)}
-                {step===21&&(<>
+
+      {step===21&&(<>
             <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{lang==="es"?"QUÉ DÍAS":"WHICH DAYS"}</div>
             <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:8,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"¿Qué días?":"Which days?"}</div>
             <div style={{fontFamily:mono,fontSize:10,color:C.tx3,letterSpacing:1,marginBottom:28,opacity:.7}}>
@@ -3299,7 +3315,8 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               <div style={{flex:2}}><Btn onClick={()=>setStep(22)} disabled={manualSelDays.length!==manualDays}>{t.next}</Btn></div>
             </div>
           </>)}
-            {step===23&&(<>
+
+      {step===23&&(<>
             {/* Header sticky con días */}
             <div style={{position:"sticky",top:0,zIndex:5,background:"rgba(44,48,64,0.92)",backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",marginBottom:16,paddingBottom:12,borderBottom:"1px solid rgba(240,242,245,0.07)"}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
@@ -3463,7 +3480,8 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               <div style={{flex:2}}><Btn onClick={finishManual} disabled={manualSelDays.some((_,i)=>(manualRoutine[i]||[]).length===0)}>{t.go}</Btn></div>
             </div>
           </>)}
-                {step===25&&(<>
+
+      {step===25&&(<>
             {(()=>{
               const CELEB_CARDS=[
                 {id:"arnold",    img:IMGS_C.arnold,    ac:"#f0a830", label:"IRON ARNOLD",    name:{es:"SCHWARZENEGGER",en:"SCHWARZENEGGER"}, badge:"CHEST+BACK",days:6, split:"Pecho+Espalda / Hombros+Brazos / Piernas (×2)", lvl:{es:"EXTREMO",en:"EXTREME"},  source:"The New Encyclopedia of Modern Bodybuilding — Schwarzenegger & Dobbins (1998)", desc:{es:"Split documentado en su libro: Pecho+Espalda, Hombros+Brazos, Piernas — repetido 2x/semana. 5-6 series × 6-10 reps, pirámide invertida hasta fallo. Sesiones de 90-120 min.",en:"Documented in his book: Chest+Back, Shoulders+Arms, Legs — twice weekly. 5-6 sets x 6-10 reps, inverted pyramid to failure. 90-120 min sessions."}},
@@ -3604,6 +3622,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
     </div>
   );
 }
+
 
 function getZoneState(zk, st) {
   const ts = st[zk]; if(!ts) return "rec";
