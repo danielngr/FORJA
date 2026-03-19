@@ -3427,7 +3427,13 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                 const pf={lang,goal,level,days,age,weight,height,units,selDays,gender,equipment};
                 FStore.saveProfile(pf,r);sp(pf);sr(r);setStep(99);
               } else {
-                setStep(8);
+                // Home gym: equipment already selected in step 15 — build directly
+                const key=`${days}${level}`;
+                const splits=RAW[key]||RAW[`${days}beg`]||Object.values(RAW)[0];
+                const fs=splits.map(d=>({...d,ex:d.ex.map(ex=>({...ex,e:canDoAuto(ex.e,equipment)}))}));
+                const r=buildRoutine7(fs,selDays,goal,equipment);
+                const pf={lang,goal,level,days,age,weight,height,units,selDays,gender,equipment};
+                FStore.saveProfile(pf,r);sp(pf);sr(r);setStep(99);
               }
             }} style={{flex:2,padding:"16px",borderRadius:14,cursor:"pointer",background:"#EEEAE3",color:"#07080a",border:"none",fontFamily:mono,fontSize:11,fontWeight:500,letterSpacing:2,textTransform:"uppercase",opacity:selDays.length!==days?0.28:1,transition:"all .18s",display:"flex",alignItems:"center",justifyContent:"center",gap:9}}>
               {gymType==="gym"?(lang==="es"?"FORJAR →":"FORGE IT →"):t.next}<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2.5 6.5h8M6.5 2.5l4 4-4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
