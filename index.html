@@ -3358,6 +3358,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                   FStore.saveProfile(pf,r);
                   sp(pf);sr(r);setStep(99);
                 } else if(step===22){setCatalogDay(0);setCatalogMuscle("");setStep(23);}
+                else if(mode==="celebrity"&&celebData){setDays(celebData.days);setStep(23);}
                 else if(gymType==="homegym") setStep(2);
                 else setStep(7);
               }}>{mode==="celebrity"?(lang==="es"?"EMPEZAR →":"START →"):step===22?(lang==="es"?"VER CATÁLOGO →":"CATALOG →"):t.next}</Btn></div>
