@@ -38,10 +38,10 @@ input[type=number]{-moz-appearance:textfield;}
 <div id="root"></div>
 <div id="forja-sync" title="sync"></div>
 <script>
-// ═══════════════════════════════════════════════════════════════
+// ===============================================================
 // FORJA SUPABASE LAYER v1.0
 // Hybrid: localStorage instant + Supabase async sync
-// ═══════════════════════════════════════════════════════════════
+// ===============================================================
 
 // ⚠️  CONFIGURAR: reemplaza con tus credenciales de Supabase
 //     Dashboard → Settings → API → Project URL + anon key
@@ -94,9 +94,9 @@ async function ensureAuth(){
   syncDot('error');return null;
 }
 
-// ── MUSCLE MAP: exercise → muscles ──────────────────────────
+// -- MUSCLE MAP: exercise → muscles --------------------------
 const EXERCISE_MUSCLE_MAP={
-  // ── PECHO ──────────────────────────────────────────────────────────
+  // -- PECHO ----------------------------------------------------------
   "bench press":             {p:["pectoral mayor"],           s:["tríceps braquial","deltoides anterior"]},
   "incline bench press":     {p:["pectoral mayor"],           s:["tríceps braquial","deltoides anterior"]},
   "decline bench press":     {p:["pectoral mayor"],           s:["tríceps braquial"]},
@@ -111,7 +111,7 @@ const EXERCISE_MUSCLE_MAP={
   "decline push up":         {p:["pectoral mayor"],           s:["tríceps braquial"]},
   "dips":                    {p:["pectoral mayor"],           s:["tríceps braquial","deltoides anterior"]},
   "barbell pullover":        {p:["dorsal ancho"],             s:["pectoral mayor","tríceps braquial"]},
-  // ── ESPALDA ────────────────────────────────────────────────────────
+  // -- ESPALDA --------------------------------------------------------
   "pull up":                 {p:["dorsal ancho"],             s:["bíceps braquial","romboides"]},
   "weighted pull up":        {p:["dorsal ancho"],             s:["bíceps braquial","romboides"]},
   "chin up":                 {p:["dorsal ancho"],             s:["bíceps braquial"]},
@@ -124,7 +124,7 @@ const EXERCISE_MUSCLE_MAP={
   "machine pulldown":        {p:["dorsal ancho"],             s:["bíceps braquial"]},
   "barbell rack pull":       {p:["trapecio superior"],        s:["dorsal ancho","isquiotibiales","glúteo mayor"]},
   "hyperextension":          {p:["erector espinal"],          s:["glúteo mayor","isquiotibiales"]},
-  // ── HOMBROS ────────────────────────────────────────────────────────
+  // -- HOMBROS --------------------------------------------------------
   "overhead press":          {p:["deltoides anterior"],       s:["tríceps braquial","trapecio superior"]},
   "dumbbell shoulder press": {p:["deltoides anterior"],       s:["tríceps braquial"]},
   "seated overhead press":   {p:["deltoides anterior"],       s:["tríceps braquial"]},
@@ -141,21 +141,21 @@ const EXERCISE_MUSCLE_MAP={
   "external rotation":       {p:["manguito rotador"],         s:[]},
   "barbell shrug":           {p:["trapecio superior"],        s:[]},
   "dumbbell shrug":          {p:["trapecio superior"],        s:[]},
-  // ── BÍCEPS ─────────────────────────────────────────────────────────
+  // -- BÍCEPS ---------------------------------------------------------
   "barbell curl":            {p:["bíceps braquial"],          s:["braquial","braquiorradial"]},
   "dumbbell curl":           {p:["bíceps braquial"],          s:["braquial","braquiorradial"]},
   "hammer curl":             {p:["braquial"],                 s:["bíceps braquial","braquiorradial"]},
   "preacher curl":           {p:["bíceps braquial"],          s:["braquial"]},
   "concentration curl":      {p:["bíceps braquial"],          s:["braquial"]},
   "reverse curl":            {p:["braquiorradial"],           s:["bíceps braquial"]},
-  // ── TRÍCEPS ────────────────────────────────────────────────────────
+  // -- TRÍCEPS --------------------------------------------------------
   "skull crusher":           {p:["tríceps braquial"],         s:[]},
   "overhead tricep extension":{p:["tríceps braquial"],        s:[]},
   "tricep pushdown":         {p:["tríceps braquial"],         s:[]},
   "close grip bench press":  {p:["tríceps braquial"],         s:["pectoral mayor"]},
   "diamond push ups":        {p:["tríceps braquial"],         s:["pectoral mayor","deltoides anterior"]},
   "bench dips":              {p:["tríceps braquial"],         s:["deltoides anterior","pectoral mayor"]},
-  // ── PIERNAS ────────────────────────────────────────────────────────
+  // -- PIERNAS --------------------------------------------------------
   "barbell squat":           {p:["cuádriceps"],               s:["glúteo mayor","isquiotibiales"]},
   "squat":                   {p:["cuádriceps"],               s:["glúteo mayor","isquiotibiales"]},
   "bodyweight squat":        {p:["cuádriceps"],               s:["glúteo mayor","isquiotibiales"]},
@@ -177,12 +177,12 @@ const EXERCISE_MUSCLE_MAP={
   "seated calf raise":       {p:["sóleo"],                   s:["gastrocnemio"]},
   "box jump":                {p:["cuádriceps"],               s:["glúteo mayor","gastrocnemio"]},
   "supermans":               {p:["erector espinal"],          s:["glúteo mayor","isquiotibiales"]},
-  // ── POWER / FULL BODY ──────────────────────────────────────────────
+  // -- POWER / FULL BODY ----------------------------------------------
   "barbell thruster":        {p:["cuádriceps"],               s:["deltoides anterior","tríceps braquial","glúteo mayor"]},
   "power clean":             {p:["cuádriceps","glúteo mayor"],s:["isquiotibiales","trapecio superior","deltoides anterior"]},
   "kettlebell swing":        {p:["glúteo mayor","isquiotibiales"],s:["dorsal ancho","cuádriceps"]},
   "farmer walk":             {p:["trapecio superior"],        s:["dorsal ancho","core (transverso abdominal)","braquiorradial"]},
-  // ── CORE ───────────────────────────────────────────────────────────
+  // -- CORE -----------------------------------------------------------
   "plank":                   {p:["core (transverso abdominal)"],s:[]},
   "mountain climber":        {p:["core (transverso abdominal)"],s:["cuádriceps"]},
   "hanging knee raises":     {p:["core (transverso abdominal)"],s:[]},
@@ -214,7 +214,7 @@ function computeWeeklyMuscleVol(logs,routine){
   return mv;
 }
 
-// ── Hybrid store: instant localStorage + async Supabase ──────
+// -- Hybrid store: instant localStorage + async Supabase ------
 const FStore={
   async saveProfile(profile,routine){
     try{localStorage.setItem('fv8p',JSON.stringify(profile));}catch(_){}
@@ -408,7 +408,7 @@ const ES_TO_META={
   "rotación con cable":"cable face pull",
   "press inclinado cable":"cable fly",
   "tríceps por encima":"overhead tricep extension","tríceps mancuerna":"overhead tricep extension",
-  // ── Celebs routines additions ──────────────────────────────────────
+  // -- Celebs routines additions --------------------------------------
   "remo barra":"barbell row","remo con barra":"barbell row","remo barra inclinado":"barbell row",
   "press cerrado":"close grip bench press","jalón tríceps polea":"tricep pushdown","jalón tríceps":"tricep pushdown",
   "press inclinado barra":"incline bench press","elevaciones laterales":"lateral raise",
@@ -482,10 +482,10 @@ const L={
 const DN={es:["LU","MA","MI","JU","VI","SA","DO"],en:["MO","TU","WE","TH","FR","SA","SU"]};
 const DF={es:["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"],en:["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]};
 
-// ─── RUTINAS ──────────────────────────────────────────────
+// --- RUTINAS ----------------------------------------------
 // 12 programas × 5 objetivos. s/r base = hipertrofia.
 // Adaptación por objetivo via buildRoutine().
-// ──────────────────────────────────────────────────────────
+// ----------------------------------------------------------
 const RAW={
   "3beg":[
     {l:"FULL BODY A",ex:[{e:"Sentadilla goblet",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Press banca mancuerna",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Jalón polea",s:3,r:"10-12",rs:"6-8",rc:"15-20",rr:"10-12",rg:"10-12"},{e:"Press militar mancuerna",s:2,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Curl femoral",s:2,r:"12-15",rs:"8-10",rc:"15-20",rr:"12-15",rg:"12-15"},{e:"Plancha",s:3,r:"30-45s",rs:"30-45s",rc:"45-60s",rr:"30-45s",rg:"30-45s"}]},
@@ -590,7 +590,7 @@ function applyGoal(ex,goal){
 }
 
 // Distribuye N splits en 7 días según selectedDays (array de 0-6)
-// ── CELEBRITY ROUTINE BUILDER ─────────────────────────────────────
+// -- CELEBRITY ROUTINE BUILDER -------------------------------------
 // Maps each exercise to the equipment it needs
 const CELEB_EQ_NEEDS={
   // Barbell exercises
@@ -1409,7 +1409,7 @@ const getVid=name=>{
 };
 
 
-// ── Utilidades ──
+// -- Utilidades --
 const epley=(w,r)=>r===1?+w:Math.round(+w*(1+0.0333*+r));
 const ARC_C=2*Math.PI*18; // circumference r=18
 
@@ -1493,7 +1493,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
     tx:"#F0F2F5",tx2:"#9aa3b8",tx3:"#4a5268",
     green:"#3fcf8e",blue:"#4f8ef7",yellow:"#f0b429",red:"#e05555",purple:"#8b6cf7",white:"#FFFFFF"};
 
-  // ── Per-exercise sets state: [{kg,rp,done}] ──
+  // -- Per-exercise sets state: [{kg,rp,done}] --
   const[sets,setSets]=useState(()=>exs.map(ex=>{
     const h=logs[ex.id];
     const numSets=ex.s||1;
@@ -1511,19 +1511,19 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
   const[npVal,setNpVal]=useState("0");
   const[arcPopOpen,setArcPopOpen]=useState(false);
 
-  // ── Rest timer ──
+  // -- Rest timer --
   const[restSecs,setRestSecs]=useState(0);
   const[restDur,setRestDur]=useState(90);
   const[restActive,setRestActive]=useState(false);
   const[restCtx,setRestCtx]=useState(null);
   const restRef=useRef(null);
 
-  // ── Session timer ──
+  // -- Session timer --
   const[sessSecs,setSessSecs]=useState(0);
   const[finalSecs,setFinalSecs]=useState(0);
   useEffect(()=>{const t=setInterval(()=>setSessSecs(s=>s+1),1000);return()=>clearInterval(t);},[]);
 
-  // ── Rest countdown ──
+  // -- Rest countdown --
   useEffect(()=>{
     if(restActive&&restSecs>0){
       restRef.current=setTimeout(()=>setRestSecs(s=>s-1),1000);
@@ -1548,16 +1548,16 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
     return()=>clearTimeout(restRef.current);
   },[restActive,restSecs]);
 
-  // ── Adaptive rest ──
+  // -- Adaptive rest --
   function calcRest(ei,si){
     const s=sets[ei][si];
     const ex=exs[ei];
     const h=logs[ex.id];
     const prevKg=h&&h[0]?+h[0].w:0;
     const curKg=+s.kg||0;
-    if(curKg>prevKg&&prevKg>0)return{dur:120,msg:lang==="es"?"NUEVO PESO · 2 MIN":"NEW WEIGHT · 2 MIN"};
-    if(+s.rp>12)return{dur:60,msg:lang==="es"?"REPS ALTAS · 60S":"HIGH REPS · 60S"};
-    if(curKg>0&&curKg<prevKg)return{dur:60,msg:lang==="es"?"MENOS PESO · 60S":"LESS WEIGHT · 60S"};
+    if(curKg>prevKg&&prevKg>0)return{dur:120,msg:lang==="es"?"NUEVO PESO . 2 MIN":"NEW WEIGHT . 2 MIN"};
+    if(+s.rp>12)return{dur:60,msg:lang==="es"?"REPS ALTAS . 60S":"HIGH REPS . 60S"};
+    if(curKg>0&&curKg<prevKg)return{dur:60,msg:lang==="es"?"MENOS PESO . 60S":"LESS WEIGHT . 60S"};
     return{dur:90,msg:""};
   }
 
@@ -1567,7 +1567,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
   }
   function skipRest(){setRestActive(false);setRestSecs(0);if(restCtx)highlightNext(restCtx.ei,restCtx.si);}
 
-  // ── Highlight next set ──
+  // -- Highlight next set --
   function highlightNext(ei,si){
     const nextSi=sets[ei].findIndex((s,i)=>i>si&&!s.done);
     let id=null;
@@ -1587,7 +1587,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
     }
   }
 
-  // ── Toggle set done ──
+  // -- Toggle set done --
   function toggleDone(ei,si){
     const ns=sets.map((e,i)=>i!==ei?e:e.map((s,j)=>j!==si?s:{...s,done:!s.done}));
     setSets(ns);
@@ -1611,12 +1611,12 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
     setSets(sets.map((e,i)=>i!==ei?e:[...e,{kg:last.kg,rp:last.rp,done:false}]));
   }
 
-  // ── Completion ──
+  // -- Completion --
   const[allDone,setAllDone]=useState(false);
   const totalSets=sets.reduce((a,e)=>a+e.length,0);
   const doneSets=sets.reduce((a,e)=>a+e.filter(s=>s.done).length,0);
 
-  // ── Numpad ──
+  // -- Numpad --
   function openNp(ei,si,field){
     const v=field==='kg'?sets[ei][si].kg:sets[ei][si].rp;
     setNpVal(v||"0");setNpOpen({ei,si,field});
@@ -1645,7 +1645,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
     setNpVal(nv%1===0?String(nv):nv.toFixed(1));
   }
 
-  // ── Vol per exercise ──
+  // -- Vol per exercise --
   function calcVol(ei){
     return sets[ei].filter(s=>s.done).reduce((sum,s)=>{
       const kg=typeof s.kg==='string'?parseFloat(s.kg)||0:+s.kg||0;
@@ -1654,7 +1654,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
     },0);
   }
 
-  // ── Arc values ──
+  // -- Arc values --
   const arcPct=restActive?(restSecs/restDur):Math.min(sessSecs/3600,1);
   const arcOffset=ARC_C*(1-arcPct);
   const arcColor=restActive?(restSecs<=10?C2.red:restSecs<=30?C2.yellow:C2.blue):"rgba(82,90,110,.4)";
@@ -1665,7 +1665,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
 
   const fmtSess=()=>{const s=allDone?finalSecs:sessSecs;const m=Math.floor(s/60),sec=s%60;return(m<10?'0':'')+m+':'+(sec<10?'0':'')+sec;};
 
-  // ── msgs must be outside conditional — React rules of hooks ──
+  // -- msgs must be outside conditional — React rules of hooks --
   const celebMsgs=lang==="es"?["¡Lo aplastaste hoy!","¡Brutal, crack!","¡Sesión completada!"]:["You crushed it!","Absolutely brutal!","Session complete!"];
   const[celebMsg]=useState(()=>celebMsgs[Math.floor(Math.random()*celebMsgs.length)]);
 
@@ -1690,7 +1690,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
     });
   });
 
-  // ── Completion screen ──
+  // -- Completion screen --
   if(allDone){
     const confettiColors=["#3fcf8e","#6a8fc0","#f0b429","#8878c0","#F0F2F5","#e05555"];
     return(
@@ -1745,7 +1745,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
   return(
     <div style={{position:"fixed",inset:0,background:C2.bg,display:"flex",flexDirection:"column",fontFamily:sans,overflow:"hidden"}}>
 
-      {/* ── REST OVERLAY ── */}
+      {/* -- REST OVERLAY -- */}
       {restActive&&(
         <div style={{
           position:"fixed",inset:0,zIndex:200,
@@ -1845,7 +1845,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
           <div style={{fontFamily:mono,fontSize:7,color:C2.tx3,letterSpacing:2,padding:"2px 14px 6px",borderBottom:`1px solid rgba(82,90,110,.3)`,marginBottom:4}}>
             {lang==="es"?"DESCANSO":"REST"}
           </div>
-          {[[60,lang==="es"?"60s · sprints":"60s · sprints"],[90,lang==="es"?"90s · estándar":"90s · standard"],[120,lang==="es"?"2 min · fuerza":"2 min · strength"],[180,lang==="es"?"3 min · pesado":"3 min · heavy"]].map(([s,label])=>(
+          {[[60,lang==="es"?"60s . sprints":"60s . sprints"],[90,lang==="es"?"90s . estándar":"90s . standard"],[120,lang==="es"?"2 min . fuerza":"2 min . strength"],[180,lang==="es"?"3 min . pesado":"3 min . heavy"]].map(([s,label])=>(
             <button key={s} onClick={()=>{setRestDur(s);if(restActive){setRestSecs(s);}setArcPopOpen(false);}}
               style={{display:"block",width:"100%",padding:"6px 14px",borderRadius:7,background:restDur===s?"rgba(106,143,192,.1)":"transparent",
                 border:"none",color:restDur===s?C2.blue:C2.tx3,fontFamily:mono,fontSize:10,cursor:"pointer",textAlign:"left",letterSpacing:1}}>
@@ -1867,7 +1867,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
           transition:"width 1s linear, background .5s"}}/>
       </div>
 
-      {/* ── SCROLL ── */}
+      {/* -- SCROLL -- */}
       <div style={{flex:1,overflowY:"auto",overflowX:"hidden",paddingBottom:100}} id="workout-scroll">
         {exs.map((ex,ei)=>{
           const vidUrl=getVid(ex.e);
@@ -1918,7 +1918,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                   {String(ei+1).padStart(2,'0')} / {String(exs.length).padStart(2,'0')}
                   {EX_META[exMetaKey(ex.e)]?.mec&&(
                     <span style={{marginLeft:8,color:EX_META[exMetaKey(ex.e)]?.mec==="compound"?C2.blue:C2.purple}}>
-                      · {lang==="es"?EX_META[exMetaKey(ex.e)]?.mec==="compound"?"COMPUESTO":"AISLAMIENTO":EX_META[exMetaKey(ex.e)]?.mec?.toUpperCase()}
+                      . {lang==="es"?EX_META[exMetaKey(ex.e)]?.mec==="compound"?"COMPUESTO":"AISLAMIENTO":EX_META[exMetaKey(ex.e)]?.mec?.toUpperCase()}
                     </span>
                   )}
                 </div>
@@ -2125,7 +2125,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
           <div style={{background:C2.bgD,borderTop:`1px solid ${C2.borderL}`,borderRadius:"16px 16px 0 0",padding:"16px 20px 32px"}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
               <div style={{fontFamily:mono,fontSize:9,color:C2.tx3,letterSpacing:2}}>
-                {lang==="es"?"NOTA":"NOTE"} · {exs[noteOpen]&&exs[noteOpen].e?exs[noteOpen].e.toUpperCase():""}
+                {lang==="es"?"NOTA":"NOTE"} . {exs[noteOpen]&&exs[noteOpen].e?exs[noteOpen].e.toUpperCase():""}
               </div>
               <button onClick={()=>{setNotes({...notes,[noteOpen]:noteText});setNoteOpen(null);}}
                 style={{background:C2.tx,color:C2.bgD,border:"none",borderRadius:8,padding:"6px 16px",fontFamily:mono,fontSize:10,fontWeight:700,cursor:"pointer"}}>
@@ -2235,7 +2235,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
           <div>
             <div style={{fontSize:10,fontFamily:mono,color:"rgba(255,255,255,.25)",letterSpacing:5,marginBottom:4,fontWeight:700}}>FORJA</div>
             <div style={{fontSize:26,fontWeight:900,letterSpacing:-1.2,lineHeight:.9}}>{day?day.l:t.rest}</div>
-            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:1.5,marginTop:2}}>{DF[lang][sel].toUpperCase()} {day?`· ${day.ex.length} ${lang==="es"?"ejercicios":"exercises"}`:""}
+            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:1.5,marginTop:2}}>{DF[lang][sel].toUpperCase()} {day?`. ${day.ex.length} ${lang==="es"?"ejercicios":"exercises"}`:""}
             </div>
           </div>
           <div style={{display:"flex",alignItems:"flex-start",gap:10,paddingTop:2}}>
@@ -2376,7 +2376,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                   </div>
                 </div>
 
-                {/* ── PESA 3D — tap to start workout ── */}
+                {/* -- PESA 3D — tap to start workout -- */}
                 <div id="forja-dumbbell-wrap" style={{width:"100%",height:260,marginTop:16,borderRadius:16,overflow:"hidden",position:"relative",background:C.bg,cursor:"pointer"}}
                   onClick={()=>{if(day&&day.ex&&day.ex.length)setInWorkout(true);}}
                 >
@@ -2392,7 +2392,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                   </div>
                 </div>
 
-                {/* ── VOLUMEN SEMANAL POR MÚSCULO ── */}
+                {/* -- VOLUMEN SEMANAL POR MÚSCULO -- */}
                 {(()=>{
                   // Calcular series por grupo muscular esta semana
                   const muscleMap={
@@ -2826,412 +2826,140 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
   const Opt=({active,onClick,children})=>{
     const n=String(++_optIdx).padStart(2,"0");
     return(
-      <button onClick={onClick} style={{
-        width:"100%",padding:"16px 18px",cursor:"pointer",border:"none",
-        background:active?"rgba(255,255,255,.05)":"transparent",
-        borderBottom:"1px solid rgba(255,255,255,.04)",
-        borderRadius:active?12:0,
-        display:"flex",alignItems:"center",gap:16,textAlign:"left",
-        transition:"all 0.2s",position:"relative",outline:"none",
-      }}>
-        <div style={{width:2,height:active?"100%":"0%",background:"rgba(240,242,245,.8)",borderRadius:2,transition:"height 0.2s ease",position:"absolute",left:0,top:0,bottom:0}}/>
-        <span style={{fontSize:9,fontFamily:mono,color:active?"rgba(255,255,255,.45)":"rgba(255,255,255,.15)",letterSpacing:1,minWidth:22,transition:"color 0.15s"}}>{n}</span>
-        <span style={{flex:1,fontSize:15,fontWeight:active?700:400,fontFamily:active?sans:mono,letterSpacing:active?-.4:.5,color:active?"#F0F2F5":"rgba(255,255,255,.35)",transition:"all 0.15s"}}>{children}</span>
-        <div style={{width:7,height:7,borderRadius:"50%",background:"#F0F2F5",opacity:active?1:0,transition:"opacity 0.15s"}}/>
-      </button>
-    );
-  };
+    <div style={{minHeight:"100vh",background:"#07080a",color:"#EEEAE3",fontFamily:"'DM Sans',sans-serif",position:"relative"}}>
 
-  const Btn=({onClick,disabled,children,ghost})=>(
-    <button onClick={onClick} disabled={disabled} style={{
-      width:"100%",padding:"18px 24px",cursor:disabled?"default":"pointer",
-      background:ghost?"transparent":disabled?"rgba(255,255,255,.03)":"rgba(255,255,255,.06)",
-      border:`1px solid ${disabled?"rgba(255,255,255,.06)":ghost?"rgba(255,255,255,.08)":"rgba(255,255,255,.14)"}`,
-      borderRadius:16,
-      color:ghost?"rgba(255,255,255,.3)":disabled?"rgba(255,255,255,.2)":C.tx,
-      fontSize:11,fontWeight:700,fontFamily:mono,
-      letterSpacing:3,textTransform:"uppercase",
-      display:"flex",alignItems:"center",justifyContent:"space-between",
-      transition:"all 0.2s",opacity:disabled?0.4:1,outline:"none",
-      backdropFilter:ghost?"none":"blur(12px)",
-      WebkitBackdropFilter:ghost?"none":"blur(12px)"}}>
-      <span>{children}</span>
-      {!ghost&&!disabled&&<span style={{fontSize:14,opacity:.6,letterSpacing:0}}>→</span>}
-    </button>
-  );
+      <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:9997,opacity:.03,backgroundImage:"url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")"}}/>
 
-  const Num=({val,set,min=1,max=999,label})=>(
-    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 0",borderBottom:`1px solid rgba(82,90,110,.25)`}}>
-      <div style={{fontSize:11,fontFamily:mono,color:C.tx3,letterSpacing:2}}>{label}</div>
-      <div style={{display:"flex",alignItems:"center",gap:14}}>
-        <button onClick={()=>set(v=>Math.max(min,v-1))} style={{width:34,height:34,borderRadius:8,border:`1px solid ${C.borderL}`,background:"transparent",color:C.tx3,fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
-        <div style={{fontSize:26,fontWeight:900,color:C.tx,minWidth:56,textAlign:"center"}}>{val}</div>
-        <button onClick={()=>set(v=>Math.min(max,v+1))} style={{width:34,height:34,borderRadius:8,border:`1px solid ${C.borderL}`,background:"transparent",color:C.tx3,fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
-      </div>
-    </div>
-  );
-
-  return(
-    <div style={{minHeight:"100vh",background:"#07080a",color:"#EEEAE3",
-      fontFamily:"'DM Sans',sans-serif",position:"relative"}}>
-
-      {/* ── GRAIN OVERLAY ─────────────────────────────── */}
-      <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:9997,opacity:.03,
-        backgroundImage:"url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")"}}/>
-
-      {/* ── PROGRESS ──────────────────────────────────── */}
-      {step>=1&&<div style={{position:"fixed",top:0,left:0,right:0,height:"1.5px",background:"rgba(238,234,227,.1)",zIndex:100}}>
-        <div style={{height:"100%",background:"#BFA98A",transition:"width .55s cubic-bezier(.4,0,.2,1)",
-          width:`${({1:18,15:33,2:42,3:52,4:60,5:68,6:76,7:90}[step]||0)}%`}}/>
+      {step>0&&step<99&&<div style={{position:"fixed",top:0,left:0,right:0,height:"1.5px",background:"rgba(238,234,227,.1)",zIndex:200}}>
+        <div style={{height:"100%",background:"#BFA98A",transition:"width .5s ease",width:step===1?"10%":step===15?"20%":step===2?"30%":step===3?"38%":step===4?"46%":step===5?"54%":step===6?"62%":step===7?"70%":step===8?"78%":step===20?"30%":step===21?"40%":step===22?"50%":step===23?"60%":step===25?"35%":step===26?"70%":"0%"}}/>
       </div>}
 
-      {/* ── BACK BUTTON ───────────────────────────────── */}
-      {step>0&&<button onClick={()=>{
-        const prev={1:0,15:1,2:15,3:2,4:3,5:4,6:5,7:6,8:7,26:25};
-        if(prev[step]!==undefined) setStep(prev[step]);
-        else setStep(s=>s-1);
-      }} style={{position:"fixed",top:18,left:18,zIndex:100,width:34,height:34,borderRadius:"50%",
-        border:"1px solid rgba(238,234,227,.1)",background:"rgba(7,8,10,.7)",backdropFilter:"blur(12px)",
-        display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
-        <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-          <path d="M9.5 2.5L5 7.5l4.5 5" stroke="rgba(238,234,227,.7)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
+      {step>0&&step!==99&&<button onClick={()=>{const map={1:0,15:1,2:15,3:2,4:3,5:4,6:5,7:6,8:7,20:2,21:20,22:21,23:22,25:2,26:25};if(map[step]!==undefined)setStep(map[step]);}} style={{position:"fixed",top:18,left:18,zIndex:300,width:34,height:34,borderRadius:"50%",border:"1px solid rgba(238,234,227,.12)",background:"rgba(7,8,10,.8)",backdropFilter:"blur(12px)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M9.5 2.5L5 7.5l4.5 5" stroke="rgba(238,234,227,.7)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
       </button>}
 
-      {/* ═══════════════════════════════════════════════ */}
-      {/* STEP 0 — LANGUAGE                               */}
-      {/* ═══════════════════════════════════════════════ */}
       {step===0&&(
-        <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",
-          justifyContent:"center",
-          background:"radial-gradient(ellipse 80% 60% at 50% 100%, rgba(191,169,138,.05) 0%, transparent 70%)"}}>
-          <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:68,letterSpacing:14,color:"#EEEAE3",
-            textShadow:"0 0 80px rgba(191,169,138,.1)",marginBottom:6}}>FORJA</div>
-          <div style={{width:28,height:1,background:"#BFA98A",opacity:.4,margin:"0 auto",marginBottom:30}}/>
-          <div style={{fontFamily:mono,fontSize:9,letterSpacing:4,color:"rgba(238,234,227,.22)",
-            textTransform:"uppercase",marginBottom:18,textAlign:"center",color:"rgba(238,234,227,.65)"}}>
-            Elige tu idioma · Choose your language
-          </div>
+        <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:"radial-gradient(ellipse 80% 60% at 50% 100%, rgba(191,169,138,.05) 0%, transparent 70%)"}}>
+          <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:68,letterSpacing:14,color:"#EEEAE3",textShadow:"0 0 80px rgba(191,169,138,.1)",marginBottom:6}}>FORJA</div>
+          <div style={{width:28,height:1,background:"#BFA98A",opacity:.4,marginBottom:30}}/>
+          <div style={{fontFamily:mono,fontSize:9,letterSpacing:4,color:"rgba(238,234,227,.5)",textTransform:"uppercase",marginBottom:20,textAlign:"center"}}>Elige tu idioma . Choose your language</div>
           <div style={{display:"flex",gap:10}}>
             {["es","en"].map(l=>(
-              <button key={l} onClick={()=>setLang(l)} style={{
-                padding:"14px 32px",borderRadius:13,cursor:"pointer",
-                border:`1px solid ${lang===l?"rgba(191,169,138,.5)":"rgba(238,234,227,.1)"}`,
-                background:lang===l?"rgba(191,169,138,.07)":"transparent",
-                fontFamily:"'Bebas Neue',cursive",fontSize:28,letterSpacing:3,
-                color:lang===l?"#EEEAE3":"rgba(238,234,227,.45)",
-                transition:"all .2s",boxShadow:lang===l?"0 0 24px rgba(191,169,138,.06)":"none",
-              }}>{l.toUpperCase()}</button>
+              <button key={l} onClick={()=>setLang(l)} style={{padding:"14px 32px",borderRadius:13,cursor:"pointer",border:`1px solid ${lang===l?"rgba(191,169,138,.5)":"rgba(238,234,227,.12)"}`,background:lang===l?"rgba(191,169,138,.08)":"transparent",fontFamily:"'Bebas Neue',cursive",fontSize:28,letterSpacing:3,color:lang===l?"#EEEAE3":"rgba(238,234,227,.45)",transition:"all .2s"}}>{l.toUpperCase()}</button>
             ))}
           </div>
-          <div style={{marginTop:36,opacity:lang?1:0,pointerEvents:lang?"all":"none",transition:"opacity .3s"}}>
-            <button onClick={()=>setStep(1)} style={{
-              display:"inline-flex",alignItems:"center",gap:9,padding:"16px 30px",borderRadius:14,
-              background:"#EEEAE3",color:"#07080a",border:"none",cursor:"pointer",
-              fontFamily:mono,fontSize:11,fontWeight:500,letterSpacing:2,textTransform:"uppercase",
-            }}>{lang==="es"?"COMENZAR":"START"} <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2.5 6.5h8M6.5 2.5l4 4-4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg></button>
+          <div style={{marginTop:36,opacity:lang?1:0,transition:"opacity .3s",pointerEvents:lang?"all":"none"}}>
+            <button onClick={()=>setStep(1)} style={{display:"inline-flex",alignItems:"center",gap:9,padding:"16px 32px",borderRadius:14,background:"#EEEAE3",color:"#07080a",border:"none",cursor:"pointer",fontFamily:mono,fontSize:11,fontWeight:500,letterSpacing:2,textTransform:"uppercase"}}>
+              {lang==="es"?"COMENZAR":"START"}<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2.5 6.5h8M6.5 2.5l4 4-4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </button>
           </div>
         </div>
       )}
 
-      {/* ═══════════════════════════════════════════════ */}
-      {/* STEP 1 — GENDER                                 */}
-      {/* ═══════════════════════════════════════════════ */}
       {step===1&&(
         <div style={{position:"fixed",inset:0,display:"flex",overflow:"hidden"}}>
-          <div style={{position:"absolute",top:0,bottom:0,left:"50%",width:1,
-  background:"linear-gradient(to bottom, transparent 0%, rgba(255,255,255,.06) 30%, rgba(255,255,255,.06) 70%, transparent 100%)",
-  zIndex:10,pointerEvents:"none",
-  opacity:gender?0:1,transition:"opacity .4s"}}/>
-          {[
-            {key:"male",  label:lang==="es"?"HOMBRE":"MAN",
-              imgStyle:{objectPosition:"55% 10%",transform:"scaleX(-1)"},
-              img:"https://forjavideos.b-cdn.net/Nano_Banana_2_Metallic_male_humanoid_statue_with_a_classical_warrior_helmet_fully_covering_the_face__3.png"},
-            {key:"female",label:lang==="es"?"MUJER":"WOMAN",
-              imgStyle:{objectPosition:"45% 10%"},
-              img:"https://forjavideos.b-cdn.net/Nano_Banana_2_Metallic_female_humanoid_statue_with_a_classical_warrior_helmet_fully_covering_the_fac_2.png"},
-          ].map(({key,label,img,imgStyle})=>{
+          <div style={{position:"absolute",top:0,bottom:0,left:"50%",width:1,background:"rgba(255,255,255,.07)",zIndex:10,pointerEvents:"none",opacity:gender?0:1,transition:"opacity .4s"}}/>
+          {[{key:"male",label:lang==="es"?"HOMBRE":"MAN",img:"https://forjavideos.b-cdn.net/Nano_Banana_2_Metallic_male_humanoid_statue_with_a_classical_warrior_helmet_fully_covering_the_face__3.png",flip:true},{key:"female",label:lang==="es"?"MUJER":"WOMAN",img:"https://forjavideos.b-cdn.net/Nano_Banana_2_Metallic_female_humanoid_statue_with_a_classical_warrior_helmet_fully_covering_the_fac_2.png",flip:false}].map(({key,label,img,flip})=>{
             const sel=gender===key,desel=gender&&gender!==key;
             return(
-            <div key={key} onClick={()=>setGender(key)} style={{
-              flex:sel?1.28:desel?0.72:1,position:"relative",cursor:"pointer",overflow:"hidden",
-              transition:"flex .5s cubic-bezier(.4,0,.2,1)"}}>
-              <img src={img} alt={label} style={{position:"absolute",inset:0,width:"100%",height:"100%",
-                objectFit:"cover",...(imgStyle||{}),
-                filter:sel?"brightness(.72) saturate(.85)":desel?"brightness(.25) saturate(.3)":"brightness(.5) saturate(.65)",
-                transition:"filter .5s"}}/>
-              <div style={{position:"absolute",inset:0,
-                background:"linear-gradient(0deg,rgba(7,8,10,.97) 0%,rgba(7,8,10,.35) 30%,transparent 60%)",
-                boxShadow:sel?"inset 0 0 0 1.5px rgba(191,169,138,.4)":"none",
-                pointerEvents:"none",transition:"box-shadow .3s"}}/>
-              {sel&&<div style={{position:"absolute",top:14,right:14,width:26,height:26,borderRadius:"50%",
-                background:"#EEEAE3",display:"flex",alignItems:"center",justifyContent:"center",
-                animation:"popIn .3s cubic-bezier(.34,1.56,.64,1)"}}>
+            <div key={key} onClick={()=>setGender(key)} style={{flex:sel?1.28:desel?0.72:1,position:"relative",cursor:"pointer",overflow:"hidden",transition:"flex .5s cubic-bezier(.4,0,.2,1)"}}>
+              <img src={img} alt={label} style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",objectPosition:"55% 15%",filter:sel?"brightness(.75) saturate(.9)":desel?"brightness(.25) saturate(.3)":"brightness(.5) saturate(.65)",transition:"filter .5s",transform:flip?"scaleX(-1)":"none"}}/>
+              <div style={{position:"absolute",inset:0,background:"linear-gradient(0deg,rgba(7,8,10,.97) 0%,rgba(7,8,10,.3) 35%,transparent 65%)",boxShadow:sel?"inset 0 0 0 1.5px rgba(191,169,138,.4)":"none",pointerEvents:"none",transition:"box-shadow .3s"}}/>
+              {sel&&<div style={{position:"absolute",top:14,right:14,width:26,height:26,borderRadius:"50%",background:"#EEEAE3",display:"flex",alignItems:"center",justifyContent:"center",animation:"popIn .3s cubic-bezier(.34,1.56,.64,1)"}}>
                 <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M2 5.5l2.5 2.5 4.5-4.5" stroke="#07080a" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </div>}
               <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"24px 22px 130px"}}>
-                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:44,letterSpacing:4,
-                  color:"#EEEAE3",lineHeight:1,opacity:desel?0.3:1,transition:"opacity .3s"}}>{label}</div>
+                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:44,letterSpacing:4,color:"#EEEAE3",lineHeight:1,opacity:desel?0.3:1,transition:"opacity .3s"}}>{label}</div>
               </div>
             </div>
-          )})}
-          <div style={{position:"fixed",bottom:0,left:0,right:0,padding:"16px 24px 48px",zIndex:20,
-            background:"linear-gradient(transparent 0%, rgba(7,8,10,.55) 15%, rgba(7,8,10,.92) 50%, rgba(7,8,10,.98) 100%)",
-            display:"flex",flexDirection:"column",alignItems:"center",gap:8}}>
+          );})}
+          <div style={{position:"fixed",bottom:0,left:0,right:0,padding:"16px 24px 44px",zIndex:20,background:"linear-gradient(transparent 0%,rgba(7,8,10,.7) 20%,rgba(7,8,10,.95) 55%,rgba(7,8,10,.98) 100%)",display:"flex",flexDirection:"column",alignItems:"center",gap:10}}>
             <div style={{opacity:gender?1:0,pointerEvents:gender?"all":"none",transition:"opacity .3s",width:"100%",display:"flex",justifyContent:"flex-end"}}>
-              <button onClick={()=>setStep(15)} style={{display:"inline-flex",alignItems:"center",gap:9,
-                padding:"16px 30px",borderRadius:14,background:"#EEEAE3",color:"#07080a",border:"none",
-                cursor:"pointer",fontFamily:mono,fontSize:11,fontWeight:500,letterSpacing:2,textTransform:"uppercase"}}>
-                {lang==="es"?"CONTINUAR":"CONTINUE"} <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2.5 6.5h8M6.5 2.5l4 4-4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              <button onClick={()=>setStep(15)} style={{display:"inline-flex",alignItems:"center",gap:9,padding:"16px 30px",borderRadius:14,background:"#EEEAE3",color:"#07080a",border:"none",cursor:"pointer",fontFamily:mono,fontSize:11,fontWeight:500,letterSpacing:2,textTransform:"uppercase"}}>
+                {lang==="es"?"CONTINUAR":"CONTINUE"}<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2.5 6.5h8M6.5 2.5l4 4-4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </button>
             </div>
-            <button onClick={()=>{setGender(null);setStep(15);}} style={{background:"none",border:"none",
-              cursor:"pointer",fontFamily:mono,fontSize:9,letterSpacing:2,
-              color:"rgba(238,234,227,.25)",transition:"color .2s",padding:"4px 2px"}}>
-              {lang==="es"?"prefiero no definirlo":"prefer not to say"}
-            </button>
+            <button onClick={()=>{setGender(null);setStep(15);}} style={{background:"none",border:"none",cursor:"pointer",fontFamily:mono,fontSize:9,letterSpacing:2,color:"rgba(238,234,227,.3)",padding:"4px 2px"}}>{lang==="es"?"prefiero no definirlo":"prefer not to say"}</button>
           </div>
         </div>
       )}
 
-      {/* ═══════════════════════════════════════════════ */}
-      {/* STEP 15 — WHERE DO YOU TRAIN                    */}
-      {/* ═══════════════════════════════════════════════ */}
       {step===15&&(
-        <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",
-          overflowY:"auto",paddingBottom:8,background:"#07080a"}}>
-          <div style={{padding:"68px 28px 0"}}>
-            <div style={{fontFamily:mono,fontSize:9,letterSpacing:4,color:"rgba(238,234,227,.22)",
-              textTransform:"uppercase",marginBottom:14,display:"flex",alignItems:"center",gap:10}}>
-              <span style={{width:18,height:1,background:"rgba(238,234,227,.1)",display:"block"}}/>
-              {lang==="es"?"EQUIPAMIENTO":"EQUIPMENT"}
-              <span style={{width:18,height:1,background:"rgba(238,234,227,.1)",display:"block"}}/>
-            </div>
-            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:52,letterSpacing:2,lineHeight:.92,marginBottom:6}}>
-              {lang==="es"?"DÓNDE":"WHERE DO"}<br/>
-              <span style={{color:"#BFA98A"}}>{lang==="es"?"ENTRENAS":"YOU TRAIN"}</span>
-            </div>
-            <div style={{fontSize:12,color:"rgba(238,234,227,.3)",letterSpacing:.3,lineHeight:1.65,marginBottom:32}}>
-              {lang==="es"?"El sistema adapta cada ejercicio a lo que tienes.":"The system adapts every exercise to what you have."}
-            </div>
+        <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",overflowY:"auto"}}>
+          <div style={{padding:"72px 28px 0",marginBottom:8}}>
+            <div style={{fontFamily:mono,fontSize:9,letterSpacing:4,color:"rgba(238,234,227,.3)",textTransform:"uppercase",marginBottom:14,display:"flex",alignItems:"center",gap:10}}><span style={{width:18,height:1,background:"rgba(238,234,227,.1)",display:"block"}}/>{lang==="es"?"EQUIPAMIENTO":"EQUIPMENT"}<span style={{width:18,height:1,background:"rgba(238,234,227,.1)",display:"block"}}/></div>
+            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:52,letterSpacing:2,lineHeight:.92,marginBottom:6}}>{lang==="es"?"DÓNDE":"WHERE DO"}<br/><span style={{color:"#BFA98A"}}>{lang==="es"?"ENTRENAS":"YOU TRAIN"}</span></div>
+            <div style={{fontSize:12,color:"rgba(238,234,227,.3)",letterSpacing:.3,lineHeight:1.65}}>{lang==="es"?"El sistema adapta cada ejercicio a lo que tienes.":"The system adapts every exercise to what you have."}</div>
           </div>
-
-          {/* GYM COMPLETO */}
-          {(()=>{
-            const sel=gymType==="gym";
+          {[{type:"gym",label:{es:"GYM COMPLETO",en:"FULL GYM"},sub:{es:"Todo el equipamiento",en:"All equipment"}},{type:"homegym",label:{es:"GYM EN CASA",en:"HOME GYM"},sub:{es:"Dinos qué tienes",en:"Tell us what you have"}}].map(({type,label,sub})=>{
+            const sel=gymType===type;
+            const col=type==="gym"?"rgba(61,150,104":"rgba(184,149,64";
             return(
-            <div onClick={()=>{
-              setGymType("gym");setEqMode("full");
-              setEquipment(["Rack+Barra","Banco","Mancuernas","Dominadas","Paralelas","Barra Z/EZ","Leg Ext/Curl","Polea","Chaleco","Kettlebell","Bandas"]);
-            }} style={{
-              flex:1,cursor:"pointer",minHeight:80,
-              display:"flex",alignItems:"center",
-              padding:"0 28px",
-              borderTop:"1px solid rgba(238,234,227,.06)",
-              borderLeft:sel?"2.5px solid rgba(61,150,104,.7)":"2.5px solid transparent",
-              background:sel?"rgba(61,150,104,.04)":"transparent",
-              transition:"all .25s",
-            }}>
-              <div style={{flex:1}}>
-                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:32,letterSpacing:2,
-                  color:sel?"#EEEAE3":"rgba(238,234,227,.6)",lineHeight:1,transition:"color .25s"}}>
-                  {lang==="es"?"GYM COMPLETO":"FULL GYM"}
-                </div>
-                <div style={{fontSize:11,color:sel?"rgba(61,150,104,.8)":"rgba(238,234,227,.25)",
-                  letterSpacing:.3,marginTop:4,fontFamily:mono,transition:"color .25s"}}>
-                  {lang==="es"?"Todo el equipamiento — barras, máquinas, cables":"All equipment — bars, machines, cables"}
-                </div>
-              </div>
-              <div style={{width:20,height:20,borderRadius:"50%",flexShrink:0,
-                border:`1.5px solid ${sel?"rgba(61,150,104,.8)":"rgba(238,234,227,.15)"}`,
-                background:sel?"rgba(61,150,104,.2)":"transparent",
-                display:"flex",alignItems:"center",justifyContent:"center",
-                transition:"all .25s"}}>
-                {sel&&<div style={{width:8,height:8,borderRadius:"50%",background:"rgba(61,150,104,1)"}}/>}
-              </div>
-            </div>
-          );})()}
-
-          {/* GYM EN CASA */}
-          {(()=>{
-            const sel=gymType==="homegym";
-            return(
-            <div onClick={()=>{setGymType("homegym");setEqMode("home");}} style={{
-              flex:sel?3:1,cursor:"pointer",minHeight:80,
-              display:"flex",flexDirection:"column",
-              borderTop:"1px solid rgba(238,234,227,.06)",
-              borderLeft:sel?"2.5px solid rgba(184,149,64,.7)":"2.5px solid transparent",
-              background:sel?"rgba(184,149,64,.03)":"transparent",
-              transition:"all .45s cubic-bezier(.4,0,.2,1)",
-            }}>
-              <div style={{padding:"0 28px",minHeight:80,display:"flex",alignItems:"center"}}>
+            <div key={type} style={{display:"flex",flexDirection:"column",borderTop:"1px solid rgba(238,234,227,.06)",borderLeft:sel?`2.5px solid ${col},.7)`:"2.5px solid transparent",background:sel?`${col},.04)`:"transparent",transition:"all .3s"}}>
+              <div onClick={()=>{setGymType(type);if(type==="gym")setEquipment(["Rack+Barra","Banco","Mancuernas","Dominadas","Paralelas","Barra Z/EZ","Leg Ext/Curl","Polea","Chaleco","Kettlebell","Bandas"]);else setEquipment([]);}} style={{padding:"20px 28px",cursor:"pointer",display:"flex",alignItems:"center",gap:16,minHeight:80}}>
                 <div style={{flex:1}}>
-                  <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:32,letterSpacing:2,
-                    color:sel?"#EEEAE3":"rgba(238,234,227,.6)",lineHeight:1,transition:"color .25s"}}>
-                    {lang==="es"?"GYM EN CASA":"HOME GYM"}
-                  </div>
-                  <div style={{fontSize:11,color:sel?"rgba(184,149,64,.8)":"rgba(238,234,227,.25)",
-                    letterSpacing:.3,marginTop:4,fontFamily:mono,transition:"color .25s"}}>
-                    {lang==="es"?"Dinos qué tienes — adaptamos todo":"Tell us what you have — we adapt everything"}
-                  </div>
+                  <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:30,letterSpacing:2,color:sel?"#EEEAE3":"rgba(238,234,227,.55)",transition:"color .25s",lineHeight:1}}>{lang==="es"?label.es:label.en}</div>
+                  <div style={{fontSize:11,fontFamily:mono,letterSpacing:.3,marginTop:4,color:sel?`${col},.8)`:"rgba(238,234,227,.25)",transition:"color .25s"}}>{lang==="es"?sub.es:sub.en}</div>
                 </div>
-                <div style={{width:20,height:20,borderRadius:"50%",flexShrink:0,
-                  border:`1.5px solid ${sel?"rgba(184,149,64,.8)":"rgba(238,234,227,.15)"}`,
-                  background:sel?"rgba(184,149,64,.2)":"transparent",
-                  display:"flex",alignItems:"center",justifyContent:"center",
-                  transition:"all .25s"}}>
-                  {sel&&<div style={{width:8,height:8,borderRadius:"50%",background:"rgba(184,149,64,1)"}}/>}
-                </div>
+                <div style={{width:20,height:20,borderRadius:"50%",flexShrink:0,border:`1.5px solid ${sel?`${col},.8)`:"rgba(238,234,227,.2)"}`,background:sel?`${col},.15)`:"transparent",display:"flex",alignItems:"center",justifyContent:"center",transition:"all .25s"}}>{sel&&<div style={{width:8,height:8,borderRadius:"50%",background:`${col},1)`}}/>}</div>
               </div>
-              {sel&&(
-                <div style={{padding:"0 28px 24px",display:"flex",flexWrap:"wrap",gap:7,
-                  borderTop:"1px solid rgba(238,234,227,.06)"}}>
-                  {[
-                    {id:"Rack+Barra",es:"Rack + Barra",en:"Rack + Bar"},
-                    {id:"Banco",es:"Banco",en:"Bench"},
-                    {id:"Mancuernas",es:"Mancuernas",en:"Dumbbells"},
-                    {id:"Dominadas",es:"Dominadas",en:"Pull-up Bar"},
-                    {id:"Paralelas",es:"Paralelas",en:"Dip Bars"},
-                    {id:"Barra Z/EZ",es:"Barra Z/EZ",en:"EZ Bar"},
-                    {id:"Leg Ext/Curl",es:"Leg Ext/Curl",en:"Leg Ext/Curl"},
-                    {id:"Polea",es:"Polea",en:"Cable"},
-                    {id:"Chaleco",es:"Chaleco Lastre",en:"Weight Vest"},
-                    {id:"Kettlebell",es:"Kettlebell",en:"Kettlebell"},
-                    {id:"Bandas",es:"Bandas",en:"Bands"},
-                  ].map(item=>{
+              {sel&&type==="homegym"&&(
+                <div style={{padding:"0 28px 20px",display:"flex",flexWrap:"wrap",gap:7}}>
+                  {[{id:"Rack+Barra",es:"Rack + Barra",en:"Rack + Bar"},{id:"Banco",es:"Banco",en:"Bench"},{id:"Mancuernas",es:"Mancuernas",en:"Dumbbells"},{id:"Dominadas",es:"Dominadas",en:"Pull-up Bar"},{id:"Paralelas",es:"Paralelas",en:"Dip Bars"},{id:"Barra Z/EZ",es:"Barra Z/EZ",en:"EZ Bar"},{id:"Leg Ext/Curl",es:"Leg Ext/Curl",en:"Leg Ext/Curl"},{id:"Polea",es:"Polea",en:"Cable"},{id:"Chaleco",es:"Chaleco Lastre",en:"Weight Vest"},{id:"Kettlebell",es:"Kettlebell",en:"Kettlebell"},{id:"Bandas",es:"Bandas",en:"Bands"}].map(item=>{
                     const on=equipment.includes(item.id);
-                    return(
-                    <div key={item.id} onClick={(e)=>{
-                      e.stopPropagation();
-                      setEquipment(p=>on?p.filter(x=>x!==item.id):[...p,item.id]);
-                    }} style={{
-                      display:"flex",alignItems:"center",gap:5,
-                      padding:"8px 14px",borderRadius:40,cursor:"pointer",
-                      border:`1px solid ${on?"rgba(191,169,138,.45)":"rgba(255,255,255,.09)"}`,
-                      background:on?"rgba(191,169,138,.09)":"rgba(255,255,255,.03)",
-                      fontSize:11,color:on?"#BFA98A":"rgba(238,234,227,.35)",
-                      letterSpacing:.3,transition:"all .15s",userSelect:"none",
-                    }}>
-                      <span style={{width:5,height:5,borderRadius:"50%",
-                        background:"currentColor",flexShrink:0,opacity:on?1:0.4}}/>
-                      {lang==="es"?item.es:item.en}
-                    </div>
-                  )})}
+                    return(<div key={item.id} onClick={()=>setEquipment(p=>on?p.filter(x=>x!==item.id):[...p,item.id])} style={{display:"flex",alignItems:"center",gap:5,padding:"8px 14px",borderRadius:40,cursor:"pointer",userSelect:"none",border:`1px solid ${on?"rgba(191,169,138,.45)":"rgba(255,255,255,.09)"}`,background:on?"rgba(191,169,138,.09)":"rgba(255,255,255,.03)",fontSize:11,color:on?"#BFA98A":"rgba(238,234,227,.35)",letterSpacing:.3,transition:"all .15s"}}>
+                      <span style={{width:5,height:5,borderRadius:"50%",background:"currentColor",opacity:on?1:.4}}/>{lang==="es"?item.es:item.en}
+                    </div>);
+                  })}
                 </div>
               )}
             </div>
-          );})()}
-
+          );})}
           <div style={{flex:1}}/>
           <div style={{display:"flex",gap:8,padding:"20px 28px 40px"}}>
-            <button onClick={()=>setStep(1)} style={{flex:1,padding:"16px",borderRadius:14,
-              cursor:"pointer",background:"transparent",color:"rgba(238,234,227,.5)",
-              border:"1px solid rgba(238,234,227,.1)",fontFamily:mono,fontSize:11,letterSpacing:1}}>
-              {t.back}
-            </button>
-            <button onClick={()=>setStep(2)}
-              disabled={!gymType||(gymType==="homegym"&&equipment.length===0)}
-              style={{flex:2,padding:"16px",borderRadius:14,cursor:"pointer",
-                background:"#EEEAE3",color:"#07080a",border:"none",fontFamily:mono,
-                fontSize:11,fontWeight:500,letterSpacing:2,textTransform:"uppercase",
-                opacity:(!gymType||(gymType==="homegym"&&equipment.length===0))?0.28:1,
-                transition:"all .18s",display:"flex",alignItems:"center",
-                justifyContent:"center",gap:9}}>
-              {t.next}
-              <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-                <path d="M2.5 6.5h8M6.5 2.5l4 4-4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
+            <button onClick={()=>setStep(1)} style={{flex:1,padding:"16px",borderRadius:14,cursor:"pointer",background:"transparent",color:"rgba(238,234,227,.5)",border:"1px solid rgba(238,234,227,.1)",fontFamily:mono,fontSize:11,letterSpacing:1}}>{t.back}</button>
+            <button onClick={()=>setStep(2)} disabled={!gymType||(gymType==="homegym"&&equipment.length===0)} style={{flex:2,padding:"16px",borderRadius:14,cursor:"pointer",background:"#EEEAE3",color:"#07080a",border:"none",fontFamily:mono,fontSize:11,fontWeight:500,letterSpacing:2,textTransform:"uppercase",opacity:(!gymType||(gymType==="homegym"&&equipment.length===0))?0.28:1,transition:"all .18s",display:"flex",alignItems:"center",justifyContent:"center",gap:9}}>
+              {t.next}<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2.5 6.5h8M6.5 2.5l4 4-4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </button>
           </div>
         </div>
       )}
 
-
-      {/* ═══════════════════════════════════════════════ */}
-      {/* STEP 2 — ROUTINE TYPE                           */}
-      {/* ═══════════════════════════════════════════════ */}
-      {step===2&&(<>
-        <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",
-          background:"#07080a",overflowY:"auto",paddingBottom:8}}>
-          <div style={{padding:"68px 28px 0",marginBottom:8}}>
-            <div style={{fontFamily:mono,fontSize:9,letterSpacing:4,color:"rgba(238,234,227,.22)",
-              textTransform:"uppercase",marginBottom:14,display:"flex",alignItems:"center",gap:10}}>
-              <span style={{width:18,height:1,background:"rgba(238,234,227,.1)",display:"block"}}/>
-              {lang==="es"?"PROGRAMA":"PROGRAM"}
-              <span style={{width:18,height:1,background:"rgba(238,234,227,.1)",display:"block"}}/>
-            </div>
-            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:52,letterSpacing:2,lineHeight:.92,marginBottom:6}}>
-              {lang==="es"?"TU":"YOUR"}<br/>
-              <span style={{color:"#BFA98A"}}>{lang==="es"?"PROGRAMA":"PROGRAM"}</span>
-            </div>
-            <div style={{fontSize:12,color:"rgba(238,234,227,.3)",letterSpacing:.3,lineHeight:1.65}}>
-              {lang==="es"?"Elige cómo estructurar tu entrenamiento":"Choose how to structure your training"}
-            </div>
+      {step===2&&(
+        <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",overflowY:"auto"}}>
+          <div style={{padding:"72px 28px 0",marginBottom:8}}>
+            <div style={{fontFamily:mono,fontSize:9,letterSpacing:4,color:"rgba(238,234,227,.3)",textTransform:"uppercase",marginBottom:14,display:"flex",alignItems:"center",gap:10}}><span style={{width:18,height:1,background:"rgba(238,234,227,.1)",display:"block"}}/>{lang==="es"?"PROGRAMA":"PROGRAM"}<span style={{width:18,height:1,background:"rgba(238,234,227,.1)",display:"block"}}/></div>
+            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:52,letterSpacing:2,lineHeight:.92,marginBottom:6}}>{lang==="es"?"TU":"YOUR"}<br/><span style={{color:"#BFA98A"}}>{lang==="es"?"PROGRAMA":"PROGRAM"}</span></div>
+            <div style={{fontSize:12,color:"rgba(238,234,227,.3)",letterSpacing:.3,lineHeight:1.65}}>{lang==="es"?"Elige cómo estructurar tu entrenamiento":"Choose how to structure your training"}</div>
           </div>
-
-          {[
-            {key:"auto",    nextStep:3,
-              label:{es:"Rutina inteligente",en:"AI-generated"},
-              sub:{es:"Optimizada para tu objetivo y nivel",en:"Optimized for your goal and level"},
-              tag:{es:"RECOMENDADO",en:"RECOMMENDED"},
-              accent:"rgba(238,234,227,.9)"},
-            {key:"celebrity", nextStep:25,
-              label:{es:"Rutina de élite",en:"Elite routine"},
-              sub:{es:"Arnold · Hemsworth · LeBron · Goggins...",en:"Arnold · Hemsworth · LeBron · Goggins..."},
-              tag:{es:"ÉLITE",en:"ELITE"},
-              accent:"#BFA98A"},
-            {key:"manual",  nextStep:20,
-              label:{es:"Personalizada",en:"Custom"},
-              sub:{es:"Diseña tu rutina desde cero","en":"Build your own from scratch"},
-              tag:null,
-              accent:"rgba(238,234,227,.4)"},
-          ].map(({key,nextStep,label,sub,tag,accent},idx)=>(
-            <div key={key} onClick={()=>{setMode(key);setStep(nextStep);}} style={{
-              padding:"24px 28px",cursor:"pointer",
-              borderTop:"1px solid rgba(238,234,227,.06)",
-              display:"flex",alignItems:"center",gap:16,
-              transition:"background .2s",
-            }} onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,.02)"}
-               onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+          {[{m:"auto",ns:3,label:{es:"Rutina inteligente",en:"AI-generated"},sub:{es:"Optimizada para tu objetivo y nivel",en:"Optimized for your goal and level"},tag:{es:"RECOMENDADO",en:"RECOMMENDED"},col:"rgba(238,234,227,.9)"},
+            {m:"celebrity",ns:25,label:{es:"Rutina de élite",en:"Elite routine"},sub:{es:"Arnold . Hemsworth . LeBron . Goggins...",en:"Arnold . Hemsworth . LeBron . Goggins..."},tag:{es:"ÉLITE",en:"ELITE"},col:"#BFA98A"},
+            {m:"manual",ns:20,label:{es:"Personalizada",en:"Custom"},sub:{es:"Diseña tu rutina desde cero",en:"Build your own from scratch"},tag:null,col:"rgba(238,234,227,.4)"},
+          ].map(({m,ns,label,sub,tag,col})=>(
+            <div key={m} onClick={()=>{setMode(m);setStep(ns);}} style={{padding:"22px 28px",cursor:"pointer",borderTop:"1px solid rgba(238,234,227,.06)",display:"flex",alignItems:"center",gap:16,transition:"background .2s"}}>
               <div style={{flex:1}}>
                 <div style={{display:"flex",alignItems:"baseline",gap:10,marginBottom:5}}>
-                  <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:30,letterSpacing:2,
-                    color:accent,lineHeight:1}}>{lang==="es"?label.es:label.en}</div>
-                  {tag&&<div style={{fontFamily:mono,fontSize:7,letterSpacing:3,
-                    color:key==="celebrity"?"#BFA98A":"rgba(238,234,227,.35)",
-                    border:`1px solid ${key==="celebrity"?"rgba(191,169,138,.35)":"rgba(238,234,227,.15)"}`,
-                    padding:"2px 6px",borderRadius:4}}>
-                    {lang==="es"?tag.es:tag.en}
-                  </div>}
+                  <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:30,letterSpacing:2,color:col,lineHeight:1}}>{lang==="es"?label.es:label.en}</div>
+                  {tag&&<div style={{fontFamily:mono,fontSize:7,letterSpacing:2,color:m==="celebrity"?"#BFA98A":"rgba(238,234,227,.4)",border:`1px solid ${m==="celebrity"?"rgba(191,169,138,.35)":"rgba(238,234,227,.15)"}`,padding:"2px 6px",borderRadius:4}}>{lang==="es"?tag.es:tag.en}</div>}
                 </div>
-                <div style={{fontSize:11,color:"rgba(238,234,227,.3)",fontFamily:mono,letterSpacing:.3}}>
-                  {lang==="es"?sub.es:sub.en}
-                </div>
+                <div style={{fontSize:11,color:"rgba(238,234,227,.3)",fontFamily:mono,letterSpacing:.3}}>{lang==="es"?sub.es:sub.en}</div>
               </div>
-              <svg style={{opacity:.25,flexShrink:0}} width="7" height="12" viewBox="0 0 7 12" fill="none">
-                <path d="M1 1l5 5.5L1 11" stroke="rgba(238,234,227,.8)" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
+              <svg style={{opacity:.25,flexShrink:0}} width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5.5L1 11" stroke="rgba(238,234,227,.8)" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </div>
           ))}
-
           <div style={{flex:1}}/>
           <div style={{padding:"20px 28px 40px"}}>
-            <button onClick={()=>setStep(15)} style={{width:"100%",padding:"16px",borderRadius:14,
-              cursor:"pointer",background:"transparent",color:"rgba(238,234,227,.5)",
-              border:"1px solid rgba(238,234,227,.1)",fontFamily:mono,fontSize:11,letterSpacing:1}}>
-              {t.back}
-            </button>
+            <button onClick={()=>setStep(15)} style={{width:"100%",padding:"16px",borderRadius:14,cursor:"pointer",background:"transparent",color:"rgba(238,234,227,.5)",border:"1px solid rgba(238,234,227,.1)",fontFamily:mono,fontSize:11,letterSpacing:1}}>{t.back}</button>
           </div>
         </div>
-      </>)}
+      )}
 
-      {/* ── STEPS 2-5 (goal, level, body data) ────────── */}
       {(step>=3&&step<=5)&&(
-        <div style={{padding:"0 28px",paddingTop:"8vh",paddingBottom:48,animation:"forjaFadeSlide 0.4s cubic-bezier(0.16,1,0.3,1)"}}>
+        <div style={{padding:"0 28px",paddingTop:"8vh",paddingBottom:48,animation:"fu 0.4s ease"}}>
           <div style={{display:"flex",gap:6,marginBottom:36}}>
             {Array.from({length:TOTAL_STEPS},(_,i)=><div key={i} style={{height:2,flex:1,borderRadius:1,background:i<step-1?"#BFA98A":"rgba(238,234,227,.12)",transition:"background .4s"}}/>)}
           </div>
-          {step===3&&(<>
+                    {step===3&&(<>
             <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,.2)",letterSpacing:4,marginBottom:16,textTransform:"uppercase"}}>{t.goal}</div>
             <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:24,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"¿Qué buscas?":"What's your goal?"}</div>
             <div style={{display:"flex",flexDirection:"column",borderTop:`1px solid rgba(240,242,245,0.12)`}}>
@@ -3244,7 +2972,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               <div style={{flex:2}}><Btn onClick={()=>setStep(4)} disabled={!goal}>{t.next}</Btn></div>
             </div>
           </>)}
-          {step===4&&mode==="auto"&&(<>
+                    {step===4&&mode==="auto"&&(<>
             <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,.2)",letterSpacing:4,marginBottom:16,textTransform:"uppercase"}}>{t.level}</div>
             <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:24,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"Tu experiencia":"Your experience"}</div>
             <div style={{display:"flex",flexDirection:"column",borderTop:`1px solid rgba(240,242,245,0.12)`}}>
@@ -3257,13 +2985,13 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               <div style={{flex:2}}><Btn onClick={()=>setStep(5)} disabled={!level}>{t.next}</Btn></div>
             </div>
           </>)}
-          {step===4&&mode!=="auto"&&(<>
+                    {step===4&&mode!=="auto"&&(<>
             <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,.2)",letterSpacing:4,marginBottom:16,textTransform:"uppercase"}}>{lang==="es"?"UNIDADES":"UNITS"}</div>
             <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:32,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"Sistema de medida":"Measurement"}</div>
             <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:32}}>
               {[
-                {key:"metric",  es:"Métrico",   en:"Metric",   sub:"kg · cm"},
-                {key:"imperial",es:"Imperial",  en:"Imperial", sub:"lb · in"},
+                {key:"metric",  es:"Métrico",   en:"Metric",   sub:"kg . cm"},
+                {key:"imperial",es:"Imperial",  en:"Imperial", sub:"lb . in"},
               ].map(({key,es,en,sub})=>(
                 <button key={key} onClick={()=>setUnits(key)} style={{
                   display:"flex",alignItems:"center",justifyContent:"space-between",
@@ -3285,7 +3013,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               <div style={{flex:2}}><Btn onClick={()=>setStep(5)}>{t.next}</Btn></div>
             </div>
           </>)}
-          {step===5&&(<>
+                    {step===5&&(<>
             <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{lang==="es"?"DATOS FÍSICOS":"BODY DATA"}</div>
             <div style={{fontSize:36,fontWeight:900,letterSpacing:-1.5,marginBottom:24,lineHeight:.9}}>{lang==="es"?"Tu cuerpo":"Your body"}</div>
             <div style={{display:"flex",flexDirection:"column",gap:20,marginBottom:32}}>
@@ -3311,205 +3039,75 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
         </div>
       )}
 
-      {/* ═══════════════════════════════════════════════ */}
-      {/* STEP 6 — HOW MANY DAYS                          */}
-      {/* ═══════════════════════════════════════════════ */}
       {step===6&&(
-        <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",
-          justifyContent:"center",padding:"0 28px",animation:"forjaFadeSlide .38s cubic-bezier(.16,1,.3,1)"}}>
-          <div style={{fontFamily:mono,fontSize:9,letterSpacing:4,color:"rgba(238,234,227,.22)",
-            textTransform:"uppercase",marginBottom:14,display:"flex",alignItems:"center",gap:10}}>
-            <span style={{width:18,height:1,background:"rgba(238,234,227,.1)",display:"block"}}/>
-            {t.days}
-            <span style={{width:18,height:1,background:"rgba(238,234,227,.1)",display:"block"}}/>
-          </div>
-          <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:60,letterSpacing:2,lineHeight:.92,textAlign:"center",marginBottom:6}}>
-            {lang==="es"?"DÍAS":"DAYS"}<br/><span style={{color:"#BFA98A"}}>{lang==="es"?"POR SEMANA":"PER WEEK"}</span>
-          </div>
-          <div style={{fontSize:12,color:"rgba(238,234,227,.3)",letterSpacing:.3,textAlign:"center",marginBottom:44}}>
-            {lang==="es"?"La constancia supera a la intensidad.":"Consistency beats intensity. Every time."}
-          </div>
+        <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"0 28px"}}>
+          <div style={{fontFamily:mono,fontSize:9,letterSpacing:4,color:"rgba(238,234,227,.3)",textTransform:"uppercase",marginBottom:14,display:"flex",alignItems:"center",gap:10}}><span style={{width:18,height:1,background:"rgba(238,234,227,.1)",display:"block"}}/>{lang==="es"?"FRECUENCIA":"FREQUENCY"}<span style={{width:18,height:1,background:"rgba(238,234,227,.1)",display:"block"}}/></div>
+          <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:60,letterSpacing:2,lineHeight:.92,textAlign:"center",marginBottom:6}}>{lang==="es"?"DÍAS":"DAYS"}<br/><span style={{color:"#BFA98A"}}>{lang==="es"?"POR SEMANA":"PER WEEK"}</span></div>
+          <div style={{fontSize:12,color:"rgba(238,234,227,.3)",textAlign:"center",marginBottom:44}}>{lang==="es"?"La constancia supera a la intensidad.":"Consistency beats intensity."}</div>
           <div style={{display:"flex",gap:8,marginBottom:20}}>
             {[3,4,5,6].map(n=>{
               const sel=days===n;
               return(
-              <div key={n} onClick={()=>{setDays(n);setSelDays([]);}} style={{
-                width:72,height:92,borderRadius:18,cursor:"pointer",
-                display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
-                border:`1.5px solid ${sel?"rgba(191,169,138,.45)":"rgba(238,234,227,.07)"}`,
-                background:sel?"rgba(191,169,138,.06)":"transparent",
-                transform:sel?"translateY(-6px) scale(1.06)":"none",
-                boxShadow:sel?"0 16px 40px rgba(0,0,0,.5)":"none",
-                transition:"all .28s cubic-bezier(.34,1.56,.64,1)",position:"relative",overflow:"hidden",
-              }}>
+              <div key={n} onClick={()=>{setDays(n);setSelDays([]);}} style={{width:72,height:92,borderRadius:18,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",border:`1.5px solid ${sel?"rgba(191,169,138,.45)":"rgba(238,234,227,.07)"}`,background:sel?"rgba(191,169,138,.06)":"transparent",transform:sel?"translateY(-6px) scale(1.06)":"none",boxShadow:sel?"0 16px 40px rgba(0,0,0,.5)":"none",transition:"all .28s cubic-bezier(.34,1.56,.64,1)",position:"relative",overflow:"hidden"}}>
                 <div style={{position:"absolute",inset:0,background:"radial-gradient(circle at 50% 120%, rgba(191,169,138,.18), transparent 65%)",opacity:sel?1:0,transition:"opacity .3s"}}/>
-                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:42,letterSpacing:-1,
-                  color:sel?"#EEEAE3":"rgba(238,234,227,.22)",transition:"color .28s",lineHeight:1}}>{n}</div>
-                <div style={{fontFamily:mono,fontSize:7.5,letterSpacing:2,
-                  color:sel?"#BFA98A":"rgba(238,234,227,.22)",marginTop:5,textTransform:"uppercase"}}>{t.days.split(" ")[0]}</div>
+                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:42,letterSpacing:-1,color:sel?"#EEEAE3":"rgba(238,234,227,.22)",transition:"color .28s",lineHeight:1}}>{n}</div>
+                <div style={{fontFamily:mono,fontSize:7.5,letterSpacing:2,color:sel?"#BFA98A":"rgba(238,234,227,.22)",marginTop:5,textTransform:"uppercase"}}>{lang==="es"?"DÍAS":"DAYS"}</div>
               </div>
-            )})}
+            );})}
           </div>
-          <div style={{fontSize:12,color:"rgba(238,234,227,.3)",letterSpacing:.3,textAlign:"center",minHeight:18,marginBottom:32}}>
+          <div style={{fontSize:12,color:"rgba(238,234,227,.3)",textAlign:"center",minHeight:18,marginBottom:32}}>
             {days?([{es:"Ideal para empezar",en:"Great to start"},{es:"Frecuencia óptima",en:"Optimal balance"},{es:"Nivel avanzado",en:"Advanced level"},{es:"Atleta de élite",en:"Elite athlete"}][days-3]?.[lang==="es"?"es":"en"]||""):""}
           </div>
           <div style={{display:"flex",gap:8,width:"100%",maxWidth:380}}>
             <button onClick={()=>setStep(5)} style={{flex:1,padding:"16px",borderRadius:14,cursor:"pointer",background:"transparent",color:"rgba(238,234,227,.5)",border:"1px solid rgba(238,234,227,.1)",fontFamily:mono,fontSize:11,letterSpacing:1}}>{t.back}</button>
             <button onClick={()=>setStep(7)} disabled={!days} style={{flex:2,padding:"16px",borderRadius:14,cursor:"pointer",background:"#EEEAE3",color:"#07080a",border:"none",fontFamily:mono,fontSize:11,fontWeight:500,letterSpacing:2,textTransform:"uppercase",opacity:!days?0.28:1,transition:"all .18s",display:"flex",alignItems:"center",justifyContent:"center",gap:9}}>
-              {t.next} <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2.5 6.5h8M6.5 2.5l4 4-4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              {t.next}<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2.5 6.5h8M6.5 2.5l4 4-4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </button>
           </div>
         </div>
       )}
 
-      {/* ═══════════════════════════════════════════════ */}
-      {/* STEP 7 — WHICH DAYS                             */}
-      {/* ═══════════════════════════════════════════════ */}
       {step===7&&(
-        <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",
-          justifyContent:"center",padding:"0 24px",animation:"forjaFadeSlide .38s cubic-bezier(.16,1,.3,1)"}}>
-          <div style={{fontFamily:mono,fontSize:9,letterSpacing:4,color:"rgba(238,234,227,.22)",
-            textTransform:"uppercase",marginBottom:14,display:"flex",alignItems:"center",gap:10}}>
-            <span style={{width:18,height:1,background:"rgba(238,234,227,.1)",display:"block"}}/>
-            {lang==="es"?"HORARIO":"SCHEDULE"}
-            <span style={{width:18,height:1,background:"rgba(238,234,227,.1)",display:"block"}}/>
-          </div>
-          <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:60,letterSpacing:2,lineHeight:.92,textAlign:"center",marginBottom:28}}>
-            {lang==="es"?"QUÉ":"WHICH"}<br/><span style={{color:"#BFA98A"}}>{lang==="es"?"DÍAS":"DAYS"}</span>
-          </div>
-          <div style={{display:"flex",gap:5,marginBottom:36}}>
-            {Array.from({length:days}).map((_,i)=>(
-              <div key={i} style={{width:5,height:5,borderRadius:"50%",transition:"all .3s cubic-bezier(.34,1.56,.64,1)",
-                background:selDays.length>i?"#BFA98A":"rgba(238,234,227,.12)",
-                transform:selDays.length>i?"scale(1.3)":"scale(1)"}}/>
-            ))}
-          </div>
-          <div style={{display:"flex",gap:7,width:"100%",maxWidth:390,marginBottom:24}}>
+        <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"0 24px"}}>
+          <div style={{fontFamily:mono,fontSize:9,letterSpacing:4,color:"rgba(238,234,227,.3)",textTransform:"uppercase",marginBottom:14,display:"flex",alignItems:"center",gap:10}}><span style={{width:18,height:1,background:"rgba(238,234,227,.1)",display:"block"}}/>{lang==="es"?"HORARIO":"SCHEDULE"}<span style={{width:18,height:1,background:"rgba(238,234,227,.1)",display:"block"}}/></div>
+          <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:60,letterSpacing:2,lineHeight:.92,textAlign:"center",marginBottom:28}}>{lang==="es"?"QUÉ":"WHICH"}<br/><span style={{color:"#BFA98A"}}>{lang==="es"?"DÍAS":"DAYS"}</span></div>
+          <div style={{display:"flex",gap:5,marginBottom:36}}>{Array.from({length:days}).map((_,i)=>(<div key={i} style={{width:5,height:5,borderRadius:"50%",background:selDays.length>i?"#BFA98A":"rgba(238,234,227,.12)",transform:selDays.length>i?"scale(1.3)":"scale(1)",transition:"all .3s cubic-bezier(.34,1.56,.64,1)"}}/>))}</div>
+          <div style={{display:"flex",gap:7,width:"100%",maxWidth:390,marginBottom:20}}>
             {(lang==="es"?["L","M","X","J","V","S","D"]:["M","T","W","T","F","S","S"]).map((letter,i)=>{
               const full=lang==="es"?["LUN","MAR","MIÉ","JUE","VIE","SÁB","DOM"]:["MON","TUE","WED","THU","FRI","SAT","SUN"];
               const sel=selDays.includes(i),dim=!sel&&selDays.length>=days;
               return(
-              <div key={i} onClick={()=>{
-                if(sel)setSelDays(p=>p.filter(x=>x!==i));
-                else if(!dim)setSelDays(p=>[...p,i]);
-              }} style={{
-                flex:1,aspectRatio:"1",borderRadius:"50%",display:"flex",flexDirection:"column",
-                alignItems:"center",justifyContent:"center",cursor:dim?"default":"pointer",
-                border:`1.5px solid ${sel?"rgba(191,169,138,.55)":"rgba(238,234,227,.08)"}`,
-                background:sel?"rgba(191,169,138,.09)":"transparent",
-                transform:sel?"scale(1.1)":"scale(1)",
-                boxShadow:sel?"0 0 20px rgba(191,169,138,.08)":"none",
-                opacity:dim?0.2:1,transition:"all .25s cubic-bezier(.34,1.56,.64,1)",position:"relative",
-              }}>
-                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:15,letterSpacing:1,
-                  color:sel?"#EEEAE3":"rgba(238,234,227,.3)",transition:"color .2s",lineHeight:1}}>{letter}</div>
+              <div key={i} onClick={()=>{if(sel)setSelDays(p=>p.filter(x=>x!==i));else if(!dim)setSelDays(p=>[...p,i]);}} style={{flex:1,aspectRatio:"1",borderRadius:"50%",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:dim?"default":"pointer",border:`1.5px solid ${sel?"rgba(191,169,138,.55)":"rgba(238,234,227,.08)"}`,background:sel?"rgba(191,169,138,.09)":"transparent",transform:sel?"scale(1.1)":"scale(1)",opacity:dim?0.2:1,transition:"all .25s cubic-bezier(.34,1.56,.64,1)",position:"relative"}}>
+                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:15,letterSpacing:1,color:sel?"#EEEAE3":"rgba(238,234,227,.3)",lineHeight:1}}>{letter}</div>
                 <div style={{fontFamily:mono,fontSize:6.5,letterSpacing:1,color:sel?"#BFA98A":"rgba(238,234,227,.2)",marginTop:2}}>{full[i]}</div>
-                {sel&&<div style={{position:"absolute",top:-3,right:-3,width:13,height:13,borderRadius:"50%",
-                  background:"#BFA98A",display:"flex",alignItems:"center",justifyContent:"center",
-                  animation:"popIn .2s cubic-bezier(.34,1.56,.64,1)"}}>
-                  <svg width="6" height="6" viewBox="0 0 6 6" fill="none"><path d="M1 3l1.5 1.5 2.5-2.5" stroke="#07080a" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                </div>}
+                {sel&&<div style={{position:"absolute",top:-3,right:-3,width:13,height:13,borderRadius:"50%",background:"#BFA98A",display:"flex",alignItems:"center",justifyContent:"center"}}><svg width="6" height="6" viewBox="0 0 6 6" fill="none"><path d="M1 3l1.5 1.5 2.5-2.5" stroke="#07080a" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg></div>}
               </div>
-            )})}
+            );})}
           </div>
-          <div style={{fontSize:12,color:"rgba(238,234,227,.3)",letterSpacing:.3,textAlign:"center",minHeight:18,marginBottom:32}}>
-            {selDays.length===days?(lang==="es"?"¡Listo. Tu semana está set.":"All set. Your week is ready."):(lang==="es"?`${days-selDays.length} día${days-selDays.length!==1?"s":""} más`:`${days-selDays.length} more day${days-selDays.length!==1?"s":""}`)}
+          <div style={{fontSize:12,color:"rgba(238,234,227,.3)",textAlign:"center",minHeight:18,marginBottom:32}}>
+            {selDays.length===days?(lang==="es"?"¡Listo. Tu semana está set.":"All set."):(lang==="es"?`${days-selDays.length} día${days-selDays.length!==1?"s":""} más`:`${days-selDays.length} more day${days-selDays.length!==1?"s":""}`)}
           </div>
           <div style={{display:"flex",gap:8,width:"100%",maxWidth:390}}>
             <button onClick={()=>setStep(6)} style={{flex:1,padding:"16px",borderRadius:14,cursor:"pointer",background:"transparent",color:"rgba(238,234,227,.5)",border:"1px solid rgba(238,234,227,.1)",fontFamily:mono,fontSize:11,letterSpacing:1}}>{t.back}</button>
-            <button onClick={()=>{
+            <button disabled={selDays.length!==days} onClick={()=>{
               if(gymType==="gym"){
-                // Gym completo — build routine directly, skip equipment screen
-                const splits=RAW[`${days}${level}`]||RAW[`${days}beg`]||[];
-                const filtered=splits.map(d=>({...d,ex:d.ex.map(ex=>({...ex,e:canDoAuto(ex.e,equipment)}))}));
-                const r=buildRoutine7(filtered,selDays,goal,equipment);
+                const key=`${days}${level}`;
+                const splits=RAW[key]||RAW[`${days}beg`]||Object.values(RAW)[0];
+                const fs=splits.map(d=>({...d,ex:d.ex.map(ex=>({...ex,e:canDoAuto(ex.e,equipment)}))}));
+                const r=buildRoutine7(fs,selDays,goal,equipment);
                 const pf={lang,goal,level,days,age,weight,height,units,selDays,gender,equipment};
                 FStore.saveProfile(pf,r);sp(pf);sr(r);setStep(99);
               } else {
                 setStep(8);
               }
-            }} disabled={selDays.length!==days} style={{flex:2,padding:"16px",borderRadius:14,cursor:"pointer",background:"#EEEAE3",color:"#07080a",border:"none",fontFamily:mono,fontSize:11,fontWeight:500,letterSpacing:2,textTransform:"uppercase",opacity:selDays.length!==days?0.28:1,transition:"all .18s",display:"flex",alignItems:"center",justifyContent:"center",gap:9}}>
-              {t.next} <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2.5 6.5h8M6.5 2.5l4 4-4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            }} style={{flex:2,padding:"16px",borderRadius:14,cursor:"pointer",background:"#EEEAE3",color:"#07080a",border:"none",fontFamily:mono,fontSize:11,fontWeight:500,letterSpacing:2,textTransform:"uppercase",opacity:selDays.length!==days?0.28:1,transition:"all .18s",display:"flex",alignItems:"center",justifyContent:"center",gap:9}}>
+              {gymType==="gym"?(lang==="es"?"FORJAR →":"FORGE IT →"):t.next}<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2.5 6.5h8M6.5 2.5l4 4-4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </button>
           </div>
         </div>
       )}
 
-
-      {(step===8||step===20||step===21||step===22||step===25)&&(
-        <div style={{padding:"0 26px",paddingTop:"7vh",paddingBottom:40,animation:"fu 0.4s ease"}}>
-          {/* Step 20 — cuántos días manual */}
-          {step===20&&(<>
-            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{lang==="es"?"DÍAS / SEMANA":"DAYS / WEEK"}</div>
-            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:32,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"¿Cuántos días?":"How many days?"}</div>
-            <div style={{display:"flex",gap:10,justifyContent:"center"}}>
-              {[3,4,5,6].map(n=>(
-                <button key={n} onClick={()=>{setManualDays(n);setManualSelDays([]);setManualRoutine(Array(7).fill(null).map(()=>[]));}} style={{
-                  width:68,height:84,borderRadius:14,
-                  border:`1.5px solid ${manualDays===n?C.tx:C.borderL}`,cursor:"pointer",
-                  background:manualDays===n?C.tx:"transparent",color:manualDays===n?C.white:C.tx3,
-                  fontSize:32,fontWeight:900,fontFamily:sans,transition:"all 0.2s"}}>{n}</button>
-              ))}
-            </div>
-            <div style={{display:"flex",gap:10,marginTop:32}}>
-              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(2)}>{t.back}</Btn></div>
-              <div style={{flex:2}}><Btn onClick={()=>setStep(21)} disabled={!manualDays}>{t.next}</Btn></div>
-            </div>
-          </>)}
-
-          {/* Step 21 — qué días manual */}
-          {step===21&&(<>
-            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{lang==="es"?"QUÉ DÍAS":"WHICH DAYS"}</div>
-            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:8,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"¿Qué días?":"Which days?"}</div>
-            <div style={{fontFamily:mono,fontSize:10,color:C.tx3,letterSpacing:1,marginBottom:28,opacity:.7}}>
-              {lang==="es"?`Selecciona ${manualDays} días`:`Select ${manualDays} days`}
-            </div>
-            <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:32}}>
-              {(lang==="es"?["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"]:["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]).map((d,i)=>{
-                const sel=manualSelDays.includes(i);
-                return(
-                  <button key={i} onClick={()=>{
-                    const ns=sel?manualSelDays.filter(x=>x!==i):[...manualSelDays,i].slice(0,manualDays);
-                    setManualSelDays([...ns].sort((a,b)=>a-b));
-                  }} style={{
-                    padding:"16px 20px",borderRadius:14,cursor:"pointer",
-                    border:`1.5px solid ${sel?"rgba(240,242,245,0.5)":"rgba(240,242,245,0.08)"}`,
-                    background:sel?"rgba(240,242,245,0.09)":"rgba(66,72,88,0.35)",
-                    backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",
-                    display:"flex",alignItems:"center",justifyContent:"space-between",
-                    transition:"all .2s",outline:"none",
-                  }}>
-                    <div style={{display:"flex",alignItems:"center",gap:14}}>
-                      <div style={{
-                        width:36,height:36,borderRadius:10,
-                        background:sel?"rgba(240,242,245,0.15)":"rgba(240,242,245,0.04)",
-                        display:"flex",alignItems:"center",justifyContent:"center",
-                        fontSize:11,fontFamily:mono,fontWeight:700,
-                        color:sel?"#F0F2F5":"#9aa0b0",letterSpacing:1,transition:"all .2s",
-                      }}>
-                        {(lang==="es"?["L","M","X","J","V","S","D"]:["M","T","W","T","F","S","S"])[i]}
-                      </div>
-                      <span style={{fontSize:15,fontWeight:sel?700:400,color:sel?"#F0F2F5":"#b8bcc8",transition:"all .15s"}}>{d}</span>
-                    </div>
-                    <div style={{
-                      width:22,height:22,borderRadius:"50%",
-                      background:sel?"#F0F2F5":"transparent",
-                      border:`1.5px solid ${sel?"#F0F2F5":"rgba(240,242,245,0.2)"}`,
-                      display:"flex",alignItems:"center",justifyContent:"center",
-                      fontSize:12,color:sel?"#2c3040":"transparent",transition:"all .2s",flexShrink:0,
-                    }}>{sel?"✓":""}</div>
-                  </button>
-                );
-              })}
-            </div>
-            <div style={{display:"flex",gap:10}}>
-              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(20)}>{t.back}</Btn></div>
-              <div style={{flex:2}}><Btn onClick={()=>setStep(22)} disabled={manualSelDays.length!==manualDays}>{t.next}</Btn></div>
-            </div>
-          </>)}
-
-          {/* ── EQUIPMENT SELECTOR — glass cards ── */}
-          {(step===22||step===8)&&(<>
+                {(step===22||step===8)&&(<>
             <div style={{fontSize:10,fontFamily:mono,color:"rgba(255,255,255,.18)",letterSpacing:3,marginBottom:10,textTransform:"uppercase"}}>
               {lang==="es"?"EQUIPAMIENTO":"EQUIPMENT"}
             </div>
@@ -3607,113 +3205,73 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               }}>{mode==="celebrity"?(lang==="es"?"EMPEZAR →":"START →"):step===22?(lang==="es"?"VER CATÁLOGO →":"CATALOG →"):t.next}</Btn></div>
             </div>
           </>)}
-
-          {/* Step 23 — catálogo rediseñado */}
-          {step===25&&(<>
-            {(()=>{
-              const CELEB_CARDS=[
-                {id:"arnold",    img:IMGS_C.arnold,    ac:"#f0a830", label:"IRON ARNOLD",    name:{es:"SCHWARZENEGGER",en:"SCHWARZENEGGER"}, badge:"CHEST+BACK",days:6, split:"Pecho+Espalda / Hombros+Brazos / Piernas (×2)", lvl:{es:"EXTREMO",en:"EXTREME"},  source:"The New Encyclopedia of Modern Bodybuilding — Schwarzenegger & Dobbins (1998)", desc:{es:"Split documentado en su libro: Pecho+Espalda, Hombros+Brazos, Piernas — repetido 2x/semana. 5-6 series × 6-10 reps, pirámide invertida hasta fallo. Sesiones de 90-120 min.",en:"Documented in his book: Chest+Back, Shoulders+Arms, Legs — twice weekly. 5-6 sets x 6-10 reps, inverted pyramid to failure. 90-120 min sessions."}},
-                {id:"hemsworth", img:IMGS_C.hemsworth, ac:"#4898e8", label:"THOR WEEK",      name:{es:"HEMSWORTH",en:"HEMSWORTH"},           badge:"PPL+HIIT",  days:5, split:"Push / Pull / Legs / Full / Athletic",          lvl:{es:"ALTO",en:"HIGH"},        source:"Luke Zocchi (trainer) · Centr App · Men's Health 2022", desc:{es:"Documentado por Luke Zocchi en Centr: press banca 8 series pirámide 12→4 reps. Fuerza heavy + HIIT funcional. Máx 60 min/sesión. Énfasis hombros y espalda para el look Thor.",en:"Documented by Luke Zocchi on Centr: bench press 8 sets pyramid 12→4 reps. Heavy strength + functional HIIT. Max 60 min/session. Shoulder and back emphasis for the Thor look."}},
-                {id:"rock",      img:IMGS_C.rock,      ac:"#30c870", label:"IRON PARADISE",  name:{es:"THE ROCK",en:"THE ROCK"},             badge:"4AM IRON",  days:6, split:"Hombros / Espalda / Piernas / Brazos / Pecho",  lvl:{es:"BRUTAL",en:"BRUTAL"},    source:"Instagram @therock · Men's Journal · ESPN Body Issue 2019", desc:{es:"Documentado en Instagram: 4×12 base, pirámide semanal 12→10→8→6. Cardio 30-50 min en ayunas a las 4AM + 90 min pesas. Usa SSB squat (no barra clásica) y prensa. Sin peso muerto tradicional.",en:"Documented on Instagram: 4x12 base, weekly pyramid 12→10→8→6. 30-50 min fasted cardio at 4AM + 90 min weights. Uses SSB squat (not barbell) and leg press. No conventional deadlift."}},
-                {id:"goggins",   img:IMGS_C.goggins,   ac:"#e09020", label:"NO EXCUSES",     name:{es:"GOGGINS",en:"GOGGINS"},               badge:"CALISTENIA",days:6, split:"Pull / Push / Piernas (rotación)",               lvl:{es:"INFERNAL",en:"INFERNAL"},source:"Can't Hurt Me — David Goggins (2018) · podcasts verificados", desc:{es:"Documentado en su libro: calistenia pura, series al fallo absoluto sin número fijo. Regla del 40%: cuando crees que terminaste, vas al 40% de tu capacidad real. Cardio diario obligatorio. Entrena incluso lesionado.",en:"Documented in his book: pure calisthenics, sets to absolute failure with no fixed number. 40% rule: when you think you're done, you're at 40% of real capacity. Daily mandatory cardio. Trains through injury."}},
-                {id:"cavill",    img:IMGS_C.cavill,    ac:"#c83030", label:"SUPERMAN GRIND", name:{es:"CAVILL",en:"CAVILL"},                 badge:"POWERBUILD",days:5, split:"Push / Pull / Piernas / Upper / Athletic",      lvl:{es:"ALTO",en:"HIGH"},        source:"Dave Rienzi (trainer) · Men's Health / GQ 2013-2023", desc:{es:"Reportado por Dave Rienzi: powerbuilding — fuerza base heavy (press banca >140kg) seguido de volumen estético. 4 series × 6-10 reps. Prep Man of Steel duró 10 meses. Énfasis en pecho y espalda.",en:"Reported by Dave Rienzi: powerbuilding — heavy base strength (140kg+ bench) then aesthetic volume. 4 sets x 6-10 reps. Man of Steel prep lasted 10 months. Chest and back emphasis."}},
-                {id:"ronaldo",   img:IMGS_C.ronaldo,   ac:"#d4a820", label:"CR7 CIRCUIT",    name:{es:"RONALDO",en:"RONALDO"},               badge:"ATLÉTICO",  days:5, split:"Piernas / Upper / Potencia / Core / Full",         lvl:{es:"ALTO",en:"HIGH"},        source:"Múltiples fuentes verificadas 2022-2024 · Set For Set · Man of Many", desc:{es:"5 días, 3-4h/día. Lunes: circuito piernas ×3. Martes: upper body ×3. Miércoles: 5×5 power cleans (fuerza explosiva). Jueves: core y estabilidad. Viernes: full body. Reps altas (8-15) — sin levantamientos máximos.",en:"5 days, 3-4h/day. Monday: leg circuit x3. Tuesday: upper body x3. Wednesday: 5x5 power cleans (explosive strength). Thursday: core and stability. Friday: full body. High reps (8-15) — no max lifting."}},
-                {id:"stallone",  img:IMGS_C.stallone,  ac:"#e88020", label:"ROCKY PREP",     name:{es:"STALLONE",en:"STALLONE"},             badge:"GOLDEN ERA",days:6, split:"Upper / Lower / Upper / Lower / Full / Cardio",  lvl:{es:"ALTO",en:"HIGH"},        source:"DVD extras Rocky III (1982) + Rocky IV (1985) · entrevistas verificadas", desc:{es:"Documentado en extras Rocky III/IV: dos sesiones diarias (mañana y tarde). En Rocky IV bajó a <1,000 kcal/día. Alta frecuencia de torso. Cardio matutino obligatorio. Énfasis en brazos, pecho y espalda para la silueta de boxeador.",en:"Documented in Rocky III/IV DVD extras: two daily sessions (morning and afternoon). Rocky IV prep: under 1,000 kcal/day. High upper body frequency. Mandatory morning cardio. Arms, chest and back emphasis for the boxer silhouette."}},
-                {id:"lebron",    img:IMGS_C.lebron,    ac:"#f0a818", label:"KING PROTOCOL",  name:{es:"LEBRON",en:"LEBRON"},                 badge:"ATLÉTICO",  days:5, split:"Lower Power / Upper Push / Upper Pull / Athletic", lvl:{es:"ALTO",en:"HIGH"},        source:"Mike Mancias (trainer) · Sports Illustrated · The Shop HBO", desc:{es:"Confirmado por trainer Mike Mancias: 5 días, enfoque en explosividad y movilidad funcional. +$1.5M/año en recuperación. Crioterapia, yoga y trabajo de movilidad integrados. Movimientos funcionales sobre aislamiento.",en:"Confirmed by trainer Mike Mancias: 5 days, focus on explosiveness and functional mobility. $1.5M+/year in recovery. Cryotherapy, yoga and mobility work integrated. Functional over isolation."}},
-                {id:"zyzz",      img:IMGS_C.zyzz,      ac:"#e050a8", label:"AESTHETICS GOD", name:{es:"ZYZZ",en:"ZYZZ"},                     badge:"BRO SPLIT", days:5, split:"Pecho / Espalda / Hombros / Piernas / Brazos",  lvl:{es:"MODERADO",en:"MODERATE"},source:"Videos YouTube originales 2009-2011 · bodybuilding.com foros", desc:{es:"Documentado en sus videos: bro split 5 días, 4 series × 10-12 reps. Estética sobre fuerza — definición y proporción como objetivo. Cardio ligero 2-3×/semana. Dieta de definición. WGMM.",en:"Documented in his videos: 5-day bro split, 4 sets x 10-12 reps. Aesthetics over strength — definition and proportion as goal. Light cardio 2-3x/week. Cutting diet. WGMM."}},
-              ]
-              return(<>
-                <div style={{fontSize:10,fontFamily:mono,color:"rgba(255,255,255,.18)",letterSpacing:3,marginBottom:8,textTransform:"uppercase"}}>{lang==="es"?"ELIGE TU RETO":"CHOOSE YOUR CHALLENGE"}</div>
-                <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:36,letterSpacing:3,lineHeight:.9,marginBottom:4,
-                  background:"linear-gradient(135deg,rgba(255,255,255,.95) 0%,rgba(255,255,255,.4) 100%)",
-                  WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"
-                }}>TRAIN LIKE<br/>A LEGEND</div>
-                <div style={{fontFamily:mono,fontSize:9,color:"rgba(255,255,255,.18)",letterSpacing:2,marginBottom:18}}>{lang==="es"?"RETO SEMANAL · RUTINA VERIFICADA":"WEEKLY CHALLENGE · VERIFIED ROUTINE"}</div>
-
-                {/* SCROLL ROW */}
-                <div style={{marginLeft:-26,marginRight:-26,paddingLeft:26,paddingRight:26,overflowX:"auto",overflowY:"visible",marginBottom:16,WebkitOverflowScrolling:"touch",msOverflowStyle:"none",scrollbarWidth:"none"}}>
-                  <div style={{display:"flex",gap:10,paddingTop:14,paddingBottom:12,width:"max-content",overflow:"visible"}}>
-                    {CELEB_CARDS.map(({id,img,ac,label,name,badge,days,lvl})=>{
-                      const on=selCeleb===id;
-                      return(
-                        <div key={id} onClick={()=>setSelCeleb(on?null:id)} style={{
-                          position:"relative",flexShrink:0,width:148,height:234,borderRadius:18,overflow:"hidden",cursor:"pointer",
-                          border:`1.5px solid ${on?ac:"rgba(255,255,255,.07)"}`,
-                          transition:"all .3s cubic-bezier(.34,1.56,.64,1)",
-                          transform:on?"translateY(-8px) scale(1.04)":"scale(1)",
-                          boxShadow:on?`0 0 0 1px ${ac},0 20px 48px rgba(0,0,0,.7),0 0 40px ${ac}33`:"none",
-                        }}>
-                          {/* Photo */}
-                          <img src={img||""} alt="" style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",
-                            filter:on?"brightness(.9) saturate(1.1)":"brightness(.7) saturate(.8)",
-                            transition:"filter .3s",transform:"scale(1.05)"}}
-                            onError={e=>{e.target.style.display="none";}}/>
-                          {/* Top fade */}
-                          <div style={{position:"absolute",top:0,left:0,right:0,height:"30%",background:"linear-gradient(rgba(0,0,0,.4),transparent)",pointerEvents:"none"}}/>
-                          {/* Bottom fade */}
-                          <div style={{position:"absolute",bottom:0,left:0,right:0,height:"60%",background:"linear-gradient(transparent,rgba(0,0,0,.97) 60%)",pointerEvents:"none"}}/>
-                          {/* Color glow when selected */}
-                          {on&&<div style={{position:"absolute",inset:0,background:`radial-gradient(ellipse at 50% 60%,${ac}20 0%,transparent 70%)`,pointerEvents:"none"}}/>}
-                          {/* Glass sheen */}
-                          <div style={{position:"absolute",inset:0,borderRadius:18,background:"linear-gradient(135deg,rgba(255,255,255,.08) 0%,transparent 40%,rgba(0,0,0,.2) 100%)",pointerEvents:"none"}}/>
-                          {/* Accent stripe */}
-                          <div style={{position:"absolute",top:0,left:0,width:3,height:"100%",background:`linear-gradient(180deg,${ac},transparent)`,opacity:on?1:.7,borderRadius:"18px 0 0 18px"}}/>
-                          {/* Badge */}
-                          <div style={{position:"absolute",top:11,right:11,fontFamily:mono,fontSize:7,letterSpacing:2,color:ac,background:"rgba(0,0,0,.75)",padding:"3px 7px",borderRadius:5,border:`1px solid ${ac}55`,backdropFilter:"blur(4px)"}}>{badge}</div>
-                          {/* Check */}
-                          <div style={{position:"absolute",top:11,left:11,width:20,height:20,borderRadius:"50%",background:ac,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#fff",fontWeight:900,opacity:on?1:0,transform:on?"scale(1) rotate(0)":"scale(0) rotate(-180deg)",transition:"all .3s cubic-bezier(.34,1.56,.64,1)",boxShadow:`0 0 12px ${ac}`}}>✓</div>
-                          {/* Footer */}
-                          <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"6px 12px 14px"}}>
-                            <div style={{fontFamily:mono,fontSize:8,letterSpacing:2.5,color:ac,marginBottom:3,opacity:.95}}>{label}</div>
-                            <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:18,letterSpacing:1.5,color:"#fff",lineHeight:1,marginBottom:7}}>{lang==="es"?name.es:name.en}</div>
-                            <div style={{display:"flex",alignItems:"center",gap:5}}>
-                              <span style={{fontFamily:mono,fontSize:8,color:"rgba(255,255,255,.3)",letterSpacing:1.5}}>{days} {lang==="es"?"DÍAS":"DAYS"}</span>
-                              <span style={{fontFamily:mono,fontSize:7,padding:"2px 6px",borderRadius:4,border:`1px solid ${ac}`,color:ac,letterSpacing:1.5,opacity:.9}}>{lang==="es"?lvl.es:lvl.en}</span>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Detail panel */}
-                {selCeleb&&(()=>{
-                  const card=CELEB_CARDS.find(x=>x.id===selCeleb);
-                  if(!card)return null;
-                  return(
-                    <div style={{borderRadius:18,overflow:"hidden",marginBottom:16,background:"rgba(255,255,255,.04)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",border:`1px solid ${card.ac}33`,boxShadow:`inset 0 1px 0 rgba(255,255,255,.08),0 0 24px ${card.ac}18`}}>
-                      <div style={{padding:"14px 16px",borderBottom:"1px solid rgba(255,255,255,.05)",background:"rgba(255,255,255,.02)",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                        <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:22,letterSpacing:2,color:card.ac}}>{card.label}</div>
-                        <div style={{fontFamily:mono,fontSize:8,color:"rgba(255,255,255,.25)",letterSpacing:2}}>{card.days} {lang==="es"?"DÍAS":"DAYS"} · {card.split}</div>
-                      </div>
-                      <div style={{padding:"12px 16px"}}>
-                        <div style={{fontSize:11,color:"rgba(255,255,255,.5)",lineHeight:1.65,borderLeft:`2px solid ${card.ac}`,paddingLeft:12,marginBottom:12}}>{lang==="es"?card.desc.es:card.desc.en}</div>
-                        <div style={{fontFamily:mono,fontSize:8,color:"rgba(255,255,255,.18)",fontStyle:"italic",marginBottom:6}}>📖 {card.source}</div>
-                      <div style={{fontFamily:mono,fontSize:7,color:"rgba(255,255,255,.1)",letterSpacing:.3,lineHeight:1.5,borderTop:"1px solid rgba(255,255,255,.04)",paddingTop:8}}>{lang==="es"?"⚠ Rutina basada en fuentes públicas verificadas. Series/reps adaptadas al equipamiento disponible.":"⚠ Routine based on verified public sources. Sets/reps adapted to available equipment."}</div>
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                <div style={{display:"flex",gap:10}}>
-                  <div style={{flex:1}}><Btn ghost onClick={()=>setStep(2)}>{t.back}</Btn></div>
-                  <div style={{flex:2}}><Btn disabled={!selCeleb} onClick={()=>{
-                    const cel=CELEB_CARDS.find(x=>x.id===selCeleb);
-                    if(!cel)return;
-                    setDays(cel.days);
-                    setCelebData(cel);
-                    // Celebrity: pick which days
-                    setStep(26);
-                  }}>{lang==="es"?(gymType==="gym"?"ELEGIR ESTA RUTINA →":"ELEGIR EQUIPO →"):(gymType==="gym"?"SELECT THIS ROUTINE →":"SELECT EQUIPMENT →")}</Btn></div>
-                </div>
-              </>);
-            })()}
+                {step===20&&(<>
+            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{lang==="es"?"DÍAS / SEMANA":"DAYS / WEEK"}</div>
+            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:32,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"¿Cuántos días?":"How many days?"}</div>
+            <div style={{display:"flex",gap:10,justifyContent:"center"}}>
+              {[3,4,5,6].map(n=>(
+                <button key={n} onClick={()=>{setManualDays(n);setManualSelDays([]);setManualRoutine(Array(7).fill(null).map(()=>[]));}} style={{
+                  width:68,height:84,borderRadius:14,
+                  border:`1.5px solid ${manualDays===n?C.tx:C.borderL}`,cursor:"pointer",
+                  background:manualDays===n?C.tx:"transparent",color:manualDays===n?C.white:C.tx3,
+                  fontSize:32,fontWeight:900,fontFamily:sans,transition:"all 0.2s"}}>{n}</button>
+              ))}
+            </div>
+            <div style={{display:"flex",gap:10,marginTop:32}}>
+              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(2)}>{t.back}</Btn></div>
+              <div style={{flex:2}}><Btn onClick={()=>setStep(21)} disabled={!manualDays}>{t.next}</Btn></div>
+            </div>
           </>)}
-
-
-
-      {step===23&&(<>
+                {step===21&&(<>
+            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{lang==="es"?"QUÉ DÍAS":"WHICH DAYS"}</div>
+            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:8,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"¿Qué días?":"Which days?"}</div>
+            <div style={{fontFamily:mono,fontSize:10,color:C.tx3,letterSpacing:1,marginBottom:28,opacity:.7}}>
+              {lang==="es"?`Selecciona ${manualDays} días`:`Select ${manualDays} days`}
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:32}}>
+              {(lang==="es"?["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"]:["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]).map((d,i)=>{
+                const sel=manualSelDays.includes(i);
+                return(
+                  <button key={i} onClick={()=>{
+                    const ns=sel?manualSelDays.filter(x=>x!==i):[...manualSelDays,i].slice(0,manualDays);
+                    setManualSelDays([...ns].sort((a,b)=>a-b));
+                  }} style={{
+                    padding:"16px 20px",borderRadius:14,cursor:"pointer",
+                    border:`1.5px solid ${sel?"rgba(240,242,245,0.5)":"rgba(240,242,245,0.08)"}`,
+                    background:sel?"rgba(240,242,245,0.09)":"rgba(66,72,88,0.35)",
+                    backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",
+                    display:"flex",alignItems:"center",justifyContent:"space-between",
+                    transition:"all .2s",outline:"none",
+                  }}>
+                    <div style={{display:"flex",alignItems:"center",gap:14}}>
+                      <div style={{
+                        width:36,height:36,borderRadius:10,
+                        background:sel?"rgba(240,242,245,0.15)":"rgba(240,242,245,0.04)",
+                        display:"flex",alignItems:"center",justifyContent:"center",
+                        fontSize:11,fontFamily:mono,fontWeight:700,
+                        color:sel?"#F0F2F5":"#9aa0b0",letterSpacing:1,transition:"all .2s",
+                      }}>
+                        {(lang==="es"?["L","M","X","J","V","S","D"]:["M","T","W","T","F","S","S"])[i]}
+                      </div>
+                      <span style={{fontSize:15,fontWeight:sel?700:400,color:sel?"#F0F2F5":"#b8bcc8",transition:"all .15s"}}>{d}</span>
+                    </div>
+                    <div style={{
+                      width:22,height:22,borderRadius:"50%",
+                      background:sel?"#F0F2F5":"transparent",
+                      border:`1.5px solid ${sel?"#F0F2F5":"rgba(240,242,245,0.2)"}`,
+                      display:"flex",alignItems:"center",justifyContent:"center",
+                      fontSize:12,color:sel?"#2c3040":"transparent",transition:"all .2s",flexShrink:0,
+                    }}>{sel?"✓":""}</div>
+                  </button>
+                );
+              })}
+            </div>
+            <div style={{display:"flex",gap:10}}>
+              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(20)}>{t.back}</Btn></div>
+              <div style={{flex:2}}><Btn onClick={()=>setStep(22)} disabled={manualSelDays.length!==manualDays}>{t.next}</Btn></div>
+            </div>
+          </>)}
+            {step===23&&(<>
             {/* Header sticky con días */}
             <div style={{position:"sticky",top:0,zIndex:5,background:"rgba(44,48,64,0.92)",backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",marginBottom:16,paddingBottom:12,borderBottom:"1px solid rgba(240,242,245,0.07)"}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
@@ -3748,7 +3306,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             {/* Ejercicios ya agregados al día */}
             {(manualRoutine[catalogDay]||[]).length>0&&(
               <div style={{marginBottom:16,padding:"12px 14px",borderRadius:14,background:"rgba(95,170,136,0.06)",border:"1px solid rgba(95,170,136,0.15)"}}>
-                <div style={{fontSize:8,fontFamily:mono,color:C.green,letterSpacing:2,marginBottom:8,textTransform:"uppercase"}}>{lang==="es"?"AGREGADOS AL DÍA":"ADDED TODAY"} · {(manualRoutine[catalogDay]||[]).length}</div>
+                <div style={{fontSize:8,fontFamily:mono,color:C.green,letterSpacing:2,marginBottom:8,textTransform:"uppercase"}}>{lang==="es"?"AGREGADOS AL DÍA":"ADDED TODAY"} . {(manualRoutine[catalogDay]||[]).length}</div>
                 <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
                   {(manualRoutine[catalogDay]||[]).map(ex=>(
                     <div key={ex} style={{
@@ -3877,166 +3435,148 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               <div style={{flex:2}}><Btn onClick={finishManual} disabled={manualSelDays.some((_,i)=>(manualRoutine[i]||[]).length===0)}>{t.go}</Btn></div>
             </div>
           </>)}
+                {step===25&&(<>
+            {(()=>{
+              const CELEB_CARDS=[
+                {id:"arnold",    img:IMGS_C.arnold,    ac:"#f0a830", label:"IRON ARNOLD",    name:{es:"SCHWARZENEGGER",en:"SCHWARZENEGGER"}, badge:"CHEST+BACK",days:6, split:"Pecho+Espalda / Hombros+Brazos / Piernas (×2)", lvl:{es:"EXTREMO",en:"EXTREME"},  source:"The New Encyclopedia of Modern Bodybuilding — Schwarzenegger & Dobbins (1998)", desc:{es:"Split documentado en su libro: Pecho+Espalda, Hombros+Brazos, Piernas — repetido 2x/semana. 5-6 series × 6-10 reps, pirámide invertida hasta fallo. Sesiones de 90-120 min.",en:"Documented in his book: Chest+Back, Shoulders+Arms, Legs — twice weekly. 5-6 sets x 6-10 reps, inverted pyramid to failure. 90-120 min sessions."}},
+                {id:"hemsworth", img:IMGS_C.hemsworth, ac:"#4898e8", label:"THOR WEEK",      name:{es:"HEMSWORTH",en:"HEMSWORTH"},           badge:"PPL+HIIT",  days:5, split:"Push / Pull / Legs / Full / Athletic",          lvl:{es:"ALTO",en:"HIGH"},        source:"Luke Zocchi (trainer) . Centr App . Men's Health 2022", desc:{es:"Documentado por Luke Zocchi en Centr: press banca 8 series pirámide 12→4 reps. Fuerza heavy + HIIT funcional. Máx 60 min/sesión. Énfasis hombros y espalda para el look Thor.",en:"Documented by Luke Zocchi on Centr: bench press 8 sets pyramid 12→4 reps. Heavy strength + functional HIIT. Max 60 min/session. Shoulder and back emphasis for the Thor look."}},
+                {id:"rock",      img:IMGS_C.rock,      ac:"#30c870", label:"IRON PARADISE",  name:{es:"THE ROCK",en:"THE ROCK"},             badge:"4AM IRON",  days:6, split:"Hombros / Espalda / Piernas / Brazos / Pecho",  lvl:{es:"BRUTAL",en:"BRUTAL"},    source:"Instagram @therock . Men's Journal . ESPN Body Issue 2019", desc:{es:"Documentado en Instagram: 4×12 base, pirámide semanal 12→10→8→6. Cardio 30-50 min en ayunas a las 4AM + 90 min pesas. Usa SSB squat (no barra clásica) y prensa. Sin peso muerto tradicional.",en:"Documented on Instagram: 4x12 base, weekly pyramid 12→10→8→6. 30-50 min fasted cardio at 4AM + 90 min weights. Uses SSB squat (not barbell) and leg press. No conventional deadlift."}},
+                {id:"goggins",   img:IMGS_C.goggins,   ac:"#e09020", label:"NO EXCUSES",     name:{es:"GOGGINS",en:"GOGGINS"},               badge:"CALISTENIA",days:6, split:"Pull / Push / Piernas (rotación)",               lvl:{es:"INFERNAL",en:"INFERNAL"},source:"Can't Hurt Me — David Goggins (2018) . podcasts verificados", desc:{es:"Documentado en su libro: calistenia pura, series al fallo absoluto sin número fijo. Regla del 40%: cuando crees que terminaste, vas al 40% de tu capacidad real. Cardio diario obligatorio. Entrena incluso lesionado.",en:"Documented in his book: pure calisthenics, sets to absolute failure with no fixed number. 40% rule: when you think you're done, you're at 40% of real capacity. Daily mandatory cardio. Trains through injury."}},
+                {id:"cavill",    img:IMGS_C.cavill,    ac:"#c83030", label:"SUPERMAN GRIND", name:{es:"CAVILL",en:"CAVILL"},                 badge:"POWERBUILD",days:5, split:"Push / Pull / Piernas / Upper / Athletic",      lvl:{es:"ALTO",en:"HIGH"},        source:"Dave Rienzi (trainer) . Men's Health / GQ 2013-2023", desc:{es:"Reportado por Dave Rienzi: powerbuilding — fuerza base heavy (press banca >140kg) seguido de volumen estético. 4 series × 6-10 reps. Prep Man of Steel duró 10 meses. Énfasis en pecho y espalda.",en:"Reported by Dave Rienzi: powerbuilding — heavy base strength (140kg+ bench) then aesthetic volume. 4 sets x 6-10 reps. Man of Steel prep lasted 10 months. Chest and back emphasis."}},
+                {id:"ronaldo",   img:IMGS_C.ronaldo,   ac:"#d4a820", label:"CR7 CIRCUIT",    name:{es:"RONALDO",en:"RONALDO"},               badge:"ATLÉTICO",  days:5, split:"Piernas / Upper / Potencia / Core / Full",         lvl:{es:"ALTO",en:"HIGH"},        source:"Múltiples fuentes verificadas 2022-2024 . Set For Set . Man of Many", desc:{es:"5 días, 3-4h/día. Lunes: circuito piernas ×3. Martes: upper body ×3. Miércoles: 5×5 power cleans (fuerza explosiva). Jueves: core y estabilidad. Viernes: full body. Reps altas (8-15) — sin levantamientos máximos.",en:"5 days, 3-4h/day. Monday: leg circuit x3. Tuesday: upper body x3. Wednesday: 5x5 power cleans (explosive strength). Thursday: core and stability. Friday: full body. High reps (8-15) — no max lifting."}},
+                {id:"stallone",  img:IMGS_C.stallone,  ac:"#e88020", label:"ROCKY PREP",     name:{es:"STALLONE",en:"STALLONE"},             badge:"GOLDEN ERA",days:6, split:"Upper / Lower / Upper / Lower / Full / Cardio",  lvl:{es:"ALTO",en:"HIGH"},        source:"DVD extras Rocky III (1982) + Rocky IV (1985) . entrevistas verificadas", desc:{es:"Documentado en extras Rocky III/IV: dos sesiones diarias (mañana y tarde). En Rocky IV bajó a <1,000 kcal/día. Alta frecuencia de torso. Cardio matutino obligatorio. Énfasis en brazos, pecho y espalda para la silueta de boxeador.",en:"Documented in Rocky III/IV DVD extras: two daily sessions (morning and afternoon). Rocky IV prep: under 1,000 kcal/day. High upper body frequency. Mandatory morning cardio. Arms, chest and back emphasis for the boxer silhouette."}},
+                {id:"lebron",    img:IMGS_C.lebron,    ac:"#f0a818", label:"KING PROTOCOL",  name:{es:"LEBRON",en:"LEBRON"},                 badge:"ATLÉTICO",  days:5, split:"Lower Power / Upper Push / Upper Pull / Athletic", lvl:{es:"ALTO",en:"HIGH"},        source:"Mike Mancias (trainer) . Sports Illustrated . The Shop HBO", desc:{es:"Confirmado por trainer Mike Mancias: 5 días, enfoque en explosividad y movilidad funcional. +$1.5M/año en recuperación. Crioterapia, yoga y trabajo de movilidad integrados. Movimientos funcionales sobre aislamiento.",en:"Confirmed by trainer Mike Mancias: 5 days, focus on explosiveness and functional mobility. $1.5M+/year in recovery. Cryotherapy, yoga and mobility work integrated. Functional over isolation."}},
+                {id:"zyzz",      img:IMGS_C.zyzz,      ac:"#e050a8", label:"AESTHETICS GOD", name:{es:"ZYZZ",en:"ZYZZ"},                     badge:"BRO SPLIT", days:5, split:"Pecho / Espalda / Hombros / Piernas / Brazos",  lvl:{es:"MODERADO",en:"MODERATE"},source:"Videos YouTube originales 2009-2011 . bodybuilding.com foros", desc:{es:"Documentado en sus videos: bro split 5 días, 4 series × 10-12 reps. Estética sobre fuerza — definición y proporción como objetivo. Cardio ligero 2-3×/semana. Dieta de definición. WGMM.",en:"Documented in his videos: 5-day bro split, 4 sets x 10-12 reps. Aesthetics over strength — definition and proportion as goal. Light cardio 2-3x/week. Cutting diet. WGMM."}},
+              ]
+              return(<>
+                <div style={{fontSize:10,fontFamily:mono,color:"rgba(255,255,255,.18)",letterSpacing:3,marginBottom:8,textTransform:"uppercase"}}>{lang==="es"?"ELIGE TU RETO":"CHOOSE YOUR CHALLENGE"}</div>
+                <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:36,letterSpacing:3,lineHeight:.9,marginBottom:4,
+                  background:"linear-gradient(135deg,rgba(255,255,255,.95) 0%,rgba(255,255,255,.4) 100%)",
+                  WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"
+                }}>TRAIN LIKE<br/>A LEGEND</div>
+                <div style={{fontFamily:mono,fontSize:9,color:"rgba(255,255,255,.18)",letterSpacing:2,marginBottom:18}}>{lang==="es"?"RETO SEMANAL . RUTINA VERIFICADA":"WEEKLY CHALLENGE . VERIFIED ROUTINE"}</div>
+
+                {/* SCROLL ROW */}
+                <div style={{marginLeft:-26,marginRight:-26,paddingLeft:26,paddingRight:26,overflowX:"auto",overflowY:"visible",marginBottom:16,WebkitOverflowScrolling:"touch",msOverflowStyle:"none",scrollbarWidth:"none"}}>
+                  <div style={{display:"flex",gap:10,paddingTop:14,paddingBottom:12,width:"max-content",overflow:"visible"}}>
+                    {CELEB_CARDS.map(({id,img,ac,label,name,badge,days,lvl})=>{
+                      const on=selCeleb===id;
+                      return(
+                        <div key={id} onClick={()=>setSelCeleb(on?null:id)} style={{
+                          position:"relative",flexShrink:0,width:148,height:234,borderRadius:18,overflow:"hidden",cursor:"pointer",
+                          border:`1.5px solid ${on?ac:"rgba(255,255,255,.07)"}`,
+                          transition:"all .3s cubic-bezier(.34,1.56,.64,1)",
+                          transform:on?"translateY(-8px) scale(1.04)":"scale(1)",
+                          boxShadow:on?`0 0 0 1px ${ac},0 20px 48px rgba(0,0,0,.7),0 0 40px ${ac}33`:"none",
+                        }}>
+                          {/* Photo */}
+                          <img src={img||""} alt="" style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",
+                            filter:on?"brightness(.9) saturate(1.1)":"brightness(.7) saturate(.8)",
+                            transition:"filter .3s",transform:"scale(1.05)"}}
+                            onError={e=>{e.target.style.display="none";}}/>
+                          {/* Top fade */}
+                          <div style={{position:"absolute",top:0,left:0,right:0,height:"30%",background:"linear-gradient(rgba(0,0,0,.4),transparent)",pointerEvents:"none"}}/>
+                          {/* Bottom fade */}
+                          <div style={{position:"absolute",bottom:0,left:0,right:0,height:"60%",background:"linear-gradient(transparent,rgba(0,0,0,.97) 60%)",pointerEvents:"none"}}/>
+                          {/* Color glow when selected */}
+                          {on&&<div style={{position:"absolute",inset:0,background:`radial-gradient(ellipse at 50% 60%,${ac}20 0%,transparent 70%)`,pointerEvents:"none"}}/>}
+                          {/* Glass sheen */}
+                          <div style={{position:"absolute",inset:0,borderRadius:18,background:"linear-gradient(135deg,rgba(255,255,255,.08) 0%,transparent 40%,rgba(0,0,0,.2) 100%)",pointerEvents:"none"}}/>
+                          {/* Accent stripe */}
+                          <div style={{position:"absolute",top:0,left:0,width:3,height:"100%",background:`linear-gradient(180deg,${ac},transparent)`,opacity:on?1:.7,borderRadius:"18px 0 0 18px"}}/>
+                          {/* Badge */}
+                          <div style={{position:"absolute",top:11,right:11,fontFamily:mono,fontSize:7,letterSpacing:2,color:ac,background:"rgba(0,0,0,.75)",padding:"3px 7px",borderRadius:5,border:`1px solid ${ac}55`,backdropFilter:"blur(4px)"}}>{badge}</div>
+                          {/* Check */}
+                          <div style={{position:"absolute",top:11,left:11,width:20,height:20,borderRadius:"50%",background:ac,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#fff",fontWeight:900,opacity:on?1:0,transform:on?"scale(1) rotate(0)":"scale(0) rotate(-180deg)",transition:"all .3s cubic-bezier(.34,1.56,.64,1)",boxShadow:`0 0 12px ${ac}`}}>✓</div>
+                          {/* Footer */}
+                          <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"6px 12px 14px"}}>
+                            <div style={{fontFamily:mono,fontSize:8,letterSpacing:2.5,color:ac,marginBottom:3,opacity:.95}}>{label}</div>
+                            <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:18,letterSpacing:1.5,color:"#fff",lineHeight:1,marginBottom:7}}>{lang==="es"?name.es:name.en}</div>
+                            <div style={{display:"flex",alignItems:"center",gap:5}}>
+                              <span style={{fontFamily:mono,fontSize:8,color:"rgba(255,255,255,.3)",letterSpacing:1.5}}>{days} {lang==="es"?"DÍAS":"DAYS"}</span>
+                              <span style={{fontFamily:mono,fontSize:7,padding:"2px 6px",borderRadius:4,border:`1px solid ${ac}`,color:ac,letterSpacing:1.5,opacity:.9}}>{lang==="es"?lvl.es:lvl.en}</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Detail panel */}
+                {selCeleb&&(()=>{
+                  const card=CELEB_CARDS.find(x=>x.id===selCeleb);
+                  if(!card)return null;
+                  return(
+                    <div style={{borderRadius:18,overflow:"hidden",marginBottom:16,background:"rgba(255,255,255,.04)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",border:`1px solid ${card.ac}33`,boxShadow:`inset 0 1px 0 rgba(255,255,255,.08),0 0 24px ${card.ac}18`}}>
+                      <div style={{padding:"14px 16px",borderBottom:"1px solid rgba(255,255,255,.05)",background:"rgba(255,255,255,.02)",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                        <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:22,letterSpacing:2,color:card.ac}}>{card.label}</div>
+                        <div style={{fontFamily:mono,fontSize:8,color:"rgba(255,255,255,.25)",letterSpacing:2}}>{card.days} {lang==="es"?"DÍAS":"DAYS"} . {card.split}</div>
+                      </div>
+                      <div style={{padding:"12px 16px"}}>
+                        <div style={{fontSize:11,color:"rgba(255,255,255,.5)",lineHeight:1.65,borderLeft:`2px solid ${card.ac}`,paddingLeft:12,marginBottom:12}}>{lang==="es"?card.desc.es:card.desc.en}</div>
+                        <div style={{fontFamily:mono,fontSize:8,color:"rgba(255,255,255,.18)",fontStyle:"italic",marginBottom:6}}>📖 {card.source}</div>
+                      <div style={{fontFamily:mono,fontSize:7,color:"rgba(255,255,255,.1)",letterSpacing:.3,lineHeight:1.5,borderTop:"1px solid rgba(255,255,255,.04)",paddingTop:8}}>{lang==="es"?"⚠ Rutina basada en fuentes públicas verificadas. Series/reps adaptadas al equipamiento disponible.":"⚠ Routine based on verified public sources. Sets/reps adapted to available equipment."}</div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                <div style={{display:"flex",gap:10}}>
+                  <div style={{flex:1}}><Btn ghost onClick={()=>setStep(2)}>{t.back}</Btn></div>
+                  <div style={{flex:2}}><Btn disabled={!selCeleb} onClick={()=>{
+                    const cel=CELEB_CARDS.find(x=>x.id===selCeleb);
+                    if(!cel)return;
+                    setDays(cel.days);
+                    setCelebData(cel);
+                    // Celebrity: pick which days
+                    setStep(26);
+                  }}>{lang==="es"?(gymType==="gym"?"ELEGIR ESTA RUTINA →":"ELEGIR EQUIPO →"):(gymType==="gym"?"SELECT THIS ROUTINE →":"SELECT EQUIPMENT →")}</Btn></div>
+                </div>
+              </>);
+            })()}
+          </>)}
 
       {step===26&&(
-        <div style={{position:"fixed",inset:0,display:"flex",flexDirection:"column",
-          alignItems:"center",justifyContent:"center",padding:"0 28px",
-          background:"#07080a",zIndex:50,
-          animation:"forjaFadeSlide .38s cubic-bezier(.16,1,.3,1)"}}>
-          <div style={{fontFamily:mono,fontSize:9,letterSpacing:4,color:"rgba(238,234,227,.22)",
-            textTransform:"uppercase",marginBottom:14,display:"flex",alignItems:"center",gap:10}}>
-            <span style={{width:18,height:1,background:"rgba(238,234,227,.1)",display:"block"}}/>
-            {lang==="es"?"HORARIO":"SCHEDULE"}
-            <span style={{width:18,height:1,background:"rgba(238,234,227,.1)",display:"block"}}/>
-          </div>
-          <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:60,letterSpacing:2,lineHeight:.92,
-            textAlign:"center",marginBottom:6}}>
-            {lang==="es"?"QUÉ":"WHICH"}<br/><span style={{color:"#BFA98A"}}>{lang==="es"?"DÍAS":"DAYS"}</span>
-          </div>
-          <div style={{fontSize:11,color:"rgba(238,234,227,.3)",textAlign:"center",marginBottom:36,fontFamily:mono}}>
-            {celebData&&`${celebData.days}x/${lang==="es"?"semana":"week"} · ${celebData.name||celebData.id}`}
-          </div>
-          <div style={{display:"flex",gap:5,marginBottom:36,justifyContent:"center"}}>
-            {celebData&&Array.from({length:celebData.days}).map((_,i)=>(
-              <div key={i} style={{width:5,height:5,borderRadius:"50%",
-                background:selDays.length>i?"#BFA98A":"rgba(238,234,227,.12)",
-                transform:selDays.length>i?"scale(1.3)":"scale(1)",
-                transition:"all .3s cubic-bezier(.34,1.56,.64,1)"}}/>
-            ))}
-          </div>
-          <div style={{display:"flex",gap:7,width:"100%",maxWidth:390,marginBottom:24}}>
+        <div style={{position:"fixed",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"0 28px",background:"#07080a",zIndex:50,animation:"forjaFadeSlide .38s ease"}}>
+          <div style={{fontFamily:mono,fontSize:9,letterSpacing:4,color:"rgba(238,234,227,.3)",textTransform:"uppercase",marginBottom:14,display:"flex",alignItems:"center",gap:10}}><span style={{width:18,height:1,background:"rgba(238,234,227,.1)",display:"block"}}/>{lang==="es"?"HORARIO":"SCHEDULE"}<span style={{width:18,height:1,background:"rgba(238,234,227,.1)",display:"block"}}/></div>
+          <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:60,letterSpacing:2,lineHeight:.92,textAlign:"center",marginBottom:6}}>{lang==="es"?"QUÉ":"WHICH"}<br/><span style={{color:"#BFA98A"}}>{lang==="es"?"DÍAS":"DAYS"}</span></div>
+          <div style={{fontSize:11,color:"rgba(238,234,227,.3)",textAlign:"center",marginBottom:32,fontFamily:mono}}>{celebData&&`${celebData.days}x/${lang==="es"?"semana":"week"} . ${celebData.name||celebData.id}`}</div>
+          <div style={{display:"flex",gap:5,marginBottom:36}}>{celebData&&Array.from({length:celebData.days}).map((_,i)=>(<div key={i} style={{width:5,height:5,borderRadius:"50%",background:selDays.length>i?"#BFA98A":"rgba(238,234,227,.12)",transform:selDays.length>i?"scale(1.3)":"scale(1)",transition:"all .3s"}}/>))}</div>
+          <div style={{display:"flex",gap:7,width:"100%",maxWidth:390,marginBottom:20}}>
             {(lang==="es"?["L","M","X","J","V","S","D"]:["M","T","W","T","F","S","S"]).map((letter,i)=>{
               const full=lang==="es"?["LUN","MAR","MIÉ","JUE","VIE","SÁB","DOM"]:["MON","TUE","WED","THU","FRI","SAT","SUN"];
-              const sel=selDays.includes(i),dim=!sel&&selDays.length>=(celebData?.days||7);
+              const nd=celebData?celebData.days:7;
+              const sel=selDays.includes(i),dim=!sel&&selDays.length>=nd;
               return(
-              <div key={i} onClick={()=>{
-                if(sel)setSelDays(p=>p.filter(x=>x!==i));
-                else if(!dim)setSelDays(p=>[...p,i]);
-              }} style={{
-                flex:1,aspectRatio:"1",borderRadius:"50%",
-                display:"flex",flexDirection:"column",
-                alignItems:"center",justifyContent:"center",
-                cursor:dim?"default":"pointer",
-                border:`1.5px solid ${sel?"rgba(191,169,138,.55)":"rgba(238,234,227,.08)"}`,
-                background:sel?"rgba(191,169,138,.09)":"transparent",
-                transform:sel?"scale(1.1)":"scale(1)",
-                opacity:dim?0.2:1,
-                transition:"all .25s cubic-bezier(.34,1.56,.64,1)",
-                position:"relative",
-              }}>
-                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:15,letterSpacing:1,
-                  color:sel?"#EEEAE3":"rgba(238,234,227,.3)",lineHeight:1}}>{letter}</div>
-                <div style={{fontFamily:mono,fontSize:6.5,letterSpacing:1,
-                  color:sel?"#BFA98A":"rgba(238,234,227,.2)",marginTop:2}}>{full[i]}</div>
-                {sel&&<div style={{position:"absolute",top:-3,right:-3,width:13,height:13,
-                  borderRadius:"50%",background:"#BFA98A",
-                  display:"flex",alignItems:"center",justifyContent:"center"}}>
-                  <svg width="6" height="6" viewBox="0 0 6 6" fill="none">
-                    <path d="M1 3l1.5 1.5 2.5-2.5" stroke="#07080a" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </div>}
+              <div key={i} onClick={()=>{if(sel)setSelDays(p=>p.filter(x=>x!==i));else if(!dim)setSelDays(p=>[...p,i]);}} style={{flex:1,aspectRatio:"1",borderRadius:"50%",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:dim?"default":"pointer",border:`1.5px solid ${sel?"rgba(191,169,138,.55)":"rgba(238,234,227,.08)"}`,background:sel?"rgba(191,169,138,.09)":"transparent",transform:sel?"scale(1.1)":"scale(1)",opacity:dim?0.2:1,transition:"all .25s cubic-bezier(.34,1.56,.64,1)",position:"relative"}}>
+                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:15,color:sel?"#EEEAE3":"rgba(238,234,227,.3)",lineHeight:1}}>{letter}</div>
+                <div style={{fontFamily:mono,fontSize:6.5,color:sel?"#BFA98A":"rgba(238,234,227,.2)",marginTop:2}}>{full[i]}</div>
+                {sel&&<div style={{position:"absolute",top:-3,right:-3,width:13,height:13,borderRadius:"50%",background:"#BFA98A",display:"flex",alignItems:"center",justifyContent:"center"}}><svg width="6" height="6" viewBox="0 0 6 6" fill="none"><path d="M1 3l1.5 1.5 2.5-2.5" stroke="#07080a" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg></div>}
               </div>
-            )})}
+            );})}
           </div>
-          <div style={{fontSize:12,color:"rgba(238,234,227,.3)",textAlign:"center",
-            minHeight:18,marginBottom:32}}>
-            {selDays.length===celebData.days
-              ?(lang==="es"?"¡Listo. Tu semana está set.":"All set. Your week is ready.")
-              :(lang==="es"
-                ?`${celebData.days-selDays.length} día${celebData.days-selDays.length!==1?"s":""} más`
-                :`${celebData.days-selDays.length} more day${celebData.days-selDays.length!==1?"s":""}`)}
+          <div style={{fontSize:12,color:"rgba(238,234,227,.3)",textAlign:"center",minHeight:18,marginBottom:32}}>
+            {celebData&&(selDays.length===celebData.days?(lang==="es"?"¡Listo. Tu semana está set.":"All set."):(lang==="es"?`${celebData.days-selDays.length} día${celebData.days-selDays.length!==1?"s":""} más`:`${celebData.days-selDays.length} more day${celebData.days-selDays.length!==1?"s":""}`))}
           </div>
           <div style={{display:"flex",gap:8,width:"100%",maxWidth:390}}>
-            <button onClick={()=>setStep(25)} style={{flex:1,padding:"16px",borderRadius:14,
-              cursor:"pointer",background:"transparent",color:"rgba(238,234,227,.5)",
-              border:"1px solid rgba(238,234,227,.1)",fontFamily:mono,fontSize:11,letterSpacing:1}}>
-              {t.back}
-            </button>
-            <button disabled={!celebData||selDays.length!==celebData.days} onClick={()=>{
+            <button onClick={()=>setStep(25)} style={{flex:1,padding:"16px",borderRadius:14,cursor:"pointer",background:"transparent",color:"rgba(238,234,227,.5)",border:"1px solid rgba(238,234,227,.1)",fontFamily:mono,fontSize:11,letterSpacing:1}}>{t.back}</button>
+            <button disabled={!celebData||selDays.length!==celebData?.days} onClick={()=>{
               if(!celebData)return;
               const r=buildCelebRoutine(celebData,equipment,selDays);
-              const pf={lang,goal:"muscle",level:"int",days:celebData.days,
-                age,weight,height,units,selDays,gender,equipment,
-                mode:"celebrity",celebrity:celebData.id};
+              const pf={lang,goal:"muscle",level:"int",days:celebData.days,age,weight,height,units,selDays,gender,equipment,mode:"celebrity",celebrity:celebData.id};
               FStore.saveProfile(pf,r);sp(pf);sr(r);setStep(99);
-            }} style={{flex:2,padding:"16px",borderRadius:14,cursor:"pointer",
-              background:"#EEEAE3",color:"#07080a",border:"none",fontFamily:mono,
-              fontSize:11,fontWeight:500,letterSpacing:2,textTransform:"uppercase",
-              opacity:(!celebData||selDays.length!==celebData.days)?0.28:1,
-              transition:"all .18s",display:"flex",alignItems:"center",
-              justifyContent:"center",gap:9}}>
+            }} style={{flex:2,padding:"16px",borderRadius:14,cursor:"pointer",background:"#EEEAE3",color:"#07080a",border:"none",fontFamily:mono,fontSize:11,fontWeight:500,letterSpacing:2,textTransform:"uppercase",opacity:(!celebData||selDays.length!==celebData?.days)?0.28:1,transition:"all .18s",display:"flex",alignItems:"center",justifyContent:"center",gap:9}}>
               {lang==="es"?"FORJAR →":"FORGE IT →"}
             </button>
           </div>
         </div>
       )}
-        </div>
-      )}
+
     </div>
   );
 }
-
-
-// ── BODY HEATMAP 3D ─────────────────────────────────────────────────────────
-const ZONE_REC_HOURS = {
-  pecho:72, dorsal:72, trapecio:48, romboides:48, espalda_baja:72,
-  abdomen:48, oblicuos:48, hombro_izq:48, hombro_der:48,
-  bicep_izq:36, bicep_der:36, tricep_izq:36, tricep_der:36,
-  antebrazo_izq:24, antebrazo_der:24,
-  quad:72, gluteos:72, isquiotibiales:72, gemelos:36, tibia:24,
-};
-
-const FORJA_TO_ZONE = {
-  "pectoral mayor":"pecho","pectoral menor":"pecho","pecho":"pecho","pectorales":"pecho","chest":"pecho",
-  "dorsal":"dorsal","dorsales":"dorsal","lat":"dorsal","lats":"dorsal","latissimus":"dorsal","dorsal ancho":"dorsal",
-  "trapecio":"trapecio","trapezius":"trapecio","traps":"trapecio",
-  "romboides":"romboides","rhomboids":"romboides",
-  "lumbar":"espalda_baja","espalda baja":"espalda_baja","lower back":"espalda_baja","erector":"espalda_baja","erector espinal":"espalda_baja",
-  "abdomen":"abdomen","abs":"abdomen","abdominales":"abdomen","rectus abdominis":"abdomen","recto abdominal":"abdomen",
-  "oblicuos":"oblicuos","obliques":"oblicuos","oblicuo externo":"oblicuos",
-  "deltoides":"hombro_izq","deltoids":"hombro_izq","hombros":"hombro_izq","shoulders":"hombro_izq",
-  "deltoides anterior":"hombro_izq","deltoides lateral":"hombro_izq","deltoides posterior":"hombro_izq",
-  "bíceps":"bicep_izq","biceps":"bicep_izq","bícep":"bicep_izq","biceps braquial":"bicep_izq",
-  "tríceps":"tricep_izq","triceps":"tricep_izq","trícep":"tricep_izq","triceps braquial":"tricep_izq",
-  "antebrazo":"antebrazo_izq","forearm":"antebrazo_izq","antebrazos":"antebrazo_izq","braquiorradial":"antebrazo_izq",
-  "cuádriceps":"quad","quadriceps":"quad","quads":"quad","cuadriceps":"quad","muslo":"quad",
-  "vasto lateral":"quad","vasto medial":"quad","recto femoral":"quad",
-  "glúteo mayor":"gluteos","glúteos":"gluteos","glutes":"gluteos","gluteos":"gluteos","glúteo medio":"gluteos",
-  "isquiotibiales":"isquiotibiales","hamstrings":"isquiotibiales","femorales":"isquiotibiales","bíceps femoral":"isquiotibiales",
-  "gemelos":"gemelos","calves":"gemelos","gastrocnemio":"gemelos","sóleo":"gemelos",
-  "tibial anterior":"tibia","tibia":"tibia","shin":"tibia",
-  "aductores":"quad","aductors":"quad","cadera":"gluteos",
-};
-
-const MESH_ZONE_3D = {
-  "pectorales":"pecho","hombros":"hombro_izq",
-  "deltoides":"hombro_izq","acromio":"hombro_izq","deltoides 2":"hombro_der",
-  "biceps 1":"bicep_izq","antebrazo":"antebrazo_izq","felxor":"antebrazo_izq",
-  "bicep3":"bicep_der","antebrazos 2":"antebrazo_der",
-  "triceps":"tricep_izq","triceps brachi":"tricep_der",
-  "dorsales ancho":"dorsal","trapecio":"trapecio",
-  "romboides mayor":"romboides","romboides mayor.001":"romboides",
-  "serrato posterior inferior":"espalda_baja",
-  "4 abs inferiores":"abdomen","6 abs superiores":"abdomen","oblicuos":"oblicuos",
-  "muslos":"quad","sartorius":"quad","isquiotibiales":"isquiotibiales","gluteos":"gluteos",
-  "gemelos":"gemelos","tibialis anterior":"tibia","tibia":"tibia",
-};
-
-const ZONE_LABELS_3D = {
-  pecho:"Pecho",dorsal:"Dorsal",trapecio:"Trapecio",romboides:"Romboides",
-  espalda_baja:"Espalda Baja",abdomen:"Abdomen",oblicuos:"Oblicuos",
-  hombro_izq:"Hombro Izq",hombro_der:"Hombro Der",
-  bicep_izq:"Bícep Izq",bicep_der:"Bícep Der",
-  tricep_izq:"Trícep Izq",tricep_der:"Trícep Der",
-  antebrazo_izq:"Antebrazo Izq",antebrazo_der:"Antebrazo Der",
-  quad:"Cuádriceps",gluteos:"Glúteos",isquiotibiales:"Isquiotibiales",
-  gemelos:"Gemelos",tibia:"Tibial Ant.",
-};
-
-const ZONE_COLOR_VALS = {
-  fresh:[0.80,0.06,0.06], warm:[0.78,0.30,0.02],
-  yel:[0.25,0.55,0.06],   rec:[0.12,0.12,0.16], base:[0.10,0.10,0.13],
-};
+}
 
 function getZoneState(zk, st) {
   const ts = st[zk]; if(!ts) return "rec";
@@ -4162,7 +3702,7 @@ function BodyHeatmapTab({logs, routine, lang, profile}){
     resize();
     const ro=new ResizeObserver(resize); ro.observe(wrapRef.current);
 
-    // ── Horizontal-only orbit ────────────────────────────────────────
+    // -- Horizontal-only orbit ----------------------------------------
     let drag=false,lx=0,rotY=0,rotOffset=0,auto=true,mom=0,ldx=0;
     function applyRot(){ if(modelRef.current) modelRef.current.rotation.y=rotY; }
     const el=cvsRef.current;
@@ -4268,7 +3808,7 @@ function BodyHeatmapTab({logs, routine, lang, profile}){
     return es?"descansado — listo ✓":"rested — ready ✓";
   }
 
-  // ── Stats data (moved from StatsScreen) ─────────────────────────────
+  // -- Stats data (moved from StatsScreen) -----------------------------
   const prs=Object.entries(logs).map(([id,entries])=>{
     if(!entries||!entries.length) return null;
     const best=entries.reduce((b,e)=>((e.rm||0)>(b.rm||0)?e:b),entries[0]);
@@ -4308,7 +3848,7 @@ function BodyHeatmapTab({logs, routine, lang, profile}){
 
   return e("div",{style:{paddingBottom:32}},
 
-    // ── 3D Canvas ──────────────────────────────────────────────────────
+    // -- 3D Canvas ------------------------------------------------------
     e("div",{ref:wrapRef,style:{position:"relative",height:480,touchAction:"none",marginBottom:0},onClick:handleClick},
       e("canvas",{ref:cvsRef,style:{display:"block",width:"100%",height:"100%"}}),
       e("div",{style:{position:"absolute",inset:0,background:"radial-gradient(ellipse 80% 90% at 50% 50%, transparent 40%, rgba(10,10,13,0.65) 100%)",pointerEvents:"none"}}),
@@ -4321,11 +3861,11 @@ function BodyHeatmapTab({logs, routine, lang, profile}){
       ),
       // Zone label overlay
       activeZone&&e("div",{style:{position:"absolute",bottom:10,left:"50%",transform:"translateX(-50%)",background:"rgba(10,10,13,0.85)",backdropFilter:"blur(12px)",border:"1px solid "+C.bd2,borderRadius:30,padding:"6px 16px",fontSize:10,fontFamily:mono,color:C.acc,letterSpacing:"0.08em",pointerEvents:"none",whiteSpace:"nowrap"}},
-        (ZONE_LABELS_3D[activeZone]||activeZone).toUpperCase()+" · "+getStatusText(activeZone)
+        (ZONE_LABELS_3D[activeZone]||activeZone).toUpperCase()+" . "+getStatusText(activeZone)
       )
     ),
 
-    // ── Legend ─────────────────────────────────────────────────────────
+    // -- Legend ---------------------------------------------------------
     e("div",{style:{display:"flex",gap:10,padding:"8px 0 14px",flexWrap:"wrap",borderBottom:"1px solid "+C.bd}},
       [{c:"#e53535",g:true,l:es?"activo 0–33%":"active 0–33%"},{c:"#ff7a1a",g:true,l:"33–66%"},{c:"#7ab82a",g:false,l:"66–99%"},{c:"#2a2a3a",g:false,l:es?"listo":"ready"}]
       .map((x,i)=>e("div",{key:i,style:{display:"flex",alignItems:"center",gap:4}},
@@ -4334,7 +3874,7 @@ function BodyHeatmapTab({logs, routine, lang, profile}){
       ))
     ),
 
-    // ── PRs section ────────────────────────────────────────────────────
+    // -- PRs section ----------------------------------------------------
     prs.length>0&&e("div",{style:{marginTop:16}},
       e("div",{style:{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:3,marginBottom:12,textTransform:"uppercase"}},
         "🏆 "+(es?"MIS PRs":"MY PRs")
@@ -4391,7 +3931,7 @@ function BodyHeatmapTab({logs, routine, lang, profile}){
       )
     ),
 
-    // ── Weekly stats ───────────────────────────────────────────────────
+    // -- Weekly stats ---------------------------------------------------
     e("div",{style:{display:"flex",gap:8,marginTop:14,marginBottom:14}},
       [{l:es?"SEMANA":"WEEK",v:Math.round(weekVol)+"kg",sub:weekSets+" sets"},
        {l:es?"RACHA":"STREAK",v:streak,sub:streak>=3?"🔥":"días"},
@@ -4403,7 +3943,7 @@ function BodyHeatmapTab({logs, routine, lang, profile}){
       ))
     ),
 
-    // ── Activity grid ──────────────────────────────────────────────────
+    // -- Activity grid --------------------------------------------------
     e("div",{style:{background:C.bg3,border:"1px solid "+C.bd,borderRadius:12,padding:"12px 12px 10px",marginTop:4}},
       e("div",{style:{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:10,textTransform:"uppercase"}},
         es?"ACTIVIDAD ÚLTIMAS 10 SEMANAS":"LAST 10 WEEKS"
@@ -4619,7 +4159,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     camera.position.set(0,0.15,6.4);
     camera.lookAt(0,-0.5,0);
 
-    // ── Paleta Gargantua film-accurate ───────────────────────────────
+    // -- Paleta Gargantua film-accurate -------------------------------
     function diskColor(norm,doppler){
       let r,g,b;
       if(norm<0.05){r=1.00;g=0.97;b=0.90;}
@@ -4637,7 +4177,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     const G=1.10;
     const BH_Y=-0.62;
 
-    // ── DISCO PRINCIPAL ───────────────────────────────────────────────
+    // -- DISCO PRINCIPAL -----------------------------------------------
     const DISC_N=80000;
     const dPos=new Float32Array(DISC_N*3);
     const dCol=new Float32Array(DISC_N*3);
@@ -4666,7 +4206,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       opacity:0.92,sizeAttenuation:true,depthWrite:false
     }));pts.renderOrder=1;scene.add(pts);}
 
-    // ── PHOTON RING ───────────────────────────────────────────────────
+    // -- PHOTON RING ---------------------------------------------------
     {
       const N=6000,p=new Float32Array(N*3),c=new Float32Array(N*3);
       for(let i=0;i<N;i++){
@@ -4686,7 +4226,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       }));pts.renderOrder=1;scene.add(pts);}
     }
 
-    // ── ARCO SUPERIOR (lente gravitacional) ───────────────────────────
+    // -- ARCO SUPERIOR (lente gravitacional) ---------------------------
     {
       const N=30000,p=new Float32Array(N*3),c=new Float32Array(N*3);
       for(let i=0;i<N;i++){
@@ -4714,7 +4254,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       }));pts.renderOrder=1;scene.add(pts);}
     }
 
-    // ── ARCO INFERIOR ─────────────────────────────────────────────────
+    // -- ARCO INFERIOR -------------------------------------------------
     {
       const N=8000,p=new Float32Array(N*3),c=new Float32Array(N*3);
       for(let i=0;i<N;i++){
@@ -4737,7 +4277,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       }));pts.renderOrder=1;scene.add(pts);}
     }
 
-    // ── ESFERA NEGRA — tapa el disco pero el mono se agrega después ───
+    // -- ESFERA NEGRA — tapa el disco pero el mono se agrega después ---
     // renderOrder negativo para que se dibuje antes que las partículas
     const sphere=new THREE.Mesh(
       new THREE.SphereGeometry(G*0.94,64,64),
@@ -4747,7 +4287,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     sphere.renderOrder=0;
     scene.add(sphere);
 
-    // ── FIGURA PLATEADA ───────────────────────────────────────────────
+    // -- FIGURA PLATEADA -----------------------------------------------
     let figPts=null,T=0,animId=null;
 
     function loadImg(url,fb){
