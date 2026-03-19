@@ -2483,52 +2483,146 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
 
                 {/* -- VOLUMEN SEMANAL POR MÚSCULO -- */}
                 {(()=>{
-                  // Calcular series por grupo muscular esta semana
-                  const muscleMap={
-                    "bench press":"Pecho","incline bench press":"Pecho","dumbbell bench press":"Pecho",
-                    "incline dumbbell press":"Pecho","cable fly":"Pecho","dumbbell flyes":"Pecho",
-                    "dips":"Pecho","push up":"Pecho","machine chest press":"Pecho",
-                    "pull up":"Espalda","chin up":"Espalda","barbell row":"Espalda","pendlay row":"Espalda",
-                    "dumbbell row":"Espalda","cable row":"Espalda","lat pulldown":"Espalda","machine pulldown":"Espalda",
-                    "overhead press":"Hombros","dumbbell shoulder press":"Hombros","lateral raise":"Hombros",
-                    "face pull":"Hombros","reverse fly":"Hombros",
-                    "barbell curl":"Bíceps","dumbbell curl":"Bíceps","hammer curl":"Bíceps","preacher curl":"Bíceps",
-                    "skull crusher":"Tríceps","tricep pushdown":"Tríceps","overhead tricep extension":"Tríceps",
-                    "barbell squat":"Piernas","front squat":"Piernas","leg press":"Piernas","leg extension":"Piernas",
-                    "leg curl":"Piernas","romanian deadlift":"Piernas","bulgarian split squat":"Piernas",
-                    "deadlift":"Piernas","hip thrust":"Glúteos","calf raise":"Gemelos",
+                  // Map zone → muscle group label
+                  const zoneToGroup={
+                    pecho:lang==="es"?"Pecho":"Chest",
+                    dorsal:lang==="es"?"Espalda":"Back",
+                    trapecio:lang==="es"?"Espalda":"Back",
+                    romboides:lang==="es"?"Espalda":"Back",
+                    espalda_baja:lang==="es"?"Espalda":"Back",
+                    hombro_izq:lang==="es"?"Hombros":"Shoulders",
+                    hombro_der:lang==="es"?"Hombros":"Shoulders",
+                    bicep_izq:lang==="es"?"Bíceps":"Biceps",
+                    bicep_der:lang==="es"?"Bíceps":"Biceps",
+                    tricep_izq:lang==="es"?"Tríceps":"Triceps",
+                    tricep_der:lang==="es"?"Tríceps":"Triceps",
+                    antebrazo_izq:lang==="es"?"Antebrazos":"Forearms",
+                    antebrazo_der:lang==="es"?"Antebrazos":"Forearms",
+                    quad:lang==="es"?"Cuádriceps":"Quads",
+                    isquiotibiales:lang==="es"?"Isquios":"Hamstrings",
+                    gluteos:lang==="es"?"Glúteos":"Glutes",
+                    gemelos:lang==="es"?"Gemelos":"Calves",
+                    abdomen:lang==="es"?"Abdomen":"Core",
+                    oblicuos:lang==="es"?"Oblicuos":"Obliques",
                   };
+                  // Color per group
+                  const groupColor={
+                    [lang==="es"?"Pecho":"Chest"]:"#6a8fc0",
+                    [lang==="es"?"Espalda":"Back"]:"#5faa88",
+                    [lang==="es"?"Hombros":"Shoulders"]:"#c0a870",
+                    [lang==="es"?"Bíceps":"Biceps"]:"#8878c0",
+                    [lang==="es"?"Tríceps":"Triceps"]:"#c08878",
+                    [lang==="es"?"Cuádriceps":"Quads"]:"#78b878",
+                    [lang==="es"?"Isquios":"Hamstrings"]:"#a8c060",
+                    [lang==="es"?"Glúteos":"Glutes"]:"#d07050",
+                    [lang==="es"?"Abdomen":"Core"]:"#a0a0c0",
+                    [lang==="es"?"Gemelos":"Calves"]:"#80c0a8",
+                  };
+                  // Science-based volume landmarks (sets/week)
+                  const mev={  // Minimum Effective Volume
+                    [lang==="es"?"Pecho":"Chest"]:8,
+                    [lang==="es"?"Espalda":"Back"]:8,
+                    [lang==="es"?"Hombros":"Shoulders"]:6,
+                    [lang==="es"?"Bíceps":"Biceps"]:6,
+                    [lang==="es"?"Tríceps":"Triceps"]:6,
+                    [lang==="es"?"Cuádriceps":"Quads"]:8,
+                    [lang==="es"?"Isquios":"Hamstrings"]:6,
+                    [lang==="es"?"Glúteos":"Glutes"]:4,
+                    [lang==="es"?"Abdomen":"Core"]:4,
+                    [lang==="es"?"Gemelos":"Calves"]:4,
+                  };
+                  const mrv={  // Maximum Recoverable Volume
+                    [lang==="es"?"Pecho":"Chest"]:22,
+                    [lang==="es"?"Espalda":"Back"]:25,
+                    [lang==="es"?"Hombros":"Shoulders"]:20,
+                    [lang==="es"?"Bíceps":"Biceps"]:20,
+                    [lang==="es"?"Tríceps":"Triceps"]:18,
+                    [lang==="es"?"Cuádriceps":"Quads"]:20,
+                    [lang==="es"?"Isquios":"Hamstrings"]:16,
+                    [lang==="es"?"Glúteos":"Glutes"]:16,
+                    [lang==="es"?"Abdomen":"Core"]:16,
+                    [lang==="es"?"Gemelos":"Calves"]:16,
+                  };
+
                   const vol={};
-                  // Iterar todos los días de la semana
-                  if(routine)routine.forEach((day,di)=>{
-                    if(!day)return;
+                  if(routine) routine.forEach((day,di)=>{
+                    if(!day) return;
                     day.ex.forEach(ex=>{
-                      if(done[`${di}-${ex.id}`]){
-                        const muscle=muscleMap[ex.e.toLowerCase()]||(lang==="es"?"Otro":"Other");
-                        vol[muscle]=(vol[muscle]||0)+ex.s;
-                      }
+                      if(!done[`${di}-${ex.id}`]) return;
+                      const nameLow = ex.e.toLowerCase().trim();
+                      // Resolve to english key via ES_TO_META
+                      const engKey = ES_TO_META[nameLow] || nameLow;
+                      // Get muscle data
+                      const md = EXERCISE_MUSCLE_MAP[engKey] || EXERCISE_MUSCLE_MAP[nameLow];
+                      if(!md) return;
+                      // Primary muscles get full sets, secondary get 0.5
+                      const seen = new Set();
+                      (md.p||[]).forEach(muscle=>{
+                        const zone = FORJA_TO_ZONE[muscle.toLowerCase()];
+                        if(!zone) return;
+                        const group = zoneToGroup[zone];
+                        if(!group || seen.has(group)) return;
+                        seen.add(group);
+                        vol[group] = (vol[group]||0) + (ex.s||3);
+                      });
+                      (md.s||[]).forEach(muscle=>{
+                        const zone = FORJA_TO_ZONE[muscle.toLowerCase()];
+                        if(!zone) return;
+                        const group = zoneToGroup[zone];
+                        if(!group || seen.has(group)) return;
+                        seen.add(group);
+                        vol[group] = (vol[group]||0) + Math.ceil((ex.s||3)*0.5);
+                      });
                     });
                   });
+
                   const entries=Object.entries(vol).sort((a,b)=>b[1]-a[1]);
-                  if(!entries.length)return null;
-                  const maxV=entries[0][1];
+                  if(!entries.length) return null;
+                  const cap = lang==="es"?"series":"sets";
                   return(
                     <div style={{marginTop:14,padding:"14px 16px",background:C.card,borderRadius:12,border:`1px solid ${C.borderL}`}}>
-                      <div style={{fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>
-                        {lang==="es"?"// VOLUMEN SEMANAL":"// WEEKLY VOLUME"}
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:12}}>
+                        <div style={{fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:2}}>
+                          {lang==="es"?"// VOLUMEN SEMANAL":"// WEEKLY VOLUME"}
+                        </div>
+                        <div style={{fontSize:8,fontFamily:mono,color:C.tx3,opacity:.5}}>
+                          {lang==="es"?"primario · ½ secundario":"primary · ½ secondary"}
+                        </div>
                       </div>
-                      <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                        {entries.map(([m,s])=>(
-                          <div key={m} style={{display:"flex",alignItems:"center",gap:10}}>
-                            <div style={{fontSize:10,fontFamily:mono,color:C.tx2,width:60,flexShrink:0}}>{m}</div>
-                            <div style={{flex:1,height:6,background:C.borderL,borderRadius:3,overflow:"hidden"}}>
-                              <div style={{height:"100%",width:`${(s/maxV)*100}%`,
-                                background:s>=10?C.green:s>=6?C.blue:C.yellow,
-                                borderRadius:3,transition:"width 0.5s"}}/>
+                      <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                        {entries.map(([m,s])=>{
+                          const color = groupColor[m] || C.tx3;
+                          const target = mev[m] || 8;
+                          const max = mrv[m] || 20;
+                          const pct = Math.min(100, (s/max)*100);
+                          const atMev = s >= target;
+                          const atMrv = s >= max;
+                          return(
+                          <div key={m}>
+                            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+                              <div style={{fontSize:10,fontFamily:mono,color,width:76,flexShrink:0,letterSpacing:.3}}>{m}</div>
+                              <div style={{flex:1,height:5,background:C.borderL,borderRadius:3,overflow:"hidden"}}>
+                                <div style={{height:"100%",
+                                  width:`${pct}%`,
+                                  background:atMrv?"#e05555":atMev?color:"rgba(255,255,255,.2)",
+                                  borderRadius:3,transition:"width .5s ease"}}/>
+                              </div>
+                              <div style={{fontSize:10,fontFamily:mono,color:atMrv?"#e05555":atMev?color:C.tx3,
+                                width:32,textAlign:"right",letterSpacing:.5}}>
+                                {s}<span style={{fontSize:7,opacity:.5}}>{cap[0]}</span>
+                              </div>
                             </div>
-                            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,width:28,textAlign:"right"}}>{s}s</div>
+                            <div style={{display:"flex",justifyContent:"space-between",paddingLeft:84}}>
+                              <div style={{fontSize:7,fontFamily:mono,color:C.tx3,opacity:.5,letterSpacing:.5}}>
+                                MEV {target}{cap[0]} · MRV {max}{cap[0]}
+                              </div>
+                              <div style={{fontSize:7,fontFamily:mono,letterSpacing:.5,
+                                color:atMrv?"#e05555":atMev?color:"rgba(255,255,255,.2)"}}>
+                                {atMrv?(lang==="es"?"⚠ máx":"⚠ max"):atMev?"✓":(lang==="es"?"↑ acumular":"↑ add more")}
+                              </div>
+                            </div>
                           </div>
-                        ))}
+                        );})}
                       </div>
                     </div>
                   );
