@@ -461,7 +461,64 @@ function exMetaKey(name){
   return ES_TO_META[low] || low;
 }
 </script>
-<script type="text/babel">
+<script type="text/babel">const MESH_ZONE_3D={
+  "pectorales":"pecho","hombros":"pecho",
+  "deltoides":"hombro_izq","acromio":"hombro_izq","deltoides 2":"hombro_der",
+  "biceps 1":"bicep_izq","antebrazo":"antebrazo_izq","felxor":"antebrazo_izq",
+  "bicep3":"bicep_der","antebrazos 2":"antebrazo_der",
+  "triceps":"tricep_izq","triceps brachi":"tricep_der",
+  "dorsales ancho":"dorsal","trapecio":"trapecio",
+  "romboides mayor":"romboides","romboides mayor.001":"romboides",
+  "serrato posterior inferior":"espalda_baja",
+  "4 abs inferiores":"abdomen","6 abs superiores":"abdomen","oblicuos":"oblicuos",
+  "muslos":"quad","sartorius":"quad","isquiotibiales":"isquiotibiales","gluteos":"gluteos",
+  "gemelos":"gemelos","tibialis anterior":"tibia","tibia":"tibia",
+};
+const ZONE_COLOR_VALS={
+  fresh:[0.80,0.06,0.06], warm:[0.78,0.30,0.02],
+  yel:[0.25,0.55,0.06], rec:[0.12,0.12,0.16], base:[0.10,0.10,0.13],
+};
+const ZONE_REC_HOURS={
+  pecho:72,dorsal:72,trapecio:48,romboides:48,espalda_baja:72,
+  abdomen:48,oblicuos:48,hombro_izq:48,hombro_der:48,
+  bicep_izq:36,bicep_der:36,tricep_izq:36,tricep_der:36,
+  antebrazo_izq:36,antebrazo_der:36,
+  quad:72,gluteos:72,isquiotibiales:72,gemelos:48,tibia:48,
+};
+const ZONE_LABELS_3D={
+  pecho:"Pecho",dorsal:"Dorsal",trapecio:"Trapecio",romboides:"Romboides",
+  espalda_baja:"Espalda Baja",abdomen:"Abdomen",oblicuos:"Oblicuos",
+  hombro_izq:"Hombro Izq",hombro_der:"Hombro Der",
+  bicep_izq:"Bícep Izq",bicep_der:"Bícep Der",
+  tricep_izq:"Trícep Izq",tricep_der:"Trícep Der",
+  antebrazo_izq:"Antebrazo Izq",antebrazo_der:"Antebrazo Der",
+  quad:"Cuádriceps",gluteos:"Glúteos",isquiotibiales:"Isquiotibiales",
+  gemelos:"Gemelos",tibia:"Tibial Ant.",
+};
+const FORJA_TO_ZONE={
+  "pectoral mayor":"pecho","pectoral menor":"pecho","pecho":"pecho","pectorales":"pecho","chest":"pecho",
+  "dorsal":"dorsal","dorsales":"dorsal","lat":"dorsal","lats":"dorsal","latissimus":"dorsal","dorsal ancho":"dorsal",
+  "trapecio":"trapecio","trapezius":"trapecio","traps":"trapecio",
+  "romboides":"romboides","rhomboids":"romboides",
+  "lumbar":"espalda_baja","espalda baja":"espalda_baja","lower back":"espalda_baja","erector":"espalda_baja","erector espinal":"espalda_baja",
+  "abdomen":"abdomen","abs":"abdomen","abdominales":"abdomen","rectus abdominis":"abdomen","recto abdominal":"abdomen",
+  "oblicuos":"oblicuos","obliques":"oblicuos","oblicuo externo":"oblicuos",
+  "deltoides":"hombro_izq","deltoids":"hombro_izq","hombros":"hombro_izq","shoulders":"hombro_izq",
+  "deltoides anterior":"hombro_izq","deltoides lateral":"hombro_izq","deltoides posterior":"hombro_izq",
+  "manguito rotador":"hombro_izq",
+  "bíceps":"bicep_izq","biceps":"bicep_izq","bícep":"bicep_izq","biceps braquial":"bicep_izq",
+  "tríceps":"tricep_izq","triceps":"tricep_izq","trícep":"tricep_izq","triceps braquial":"tricep_izq",
+  "antebrazo":"antebrazo_izq","forearm":"antebrazo_izq","antebrazos":"antebrazo_izq","braquiorradial":"antebrazo_izq",
+  "cuádriceps":"quad","quadriceps":"quad","quads":"quad","cuadriceps":"quad","muslo":"quad",
+  "vasto lateral":"quad","vasto medial":"quad","recto femoral":"quad",
+  "glúteo mayor":"gluteos","glúteos":"gluteos","glutes":"gluteos","gluteos":"gluteos","glúteo medio":"gluteos",
+  "isquiotibiales":"isquiotibiales","hamstrings":"isquiotibiales","femorales":"isquiotibiales","bíceps femoral":"isquiotibiales",
+  "gemelos":"gemelos","calves":"gemelos","gastrocnemio":"gemelos","sóleo":"gemelos",
+  "tibial anterior":"tibia","tibia":"tibia","shin":"tibia",
+  "aductores":"quad","aductors":"quad","cadera":"gluteos",
+};
+
+
 const {useState,useEffect,useCallback,useRef}=React;
 
 const C={
