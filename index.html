@@ -3718,7 +3718,7 @@ function BodyHeatmapTab({logs, routine, lang, profile}){
         const box=new THREE.Box3().setFromObject(group);
         const center=box.getCenter(new THREE.Vector3()), size=box.getSize(new THREE.Vector3());
         group.position.sub(center);
-        group.position.y -= 4.0;
+        group.position.y -= 5.2;
         group.scale.setScalar(17/Math.max(size.x,size.y,size.z));
         scene.add(group); modelRef.current=group;
         refreshMats(stRef.current);
