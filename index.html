@@ -2093,7 +2093,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
       </div>
 
       <div style={{display:"flex",borderBottom:"1px solid rgba(255,255,255,0.05)",padding:"0 18px",background:"rgba(8,10,14,0.95)"}}>
-        {[{id:"train",l:t.train},{id:"stats",l:t.stats}].map(tb=>(
+        {[{id:"train",l:t.train},{id:"body",l:lang==="es"?"CUERPO":"BODY"},{id:"stats",l:t.stats}].map(tb=>(
           <button key={tb.id} onClick={()=>{setTab(tb.id);setAddEx(false);setAddF(false);}}
             style={{padding:"13px 0",marginRight:22,border:"none",
               borderBottom:`2px solid ${tab===tb.id?C.tx:"transparent"}`,background:"transparent",
@@ -2365,6 +2365,10 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
               </div>
             )}
           </div>
+        )}
+
+        {tab==="body"&&(
+          <BodyHeatmapTab logs={logs} routine={routine} lang={lang}/>
         )}
 
         {tab==="stats"&&(
@@ -3468,429 +3472,451 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
 }
 
 
+// ── BODY HEATMAP 3D ─────────────────────────────────────────────────────────
+
+const ZONE_REC_HOURS = {
+  pecho:72, dorsal:72, trapecio:48, romboides:48, espalda_baja:72,
+  abdomen:48, oblicuos:48, hombro_izq:48, hombro_der:48,
+  bicep_izq:36, bicep_der:36, tricep_izq:36, tricep_der:36,
+  antebrazo_izq:24, antebrazo_der:24,
+  quad:72, gluteos:72, isquiotibiales:72, gemelos:36, tibia:24,
+};
+
+const FORJA_TO_ZONE = {
+  "pectoral mayor":"pecho","pectoral menor":"pecho","pecho":"pecho","pectorales":"pecho","chest":"pecho",
+  "dorsal":"dorsal","dorsales":"dorsal","lat":"dorsal","lats":"dorsal","latissimus":"dorsal","dorsal ancho":"dorsal",
+  "trapecio":"trapecio","trapezius":"trapecio","traps":"trapecio",
+  "romboides":"romboides","rhomboids":"romboides",
+  "lumbar":"espalda_baja","espalda baja":"espalda_baja","lower back":"espalda_baja","erector":"espalda_baja","erector espinal":"espalda_baja",
+  "abdomen":"abdomen","abs":"abdomen","abdominales":"abdomen","rectus abdominis":"abdomen","recto abdominal":"abdomen",
+  "oblicuos":"oblicuos","obliques":"oblicuos","oblicuo externo":"oblicuos",
+  "deltoides":"hombro_izq","deltoids":"hombro_izq","hombros":"hombro_izq","shoulders":"hombro_izq",
+  "deltoides anterior":"hombro_izq","deltoides lateral":"hombro_izq","deltoides posterior":"hombro_izq",
+  "bíceps":"bicep_izq","biceps":"bicep_izq","bícep":"bicep_izq","biceps braquial":"bicep_izq",
+  "tríceps":"tricep_izq","triceps":"tricep_izq","trícep":"tricep_izq","triceps braquial":"tricep_izq",
+  "antebrazo":"antebrazo_izq","forearm":"antebrazo_izq","antebrazos":"antebrazo_izq","braquiorradial":"antebrazo_izq",
+  "cuádriceps":"quad","quadriceps":"quad","quads":"quad","cuadriceps":"quad","muslo":"quad",
+  "vasto lateral":"quad","vasto medial":"quad","recto femoral":"quad",
+  "glúteo mayor":"gluteos","glúteos":"gluteos","glutes":"gluteos","gluteos":"gluteos","glúteo medio":"gluteos",
+  "isquiotibiales":"isquiotibiales","hamstrings":"isquiotibiales","femorales":"isquiotibiales","bíceps femoral":"isquiotibiales",
+  "gemelos":"gemelos","calves":"gemelos","gastrocnemio":"gemelos","sóleo":"gemelos",
+  "tibial anterior":"tibia","tibia":"tibia","shin":"tibia",
+  "aductores":"quad","aductors":"quad","cadera":"gluteos",
+};
+
+const MESH_ZONE_3D = {
+  "pectorales":"pecho","hombros":"pecho",
+  "deltoides":"hombro_izq","acromio":"hombro_izq","deltoides 2":"hombro_der",
+  "biceps 1":"bicep_izq","antebrazo":"antebrazo_izq","felxor":"antebrazo_izq",
+  "bicep3":"bicep_der","antebrazos 2":"antebrazo_der",
+  "triceps":"tricep_izq","triceps brachi":"tricep_der",
+  "dorsales ancho":"dorsal","trapecio":"trapecio",
+  "romboides mayor":"romboides","romboides mayor.001":"romboides",
+  "serrato posterior inferior":"espalda_baja",
+  "4 abs inferiores":"abdomen","6 abs superiores":"abdomen","oblicuos":"oblicuos",
+  "muslos":"quad","sartorius":"quad","isquiotibiales":"isquiotibiales","gluteos":"gluteos",
+  "gemelos":"gemelos","tibialis anterior":"tibia","tibia":"tibia",
+};
+
+const ZONE_LABELS_3D = {
+  pecho:"Pecho",dorsal:"Dorsal",trapecio:"Trapecio",romboides:"Romboides",
+  espalda_baja:"Espalda Baja",abdomen:"Abdomen",oblicuos:"Oblicuos",
+  hombro_izq:"Hombro Izq",hombro_der:"Hombro Der",
+  bicep_izq:"Bícep Izq",bicep_der:"Bícep Der",
+  tricep_izq:"Trícep Izq",tricep_der:"Trícep Der",
+  antebrazo_izq:"Antebrazo Izq",antebrazo_der:"Antebrazo Der",
+  quad:"Cuádriceps",gluteos:"Glúteos",isquiotibiales:"Isquiotibiales",
+  gemelos:"Gemelos",tibia:"Tibial Ant.",
+};
+
+// Colors as plain arrays — NO THREE references at module level
+const ZONE_COLOR_VALS = {
+  fresh:[0.80,0.06,0.06], warm:[0.78,0.30,0.02],
+  yel:[0.25,0.55,0.06],   rec:[0.12,0.12,0.16], base:[0.10,0.10,0.13],
+};
+
+function getZoneState(zk, st) {
+  const ts = st[zk];
+  if(!ts) return "rec";
+  const h = (Date.now()-ts)/3600000;
+  const rec = ZONE_REC_HOURS[zk]||72;
+  if(h < rec*0.33) return "fresh";
+  if(h < rec*0.66) return "warm";
+  if(h < rec) return "yel";
+  return "rec";
+}
+
+function getDotColor(zk, st) {
+  const s = getZoneState(zk, st);
+  return s==="fresh"?"#e53535":s==="warm"?"#ff7a1a":s==="yel"?"#7ab82a":"#2a2a3a";
+}
+
+function getPct(zk, st) {
+  if(!st[zk]) return 100;
+  return Math.min(100,Math.round(((Date.now()-st[zk])/3600000)/(ZONE_REC_HOURS[zk]||72)*100));
+}
+
+function logsToZoneTimestamps(logs, routine) {
+  const zoneTs = {};
+  Object.entries(logs||{}).forEach(([exId, entries])=>{
+    if(!entries||!entries.length) return;
+    let exName = exId;
+    if(routine) routine.forEach(d=>{
+      if(!d||!d.ex) return;
+      d.ex.forEach(e=>{ if(e.id===exId) exName=e.e; });
+    });
+    const muscleData = typeof EXERCISE_MUSCLE_MAP!=="undefined"
+      ? (EXERCISE_MUSCLE_MAP[exName.toLowerCase()]||null) : null;
+    if(!muscleData) return;
+    const muscles = [...(muscleData.p||[]),...(muscleData.s||[])];
+    muscles.forEach(m=>{
+      const zk = FORJA_TO_ZONE[m.toLowerCase()];
+      if(!zk) return;
+      entries.forEach(e=>{
+        if(!e.d) return;
+        const ts = new Date(e.d+"T12:00:00").getTime();
+        if(!zoneTs[zk]||ts>zoneTs[zk]) zoneTs[zk]=ts;
+      });
+      // Mirror bilateral pairs
+      const pairs = [["hombro_izq","hombro_der"],["bicep_izq","bicep_der"],
+                     ["tricep_izq","tricep_der"],["antebrazo_izq","antebrazo_der"]];
+      pairs.forEach(([a,b])=>{
+        if(zk===a&&(!zoneTs[b]||zoneTs[a]>zoneTs[b])) zoneTs[b]=zoneTs[a];
+        if(zk===b&&(!zoneTs[a]||zoneTs[b]>zoneTs[a])) zoneTs[a]=zoneTs[b];
+      });
+    });
+  });
+  return zoneTs;
+}
+
+// Legacy stub — real heatmap is in BodyHeatmapTab
 function MuscleHeatmap({muscleVol,lang}){
-  const cRef=React.useRef(null);
-  const renRef=React.useRef(null);
-  const mdlRef=React.useRef(null);
-  const frameRef=React.useRef(null);
-  const[status,setStatus]=React.useState("CARGANDO...");
-  const mono="'SF Mono','Courier New',monospace";
-  const es=lang==="es";
+  return React.createElement("div",{
+    style:{color:"rgba(255,255,255,0.25)",fontSize:9,
+           fontFamily:"'SF Mono','Courier New',monospace",
+           textAlign:"center",padding:"14px 0"}
+  }, lang==="es"?"→ Ver pestaña CUERPO":"→ See BODY tab");
+}
 
-  // Smooth gaussian heatmap using world-space normalized coordinates
-  function applyHeatmap(obj, muscleVol){
-    const totalVol=Object.values(muscleVol||{}).reduce((a,b)=>a+b,0);
-    if(!muscleVol||totalVol===0){
-      obj.traverse(function(c){
-        if(!c.isMesh) return;
-        if(c._isBack||c._isBackBody){
-          if(c._isBack)c.visible=false;
-        } else {
-          // Restore FrontSide chrome
-          var envM2=obj._envMap||null;
-          var rm=new THREE.MeshStandardMaterial({color:0xffffff,metalness:1.0,roughness:0.03,envMapIntensity:2.5,side:THREE.FrontSide});
-          if(envM2)rm.envMap=envM2; c.material=rm; c.renderOrder=0;
-          // Restore BackBody chrome
-          if(c._backBodyMesh){
-            var rb=new THREE.MeshStandardMaterial({color:0xffffff,metalness:1.0,roughness:0.03,envMapIntensity:2.5,side:THREE.BackSide});
-            if(envM2)rb.envMap=envM2; c._backBodyMesh.material=rb; c._backBodyMesh.visible=true;
-          }
-        }
-      });
-      return;
-    }
-    const maxV=Math.max(...Object.values(muscleVol),1);
-    const mv={};
-    Object.keys(muscleVol).forEach(k=>{ mv[k]=Math.min(1,(muscleVol[k]||0)/maxV); });
-    const THR=0.08;
-    const vt=k=>(mv[k]||0)>=THR?mv[k]:0;
-    const wb=new THREE.Box3().setFromObject(obj);
-    const yMin=wb.min.y, yH=(wb.max.y-wb.min.y)||1;
-    const xMaxAbs=Math.max(Math.abs(wb.min.x),Math.abs(wb.max.x))||1;
-    const zMaxAbs=Math.max(Math.abs(wb.min.z),Math.abs(wb.max.z),0.01);
-    function G(x,c,s){ return Math.exp(-Math.pow(x-c,2)/(2*s*s)); }
+function BodyHeatmapTab({logs, routine, lang}){
+  const cvsRef  = React.useRef(null);
+  const wrapRef = React.useRef(null);
+  const matMapRef   = React.useRef({});
+  const meshMapRef  = React.useRef({});
+  const modelRef    = React.useRef(null);
+  const rendererRef = React.useRef(null);
+  const cameraRef   = React.useRef(null);
+  const stateRef    = React.useRef({});
+  const rafRef      = React.useRef(null);
 
-    // MUSCLE DEFINITIONS — all values measured by user raycasting on real model
-    // PECHO yn=0.728 zn=+0.76 | ABS yn=0.608 | BICEPS yn=0.741 xn=0.408 zn=+0.09
-    // DORSAL yn=0.687 zn=-0.63 | TRAPECIO yn=0.819 zn=-0.72 | GLUTEO yn=0.516 zn=-0.71
-    // DELT_ANT yn=0.797 xn=0.287 | DELT_POST yn=0.797 xn=0.310 zn=-0.56
-    // QUAD yn=0.455 zn=+0.58 | ISQUIO yn=0.386 zn=-0.42 | GEMELOS yn=0.201 zn=-0.74
-    const DEFS={
-      "pectoral mayor":{z:function(yn,xn,zn,l){return !l&&zn>0.15&&yn>0.710&&yn<0.788&&xn<0.280;},pk:[
-        [0.734,0.080,0.024,0.085,1.0],[0.734,0.180,0.024,0.085,1.0],[0.726,0.220,0.022,0.080,0.9],
-        [0.744,0.130,0.022,0.095,0.85],[0.728,0.150,0.020,0.080,0.75]]},
-      "core (transverso abdominal)":{z:function(yn,xn,zn,l){return !l&&zn>0.15&&yn>0.534&&yn<0.683&&xn<0.160;},pk:[
-        [0.635,0.035,0.028,0.042,1.0],[0.608,0.040,0.028,0.040,0.95],
-        [0.582,0.038,0.026,0.038,0.88],[0.620,0.100,0.026,0.052,0.6]]},
-      "deltoides anterior":{z:function(yn,xn,zn,l){return !l&&zn>0.15&&yn>0.714&&yn<0.848&&xn>0.18&&xn<0.355;},pk:[
-        [0.800,0.265,0.028,0.055,1.0],[0.790,0.290,0.026,0.050,0.9],
-        [0.778,0.295,0.024,0.045,0.8],[0.762,0.280,0.022,0.038,0.7]]},
-      "deltoides posterior":{z:function(yn,xn,zn,l){return !l&&zn<-0.15&&yn>0.714&&yn<0.848&&xn>0.18&&xn<0.360;},pk:[
-        [0.800,0.280,0.028,0.055,1.0],[0.788,0.300,0.026,0.050,0.9],
-        [0.775,0.295,0.024,0.045,0.8],[0.762,0.280,0.022,0.038,0.7]]},
-      "trapecio superior":{z:function(yn,xn,zn,l){return !l&&zn<-0.10&&yn>0.782&&yn<0.888&&xn<0.268;},pk:[
-        [0.840,0.000,0.022,0.012,0.85],[0.830,0.090,0.026,0.078,1.0],
-        [0.828,0.160,0.024,0.068,0.92],[0.815,0.110,0.024,0.092,0.88],
-        [0.800,0.070,0.020,0.062,0.72]]},
-      "dorsal ancho":{z:function(yn,xn,zn,l){return !l&&zn<-0.15&&yn>0.597&&yn<0.768&&xn<0.315;},pk:[
-        [0.720,0.055,0.022,0.058,0.8],[0.705,0.090,0.024,0.080,0.95],
-        [0.695,0.140,0.026,0.095,1.0],[0.685,0.200,0.026,0.092,0.98],
-        [0.672,0.255,0.024,0.088,0.92],[0.658,0.180,0.022,0.095,0.88],
-        [0.645,0.110,0.022,0.080,0.82]]},
-      "glúteo mayor":{z:function(yn,xn,zn,l){return zn<-0.15&&yn>0.472&&yn<0.597&&xn<0.270;},pk:[
-        [0.535,0.080,0.030,0.088,1.0],[0.535,0.185,0.028,0.080,0.95],
-        [0.520,0.060,0.026,0.065,0.88],[0.520,0.210,0.024,0.062,0.82],
-        [0.549,0.116,0.028,0.085,0.92]]},
-      "bíceps braquial":{z:function(yn,xn,zn,l){return !l&&zn>0.10&&yn>0.690&&yn<0.808&&xn>0.32&&xn<0.518;},pk:[
-        [0.745,0.390,0.026,0.055,1.0],[0.755,0.410,0.024,0.050,0.92],
-        [0.738,0.380,0.024,0.050,0.88],[0.760,0.430,0.020,0.040,0.72]]},
-      "tríceps braquial":{z:function(yn,xn,zn,l){return !l&&zn<-0.10&&yn>0.690&&yn<0.810&&xn>0.32&&xn<0.518;},pk:[
-        [0.748,0.400,0.026,0.055,1.0],[0.755,0.430,0.024,0.050,0.92],
-        [0.738,0.380,0.024,0.045,0.85],[0.762,0.450,0.020,0.040,0.72]]},
-      "braquiorradial":{z:function(yn,xn,zn,l){return !l&&yn>0.620&&yn<0.746&&xn>0.50&&xn<0.820;},pk:[
-        [0.698,0.620,0.024,0.075,1.0],[0.682,0.650,0.022,0.065,0.88],
-        [0.668,0.680,0.020,0.055,0.72]]},
-      "braquial":{z:function(yn,xn,zn,l){return !l&&yn>0.620&&yn<0.746&&xn>0.50&&xn<0.820;},pk:[
-        [0.696,0.615,0.024,0.075,1.0],[0.680,0.645,0.022,0.065,0.88]]},
-      "cuádriceps":{z:function(yn,xn,zn,l){return yn>0.357&&yn<0.516&&xn<0.320&&zn>0.10;},pk:[
-        [0.468,0.150,0.030,0.085,1.0],[0.448,0.165,0.028,0.088,0.95],
-        [0.425,0.155,0.026,0.085,0.90],[0.405,0.140,0.024,0.078,0.82],
-        [0.460,0.200,0.026,0.065,0.78],[0.455,0.092,0.026,0.055,0.72]]},
-      "isquiotibiales":{z:function(yn,xn,zn,l){return yn>0.310&&yn<0.466&&xn<0.300&&zn<-0.10;},pk:[
-        [0.420,0.100,0.028,0.068,1.0],[0.400,0.105,0.026,0.070,0.95],
-        [0.380,0.092,0.024,0.065,0.88],[0.358,0.082,0.022,0.058,0.72],
-        [0.418,0.175,0.026,0.055,0.82],[0.398,0.165,0.024,0.050,0.72]]},
-      "gastrocnemio":{z:function(yn,xn,zn,l){return yn>0.120&&yn<0.263&&xn<0.320&&zn<-0.10;},pk:[
-        [0.215,0.110,0.026,0.062,1.0],[0.215,0.190,0.024,0.055,0.95],
-        [0.200,0.150,0.024,0.075,0.88],[0.183,0.145,0.022,0.068,0.78],
-        [0.168,0.140,0.018,0.058,0.58]]},
-    };
+  const [loaded,   setLoaded]   = React.useState(false);
+  const [progress, setProgress] = React.useState(0);
+  const [pTxt,     setPTxt]     = React.useState("iniciando...");
+  const [activeZone, setActiveZone] = React.useState(null);
+  const [brushState, setBrushState] = React.useState(null);
+  const [zoneState,  setZoneState]  = React.useState({});
 
-    // Ensure back meshes are visible
-    obj.traverse(function(c){if(c.isMesh&&c._isBack)c.visible=true;});
-        obj.traverse(function(c){
-      if(!c.isMesh||c._isBack) return;
-      const geo=c.geometry, pos=geo.attributes.position;
-      if(!pos) return;
-      const colF=new Float32Array(pos.count*3);
-      const colB=new Float32Array(pos.count*4);
-      for(let i=0;i<pos.count;i++){
-        const wy=pos.getY(i)*obj.scale.y+obj.position.y;
-        const wx=pos.getX(i)*obj.scale.x;
-        const wz=pos.getZ(i)*obj.scale.z;
-        const yn=(wy-yMin)/yH, xn=Math.abs(wx)/xMaxAbs, zn=wz/zMaxAbs;
-        const isLeg=yn<0.44&&xn<0.35;
-        let h=0;
-        for(const mName in DEFS){
-          const vol=vt(mName);if(vol<=0)continue;
-          const D=DEFS[mName];
-          // Soft zone check: use zone as a hint, not hard gate
-          // Muscles near the boundary get a smooth falloff instead of hard clip
-          if(!D.z(yn,xn,zn,isLeg))continue;
-          let pH=0;
-          for(let p=0;p<D.pk.length;p++){
-            // Wider sigmas for soft diffusion (1.4x original)
-            const pG=D.pk[p][4]*G(yn,D.pk[p][0],D.pk[p][2]*1.4)*G(xn,D.pk[p][1],D.pk[p][3]*1.4);
-            pH=Math.max(pH,pG);
-          }
-          h=Math.max(h,vol*pH);
-        }
-        h=Math.min(1,h);
-        let r,g,b;
-        if(h<0.03){ r=0.68;g=0.70;b=0.74; }
-        else{
-          // Recovery color ramp: green (recovered) → orange → red (fatigued)
-          const t=Math.min(1,Math.pow(h,0.45));
-          if(t<0.25){const s=t/0.25; r=0.20+s*0.40;g=0.75-s*0.10;b=0.30-s*0.15;}
-          else if(t<0.55){const s=(t-0.25)/0.30; r=0.60+s*0.36;g=0.65-s*0.37;b=0.15-s*0.05;}
-          else if(t<0.80){const s=(t-0.55)/0.25; r=0.96;g=0.28-s*0.16;b=0.10;}
-          else{const s=(t-0.80)/0.20; r=0.95;g=0.12-s*0.10;b=0.04-s*0.03;}
-        }
-        colF[i*3]=r; colF[i*3+1]=g; colF[i*3+2]=b;
-        colB[i*4]=r; colB[i*4+1]=g; colB[i*4+2]=b;
-        colB[i*4+3]=(h>0.03)?1.0:0.0;
-      }
-      geo.setAttribute('color',new THREE.BufferAttribute(colF,3));
-      // Use MeshStandardMaterial with vertexColors to keep chrome look on grey areas
-      var envMap=obj._envMap||null;
-      var sm=new THREE.MeshStandardMaterial({
-        vertexColors:true,side:THREE.FrontSide,
-        metalness:1.0,roughness:0.03,envMapIntensity:2.5,
-      });
-      if(envMap)sm.envMap=envMap;
-      c.material=sm;
-      c.renderOrder=0;
-      // BackBody mesh: same chrome look from back (no heatmap — provides clean silhouette)
-      if(c._backBodyMesh){
-        var sbm=new THREE.MeshStandardMaterial({color:0xffffff,metalness:1.0,roughness:0.03,envMapIntensity:2.5,side:THREE.BackSide});
-        if(envMap)sbm.envMap=envMap; c._backBodyMesh.material=sbm; c._backBodyMesh.visible=true;
-      }
-      if(c._backMesh){
-        if(!c._backGeo){
-          c._backGeo=new THREE.BufferGeometry();
-          c._backGeo.setAttribute('position',geo.attributes.position);
-          c._backMesh.geometry=c._backGeo;
-        }
-        c._backGeo.setAttribute('color',new THREE.BufferAttribute(colB,4));
-        c._backMesh.material=new THREE.MeshBasicMaterial({vertexColors:true,side:THREE.BackSide,transparent:true,alphaTest:0.5,depthTest:true,depthWrite:false});
-        c._backMesh.renderOrder=1;
-      }
+  const mono = "'SF Mono','Courier New',monospace";
+  const C = {
+    bg:"#0a0a0d",bg2:"#111116",bg3:"#18181e",
+    bd:"rgba(255,255,255,0.06)",bd2:"rgba(255,255,255,0.12)",
+    tx:"#eeeef2",tx2:"#88889a",tx3:"#44445a",acc:"#e8e0d0"
+  };
+  const es = lang==="es";
+
+  // Sync logs → zone timestamps
+  React.useEffect(()=>{
+    const ts = logsToZoneTimestamps(logs, routine);
+    setZoneState(ts);
+    stateRef.current = ts;
+  }, [logs, routine]);
+
+  // Update mat colors when zoneState changes
+  function refreshMats(st) {
+    if(typeof THREE==="undefined") return;
+    Object.entries(matMapRef.current).forEach(([name,mat])=>{
+      const zk = MESH_ZONE_3D[name]||"base";
+      const s  = getZoneState(zk, st);
+      const [r,g,b] = ZONE_COLOR_VALS[s]||ZONE_COLOR_VALS.base;
+      mat.color.setRGB(r,g,b);
     });
   }
 
-  
   React.useEffect(()=>{
-    const cv=cRef.current;
-    if(!cv) return;
+    stateRef.current = zoneState;
+    refreshMats(zoneState);
+  }, [zoneState]);
 
-    const ren=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:false});
-    ren.setSize(240,380,false);
+  // Init Three.js
+  React.useEffect(()=>{
+    if(!cvsRef.current||!wrapRef.current) return;
+    if(typeof THREE==="undefined") {
+      setPTxt("Three.js no disponible"); return;
+    }
+
+    const ren = new THREE.WebGLRenderer({canvas:cvsRef.current, antialias:true});
     ren.setPixelRatio(Math.min(devicePixelRatio,2));
-    ren.setClearColor(0x383e4e,1);
-    ren.toneMapping=THREE.ACESFilmicToneMapping;
-    ren.toneMappingExposure=1.2;
-    ren.outputEncoding=THREE.sRGBEncoding;
-    ren.physicallyCorrectLights=true;
-    renRef.current=ren;
+    ren.outputEncoding = THREE.sRGBEncoding;
+    ren.toneMapping    = THREE.ACESFilmicToneMapping;
+    ren.toneMappingExposure = 1.3;
+    ren.setClearColor(0x0a0a0d,1);
+    rendererRef.current = ren;
 
-    const sc=new THREE.Scene();
-    // FOV 32 + camera pulled back → full body fits with no cropping
-    const cam=new THREE.PerspectiveCamera(32,240/380,0.1,200);
-    cam.position.set(0,-0.1,7.8);
-    cam.lookAt(0,-0.1,0);
+    const scene = new THREE.Scene();
+    scene.fog   = new THREE.FogExp2(0x0a0a0d, 0.018);
 
-    const pmrem=new THREE.PMREMGenerator(ren);
-    pmrem.compileEquirectangularShader();
-    sc.add(new THREE.AmbientLight(0xffffff,0.4));
-    const kl=new THREE.DirectionalLight(0xffffff,1.5);kl.position.set(3,5,4);sc.add(kl);
-    const fl=new THREE.DirectionalLight(0x8899ff,0.5);fl.position.set(-4,1,-3);sc.add(fl);
+    const cam = new THREE.PerspectiveCamera(55,1,0.01,1000);
+    cam.position.set(0,-0.5,20);
+    cameraRef.current = cam;
 
-    setStatus(es?"CARGANDO ENTORNO...":"LOADING ENV...");
+    scene.add(new THREE.AmbientLight(0x223344,0.5));
+    const kl = new THREE.DirectionalLight(0xfff4e0,2.2); kl.position.set(4,6,8);  scene.add(kl);
+    const fl = new THREE.DirectionalLight(0x8ab4e8,0.6); fl.position.set(-8,2,4); scene.add(fl);
+    const rl = new THREE.DirectionalLight(0xffffff,0.9); rl.position.set(0,4,-12);scene.add(rl);
 
-    function loadModel(envReady){
-      setStatus(es?"CARGANDO MODELO...":"LOADING MODEL...");
-      new THREE.OBJLoader().load(
-        'https://forjavideos.b-cdn.net/cuerpo.obj',
-        function(obj){
-          const box=new THREE.Box3().setFromObject(obj);
-          const sz=box.getSize(new THREE.Vector3());
-          const ct=box.getCenter(new THREE.Vector3());
-          const s=3.6/Math.max(sz.x,sz.y,sz.z);
-          obj.scale.setScalar(s);
-          obj.position.sub(ct.multiplyScalar(s));
-          // No Y offset — perfectly centered
+    function resize(){
+      if(!wrapRef.current) return;
+      const w=wrapRef.current.clientWidth, h=wrapRef.current.clientHeight;
+      ren.setSize(w,h,false); cam.aspect=w/h; cam.updateProjectionMatrix();
+    }
+    resize();
+    const ro = new ResizeObserver(resize);
+    ro.observe(wrapRef.current);
 
-          // Apply chrome material + store reference on obj
-          // envMap comes from sc.environment (auto-applied by Three.js when envMap=null)
-          // 3-MESH SYSTEM:
-          // 1. frontMesh  = FrontSide, chrome/heatmap
-          // 2. backBodyMesh = BackSide, chrome only (silhouette from back, no heatmap bleed)
-          // 3. backHeatMesh = BackSide, alphaTest, only colored muscle pixels
-          var envM=sc._envMap||null;
-          obj._envMap=envM;
-          function makeChromeF(){
-            var m=new THREE.MeshStandardMaterial({color:0xffffff,metalness:1.0,roughness:0.03,envMapIntensity:2.5,side:THREE.FrontSide});
-            if(envM)m.envMap=envM; return m;
-          }
-          function makeChromeB(){
-            var m=new THREE.MeshStandardMaterial({color:0xffffff,metalness:1.0,roughness:0.03,envMapIntensity:2.5,side:THREE.BackSide});
-            if(envM)m.envMap=envM; return m;
-          }
-          obj._chromeMat=makeChromeF();
-          obj.traverse(function(c){
-            if(!c.isMesh||c._isBack||c._isBackBody) return;
-            // FrontSide chrome
-            c.material=makeChromeF(); c.renderOrder=0;
-            // BackSide chrome body (silhouette, renderOrder=0 so heatmap overlays on top)
-            var bBody=new THREE.Mesh(c.geometry,makeChromeB());
-            bBody._isBackBody=true; bBody.renderOrder=0;
-            c._backBodyMesh=bBody; obj.add(bBody);
-            // BackSide heatmap mesh (muscle colors only, alphaTest hides grey)
-            var bHeat=new THREE.Mesh(new THREE.BufferGeometry(),
-              new THREE.MeshBasicMaterial({color:0xb0b4c0,side:THREE.BackSide,transparent:true,alphaTest:0.5,depthTest:true,depthWrite:false}));
-            bHeat._isBack=true; bHeat.renderOrder=1; bHeat.visible=false;
-            c._backMesh=bHeat; c._backGeo=null; obj.add(bHeat);
+    // Orbit
+    let drag=false,lx=0,ly=0,rotY=0,rotX=0,auto=true,mom=0,ldx=0;
+    function applyRot(){ if(modelRef.current){modelRef.current.rotation.y=rotY;modelRef.current.rotation.x=rotX;} }
+    const el = cvsRef.current;
+    const onDown = e=>{ drag=true; lx=e.clientX; ly=e.clientY; auto=false; ldx=0; };
+    const onMove = e=>{ if(!drag) return; const dx=e.clientX-lx,dy=e.clientY-ly; rotY+=dx*0.009; rotX=Math.max(-1.1,Math.min(1.1,rotX+dy*0.009)); ldx=dx; lx=e.clientX; ly=e.clientY; applyRot(); };
+    const onUp   = ()=>{ if(drag) mom=ldx*0.008; drag=false; };
+    el.addEventListener("pointerdown",onDown);
+    window.addEventListener("pointermove",onMove);
+    window.addEventListener("pointerup",onUp);
+
+    const t0=performance.now();
+    function animate(t){
+      rafRef.current=requestAnimationFrame(animate);
+      if(auto&&modelRef.current){ rotY=(t-t0)*0.00022; applyRot(); }
+      if(!drag&&!auto&&Math.abs(mom)>0.0002){ rotY+=mom; applyRot(); mom*=0.92; }
+      ren.render(scene,cam);
+    }
+    rafRef.current=requestAnimationFrame(animate);
+
+    // Fetch GLB
+    setProgress(10); setPTxt(es?"cargando modelo...":"loading model...");
+    fetch("forja_body.glb")
+      .then(r=>{ if(!r.ok) throw new Error("GLB 404"); setProgress(35); setPTxt(es?"descargando...":"downloading..."); return r.arrayBuffer(); })
+      .then(buf=>{
+        setProgress(60); setPTxt(es?"parseando...":"parsing...");
+        const u8  = new Uint8Array(buf);
+        const dv  = new DataView(buf);
+        if(dv.getUint32(0,true)!==0x46546C67) throw new Error("Invalid GLB");
+        const jLen = dv.getUint32(12,true);
+        const gltf = JSON.parse(new TextDecoder().decode(u8.slice(20,20+jLen)));
+        const bin  = u8.slice(20+jLen+8);
+
+        setProgress(80); setPTxt(es?"construyendo...":"building...");
+        const group = new THREE.Group();
+
+        gltf.nodes.forEach(node=>{
+          if(node.mesh===undefined) return;
+          gltf.meshes[node.mesh].primitives.forEach(prim=>{
+            const geo = new THREE.BufferGeometry();
+            const getArr = (ai,T,n)=>{
+              const a=gltf.accessors[ai], bv=gltf.bufferViews[a.bufferView];
+              const off=(bv.byteOffset||0)+(a.byteOffset||0);
+              return new T(bin.buffer, bin.byteOffset+off, a.count*n);
+            };
+            if(prim.attributes.POSITION!==undefined)
+              geo.setAttribute("position",new THREE.BufferAttribute(getArr(prim.attributes.POSITION,Float32Array,3).slice(),3));
+            if(prim.attributes.NORMAL!==undefined)
+              geo.setAttribute("normal",new THREE.BufferAttribute(getArr(prim.attributes.NORMAL,Float32Array,3).slice(),3));
+            if(prim.indices!==undefined){
+              const a=gltf.accessors[prim.indices];
+              const T=a.componentType===5123?Uint16Array:Uint32Array;
+              geo.setIndex(new THREE.BufferAttribute(getArr(prim.indices,T,1).slice(),1));
+            }
+            if(!geo.attributes.normal) geo.computeVertexNormals();
+
+            const zk = MESH_ZONE_3D[node.name]||"base";
+            const s  = getZoneState(zk, stateRef.current);
+            const [r,g,b] = ZONE_COLOR_VALS[s]||ZONE_COLOR_VALS.base;
+            const mat = new THREE.MeshStandardMaterial({
+              color:new THREE.Color(r,g,b),
+              roughness: zk==="base"?0.88:0.72,
+              metalness: 0.05,
+            });
+            matMapRef.current[node.name] = mat;
+
+            const mesh = new THREE.Mesh(geo,mat);
+            mesh.name = node.name;
+            if(node.translation) mesh.position.set(...node.translation);
+            if(node.rotation)    mesh.quaternion.set(...node.rotation);
+            if(node.scale)       mesh.scale.set(...node.scale);
+            meshMapRef.current[node.name] = mesh;
+            group.add(mesh);
           });
-          sc.add(obj);
-          mdlRef.current=obj;
-          if(muscleVol&&Object.keys(muscleVol).length>0) applyHeatmap(obj,muscleVol);
-          setStatus("");
-        },
-        function(x){setStatus("OBJ "+(x.loaded/1048576).toFixed(1)+"MB / 25MB");},
-        function(e){setStatus("ERROR: "+e);}
-      );
-    }
+        });
 
-    // Timeout: if HDRI takes >5s, use fallback lights
-    var _hdriLoaded=false;
-    function _fallbackLights(){
-      if(_hdriLoaded)return; _hdriLoaded=true;
-      [[0xffffff,8,4,6,5],[0xaaddff,4,-5,3,-3],[0xffffff,5,0,-5,-4],[0xffffff,3,0,8,0]].forEach(function(p){
-        var l=new THREE.PointLight(p[0],p[1],35);l.position.set(p[2],p[3],p[4]);sc.add(l);
-      });
-      loadModel(false);
-    }
-    var _hdriTimeout=setTimeout(_fallbackLights,5000);
-    new THREE.RGBELoader().load(
-      'https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/studio_small_08_1k.hdr',
-      function(hdr){
-        if(_hdriLoaded)return; _hdriLoaded=true; clearTimeout(_hdriTimeout);
-        var env=pmrem.fromEquirectangular(hdr).texture;
-        sc.environment=env; sc._envMap=env;
-        hdr.dispose();pmrem.dispose();
-        loadModel(true);
-      },
-      undefined,
-      function(){
-        clearTimeout(_hdriTimeout);
-        _fallbackLights();
-      }
-    );
+        const box    = new THREE.Box3().setFromObject(group);
+        const center = box.getCenter(new THREE.Vector3());
+        const size   = box.getSize(new THREE.Vector3());
+        group.position.sub(center);
+        group.position.y -= 5.0;
+        group.scale.setScalar(14/Math.max(size.x,size.y,size.z));
+        scene.add(group);
+        modelRef.current = group;
+        refreshMats(stateRef.current);
+        setProgress(100); setPTxt(es?"listo":"ready");
+        setTimeout(()=>setLoaded(true),300);
+      })
+      .catch(err=>{ console.error(err); setPTxt(es?"error al cargar":"load error"); });
 
-    let drg=false,px=0,ry=0,vl=0; // ry=0: espalda visible por defecto // ry=0: back of model faces camera (espalda visible by default)
-    const onD=function(e){drg=true;px=e.clientX;cv.style.cursor='grabbing';};
-    const onU=function(){drg=false;cv.style.cursor='grab';};
-    const onM=function(e){if(!drg||!mdlRef.current)return;const dx=e.clientX-px;ry+=dx*0.012;vl=dx*0.012;px=e.clientX;};
-    const onTD=function(e){drg=true;px=e.touches[0].clientX;};
-    const onTU=function(){drg=false;};
-    const onTM=function(e){if(!drg||!mdlRef.current)return;const dx=e.touches[0].clientX-px;ry+=dx*0.012;vl=dx*0.012;px=e.touches[0].clientX;};
-    cv.addEventListener('mousedown',onD);
-    window.addEventListener('mouseup',onU);
-    window.addEventListener('mousemove',onM);
-    cv.addEventListener('touchstart',onTD,{passive:true});
-    window.addEventListener('touchend',onTU);
-    window.addEventListener('touchmove',onTM,{passive:true});
-    cv.style.cursor='grab';
-
-    function loop(){
-      frameRef.current=requestAnimationFrame(loop);
-      if(mdlRef.current){
-        if(!drg){vl*=0.93;ry+=vl+0.004;}
-        mdlRef.current.rotation.y=ry;
-        // Back mesh: depthTest:true prevents bleed-through from front
-        // alphaTest:0.5 on back mesh ensures only active muscle pixels show
-        // No per-frame opacity modulation needed
-      }
-      ren.render(sc,cam);
-    }
-    loop();
-
-    return function(){
-      cancelAnimationFrame(frameRef.current);
-      cv.removeEventListener('mousedown',onD);
-      window.removeEventListener('mouseup',onU);
-      window.removeEventListener('mousemove',onM);
-      cv.removeEventListener('touchstart',onTD);
-      window.removeEventListener('touchend',onTU);
-      window.removeEventListener('touchmove',onTM);
+    return ()=>{
+      cancelAnimationFrame(rafRef.current);
+      ro.disconnect();
+      el.removeEventListener("pointerdown",onDown);
+      window.removeEventListener("pointermove",onMove);
+      window.removeEventListener("pointerup",onUp);
       ren.dispose();
     };
-  },[]);
+  },[]); // run once
 
-  React.useEffect(()=>{
-    if(mdlRef.current&&muscleVol) applyHeatmap(mdlRef.current,muscleVol);
-  },[JSON.stringify(muscleVol)]);
+  // Click — raycast
+  function handleClick(e){
+    if(!modelRef.current||typeof THREE==="undefined") return;
+    const rect = cvsRef.current.getBoundingClientRect();
+    const mouse = new THREE.Vector2(
+      ((e.clientX-rect.left)/rect.width)*2-1,
+      -((e.clientY-rect.top)/rect.height)*2+1
+    );
+    const ray = new THREE.Raycaster();
+    ray.setFromCamera(mouse, cameraRef.current);
+    const hits = ray.intersectObjects(Object.values(meshMapRef.current));
+    if(!hits.length) return;
+    const zk = MESH_ZONE_3D[hits[0].object.name];
+    if(!zk||zk==="base") return;
 
-  const mv=muscleVol||{};
-  const maxV=Math.max(...Object.values(mv),1);
-  const activeMuscles=Object.entries(mv).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+    if(brushState){
+      const rec  = ZONE_REC_HOURS[zk]||72;
+      const frac = {fresh:0.1,warm:0.5,yel:0.8,rec:1.2}[brushState]||1.2;
+      const newTs = {...zoneState, [zk]: Date.now()-(rec*3600000*frac)};
+      // Mirror bilateral
+      [["hombro_izq","hombro_der"],["bicep_izq","bicep_der"],
+       ["tricep_izq","tricep_der"],["antebrazo_izq","antebrazo_der"]
+      ].forEach(([a,b])=>{
+        if(zk===a) newTs[b]=newTs[a];
+        if(zk===b) newTs[a]=newTs[b];
+      });
+      setZoneState(newTs);
+    } else {
+      setActiveZone(zk);
+    }
+  }
 
-  return(
-    <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:10}}>
-      <div style={{position:"relative",width:240}}>
-        <canvas ref={cRef} style={{width:240,height:380,borderRadius:12,display:"block"}}/>
-        {status&&(
-          <div style={{position:"absolute",bottom:8,left:"50%",transform:"translateX(-50%)",
-            background:"rgba(44,48,64,.88)",borderRadius:8,padding:"4px 10px",
-            fontSize:9,fontFamily:mono,color:"#6a8fc0",letterSpacing:1.5,whiteSpace:"nowrap"
-          }}>{status}</div>
-        )}
-        <div style={{position:"absolute",top:8,right:8,
-          background:"rgba(44,48,64,.7)",borderRadius:6,padding:"3px 7px",
-          fontSize:8,fontFamily:mono,color:"#7a8294",letterSpacing:1
-        }}>↔ {es?"GIRA":"DRAG"}</div>
-      </div>
+  function getStatusText(zk){
+    const ts=zoneState[zk];
+    if(!ts) return es?"descansado — listo ✓":"rested — ready ✓";
+    const h=(Date.now()-ts)/3600000, rec=ZONE_REC_HOURS[zk]||72, left=Math.max(0,rec-h);
+    if(h<1)   return `${es?"activo":"active"} — ${Math.round(h*60)}m`;
+    if(h<rec) return `${es?"recuperando":"recovering"} — ${Math.round(left)}h ${es?"restantes":"left"}`;
+    return es?"descansado — listo ✓":"rested — ready ✓";
+  }
 
-      {activeMuscles.length>0&&(
-        <div style={{display:"flex",flexWrap:"wrap",gap:5,justifyContent:"center",maxWidth:260}}>
-          {activeMuscles.map(function([k,v]){
-            const p=v/maxV;
-            const col=p<0.30?"#ff8c3c":p<0.65?"#ff3c3c":"#ff1010";
-            return(
-              <div key={k} style={{display:"flex",alignItems:"center",gap:4,
-                padding:"3px 8px",borderRadius:10,
-                background:"rgba(255,60,60,.08)",border:"1px solid rgba(255,60,60,.2)"
-              }}>
-                <div style={{width:5,height:5,borderRadius:"50%",background:col,flexShrink:0}}/>
-                <span style={{fontSize:9,fontFamily:mono,color:col,letterSpacing:.5,textTransform:"capitalize"}}>{k}</span>
-                <span style={{fontSize:8,fontFamily:mono,color:"#7a8294"}}>{Math.round(v/1000*10)/10}t</span>
-              </div>
-            );
-          })}
-        </div>
-      )}
-      {activeMuscles.length===0&&(
-        <div style={{fontSize:10,fontFamily:mono,color:"#525a6e",letterSpacing:1}}>
-          {es?"entrena para ver el mapa activo":"train to activate the map"}
-        </div>
-      )}
-    </div>
+  const ALL_ZONES = ["pecho","dorsal","trapecio","romboides","espalda_baja","abdomen","oblicuos",
+    "hombro_izq","hombro_der","bicep_izq","bicep_der","tricep_izq","tricep_der",
+    "antebrazo_izq","antebrazo_der","quad","gluteos","isquiotibiales","gemelos","tibia"];
+
+  const e = React.createElement;
+
+  return e("div",{style:{display:"flex",flexDirection:"column",height:"calc(100vh - 120px)"}},
+
+    // ── Canvas ─────────────────────────────────────────────────────────
+    e("div",{ref:wrapRef,style:{position:"relative",flex:"1 1 0",minHeight:200,touchAction:"none"},onClick:handleClick},
+      e("canvas",{ref:cvsRef,style:{display:"block",width:"100%",height:"100%"}}),
+      e("div",{style:{position:"absolute",inset:0,background:"radial-gradient(ellipse 80% 90% at 50% 50%, transparent 40%, rgba(10,10,13,0.65) 100%)",pointerEvents:"none"}}),
+      !loaded&&e("div",{style:{position:"absolute",inset:0,background:C.bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}},
+        e("div",{style:{fontSize:16,fontWeight:600,letterSpacing:"0.2em",color:C.acc,marginBottom:14}},"FORJA"),
+        e("div",{style:{width:110,height:1,background:C.bd2,overflow:"hidden",borderRadius:1}},
+          e("div",{style:{height:"100%",background:C.acc,width:progress+"%",transition:"width 0.4s ease"}})
+        ),
+        e("div",{style:{marginTop:8,fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:"0.1em"}},pTxt)
+      )
+    ),
+
+    // ── Bottom panel ────────────────────────────────────────────────────
+    e("div",{style:{background:C.bg2,borderTop:"1px solid "+C.bd,padding:"10px 14px 14px",overflowY:"auto",maxHeight:"42vh"}},
+
+      // Active zone info
+      e("div",{style:{background:C.bg3,border:"1px solid "+C.bd,borderRadius:10,padding:"10px 12px",marginBottom:8,minHeight:50}},
+        activeZone
+          ? e("div",null,
+              e("div",{style:{fontSize:11,fontWeight:500,color:C.acc,marginBottom:2,letterSpacing:"0.05em"}},(ZONE_LABELS_3D[activeZone]||activeZone).toUpperCase()),
+              e("div",{style:{fontSize:9,fontFamily:mono,color:C.tx2,marginBottom:6}},getStatusText(activeZone)),
+              e("div",{style:{display:"flex",alignItems:"center",gap:8}},
+                e("div",{style:{flex:1,height:2,background:C.bd,borderRadius:2,overflow:"hidden"}},
+                  e("div",{style:{height:"100%",background:getDotColor(activeZone,zoneState),width:getPct(activeZone,zoneState)+"%",transition:"width 1s ease"}})
+                ),
+                e("div",{style:{fontSize:9,fontFamily:mono,color:C.tx3,minWidth:28,textAlign:"right"}},getPct(activeZone,zoneState)+"%")
+              )
+            )
+          : e("div",{style:{fontSize:9,fontFamily:mono,color:C.tx3,paddingTop:4}},
+              es?"Toca una zona del cuerpo →":"Tap a muscle zone →"
+            )
+      ),
+
+      // Brush row
+      e("div",{style:{display:"flex",gap:6,marginBottom:8,alignItems:"center"}},
+        e("div",{style:{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:"0.06em",whiteSpace:"nowrap"}},es?"PINTAR:":"PAINT:"),
+        e("div",{style:{display:"flex",gap:4,flex:1}},
+          ...[
+            {id:null,   label:"✕",        col:C.bd2,      bg:C.bg3,    tc:C.tx3},
+            {id:"fresh",label:"0–33%",    col:"#e53535",  bg:"#1a0808",tc:"#e53535"},
+            {id:"warm", label:"33–66%",   col:"#ff7a1a",  bg:"#1a0f04",tc:"#ff7a1a"},
+            {id:"yel",  label:"66–99%",   col:"#7ab82a",  bg:"#0a1004",tc:"#7ab82a"},
+            {id:"rec",  label:es?"listo":"ready",col:C.bd2,bg:C.bg3,  tc:C.tx3},
+          ].map(b=>e("button",{key:String(b.id),onClick:()=>setBrushState(b.id),style:{
+            flex:1,padding:"5px 2px",background:b.bg,
+            border:"1.5px solid "+(brushState===b.id?b.col:"transparent"),
+            borderRadius:6,color:b.tc,fontFamily:mono,fontSize:8,cursor:"pointer",
+            opacity:brushState===b.id?1:0.55,transition:"all 0.15s",
+          }},b.label))
+        )
+      ),
+
+      // Legend
+      e("div",{style:{display:"flex",gap:10,marginBottom:8,flexWrap:"wrap"}},
+        [{c:"#e53535",g:true,l:es?"activo 0–33%":"active 0–33%"},
+         {c:"#ff7a1a",g:true,l:"33–66%"},
+         {c:"#7ab82a",g:false,l:"66–99%"},
+         {c:"#2a2a3a",g:false,l:es?"listo ✓":"ready ✓"},
+        ].map((x,i)=>e("div",{key:i,style:{display:"flex",alignItems:"center",gap:4}},
+          e("span",{style:{width:5,height:5,borderRadius:"50%",background:x.c,boxShadow:x.g?`0 0 5px ${x.c}`:"none",flexShrink:0}}),
+          e("span",{style:{fontSize:8,fontFamily:mono,color:C.tx3}},x.l)
+        ))
+      ),
+
+      // Zone pills
+      e("div",{style:{display:"flex",gap:4,flexWrap:"wrap"}},
+        ALL_ZONES.map(zk=>{
+          const dc = getDotColor(zk,zoneState);
+          const s  = getZoneState(zk,zoneState);
+          return e("div",{key:zk,onClick:()=>setActiveZone(zk),style:{
+            display:"flex",alignItems:"center",gap:3,padding:"4px 8px",
+            borderRadius:20,border:"1px solid "+(activeZone===zk?C.bd2:C.bd),
+            background:C.bg3,fontSize:8,fontFamily:mono,
+            color:activeZone===zk?C.acc:C.tx2,cursor:"pointer",transition:"all 0.2s",
+          }},
+            e("span",{style:{width:5,height:5,borderRadius:"50%",background:dc,boxShadow:s!=="rec"?`0 0 4px ${dc}`:"none",flexShrink:0}}),
+            ZONE_LABELS_3D[zk]||zk
+          );
+        })
+      )
+    )
   );
 }
 
-// ── RECOVERY SCORE ─────────────────────────────────────────────────────
-// Returns {muscle: {score:0-1, hoursLeft:N}} where 1.0 = fully recovered
-const RECOVERY_HOURS={
-  "pectoral mayor":48,"tríceps braquial":48,"deltoides anterior":48,
-  "deltoides posterior":48,"bíceps braquial":60,"braquial":60,
-  "braquiorradial":60,"trapecio superior":60,"dorsal ancho":60,
-  "cuádriceps":72,"isquiotibiales":72,"glúteo mayor":72,"gastrocnemio":48,
-  "core (transverso abdominal)":24,
-};
-function computeRecovery(logs,routine){
-  const now=Date.now();
-  // Only consider logs within the last 4 days (max recovery window is 72h)
-  const cutoff=new Date(now-4*24*3600000).toISOString().slice(0,10);
-  const lastHit={};  // muscle → {ts, vol}
-  Object.entries(logs).forEach(([id,entries])=>{
-    entries.forEach(e=>{
-      if(!e.d||e.d<cutoff) return;
-      let nm=id;
-      if(routine) routine.forEach(d=>{if(!d)return;(d.ex||[]).forEach(ex=>{if(ex.id===id)nm=ex.e;});});
-      const _nmLow=nm?.toLowerCase()?.trim();
-      const md=EXERCISE_MUSCLE_MAP[_nmLow]||EXERCISE_MUSCLE_MAP[ES_TO_META[_nmLow]];
-      if(!md) return;
-      const vol=(+e.w||0)*(+e.r||0); if(vol<=0) return;
-      const ts=new Date(e.d).getTime();
-      md.p.forEach(m=>{
-        if(!lastHit[m]||ts>lastHit[m].ts) lastHit[m]={ts,vol,isPrimary:true};
-      });
-      md.s.forEach(m=>{
-        const sv=vol*0.35;
-        if(!lastHit[m]||ts>lastHit[m].ts) lastHit[m]={ts,vol:sv,isPrimary:false};
-      });
-    });
-  });
-  const result={};
-  Object.entries(lastHit).forEach(([m,{ts,isPrimary}])=>{
-    const hrs=RECOVERY_HOURS[m]||48;
-    const elapsedHrs=(now-ts)/3600000;
-    const score=Math.min(1, elapsedHrs/hrs);
-    const hoursLeft=Math.max(0, Math.round(hrs-elapsedHrs));
-    result[m]={score, hoursLeft, isPrimary};
-  });
-  return result;
-}
-
-// Recovery → heatmap input: fatigued muscles show as red/orange, recovered as green
-function recoveryToHeatmap(recovery){
-  const mv={};
-  Object.entries(recovery).forEach(([m,{score,isPrimary}])=>{
-    const fatigue=1-score;
-    if(fatigue>0.05) mv[m]=isPrimary!==false?fatigue:fatigue*0.40;
-  });
-  return mv;
-}
 
 function StatsScreen({logs,routine,lang,profile}){
   const C={bg:"#383e4e",bgDeep:"#2c3040",card:"#424858",border:"#525a6e",borderL:"#4a5264",
