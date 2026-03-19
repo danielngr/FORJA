@@ -3708,7 +3708,7 @@ function BodyHeatmapTab({logs, routine, lang, profile}){
         const box=new THREE.Box3().setFromObject(group);
         const center=box.getCenter(new THREE.Vector3()), size=box.getSize(new THREE.Vector3());
         group.position.sub(center); group.position.y-=5.0;
-        group.scale.setScalar(14/Math.max(size.x,size.y,size.z));
+        group.scale.setScalar(18/Math.max(size.x,size.y,size.z));
         scene.add(group); modelRef.current=group;
         refreshMats(stRef.current);
         setProgress(100); setPTxt(es?"listo":"ready");
@@ -3787,7 +3787,7 @@ function BodyHeatmapTab({logs, routine, lang, profile}){
   return e("div",{style:{paddingBottom:32}},
 
     // ── 3D Canvas ──────────────────────────────────────────────────────
-    e("div",{ref:wrapRef,style:{position:"relative",height:260,touchAction:"none",marginBottom:0},onClick:handleClick},
+    e("div",{ref:wrapRef,style:{position:"relative",height:420,touchAction:"none",marginBottom:0},onClick:handleClick},
       e("canvas",{ref:cvsRef,style:{display:"block",width:"100%",height:"100%"}}),
       e("div",{style:{position:"absolute",inset:0,background:"radial-gradient(ellipse 80% 90% at 50% 50%, transparent 40%, rgba(10,10,13,0.65) 100%)",pointerEvents:"none"}}),
       !loaded&&e("div",{style:{position:"absolute",inset:0,background:C.bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}},
@@ -3801,21 +3801,6 @@ function BodyHeatmapTab({logs, routine, lang, profile}){
       activeZone&&e("div",{style:{position:"absolute",bottom:10,left:"50%",transform:"translateX(-50%)",background:"rgba(10,10,13,0.85)",backdropFilter:"blur(12px)",border:"1px solid "+C.bd2,borderRadius:30,padding:"6px 16px",fontSize:10,fontFamily:mono,color:C.acc,letterSpacing:"0.08em",pointerEvents:"none",whiteSpace:"nowrap"}},
         (ZONE_LABELS_3D[activeZone]||activeZone).toUpperCase()+" · "+getStatusText(activeZone)
       )
-    ),
-
-    // ── Zone pills row ─────────────────────────────────────────────────
-    e("div",{style:{display:"flex",gap:4,flexWrap:"wrap",padding:"8px 0 12px",borderBottom:"1px solid "+C.bd}},
-      ALL_ZONES.map(zk=>{
-        const dc=getDotColor(zk,zoneState), s=getZoneState(zk,zoneState);
-        return e("div",{key:zk,onClick:()=>setActiveZone(zk),style:{
-          display:"flex",alignItems:"center",gap:3,padding:"4px 8px",borderRadius:20,
-          border:"1px solid "+(activeZone===zk?C.bd2:C.bd),background:C.bg3,
-          fontSize:8,fontFamily:mono,color:activeZone===zk?C.acc:C.tx2,cursor:"pointer",
-        }},
-          e("span",{style:{width:5,height:5,borderRadius:"50%",background:dc,boxShadow:s!=="rec"?`0 0 4px ${dc}`:"none",flexShrink:0}}),
-          ZONE_LABELS_3D[zk]||zk
-        );
-      })
     ),
 
     // ── Legend ─────────────────────────────────────────────────────────
