@@ -3543,13 +3543,18 @@ function getPct(zk,st){if(!st[zk])return 100;return Math.min(100,Math.round(((Da
 
 function logsToZoneTimestamps(logs, routine) {
   const zoneTs = {};
-  Object.entries(logs||{}).forEach(([exId,entries])=>{
+  const BILATERAL = [["hombro_izq","hombro_der"],["bicep_izq","bicep_der"],
+                     ["tricep_izq","tricep_der"],["antebrazo_izq","antebrazo_der"]];
+  Object.entries(logs||{}).forEach(([id,entries])=>{
     if(!entries||!entries.length) return;
-    let exName=exId;
-    if(routine) routine.forEach(d=>{if(!d||!d.ex)return;d.ex.forEach(e=>{if(e.id===exId)exName=e.e;});});
-    const muscleData=typeof EXERCISE_MUSCLE_MAP!=="undefined"?(EXERCISE_MUSCLE_MAP[exName.toLowerCase()]||null):null;
-    if(!muscleData) return;
-    const muscles=[...(muscleData.p||[]),...(muscleData.s||[])];
+    // Resolve exercise name from routine (same pattern as computeWeeklyMuscleVol)
+    let nm=id;
+    if(routine) routine.forEach(d=>{if(!d)return;(d.ex||[]).forEach(ex=>{if(ex.id===id)nm=ex.e;});});
+    const nmLow=nm?.toLowerCase()?.trim()||"";
+    // Use same fallback chain as computeWeeklyMuscleVol
+    const md=EXERCISE_MUSCLE_MAP[nmLow]||EXERCISE_MUSCLE_MAP[ES_TO_META[nmLow]];
+    if(!md) return;
+    const muscles=[...(md.p||[]),...(md.s||[])];
     muscles.forEach(m=>{
       const zk=FORJA_TO_ZONE[m.toLowerCase()];
       if(!zk) return;
@@ -3558,9 +3563,7 @@ function logsToZoneTimestamps(logs, routine) {
         const ts=new Date(e.d+"T12:00:00").getTime();
         if(!zoneTs[zk]||ts>zoneTs[zk]) zoneTs[zk]=ts;
       });
-      [["hombro_izq","hombro_der"],["bicep_izq","bicep_der"],
-       ["tricep_izq","tricep_der"],["antebrazo_izq","antebrazo_der"]
-      ].forEach(([a,b])=>{
+      BILATERAL.forEach(([a,b])=>{
         if(zk===a&&(!zoneTs[b]||zoneTs[a]>zoneTs[b])) zoneTs[b]=zoneTs[a];
         if(zk===b&&(!zoneTs[a]||zoneTs[b]>zoneTs[a])) zoneTs[a]=zoneTs[b];
       });
