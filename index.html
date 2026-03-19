@@ -3652,12 +3652,22 @@ function BodyHeatmapTab({logs, routine, lang, profile}){
     const ro=new ResizeObserver(resize); ro.observe(wrapRef.current);
 
     // ── Horizontal-only orbit ────────────────────────────────────────
-    let drag=false,lx=0,rotY=0,auto=true,mom=0,ldx=0;
+    let drag=false,lx=0,rotY=0,rotOffset=0,auto=true,mom=0,ldx=0;
     function applyRot(){ if(modelRef.current) modelRef.current.rotation.y=rotY; }
     const el=cvsRef.current;
     const onDown=e=>{ drag=true; lx=e.clientX; auto=false; ldx=0; };
     const onMove=e=>{ if(!drag) return; const dx=e.clientX-lx; rotY+=dx*0.009; ldx=dx; lx=e.clientX; applyRot(); };
-    const onUp  =()=>{ if(drag) mom=ldx*0.008; drag=false; };
+    let autoTimer=null;
+    const onUp  =()=>{
+      if(drag) mom=ldx*0.008;
+      drag=false;
+      clearTimeout(autoTimer);
+      autoTimer=setTimeout(()=>{
+        // Sync rotOffset so auto-rotate continues from current angle
+        rotOffset=rotY-(performance.now()-t0)*0.00022;
+        auto=true;
+      },2000);
+    };
     el.addEventListener("pointerdown",onDown);
     window.addEventListener("pointermove",onMove);
     window.addEventListener("pointerup",onUp);
@@ -3665,7 +3675,7 @@ function BodyHeatmapTab({logs, routine, lang, profile}){
     const t0=performance.now();
     function animate(t){
       rafRef.current=requestAnimationFrame(animate);
-      if(auto&&modelRef.current){ rotY=(t-t0)*0.00022; applyRot(); }
+      if(auto&&modelRef.current){ rotY=(t-t0)*0.00022+(typeof rotOffset!=='undefined'?rotOffset:0); applyRot(); }
       if(!drag&&!auto&&Math.abs(mom)>0.0002){ rotY+=mom; applyRot(); mom*=0.92; }
       ren.render(scene,cam);
     }
