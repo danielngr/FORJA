@@ -2783,14 +2783,17 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
       {/* ═══════════════════════════════════════════════ */}
       {step===1&&(
         <div style={{position:"fixed",inset:0,display:"flex",overflow:"hidden"}}>
-          <div style={{position:"absolute",top:0,bottom:0,left:"50%",width:1,background:"linear-gradient(to bottom, transparent 0%, rgba(255,255,255,.06) 30%, rgba(255,255,255,.06) 70%, transparent 100%)",zIndex:10,pointerEvents:"none"}}/>
+          <div style={{position:"absolute",top:0,bottom:0,left:"50%",width:1,
+  background:"linear-gradient(to bottom, transparent 0%, rgba(255,255,255,.06) 30%, rgba(255,255,255,.06) 70%, transparent 100%)",
+  zIndex:10,pointerEvents:"none",
+  opacity:gender?0:1,transition:"opacity .4s"}}/>
           {[
             {key:"male",  label:lang==="es"?"HOMBRE":"MAN",
               imgStyle:{objectPosition:"55% 10%",transform:"scaleX(-1)"},
-              img:"https://forjavideos.b-cdn.net/Nano_Banana_2_Metallic_male_humanoid_statue_with_a_classical_warrior_helmet_fully_covering_the_face__3.png"},
+              img:"https://forjavideos.b-cdn.net/forja-male.png"},
             {key:"female",label:lang==="es"?"MUJER":"WOMAN",
               imgStyle:{objectPosition:"45% 10%"},
-              img:"https://forjavideos.b-cdn.net/Nano_Banana_2_Metallic_female_humanoid_statue_with_a_classical_warrior_helmet_fully_covering_the_fac_2.png"},
+              img:"https://forjavideos.b-cdn.net/forja-female.png"},
           ].map(({key,label,img,imgStyle})=>{
             const sel=gender===key,desel=gender&&gender!==key;
             return(
