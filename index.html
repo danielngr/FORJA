@@ -2796,7 +2796,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               flex:sel?1.28:desel?.72:1,position:"relative",cursor:"pointer",overflow:"hidden",
               transition:"flex .5s cubic-bezier(.4,0,.2,1)"}}>
               <img src={img} alt={label} style={{position:"absolute",inset:0,width:"100%",height:"100%",
-                objectFit:"cover",objectPosition:"center top",
+                objectFit:"cover",objectPosition:"center 15%",
                 filter:sel?"brightness(.72) saturate(.85)":desel?"brightness(.25) saturate(.3)":"brightness(.5) saturate(.65)",
                 transition:"filter .5s"}}/>
               <div style={{position:"absolute",inset:0,
@@ -2808,14 +2808,14 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                 animation:"popIn .3s cubic-bezier(.34,1.56,.64,1)"}}>
                 <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M2 5.5l2.5 2.5 4.5-4.5" stroke="#07080a" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </div>}
-              <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"24px 22px 32px"}}>
+              <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"24px 22px 130px"}}>
                 <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:44,letterSpacing:4,
                   color:"#EEEAE3",lineHeight:1,opacity:desel?.3:1,transition:"opacity .3s"}}>{label}</div>
               </div>
             </div>
           )})}
-          <div style={{position:"fixed",bottom:0,left:0,right:0,padding:"12px 24px 44px",zIndex:20,
-            background:"linear-gradient(transparent 0%, rgba(7,8,10,.7) 20%, rgba(7,8,10,.95) 60%)",
+          <div style={{position:"fixed",bottom:0,left:0,right:0,padding:"16px 24px 48px",zIndex:20,
+            background:"linear-gradient(transparent 0%, rgba(7,8,10,.55) 15%, rgba(7,8,10,.92) 50%, rgba(7,8,10,.98) 100%)",
             display:"flex",flexDirection:"column",alignItems:"center",gap:8}}>
             <div style={{opacity:gender?1:0,pointerEvents:gender?"all":"none",transition:"opacity .3s",width:"100%",display:"flex",justifyContent:"flex-end"}}>
               <button onClick={()=>setStep(15)} style={{display:"inline-flex",alignItems:"center",gap:9,
