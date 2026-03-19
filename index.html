@@ -2093,7 +2093,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
       </div>
 
       <div style={{display:"flex",borderBottom:"1px solid rgba(255,255,255,0.05)",padding:"0 18px",background:"rgba(8,10,14,0.95)"}}>
-        {[{id:"train",l:t.train},{id:"body",l:lang==="es"?"CUERPO":"BODY"},{id:"stats",l:t.stats}].map(tb=>(
+        {[{id:"train",l:t.train},{id:"body",l:lang==="es"?"CUERPO":"BODY"}].map(tb=>(
           <button key={tb.id} onClick={()=>{setTab(tb.id);setAddEx(false);setAddF(false);}}
             style={{padding:"13px 0",marginRight:22,border:"none",
               borderBottom:`2px solid ${tab===tb.id?C.tx:"transparent"}`,background:"transparent",
@@ -2371,9 +2371,6 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
           <BodyHeatmapTab logs={logs} routine={routine} lang={lang}/>
         )}
 
-        {tab==="stats"&&(
-          <StatsScreen logs={logs} routine={routine} lang={lang} profile={profile}/>
-        )}
       </div>
     </div>
   );
@@ -3473,7 +3470,6 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
 
 
 // ── BODY HEATMAP 3D ─────────────────────────────────────────────────────────
-
 const ZONE_REC_HOURS = {
   pecho:72, dorsal:72, trapecio:48, romboides:48, espalda_baja:72,
   abdomen:48, oblicuos:48, hombro_izq:48, hombro_der:48,
@@ -3529,58 +3525,42 @@ const ZONE_LABELS_3D = {
   gemelos:"Gemelos",tibia:"Tibial Ant.",
 };
 
-// Colors as plain arrays — NO THREE references at module level
 const ZONE_COLOR_VALS = {
   fresh:[0.80,0.06,0.06], warm:[0.78,0.30,0.02],
   yel:[0.25,0.55,0.06],   rec:[0.12,0.12,0.16], base:[0.10,0.10,0.13],
 };
 
 function getZoneState(zk, st) {
-  const ts = st[zk];
-  if(!ts) return "rec";
-  const h = (Date.now()-ts)/3600000;
-  const rec = ZONE_REC_HOURS[zk]||72;
+  const ts = st[zk]; if(!ts) return "rec";
+  const h = (Date.now()-ts)/3600000, rec = ZONE_REC_HOURS[zk]||72;
   if(h < rec*0.33) return "fresh";
   if(h < rec*0.66) return "warm";
   if(h < rec) return "yel";
   return "rec";
 }
-
-function getDotColor(zk, st) {
-  const s = getZoneState(zk, st);
-  return s==="fresh"?"#e53535":s==="warm"?"#ff7a1a":s==="yel"?"#7ab82a":"#2a2a3a";
-}
-
-function getPct(zk, st) {
-  if(!st[zk]) return 100;
-  return Math.min(100,Math.round(((Date.now()-st[zk])/3600000)/(ZONE_REC_HOURS[zk]||72)*100));
-}
+function getDotColor(zk,st){const s=getZoneState(zk,st);return s==="fresh"?"#e53535":s==="warm"?"#ff7a1a":s==="yel"?"#7ab82a":"#2a2a3a";}
+function getPct(zk,st){if(!st[zk])return 100;return Math.min(100,Math.round(((Date.now()-st[zk])/3600000)/(ZONE_REC_HOURS[zk]||72)*100));}
 
 function logsToZoneTimestamps(logs, routine) {
   const zoneTs = {};
-  Object.entries(logs||{}).forEach(([exId, entries])=>{
+  Object.entries(logs||{}).forEach(([exId,entries])=>{
     if(!entries||!entries.length) return;
-    let exName = exId;
-    if(routine) routine.forEach(d=>{
-      if(!d||!d.ex) return;
-      d.ex.forEach(e=>{ if(e.id===exId) exName=e.e; });
-    });
-    const muscleData = typeof EXERCISE_MUSCLE_MAP!=="undefined"
-      ? (EXERCISE_MUSCLE_MAP[exName.toLowerCase()]||null) : null;
+    let exName=exId;
+    if(routine) routine.forEach(d=>{if(!d||!d.ex)return;d.ex.forEach(e=>{if(e.id===exId)exName=e.e;});});
+    const muscleData=typeof EXERCISE_MUSCLE_MAP!=="undefined"?(EXERCISE_MUSCLE_MAP[exName.toLowerCase()]||null):null;
     if(!muscleData) return;
-    const muscles = [...(muscleData.p||[]),...(muscleData.s||[])];
+    const muscles=[...(muscleData.p||[]),...(muscleData.s||[])];
     muscles.forEach(m=>{
-      const zk = FORJA_TO_ZONE[m.toLowerCase()];
+      const zk=FORJA_TO_ZONE[m.toLowerCase()];
       if(!zk) return;
       entries.forEach(e=>{
         if(!e.d) return;
-        const ts = new Date(e.d+"T12:00:00").getTime();
+        const ts=new Date(e.d+"T12:00:00").getTime();
         if(!zoneTs[zk]||ts>zoneTs[zk]) zoneTs[zk]=ts;
       });
-      // Mirror bilateral pairs
-      const pairs = [["hombro_izq","hombro_der"],["bicep_izq","bicep_der"],
-                     ["tricep_izq","tricep_der"],["antebrazo_izq","antebrazo_der"]];
-      pairs.forEach(([a,b])=>{
+      [["hombro_izq","hombro_der"],["bicep_izq","bicep_der"],
+       ["tricep_izq","tricep_der"],["antebrazo_izq","antebrazo_der"]
+      ].forEach(([a,b])=>{
         if(zk===a&&(!zoneTs[b]||zoneTs[a]>zoneTs[b])) zoneTs[b]=zoneTs[a];
         if(zk===b&&(!zoneTs[a]||zoneTs[b]>zoneTs[a])) zoneTs[a]=zoneTs[b];
       });
@@ -3589,107 +3569,95 @@ function logsToZoneTimestamps(logs, routine) {
   return zoneTs;
 }
 
-// Legacy stub — real heatmap is in BodyHeatmapTab
 function MuscleHeatmap({muscleVol,lang}){
-  return React.createElement("div",{
-    style:{color:"rgba(255,255,255,0.25)",fontSize:9,
-           fontFamily:"'SF Mono','Courier New',monospace",
-           textAlign:"center",padding:"14px 0"}
-  }, lang==="es"?"→ Ver pestaña CUERPO":"→ See BODY tab");
+  return React.createElement("div",{style:{color:"rgba(255,255,255,0.2)",fontSize:9,fontFamily:"'SF Mono','Courier New',monospace",textAlign:"center",padding:"10px 0"}},
+    lang==="es"?"→ Pestaña CUERPO":"→ BODY tab");
 }
 
-function BodyHeatmapTab({logs, routine, lang}){
+function BodyHeatmapTab({logs, routine, lang, profile}){
   const cvsRef  = React.useRef(null);
   const wrapRef = React.useRef(null);
-  const matMapRef   = React.useRef({});
-  const meshMapRef  = React.useRef({});
-  const modelRef    = React.useRef(null);
-  const rendererRef = React.useRef(null);
-  const cameraRef   = React.useRef(null);
-  const stateRef    = React.useRef({});
-  const rafRef      = React.useRef(null);
+  const matMapRef  = React.useRef({});
+  const meshMapRef = React.useRef({});
+  const modelRef   = React.useRef(null);
+  const rendRef    = React.useRef(null);
+  const camRef     = React.useRef(null);
+  const stRef      = React.useRef({});
+  const rafRef     = React.useRef(null);
 
-  const [loaded,   setLoaded]   = React.useState(false);
-  const [progress, setProgress] = React.useState(0);
-  const [pTxt,     setPTxt]     = React.useState("iniciando...");
+  const [loaded,     setLoaded]     = React.useState(false);
+  const [progress,   setProgress]   = React.useState(0);
+  const [pTxt,       setPTxt]       = React.useState("iniciando...");
   const [activeZone, setActiveZone] = React.useState(null);
-  const [brushState, setBrushState] = React.useState(null);
   const [zoneState,  setZoneState]  = React.useState({});
+  const [selPR,      setSelPR]      = React.useState(null);
 
+  const es   = lang==="es";
   const mono = "'SF Mono','Courier New',monospace";
+  const sans = "-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif";
   const C = {
-    bg:"#0a0a0d",bg2:"#111116",bg3:"#18181e",
+    bg:"#0a0a0d",bg2:"#111116",bg3:"#18181e",card:"#141418",
     bd:"rgba(255,255,255,0.06)",bd2:"rgba(255,255,255,0.12)",
-    tx:"#eeeef2",tx2:"#88889a",tx3:"#44445a",acc:"#e8e0d0"
+    tx:"#eeeef2",tx2:"#88889a",tx3:"#44445a",acc:"#e8e0d0",
+    green:"#5faa88",blue:"#6a8fc0",yellow:"#c0a870",red:"#d96060",purple:"#8878c0",
+    borderL:"rgba(255,255,255,0.08)",
   };
-  const es = lang==="es";
 
   // Sync logs → zone timestamps
   React.useEffect(()=>{
-    const ts = logsToZoneTimestamps(logs, routine);
-    setZoneState(ts);
-    stateRef.current = ts;
-  }, [logs, routine]);
+    const ts=logsToZoneTimestamps(logs,routine);
+    setZoneState(ts); stRef.current=ts;
+  },[logs,routine]);
 
-  // Update mat colors when zoneState changes
-  function refreshMats(st) {
+  function refreshMats(st){
     if(typeof THREE==="undefined") return;
     Object.entries(matMapRef.current).forEach(([name,mat])=>{
-      const zk = MESH_ZONE_3D[name]||"base";
-      const s  = getZoneState(zk, st);
-      const [r,g,b] = ZONE_COLOR_VALS[s]||ZONE_COLOR_VALS.base;
+      const zk=MESH_ZONE_3D[name]||"base";
+      const s=getZoneState(zk,st);
+      const [r,g,b]=ZONE_COLOR_VALS[s]||ZONE_COLOR_VALS.base;
       mat.color.setRGB(r,g,b);
     });
   }
-
-  React.useEffect(()=>{
-    stateRef.current = zoneState;
-    refreshMats(zoneState);
-  }, [zoneState]);
+  React.useEffect(()=>{ stRef.current=zoneState; refreshMats(zoneState); },[zoneState]);
 
   // Init Three.js
   React.useEffect(()=>{
-    if(!cvsRef.current||!wrapRef.current) return;
-    if(typeof THREE==="undefined") {
-      setPTxt("Three.js no disponible"); return;
-    }
+    if(!cvsRef.current||!wrapRef.current||typeof THREE==="undefined") return;
 
-    const ren = new THREE.WebGLRenderer({canvas:cvsRef.current, antialias:true});
+    const ren=new THREE.WebGLRenderer({canvas:cvsRef.current,antialias:true});
     ren.setPixelRatio(Math.min(devicePixelRatio,2));
-    ren.outputEncoding = THREE.sRGBEncoding;
-    ren.toneMapping    = THREE.ACESFilmicToneMapping;
-    ren.toneMappingExposure = 1.3;
+    ren.outputEncoding=THREE.sRGBEncoding;
+    ren.toneMapping=THREE.ACESFilmicToneMapping;
+    ren.toneMappingExposure=1.3;
     ren.setClearColor(0x0a0a0d,1);
-    rendererRef.current = ren;
+    rendRef.current=ren;
 
-    const scene = new THREE.Scene();
-    scene.fog   = new THREE.FogExp2(0x0a0a0d, 0.018);
-
-    const cam = new THREE.PerspectiveCamera(55,1,0.01,1000);
+    const scene=new THREE.Scene();
+    scene.fog=new THREE.FogExp2(0x0a0a0d,0.018);
+    const cam=new THREE.PerspectiveCamera(55,1,0.01,1000);
     cam.position.set(0,-0.5,20);
-    cameraRef.current = cam;
+    camRef.current=cam;
 
     scene.add(new THREE.AmbientLight(0x223344,0.5));
-    const kl = new THREE.DirectionalLight(0xfff4e0,2.2); kl.position.set(4,6,8);  scene.add(kl);
-    const fl = new THREE.DirectionalLight(0x8ab4e8,0.6); fl.position.set(-8,2,4); scene.add(fl);
-    const rl = new THREE.DirectionalLight(0xffffff,0.9); rl.position.set(0,4,-12);scene.add(rl);
+    const kl=new THREE.DirectionalLight(0xfff4e0,2.2); kl.position.set(4,6,8); scene.add(kl);
+    const fl=new THREE.DirectionalLight(0x8ab4e8,0.6); fl.position.set(-8,2,4); scene.add(fl);
+    const rl=new THREE.DirectionalLight(0xffffff,0.9); rl.position.set(0,4,-12); scene.add(rl);
 
     function resize(){
       if(!wrapRef.current) return;
-      const w=wrapRef.current.clientWidth, h=wrapRef.current.clientHeight;
+      const w=wrapRef.current.clientWidth,h=wrapRef.current.clientHeight;
       ren.setSize(w,h,false); cam.aspect=w/h; cam.updateProjectionMatrix();
     }
     resize();
-    const ro = new ResizeObserver(resize);
-    ro.observe(wrapRef.current);
+    const ro=new ResizeObserver(resize); ro.observe(wrapRef.current);
 
-    // Orbit
-    let drag=false,lx=0,ly=0,rotY=0,rotX=0,auto=true,mom=0,ldx=0;
-    function applyRot(){ if(modelRef.current){modelRef.current.rotation.y=rotY;modelRef.current.rotation.x=rotX;} }
-    const el = cvsRef.current;
-    const onDown = e=>{ drag=true; lx=e.clientX; ly=e.clientY; auto=false; ldx=0; };
-    const onMove = e=>{ if(!drag) return; const dx=e.clientX-lx,dy=e.clientY-ly; rotY+=dx*0.009; rotX=Math.max(-1.1,Math.min(1.1,rotX+dy*0.009)); ldx=dx; lx=e.clientX; ly=e.clientY; applyRot(); };
-    const onUp   = ()=>{ if(drag) mom=ldx*0.008; drag=false; };
+    // ── Horizontal-only orbit ────────────────────────────────────────
+    let drag=false,lx=0,rotY=0,auto=true,mom=0,ldx=0;
+    function applyRot(){ if(modelRef.current) modelRef.current.rotation.y=rotY; }
+    const el=cvsRef.current;
+    const onDown=e=>{ drag=true; lx=e.clientX; auto=false; ldx=0; };
+    const onMove=e=>{ if(!drag) return; const dx=e.clientX-lx; rotY+=dx*0.009; ldx=dx; lx=e.clientX; applyRot(); };
+    const onUp  =()=>{ if(drag) mom=ldx*0.008; drag=false; };
     el.addEventListener("pointerdown",onDown);
     window.addEventListener("pointermove",onMove);
     window.addEventListener("pointerup",onUp);
@@ -3703,753 +3671,260 @@ function BodyHeatmapTab({logs, routine, lang}){
     }
     rafRef.current=requestAnimationFrame(animate);
 
-    // Fetch GLB
-    setProgress(10); setPTxt(es?"cargando modelo...":"loading model...");
+    // Load GLB
+    setProgress(10); setPTxt(es?"cargando...":"loading...");
     fetch("forja_body.glb")
-      .then(r=>{ if(!r.ok) throw new Error("GLB 404"); setProgress(35); setPTxt(es?"descargando...":"downloading..."); return r.arrayBuffer(); })
+      .then(r=>{ if(!r.ok) throw new Error("GLB 404"); setProgress(35); return r.arrayBuffer(); })
       .then(buf=>{
         setProgress(60); setPTxt(es?"parseando...":"parsing...");
-        const u8  = new Uint8Array(buf);
-        const dv  = new DataView(buf);
+        const u8=new Uint8Array(buf), dv=new DataView(buf);
         if(dv.getUint32(0,true)!==0x46546C67) throw new Error("Invalid GLB");
-        const jLen = dv.getUint32(12,true);
-        const gltf = JSON.parse(new TextDecoder().decode(u8.slice(20,20+jLen)));
-        const bin  = u8.slice(20+jLen+8);
-
-        setProgress(80); setPTxt(es?"construyendo...":"building...");
-        const group = new THREE.Group();
-
+        const jLen=dv.getUint32(12,true);
+        const gltf=JSON.parse(new TextDecoder().decode(u8.slice(20,20+jLen)));
+        const bin=u8.slice(20+jLen+8);
+        setProgress(80);
+        const group=new THREE.Group();
         gltf.nodes.forEach(node=>{
           if(node.mesh===undefined) return;
           gltf.meshes[node.mesh].primitives.forEach(prim=>{
-            const geo = new THREE.BufferGeometry();
-            const getArr = (ai,T,n)=>{
-              const a=gltf.accessors[ai], bv=gltf.bufferViews[a.bufferView];
-              const off=(bv.byteOffset||0)+(a.byteOffset||0);
-              return new T(bin.buffer, bin.byteOffset+off, a.count*n);
-            };
-            if(prim.attributes.POSITION!==undefined)
-              geo.setAttribute("position",new THREE.BufferAttribute(getArr(prim.attributes.POSITION,Float32Array,3).slice(),3));
-            if(prim.attributes.NORMAL!==undefined)
-              geo.setAttribute("normal",new THREE.BufferAttribute(getArr(prim.attributes.NORMAL,Float32Array,3).slice(),3));
-            if(prim.indices!==undefined){
-              const a=gltf.accessors[prim.indices];
-              const T=a.componentType===5123?Uint16Array:Uint32Array;
-              geo.setIndex(new THREE.BufferAttribute(getArr(prim.indices,T,1).slice(),1));
-            }
+            const geo=new THREE.BufferGeometry();
+            const getArr=(ai,T,n)=>{const a=gltf.accessors[ai],bv=gltf.bufferViews[a.bufferView],off=(bv.byteOffset||0)+(a.byteOffset||0);return new T(bin.buffer,bin.byteOffset+off,a.count*n);};
+            if(prim.attributes.POSITION!==undefined) geo.setAttribute("position",new THREE.BufferAttribute(getArr(prim.attributes.POSITION,Float32Array,3).slice(),3));
+            if(prim.attributes.NORMAL!==undefined)   geo.setAttribute("normal",new THREE.BufferAttribute(getArr(prim.attributes.NORMAL,Float32Array,3).slice(),3));
+            if(prim.indices!==undefined){const a=gltf.accessors[prim.indices];geo.setIndex(new THREE.BufferAttribute(getArr(prim.indices,a.componentType===5123?Uint16Array:Uint32Array,1).slice(),1));}
             if(!geo.attributes.normal) geo.computeVertexNormals();
-
-            const zk = MESH_ZONE_3D[node.name]||"base";
-            const s  = getZoneState(zk, stateRef.current);
-            const [r,g,b] = ZONE_COLOR_VALS[s]||ZONE_COLOR_VALS.base;
-            const mat = new THREE.MeshStandardMaterial({
-              color:new THREE.Color(r,g,b),
-              roughness: zk==="base"?0.88:0.72,
-              metalness: 0.05,
-            });
-            matMapRef.current[node.name] = mat;
-
-            const mesh = new THREE.Mesh(geo,mat);
-            mesh.name = node.name;
+            const zk=MESH_ZONE_3D[node.name]||"base";
+            const s=getZoneState(zk,stRef.current);
+            const [r,g,b]=ZONE_COLOR_VALS[s]||ZONE_COLOR_VALS.base;
+            const mat=new THREE.MeshStandardMaterial({color:new THREE.Color(r,g,b),roughness:zk==="base"?0.88:0.72,metalness:0.05});
+            matMapRef.current[node.name]=mat;
+            const mesh=new THREE.Mesh(geo,mat); mesh.name=node.name;
             if(node.translation) mesh.position.set(...node.translation);
             if(node.rotation)    mesh.quaternion.set(...node.rotation);
             if(node.scale)       mesh.scale.set(...node.scale);
-            meshMapRef.current[node.name] = mesh;
-            group.add(mesh);
+            meshMapRef.current[node.name]=mesh; group.add(mesh);
           });
         });
-
-        const box    = new THREE.Box3().setFromObject(group);
-        const center = box.getCenter(new THREE.Vector3());
-        const size   = box.getSize(new THREE.Vector3());
-        group.position.sub(center);
-        group.position.y -= 5.0;
+        const box=new THREE.Box3().setFromObject(group);
+        const center=box.getCenter(new THREE.Vector3()), size=box.getSize(new THREE.Vector3());
+        group.position.sub(center); group.position.y-=5.0;
         group.scale.setScalar(14/Math.max(size.x,size.y,size.z));
-        scene.add(group);
-        modelRef.current = group;
-        refreshMats(stateRef.current);
+        scene.add(group); modelRef.current=group;
+        refreshMats(stRef.current);
         setProgress(100); setPTxt(es?"listo":"ready");
         setTimeout(()=>setLoaded(true),300);
       })
-      .catch(err=>{ console.error(err); setPTxt(es?"error al cargar":"load error"); });
+      .catch(err=>{ console.error(err); setPTxt("error"); });
 
     return ()=>{
-      cancelAnimationFrame(rafRef.current);
-      ro.disconnect();
+      cancelAnimationFrame(rafRef.current); ro.disconnect();
       el.removeEventListener("pointerdown",onDown);
       window.removeEventListener("pointermove",onMove);
       window.removeEventListener("pointerup",onUp);
       ren.dispose();
     };
-  },[]); // run once
+  },[]);
 
-  // Click — raycast
+  // Raycast click → show zone info only
   function handleClick(e){
     if(!modelRef.current||typeof THREE==="undefined") return;
-    const rect = cvsRef.current.getBoundingClientRect();
-    const mouse = new THREE.Vector2(
-      ((e.clientX-rect.left)/rect.width)*2-1,
-      -((e.clientY-rect.top)/rect.height)*2+1
-    );
-    const ray = new THREE.Raycaster();
-    ray.setFromCamera(mouse, cameraRef.current);
-    const hits = ray.intersectObjects(Object.values(meshMapRef.current));
+    const rect=cvsRef.current.getBoundingClientRect();
+    const mouse=new THREE.Vector2(((e.clientX-rect.left)/rect.width)*2-1,-((e.clientY-rect.top)/rect.height)*2+1);
+    const ray=new THREE.Raycaster(); ray.setFromCamera(mouse,camRef.current);
+    const hits=ray.intersectObjects(Object.values(meshMapRef.current));
     if(!hits.length) return;
-    const zk = MESH_ZONE_3D[hits[0].object.name];
-    if(!zk||zk==="base") return;
-
-    if(brushState){
-      const rec  = ZONE_REC_HOURS[zk]||72;
-      const frac = {fresh:0.1,warm:0.5,yel:0.8,rec:1.2}[brushState]||1.2;
-      const newTs = {...zoneState, [zk]: Date.now()-(rec*3600000*frac)};
-      // Mirror bilateral
-      [["hombro_izq","hombro_der"],["bicep_izq","bicep_der"],
-       ["tricep_izq","tricep_der"],["antebrazo_izq","antebrazo_der"]
-      ].forEach(([a,b])=>{
-        if(zk===a) newTs[b]=newTs[a];
-        if(zk===b) newTs[a]=newTs[b];
-      });
-      setZoneState(newTs);
-    } else {
-      setActiveZone(zk);
-    }
+    const zk=MESH_ZONE_3D[hits[0].object.name];
+    if(zk&&zk!=="base") setActiveZone(zk);
   }
 
   function getStatusText(zk){
     const ts=zoneState[zk];
     if(!ts) return es?"descansado — listo ✓":"rested — ready ✓";
-    const h=(Date.now()-ts)/3600000, rec=ZONE_REC_HOURS[zk]||72, left=Math.max(0,rec-h);
-    if(h<1)   return `${es?"activo":"active"} — ${Math.round(h*60)}m`;
+    const h=(Date.now()-ts)/3600000,rec=ZONE_REC_HOURS[zk]||72,left=Math.max(0,rec-h);
+    if(h<1) return `${es?"activo":"active"} — ${Math.round(h*60)}m`;
     if(h<rec) return `${es?"recuperando":"recovering"} — ${Math.round(left)}h ${es?"restantes":"left"}`;
     return es?"descansado — listo ✓":"rested — ready ✓";
   }
 
-  const ALL_ZONES = ["pecho","dorsal","trapecio","romboides","espalda_baja","abdomen","oblicuos",
-    "hombro_izq","hombro_der","bicep_izq","bicep_der","tricep_izq","tricep_der",
-    "antebrazo_izq","antebrazo_der","quad","gluteos","isquiotibiales","gemelos","tibia"];
-
-  const e = React.createElement;
-
-  return e("div",{style:{display:"flex",flexDirection:"column",height:"calc(100vh - 120px)"}},
-
-    // ── Canvas ─────────────────────────────────────────────────────────
-    e("div",{ref:wrapRef,style:{position:"relative",flex:"1 1 0",minHeight:200,touchAction:"none"},onClick:handleClick},
-      e("canvas",{ref:cvsRef,style:{display:"block",width:"100%",height:"100%"}}),
-      e("div",{style:{position:"absolute",inset:0,background:"radial-gradient(ellipse 80% 90% at 50% 50%, transparent 40%, rgba(10,10,13,0.65) 100%)",pointerEvents:"none"}}),
-      !loaded&&e("div",{style:{position:"absolute",inset:0,background:C.bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}},
-        e("div",{style:{fontSize:16,fontWeight:600,letterSpacing:"0.2em",color:C.acc,marginBottom:14}},"FORJA"),
-        e("div",{style:{width:110,height:1,background:C.bd2,overflow:"hidden",borderRadius:1}},
-          e("div",{style:{height:"100%",background:C.acc,width:progress+"%",transition:"width 0.4s ease"}})
-        ),
-        e("div",{style:{marginTop:8,fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:"0.1em"}},pTxt)
-      )
-    ),
-
-    // ── Bottom panel ────────────────────────────────────────────────────
-    e("div",{style:{background:C.bg2,borderTop:"1px solid "+C.bd,padding:"10px 14px 14px",overflowY:"auto",maxHeight:"42vh"}},
-
-      // Active zone info
-      e("div",{style:{background:C.bg3,border:"1px solid "+C.bd,borderRadius:10,padding:"10px 12px",marginBottom:8,minHeight:50}},
-        activeZone
-          ? e("div",null,
-              e("div",{style:{fontSize:11,fontWeight:500,color:C.acc,marginBottom:2,letterSpacing:"0.05em"}},(ZONE_LABELS_3D[activeZone]||activeZone).toUpperCase()),
-              e("div",{style:{fontSize:9,fontFamily:mono,color:C.tx2,marginBottom:6}},getStatusText(activeZone)),
-              e("div",{style:{display:"flex",alignItems:"center",gap:8}},
-                e("div",{style:{flex:1,height:2,background:C.bd,borderRadius:2,overflow:"hidden"}},
-                  e("div",{style:{height:"100%",background:getDotColor(activeZone,zoneState),width:getPct(activeZone,zoneState)+"%",transition:"width 1s ease"}})
-                ),
-                e("div",{style:{fontSize:9,fontFamily:mono,color:C.tx3,minWidth:28,textAlign:"right"}},getPct(activeZone,zoneState)+"%")
-              )
-            )
-          : e("div",{style:{fontSize:9,fontFamily:mono,color:C.tx3,paddingTop:4}},
-              es?"Toca una zona del cuerpo →":"Tap a muscle zone →"
-            )
-      ),
-
-      // Brush row
-      e("div",{style:{display:"flex",gap:6,marginBottom:8,alignItems:"center"}},
-        e("div",{style:{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:"0.06em",whiteSpace:"nowrap"}},es?"PINTAR:":"PAINT:"),
-        e("div",{style:{display:"flex",gap:4,flex:1}},
-          ...[
-            {id:null,   label:"✕",        col:C.bd2,      bg:C.bg3,    tc:C.tx3},
-            {id:"fresh",label:"0–33%",    col:"#e53535",  bg:"#1a0808",tc:"#e53535"},
-            {id:"warm", label:"33–66%",   col:"#ff7a1a",  bg:"#1a0f04",tc:"#ff7a1a"},
-            {id:"yel",  label:"66–99%",   col:"#7ab82a",  bg:"#0a1004",tc:"#7ab82a"},
-            {id:"rec",  label:es?"listo":"ready",col:C.bd2,bg:C.bg3,  tc:C.tx3},
-          ].map(b=>e("button",{key:String(b.id),onClick:()=>setBrushState(b.id),style:{
-            flex:1,padding:"5px 2px",background:b.bg,
-            border:"1.5px solid "+(brushState===b.id?b.col:"transparent"),
-            borderRadius:6,color:b.tc,fontFamily:mono,fontSize:8,cursor:"pointer",
-            opacity:brushState===b.id?1:0.55,transition:"all 0.15s",
-          }},b.label))
-        )
-      ),
-
-      // Legend
-      e("div",{style:{display:"flex",gap:10,marginBottom:8,flexWrap:"wrap"}},
-        [{c:"#e53535",g:true,l:es?"activo 0–33%":"active 0–33%"},
-         {c:"#ff7a1a",g:true,l:"33–66%"},
-         {c:"#7ab82a",g:false,l:"66–99%"},
-         {c:"#2a2a3a",g:false,l:es?"listo ✓":"ready ✓"},
-        ].map((x,i)=>e("div",{key:i,style:{display:"flex",alignItems:"center",gap:4}},
-          e("span",{style:{width:5,height:5,borderRadius:"50%",background:x.c,boxShadow:x.g?`0 0 5px ${x.c}`:"none",flexShrink:0}}),
-          e("span",{style:{fontSize:8,fontFamily:mono,color:C.tx3}},x.l)
-        ))
-      ),
-
-      // Zone pills
-      e("div",{style:{display:"flex",gap:4,flexWrap:"wrap"}},
-        ALL_ZONES.map(zk=>{
-          const dc = getDotColor(zk,zoneState);
-          const s  = getZoneState(zk,zoneState);
-          return e("div",{key:zk,onClick:()=>setActiveZone(zk),style:{
-            display:"flex",alignItems:"center",gap:3,padding:"4px 8px",
-            borderRadius:20,border:"1px solid "+(activeZone===zk?C.bd2:C.bd),
-            background:C.bg3,fontSize:8,fontFamily:mono,
-            color:activeZone===zk?C.acc:C.tx2,cursor:"pointer",transition:"all 0.2s",
-          }},
-            e("span",{style:{width:5,height:5,borderRadius:"50%",background:dc,boxShadow:s!=="rec"?`0 0 4px ${dc}`:"none",flexShrink:0}}),
-            ZONE_LABELS_3D[zk]||zk
-          );
-        })
-      )
-    )
-  );
-}
-
-
-function StatsScreen({logs,routine,lang,profile}){
-  const C={bg:"#383e4e",bgDeep:"#2c3040",card:"#424858",border:"#525a6e",borderL:"#4a5264",
-    tx:"#F0F2F5",tx2:"#C8CDD8",tx3:"#7a8294",
-    green:"#5faa88",blue:"#6a8fc0",yellow:"#c0a870",red:"#d96060",purple:"#8878c0"};
-  const mono="'SF Mono','Courier New',monospace";
-  const sans="-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif";
-  const es=lang==="es";
-  const[selPR,setSelPR]=useState(null);
-
-  // ── Datos ────────────────────────────────────────────────────────────
-  // PRs
+  // ── Stats data (moved from StatsScreen) ─────────────────────────────
   const prs=Object.entries(logs).map(([id,entries])=>{
     if(!entries||!entries.length) return null;
     const best=entries.reduce((b,e)=>((e.rm||0)>(b.rm||0)?e:b),entries[0]);
     let name=id;
-    if(routine) routine.forEach(d=>{if(!d)return;d.ex&&d.ex.forEach(e=>{if(e.id===id)name=e.e;})});
-    // Historial de 1RM ordenado por fecha
+    if(routine) routine.forEach(d=>{if(!d)return;d.ex&&d.ex.forEach(e=>{if(e.id===id)name=e.e;});});
     const hist=[...entries].sort((a,b)=>a.d.localeCompare(b.d)).map(e=>({d:e.d,rm:e.rm||0,w:e.w,r:e.r}));
-    return {id,name,best1rm:best.rm||0,bestW:best.w,bestR:best.r,date:best.d,entries,hist};
+    return {id,name,best1rm:best.rm||0,bestW:best.w,bestR:best.r,date:best.d,hist};
   }).filter(Boolean).filter(p=>p.best1rm>0).sort((a,b)=>b.best1rm-a.best1rm);
 
-  // Semana actual
-  const today=new Date();
-  const weekStart=new Date(today);
-  // Semana empieza el lunes (getDay: 0=dom,1=lun,...6=sab)
-  const dow=today.getDay();
-  const daysToMon=dow===0?6:dow-1; // días desde el lunes anterior
-  weekStart.setDate(today.getDate()-daysToMon);
-  weekStart.setHours(0,0,0,0);
+  const today=new Date(), todayStr=today.toISOString().slice(0,10);
+  const dow=today.getDay(), daysToMon=dow===0?6:dow-1;
+  const weekStart=new Date(today); weekStart.setDate(today.getDate()-daysToMon); weekStart.setHours(0,0,0,0);
   const weekStr=weekStart.toISOString().slice(0,10);
   let weekVol=0,weekSets=0;
-  Object.entries(logs).forEach(([id,entries])=>{
-    entries.forEach(e=>{if(e.d>=weekStr){weekVol+=((+e.w||0)*(+e.r||0));weekSets++;}});
-  });
+  Object.entries(logs).forEach(([id,entries])=>entries.forEach(e=>{if(e.d>=weekStr){weekVol+=((+e.w||0)*(+e.r||0));weekSets++;}}));
 
-  // Días entrenados últimas 12 semanas (grilla tipo GitHub)
-  const WEEKS=12;
-  const grid=Array.from({length:WEEKS},(_,wi)=>{
-    return Array.from({length:7},(_,di)=>{
-      const d=new Date(today);
-      // di=0=lun, di=6=dom (consistente con lunes como inicio de semana)
-      d.setDate(today.getDate()-daysToMon-((WEEKS-1-wi)*7)+di);
-      d.setHours(0,0,0,0);
-      const ds=d.toISOString().slice(0,10);
-      let vol=0;
-      Object.values(logs).forEach(entries=>entries.forEach(e=>{if(e.d===ds)vol+=(+e.w||0)*(+e.r||0);}));
-      return {ds,vol};
-    });
-  });
+  const allDays=new Set();
+  Object.values(logs).forEach(entries=>entries.forEach(e=>{if(e.d)allDays.add(e.d);}));
+  let streak=0,sc=new Date(today);
+  if(!allDays.has(todayStr)) sc.setDate(sc.getDate()-1);
+  while(true){const ds=sc.toISOString().slice(0,10);if(!allDays.has(ds))break;streak++;sc.setDate(sc.getDate()-1);if(streak>365)break;}
 
-  // Volumen por músculo esta semana (auto-calculado desde logs)
-  const muscleVol=computeWeeklyMuscleVol(logs,routine);
-  const mvArr=Object.entries(muscleVol).sort((a,b)=>b[1]-a[1]);
-  const totalMV=mvArr.reduce((s,[,v])=>s+v,0)||1;
-  // Recovery score por músculo
-  const recovery=computeRecovery(logs,routine);
-  const recoveryArr=Object.entries(recovery).sort((a,b)=>a[1].score-b[1].score); // most fatigued first
-  // Heatmap driven by fatigue (not weekly vol)
-  const heatmapInput=Object.keys(recovery).length>0?recoveryToHeatmap(recovery):muscleVol;
-
-  // Mes actual
-  const monthStr=today.toISOString().slice(0,7);
-  const trainedDays=new Set();
-  Object.values(logs).forEach(entries=>entries.forEach(e=>{if(e.d&&e.d.startsWith(monthStr))trainedDays.add(e.d);}));
-
-  // ── STREAK — días consecutivos entrenados ────────────────────────
-  // Collect ALL trained days across all time
-  const allTrainedDays=new Set();
-  Object.values(logs).forEach(entries=>entries.forEach(e=>{if(e.d)allTrainedDays.add(e.d);}));
-
-  // Current streak: count back from today (or yesterday if today not trained)
-  const todayStr=today.toISOString().slice(0,10);
-  let streakCurrent=0;
-  let streakCheck=new Date(today);
-  // If today not trained yet, start counting from yesterday
-  if(!allTrainedDays.has(todayStr)) streakCheck.setDate(streakCheck.getDate()-1);
-  while(true){
-    const ds=streakCheck.toISOString().slice(0,10);
-    if(!allTrainedDays.has(ds)) break;
-    streakCurrent++;
-    streakCheck.setDate(streakCheck.getDate()-1);
-    if(streakCurrent>365) break; // safety
-  }
-
-  // Best streak ever
-  const sortedDays=[...allTrainedDays].sort();
-  let streakBest=0,streakTemp=0;
-  for(let i=0;i<sortedDays.length;i++){
-    if(i===0){streakTemp=1;}
-    else{
-      const prev=new Date(sortedDays[i-1]);
-      const curr=new Date(sortedDays[i]);
-      const diff=(curr-prev)/(1000*60*60*24);
-      if(diff===1){streakTemp++;}
-      else{streakTemp=1;}
-    }
-    if(streakTemp>streakBest) streakBest=streakTemp;
-  }
-  if(streakCurrent>streakBest) streakBest=streakCurrent;
-
-  // This week's training days (Mon–Sun)
-  const weekDaysTrained=Array.from({length:7},(_,i)=>{
-    const d=new Date(weekStart);
-    d.setDate(weekStart.getDate()+i);
-    const ds=d.toISOString().slice(0,10);
-    return{ds,trained:allTrainedDays.has(ds),isToday:ds===todayStr,isFuture:ds>todayStr};
-  });
-
-  // PR seleccionado para el sparkline
   const prView=selPR!==null?prs[selPR]:prs[0];
+  const ALL_ZONES=["pecho","dorsal","trapecio","romboides","espalda_baja","abdomen","oblicuos","hombro_izq","hombro_der","bicep_izq","bicep_der","tricep_izq","tricep_der","antebrazo_izq","antebrazo_der","quad","gluteos","isquiotibiales","gemelos","tibia"];
 
-  // Colores por músculo
-  const muscleColor={"pectoral mayor":C.blue,"dorsal ancho":C.green,"cuádriceps":C.red,
-    "isquiotibiales":C.yellow,"glúteo mayor":C.purple,"deltoides anterior":C.blue,
-    "bíceps braquial":C.green,"tríceps braquial":C.yellow};
+  // Activity grid last 10 weeks
+  const WEEKS=10;
+  const grid=Array.from({length:WEEKS},(_,wi)=>Array.from({length:7},(_,di)=>{
+    const d=new Date(today); d.setDate(today.getDate()-daysToMon-((WEEKS-1-wi)*7)+di); d.setHours(0,0,0,0);
+    const ds=d.toISOString().slice(0,10);
+    let vol=0; Object.values(logs).forEach(entries=>entries.forEach(e=>{if(e.d===ds)vol+=(+e.w||0)*(+e.r||0);}));
+    return {ds,vol,isToday:ds===todayStr};
+  }));
+  const maxVol=Math.max(...grid.flat().map(d=>d.vol),1);
 
-  if(prs.length===0&&weekVol===0&&Object.keys(recovery).length===0) return(
-    <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:300,gap:12}}>
-      <div style={{fontSize:32,opacity:.3}}>📊</div>
-      <div style={{fontFamily:mono,fontSize:10,color:C.tx3,letterSpacing:2,textAlign:"center"}}>
-        {es?"COMPLETA TU PRIMER ENTRENO":"COMPLETE YOUR FIRST WORKOUT"}<br/>
-        <span style={{fontSize:9,opacity:.6}}>{es?"tus stats aparecerán aquí":"your stats will appear here"}</span>
-      </div>
-    </div>
-  );
+  const e=React.createElement;
 
-  return(
-    <div style={{paddingBottom:24}}>
+  return e("div",{style:{paddingBottom:32}},
 
-      {/* ── HERO: PR principal ───────────────────────────────────────── */}
-      {prView&&(
-        <div style={{
-          background:`linear-gradient(135deg, #2c3040 0%, #383e4e 100%)`,
-          borderRadius:20,padding:"20px 18px 18px",marginBottom:12,
-          border:`1px solid ${C.borderL}`,position:"relative",overflow:"hidden",
-        }}>
-          {/* Background glow */}
-          <div style={{position:"absolute",top:-40,right:-40,width:140,height:140,borderRadius:"50%",
-            background:"rgba(106,143,192,.12)",filter:"blur(30px)",pointerEvents:"none"}}/>
+    // ── 3D Canvas ──────────────────────────────────────────────────────
+    e("div",{ref:wrapRef,style:{position:"relative",height:260,touchAction:"none",marginBottom:0},onClick:handleClick},
+      e("canvas",{ref:cvsRef,style:{display:"block",width:"100%",height:"100%"}}),
+      e("div",{style:{position:"absolute",inset:0,background:"radial-gradient(ellipse 80% 90% at 50% 50%, transparent 40%, rgba(10,10,13,0.65) 100%)",pointerEvents:"none"}}),
+      !loaded&&e("div",{style:{position:"absolute",inset:0,background:C.bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}},
+        e("div",{style:{fontSize:14,fontWeight:600,letterSpacing:"0.2em",color:C.acc,marginBottom:12}},"FORJA"),
+        e("div",{style:{width:100,height:1,background:C.bd2,overflow:"hidden",borderRadius:1}},
+          e("div",{style:{height:"100%",background:C.acc,width:progress+"%",transition:"width 0.4s ease"}})
+        ),
+        e("div",{style:{marginTop:7,fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:"0.1em"}},pTxt)
+      ),
+      // Zone label overlay
+      activeZone&&e("div",{style:{position:"absolute",bottom:10,left:"50%",transform:"translateX(-50%)",background:"rgba(10,10,13,0.85)",backdropFilter:"blur(12px)",border:"1px solid "+C.bd2,borderRadius:30,padding:"6px 16px",fontSize:10,fontFamily:mono,color:C.acc,letterSpacing:"0.08em",pointerEvents:"none",whiteSpace:"nowrap"}},
+        (ZONE_LABELS_3D[activeZone]||activeZone).toUpperCase()+" · "+getStatusText(activeZone)
+      )
+    ),
 
-          <div style={{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:3,marginBottom:16}}>
-            🏆 {es?"MEJOR PR ACTIVO":"TOP PR"}
-          </div>
+    // ── Zone pills row ─────────────────────────────────────────────────
+    e("div",{style:{display:"flex",gap:4,flexWrap:"wrap",padding:"8px 0 12px",borderBottom:"1px solid "+C.bd}},
+      ALL_ZONES.map(zk=>{
+        const dc=getDotColor(zk,zoneState), s=getZoneState(zk,zoneState);
+        return e("div",{key:zk,onClick:()=>setActiveZone(zk),style:{
+          display:"flex",alignItems:"center",gap:3,padding:"4px 8px",borderRadius:20,
+          border:"1px solid "+(activeZone===zk?C.bd2:C.bd),background:C.bg3,
+          fontSize:8,fontFamily:mono,color:activeZone===zk?C.acc:C.tx2,cursor:"pointer",
+        }},
+          e("span",{style:{width:5,height:5,borderRadius:"50%",background:dc,boxShadow:s!=="rec"?`0 0 4px ${dc}`:"none",flexShrink:0}}),
+          ZONE_LABELS_3D[zk]||zk
+        );
+      })
+    ),
 
-          {/* Nombre del ejercicio */}
-          <div style={{fontSize:11,fontFamily:mono,color:C.tx3,letterSpacing:1,marginBottom:4,textTransform:"uppercase"}}>{prView.name}</div>
+    // ── Legend ─────────────────────────────────────────────────────────
+    e("div",{style:{display:"flex",gap:10,padding:"8px 0 14px",flexWrap:"wrap",borderBottom:"1px solid "+C.bd}},
+      [{c:"#e53535",g:true,l:es?"activo 0–33%":"active 0–33%"},{c:"#ff7a1a",g:true,l:"33–66%"},{c:"#7ab82a",g:false,l:"66–99%"},{c:"#2a2a3a",g:false,l:es?"listo":"ready"}]
+      .map((x,i)=>e("div",{key:i,style:{display:"flex",alignItems:"center",gap:4}},
+        e("span",{style:{width:5,height:5,borderRadius:"50%",background:x.c,boxShadow:x.g?`0 0 5px ${x.c}`:"none",flexShrink:0}}),
+        e("span",{style:{fontSize:8,fontFamily:mono,color:C.tx3}},x.l)
+      ))
+    ),
 
-          {/* 1RM grande */}
-          <div style={{display:"flex",alignItems:"baseline",gap:6,marginBottom:6}}>
-            <div style={{fontSize:52,fontWeight:900,letterSpacing:-3,color:C.tx,lineHeight:1,fontFamily:sans}}>{prView.best1rm}</div>
-            <div style={{fontSize:14,fontFamily:mono,color:C.tx3,fontWeight:400}}>kg<br/><span style={{fontSize:9}}>1RM est.</span></div>
-          </div>
-          <div style={{fontSize:9,fontFamily:mono,color:C.tx3,opacity:.55,letterSpacing:.5,marginBottom:14}}>
-            {es
-              ?"peso × (1 + reps/30) — cuánto podrías levantar una sola vez"
-              :"weight × (1 + reps/30) — your estimated single max lift"}
-          </div>
+    // ── PRs section ────────────────────────────────────────────────────
+    prs.length>0&&e("div",{style:{marginTop:16}},
+      e("div",{style:{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:3,marginBottom:12,textTransform:"uppercase"}},
+        "🏆 "+(es?"MIS PRs":"MY PRs")
+      ),
 
-          {/* Detalle del set */}
-          <div style={{display:"flex",gap:16,marginBottom:18}}>
-            <div>
-              <div style={{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:1.5,marginBottom:2}}>{es?"PESO":"WEIGHT"}</div>
-              <div style={{fontSize:18,fontWeight:700,color:C.tx}}>{prView.bestW}<span style={{fontSize:10,color:C.tx3,fontWeight:400}}>kg</span></div>
-            </div>
-            <div style={{width:1,background:C.borderL}}/>
-            <div>
-              <div style={{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:1.5,marginBottom:2}}>REPS</div>
-              <div style={{fontSize:18,fontWeight:700,color:C.tx}}>{prView.bestR}</div>
-            </div>
-            <div style={{width:1,background:C.borderL}}/>
-            <div>
-              <div style={{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:1.5,marginBottom:2}}>{es?"FECHA":"DATE"}</div>
-              <div style={{fontSize:13,fontWeight:600,color:C.tx2}}>{prView.date}</div>
-            </div>
-          </div>
+      // PR selector pills
+      prs.length>1&&e("div",{style:{display:"flex",gap:6,overflowX:"auto",paddingBottom:8,marginBottom:10}},
+        prs.slice(0,8).map((pr,i)=>
+          e("button",{key:pr.id,onClick:()=>setSelPR(i),style:{
+            flexShrink:0,padding:"6px 12px",borderRadius:20,
+            border:"1px solid "+((selPR===i||(selPR===null&&i===0))?C.blue:C.borderL),
+            background:(selPR===i||(selPR===null&&i===0))?"rgba(106,143,192,.12)":"transparent",
+            color:(selPR===i||(selPR===null&&i===0))?C.blue:C.tx3,
+            fontSize:9,fontFamily:mono,cursor:"pointer",whiteSpace:"nowrap",
+          }},pr.name+" ",e("span",{style:{opacity:.6}},pr.best1rm+"kg"))
+        )
+      ),
 
-          {/* Sparkline de progresión */}
-          {prView.hist&&prView.hist.length>1&&(()=>{
-            const vals=prView.hist.map(h=>h.rm).filter(v=>v>0);
-            if(vals.length<2) return null;
-            const mn=Math.min(...vals),mx=Math.max(...vals),rng=mx-mn||1;
-            const W=280,H=40;
-            const pts=vals.map((v,i)=>`${(i/(vals.length-1))*W},${H-((v-mn)/rng)*H}`).join(" ");
-            const last=vals[vals.length-1],prev=vals[vals.length-2];
-            const up=last>=prev;
-            return(
-              <div>
-                <svg width="100%" viewBox={`0 0 ${W} ${H+8}`} style={{overflow:"visible"}}>
-                  <polyline points={pts} fill="none" stroke={up?C.green:C.red} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity=".9"/>
-                  {vals.map((v,i)=>{
-                    const cx=(i/(vals.length-1))*W,cy=H-((v-mn)/rng)*H;
-                    return <circle key={i} cx={cx} cy={cy} r={i===vals.length-1?3.5:2} fill={i===vals.length-1?(up?C.green:C.red):C.borderL}/>;
-                  })}
-                </svg>
-                <div style={{display:"flex",justifyContent:"space-between",marginTop:4}}>
-                  <div style={{fontSize:8,fontFamily:mono,color:C.tx3}}>{prView.hist[0]?.d}</div>
-                  <div style={{fontSize:9,fontFamily:mono,color:up?C.green:C.red}}>
-                    {up?"↑":"↓"} {Math.abs(last-prev)}kg {es?"vs anterior":"vs prev"}
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
-        </div>
-      )}
+      // PR hero card
+      prView&&e("div",{style:{background:"linear-gradient(135deg,#1a1d26 0%,#1e2230 100%)",borderRadius:16,padding:"16px 16px 14px",marginBottom:12,border:"1px solid "+C.borderL,position:"relative",overflow:"hidden"}},
+        e("div",{style:{position:"absolute",top:-30,right:-30,width:100,height:100,borderRadius:"50%",background:"rgba(106,143,192,.1)",filter:"blur(20px)",pointerEvents:"none"}}),
+        e("div",{style:{fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:1,marginBottom:6,textTransform:"uppercase"}},prView.name),
+        e("div",{style:{display:"flex",alignItems:"baseline",gap:6,marginBottom:4}},
+          e("div",{style:{fontSize:46,fontWeight:900,letterSpacing:-2,color:C.tx,lineHeight:1,fontFamily:sans}},prView.best1rm),
+          e("div",{style:{fontSize:13,fontFamily:mono,color:C.tx3}},"kg ",e("span",{style:{fontSize:9}},"1RM"))
+        ),
+        e("div",{style:{display:"flex",gap:14,marginBottom:12}},
+          e("div",null,e("div",{style:{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:1,marginBottom:2}},"PESO"),e("div",{style:{fontSize:16,fontWeight:700,color:C.tx}},prView.bestW,e("span",{style:{fontSize:9,color:C.tx3,fontWeight:400}},"kg"))),
+          e("div",{style:{width:1,background:C.borderL}}),
+          e("div",null,e("div",{style:{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:1,marginBottom:2}},"REPS"),e("div",{style:{fontSize:16,fontWeight:700,color:C.tx}},prView.bestR)),
+          e("div",{style:{width:1,background:C.borderL}}),
+          e("div",null,e("div",{style:{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:1,marginBottom:2}},"FECHA"),e("div",{style:{fontSize:12,fontWeight:600,color:C.tx2}},prView.date))
+        ),
+        // Sparkline
+        prView.hist&&prView.hist.length>1&&(()=>{
+          const vals=prView.hist.map(h=>h.rm).filter(v=>v>0);
+          if(vals.length<2) return null;
+          const mn=Math.min(...vals),mx=Math.max(...vals),rng=mx-mn||1;
+          const W=280,H=36;
+          const pts=vals.map((v,i)=>`${(i/(vals.length-1))*W},${H-((v-mn)/rng)*H}`).join(" ");
+          const up=vals[vals.length-1]>=vals[vals.length-2];
+          return e("div",null,
+            e("svg",{width:"100%",viewBox:`0 0 ${W} ${H+4}`,style:{overflow:"visible"}},
+              e("polyline",{points:pts,fill:"none",stroke:up?C.green:C.red,strokeWidth:"1.5",strokeLinecap:"round",strokeLinejoin:"round",opacity:".9"}),
+              e("g",null,vals.map((v,i)=>{const cx=(i/(vals.length-1))*W,cy=H-((v-mn)/rng)*H;return e("circle",{key:i,cx,cy,r:i===vals.length-1?3:2,fill:i===vals.length-1?(up?C.green:C.red):C.borderL});}))
+            ),
+            e("div",{style:{display:"flex",justifyContent:"space-between",marginTop:3}},
+              e("div",{style:{fontSize:8,fontFamily:mono,color:C.tx3}},prView.hist[0]?.d),
+              e("div",{style:{fontSize:8,fontFamily:mono,color:up?C.green:C.red}},
+                (up?"↑":"↓")+" "+Math.abs(vals[vals.length-1]-vals[vals.length-2])+"kg "+(es?"vs anterior":"vs prev"))
+            )
+          );
+        })()
+      )
+    ),
 
-      {/* ── SELECTOR DE PRs ─────────────────────────────────────────── */}
-      {prs.length>1&&(
-        <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:4,marginBottom:12}}>
-          {prs.slice(0,8).map((pr,i)=>(
-            <button key={pr.id} onClick={()=>setSelPR(i)} style={{
-              flexShrink:0,padding:"7px 12px",borderRadius:20,
-              border:`1px solid ${(selPR===i||(selPR===null&&i===0))?C.blue:C.borderL}`,
-              background:(selPR===i||(selPR===null&&i===0))?"rgba(106,143,192,.12)":"transparent",
-              color:(selPR===i||(selPR===null&&i===0))?C.blue:C.tx3,
-              fontSize:10,fontFamily:mono,letterSpacing:.5,cursor:"pointer",
-              whiteSpace:"nowrap",transition:"all .15s",
-            }}>
-              {pr.name} <span style={{opacity:.6}}>{pr.best1rm}kg</span>
-            </button>
-          ))}
-        </div>
-      )}
+    // ── Weekly stats ───────────────────────────────────────────────────
+    e("div",{style:{display:"flex",gap:8,marginTop:14,marginBottom:14}},
+      [{l:es?"SEMANA":"WEEK",v:Math.round(weekVol)+"kg",sub:weekSets+" sets"},
+       {l:es?"RACHA":"STREAK",v:streak,sub:streak>=3?"🔥":"días"},
+       {l:"PRs",v:prs.length,sub:es?"ejercicios":"exercises"},
+      ].map((s,i)=>e("div",{key:i,style:{flex:1,background:C.bg3,border:"1px solid "+C.bd,borderRadius:10,padding:"10px 10px 8px"}},
+        e("div",{style:{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:4}},s.l),
+        e("div",{style:{fontSize:22,fontWeight:900,color:C.tx,fontFamily:sans,letterSpacing:-1}},s.v),
+        e("div",{style:{fontSize:8,fontFamily:mono,color:C.tx3,marginTop:2}},s.sub)
+      ))
+    ),
 
-      {/* ── RECOVERY PANEL ──────────────────────────────────────────── */}
-      {recoveryArr.length>0&&(
-        <div style={{background:C.card,borderRadius:16,padding:"14px 16px",marginBottom:12,border:`1px solid ${C.borderL}`}}>
-          <div style={{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12,textTransform:"uppercase"}}>
-            ⚡ {es?"RECUPERACIÓN MUSCULAR":"MUSCLE RECOVERY"}
-          </div>
-          <div style={{display:"flex",flexDirection:"column",gap:8}}>
-            {recoveryArr.map(([m,{score,hoursLeft}])=>{
-              const pct=Math.round(score*100);
-              const color=score>=0.75?C.green:score>=0.40?"#c0a870":C.red;
-              const label=score>=0.75
-                ?(es?"Listo":"Ready")
-                :score>=0.40
-                  ?(es?`~${hoursLeft}h restantes`:`~${hoursLeft}h left`)
-                  :(es?`~${hoursLeft}h restantes`:`~${hoursLeft}h left`);
-              return(
-                <div key={m}>
-                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:3,alignItems:"center"}}>
-                    <div style={{fontSize:10,color:C.tx2,textTransform:"capitalize",fontFamily:mono}}>{m}</div>
-                    <div style={{fontSize:9,fontFamily:mono,color,fontWeight:600}}>{label} · {pct}%</div>
-                  </div>
-                  <div style={{height:4,background:C.border,borderRadius:2}}>
-                    <div style={{height:"100%",width:`${pct}%`,background:color,borderRadius:2,transition:"width .6s"}}/>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* ── MUSCLE HEATMAP ──────────────────────────────────────────── */}
-      <div style={{background:C.card,borderRadius:16,padding:"16px",marginBottom:12,border:`1px solid ${C.borderL}`,display:"flex",flexDirection:"column",alignItems:"center"}}>
-        <div style={{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12,textTransform:"uppercase",alignSelf:"flex-start"}}>
-          {recoveryArr.length>0?(es?"FATIGA MUSCULAR":"MUSCLE FATIGUE"):(es?"MÚSCULOS ESTA SEMANA":"MUSCLES THIS WEEK")}
-        </div>
-        <MuscleHeatmap muscleVol={heatmapInput} totalVol={totalMV} lang={lang}/>
-        {totalMV===0&&(
-          <div style={{fontSize:10,fontFamily:mono,color:C.tx3,marginTop:8,letterSpacing:1}}>
-            {es?"entrena para ver el mapa activo":"train to see the active map"}
-          </div>
-        )}
-      </div>
-
-      {/* ── STREAK ──────────────────────────────────────────────────── */}
-      <div style={{
-        background:streakCurrent>=3
-          ?`linear-gradient(135deg,rgba(192,112,40,.18) 0%,rgba(217,96,60,.08) 100%)`
-          :C.card,
-        borderRadius:16,padding:"16px 18px",marginBottom:12,
-        border:`1px solid ${streakCurrent>=3?"rgba(217,140,60,.35)":C.borderL}`,
-        position:"relative",overflow:"hidden",
-      }}>
-        {/* Glow fondo si racha activa */}
-        {streakCurrent>=3&&<div style={{position:"absolute",top:-30,right:-20,width:120,height:120,
-          borderRadius:"50%",background:"rgba(217,120,40,.15)",filter:"blur(30px)",pointerEvents:"none"}}/>}
-
-        <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:14}}>
-          <div>
-            <div style={{fontSize:8,fontFamily:mono,color:streakCurrent>=3?C.yellow:C.tx3,
-              letterSpacing:2,marginBottom:4,textTransform:"uppercase"}}>
-              {es?"RACHA ACTUAL":"CURRENT STREAK"}
-            </div>
-            <div style={{display:"flex",alignItems:"baseline",gap:6}}>
-              <div style={{fontSize:48,fontWeight:900,letterSpacing:-2,
-                color:streakCurrent>=7?C.yellow:streakCurrent>=3?"#ff8c3c":C.tx,
-                lineHeight:1,fontFamily:sans,
-              }}>{streakCurrent}</div>
-              <div style={{fontSize:13,fontFamily:mono,color:C.tx3,fontWeight:400}}>
-                {es?"días":"days"}
-              </div>
-              {streakCurrent>=3&&<div style={{fontSize:24}}>{streakCurrent>=7?"🔥":"⚡"}</div>}
-            </div>
-            {streakCurrent===0&&(
-              <div style={{fontSize:10,fontFamily:mono,color:C.tx3,marginTop:4}}>
-                {es?"entrena hoy para empezar":"train today to start"}
-              </div>
-            )}
-          </div>
-          {streakBest>0&&(
-            <div style={{textAlign:"right"}}>
-              <div style={{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:1.5,marginBottom:3,textTransform:"uppercase"}}>
-                {es?"mejor racha":"best streak"}
-              </div>
-              <div style={{fontSize:22,fontWeight:900,color:C.tx3,letterSpacing:-1,fontFamily:sans}}>
-                {streakBest}
-                <span style={{fontSize:10,fontWeight:400,color:C.tx3,marginLeft:3}}>{es?"días":"d"}</span>
-              </div>
-              {streakCurrent===streakBest&&streakBest>1&&(
-                <div style={{fontSize:8,fontFamily:mono,color:C.yellow,letterSpacing:1}}>RÉCORD 🏆</div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Dots de la semana — L M X J V S D */}
-        <div>
-          <div style={{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:1.5,marginBottom:8,textTransform:"uppercase"}}>
-            {es?"esta semana":"this week"}
-          </div>
-          <div style={{display:"flex",gap:6,alignItems:"center"}}>
-            {weekDaysTrained.map(({ds,trained,isToday,isFuture},i)=>{
-              const labels=es?["L","M","X","J","V","S","D"]:["M","T","W","T","F","S","S"];
-              const col=trained?C.green:isToday?"rgba(95,170,136,.3)":C.border;
-              const borderCol=isToday?C.green:trained?C.green:C.borderL;
-              return(
-                <div key={ds} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
-                  <div style={{
-                    width:"100%",aspectRatio:"1",borderRadius:"50%",
-                    background:isFuture?"transparent":col,
-                    border:`1.5px solid ${isFuture?C.borderL+"44":borderCol}`,
-                    display:"flex",alignItems:"center",justifyContent:"center",
-                    fontSize:8,color:trained?C.white:isToday?C.green:C.tx3,
-                    fontFamily:mono,fontWeight:trained?700:400,
-                    boxShadow:trained?`0 0 8px rgba(95,170,136,.4)`:"none",
-                    transition:"all .2s",
-                  }}>
-                    {trained?"✓":isToday?"·":""}
-                  </div>
-                  <div style={{fontSize:8,fontFamily:mono,
-                    color:isToday?C.green:trained?C.tx2:C.tx3,
-                    fontWeight:isToday?700:400,
-                  }}>{labels[i]}</div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Mensaje motivacional según racha */}
-        {streakCurrent>0&&(
-          <div style={{marginTop:12,padding:"8px 12px",borderRadius:10,
-            background:"rgba(255,255,255,.04)",border:`1px solid ${C.borderL}33`,
-          }}>
-            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:.5}}>
-              {streakCurrent>=14?es?"🔥 Imparable. Sigue así.":"🔥 Unstoppable. Keep going."
-              :streakCurrent>=7 ?es?"⚡ Una semana seguida. Eres consistente.":"⚡ A full week. You're consistent."
-              :streakCurrent>=3 ?es?"💪 Buen ritmo. No pares ahora.":"💪 Good rhythm. Don't stop now."
-              :                   es?"✓ Empezando la racha. Mañana es clave.":"✓ Streak started. Tomorrow is key."}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* ── STATS RÁPIDAS ───────────────────────────────────────────── */}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:12}}>
-        {[
-          {l:es?"VOL SEMANA":"WEEK VOL",v:weekVol>999?(weekVol/1000).toFixed(1)+"t":weekVol+"kg",s:`${weekSets} sets`,c:C.blue},
-          {l:es?"DÍAS/MES":"DAYS/MO",v:String(trainedDays.size),s:es?"este mes":"this month",c:C.green},
-          {l:"PRs",v:String(prs.length),s:es?"ejercicios":"exercises",c:C.yellow},
-        ].map(({l,v,s,c})=>(
-          <div key={l} style={{background:C.card,borderRadius:14,padding:"12px 10px",textAlign:"center",border:`1px solid ${C.borderL}`}}>
-            <div style={{fontSize:7,fontFamily:mono,color:C.tx3,letterSpacing:1.5,marginBottom:6,textTransform:"uppercase"}}>{l}</div>
-            <div style={{fontSize:24,fontWeight:900,letterSpacing:-1,color:c,lineHeight:1,fontFamily:sans}}>{v}</div>
-            <div style={{fontSize:9,fontFamily:mono,color:C.tx3,marginTop:4}}>{s}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* ── GRILLA DE ACTIVIDAD ─────────────────────────────────────── */}
-      <div style={{background:C.card,borderRadius:16,padding:"14px 16px",marginBottom:12,border:`1px solid ${C.borderL}`}}>
-        <div style={{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12,textTransform:"uppercase"}}>
-          {es?"ACTIVIDAD — ÚLTIMAS 12 SEMANAS":"ACTIVITY — LAST 12 WEEKS"}
-        </div>
-        {/* Días de la semana labels */}
-        <div style={{display:"flex",gap:3,marginBottom:4}}>
-          {(es?["","L","","X","","V",""]:["","M","","W","","F",""]).map((d,i)=>(
-            <div key={i} style={{width:14,fontSize:7,fontFamily:mono,color:C.tx3,textAlign:"center"}}>{d}</div>
-          ))}
-        </div>
-        {/* Grilla */}
-        <div style={{display:"flex",flexDirection:"column",gap:3}}>
-          {/* Transponer: mostrar por semanas horizontales */}
-          {Array.from({length:7},(_,di)=>(
-            <div key={di} style={{display:"flex",gap:3}}>
-              {grid.map((week,wi)=>{
-                const cell=week[di];
-                if(!cell) return <div key={wi} style={{width:14,height:14}}/>;
-                const lvl=cell.vol===0?0:cell.vol<5000?1:cell.vol<15000?2:3;
-                const bg=lvl===0?C.border:lvl===1?"rgba(106,143,192,.35)":lvl===2?"rgba(106,143,192,.65)":C.blue;
-                const isFuture=cell.ds>today.toISOString().slice(0,10);
-                return(
-                  <div key={wi} title={`${cell.ds}${cell.vol>0?" · "+Math.round(cell.vol/1000)+"t":""}`}
-                    style={{width:14,height:14,borderRadius:3,
-                      background:isFuture?"transparent":bg,
-                      border:isFuture?`1px solid ${C.borderL}33`:"none",
-                      transition:"background .2s",cursor:cell.vol>0?"pointer":"default",
-                    }}/>
-                );
-              })}
-            </div>
-          ))}
-        </div>
-        <div style={{display:"flex",justifyContent:"space-between",marginTop:8,alignItems:"center"}}>
-          <div style={{fontSize:8,fontFamily:mono,color:C.tx3}}>12 {es?"semanas":"weeks"}</div>
-          <div style={{display:"flex",alignItems:"center",gap:4}}>
-            <div style={{fontSize:7,fontFamily:mono,color:C.tx3}}>{es?"menos":"less"}</div>
-            {[C.border,"rgba(106,143,192,.35)","rgba(106,143,192,.65)",C.blue].map((c,i)=>(
-              <div key={i} style={{width:10,height:10,borderRadius:2,background:c}}/>
-            ))}
-            <div style={{fontSize:7,fontFamily:mono,color:C.tx3}}>{es?"más":"more"}</div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── VOLUMEN POR MÚSCULO ─────────────────────────────────────── */}
-      {mvArr.length>0&&(
-        <div style={{background:C.card,borderRadius:16,padding:"14px 16px",marginBottom:12,border:`1px solid ${C.borderL}`}}>
-          <div style={{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:16,textTransform:"uppercase"}}>
-            💪 {es?"DISTRIBUCIÓN MUSCULAR — ESTA SEMANA":"MUSCLE SPLIT — THIS WEEK"}
-          </div>
-          <div style={{display:"flex",gap:16,alignItems:"center"}}>
-            {/* Donut chart SVG */}
-            {(()=>{
-              const R=42,r=26,cx=52,cy=52;
-              let angle=-Math.PI/2;
-              const colors=[C.blue,C.green,C.red,C.yellow,C.purple,"#5faaaa","#aa8878"];
-              const slices=mvArr.map(([m,v],i)=>{
-                const pct=v/totalMV;
-                const a1=angle,a2=angle+pct*Math.PI*2;
-                angle=a2;
-                const x1=cx+R*Math.cos(a1),y1=cy+R*Math.sin(a1);
-                const x2=cx+R*Math.cos(a2),y2=cy+R*Math.sin(a2);
-                const ix1=cx+r*Math.cos(a1),iy1=cy+r*Math.sin(a1);
-                const ix2=cx+r*Math.cos(a2),iy2=cy+r*Math.sin(a2);
-                const large=pct>.5?1:0;
-                const path=`M ${ix1} ${iy1} L ${x1} ${y1} A ${R} ${R} 0 ${large} 1 ${x2} ${y2} L ${ix2} ${iy2} A ${r} ${r} 0 ${large} 0 ${ix1} ${iy1} Z`;
-                return {path,color:colors[i%colors.length],muscle:m,pct,vol:v};
-              });
-              return(
-                <svg width="104" height="104" style={{flexShrink:0}}>
-                  {slices.map((s,i)=>(
-                    <path key={i} d={s.path} fill={s.color} opacity=".85" stroke={C.card} strokeWidth="1.5"/>
-                  ))}
-                  <circle cx={cx} cy={cy} r={r-1} fill={C.bgDeep}/>
-                  <text x={cx} y={cy-4} textAnchor="middle" fill={C.tx} fontSize="11" fontWeight="900" fontFamily={sans}>{Math.round(totalMV/1000*10)/10}</text>
-                  <text x={cx} y={cy+9} textAnchor="middle" fill={C.tx3} fontSize="8" fontFamily={mono}>ton</text>
-                </svg>
-              );
-            })()}
-            {/* Leyenda */}
-            <div style={{flex:1,display:"flex",flexDirection:"column",gap:6}}>
-              {mvArr.slice(0,5).map(([m,v],i)=>{
-                const colors=[C.blue,C.green,C.red,C.yellow,C.purple];
-                const pct=Math.round(v/totalMV*100);
-                return(
-                  <div key={m}>
-                    <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
-                      <div style={{display:"flex",alignItems:"center",gap:6}}>
-                        <div style={{width:6,height:6,borderRadius:"50%",background:colors[i%colors.length],flexShrink:0}}/>
-                        <div style={{fontSize:10,color:C.tx2,textTransform:"capitalize"}}>{m}</div>
-                      </div>
-                      <div style={{fontSize:9,fontFamily:mono,color:C.tx3}}>{pct}%</div>
-                    </div>
-                    <div style={{height:3,background:C.border,borderRadius:2}}>
-                      <div style={{height:"100%",width:`${pct}%`,background:colors[i%colors.length],borderRadius:2,transition:"width .5s",opacity:.8}}/>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── TOP PRs LIST ─────────────────────────────────────────────── */}
-      {prs.length>0&&(
-        <div style={{background:C.card,borderRadius:16,padding:"14px 16px",border:`1px solid ${C.borderL}`}}>
-          <div style={{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:14,textTransform:"uppercase"}}>
-            {es?"TODOS LOS PRs":"ALL PRs"} <span style={{opacity:.5}}>({prs.length})</span>
-          </div>
-          <div style={{display:"flex",flexDirection:"column",gap:0}}>
-            {prs.map((pr,i)=>{
-              const prev=pr.hist&&pr.hist.length>1?pr.hist[pr.hist.length-2]?.rm:null;
-              const delta=prev?pr.best1rm-prev:null;
-              return(
-                <div key={pr.id} onClick={()=>setSelPR(i)}
-                  style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",
-                    borderBottom:i<prs.length-1?`1px solid ${C.borderL}33`:"none",
-                    cursor:"pointer",transition:"opacity .15s",
-                    opacity:(selPR===i||(selPR===null&&i===0))?1:.75,
-                  }}>
-                  {/* Rank */}
-                  <div style={{
-                    width:20,height:20,borderRadius:"50%",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",
-                    fontSize:8,fontFamily:mono,color:i<3?["#c0a870","#9aa0b0","#c07060"][i]:C.tx3,
-                    fontWeight:700,
-                  }}>{i===0?"🥇":i===1?"🥈":i===2?"🥉":i+1}</div>
-                  {/* Nombre */}
-                  <div style={{flex:1,fontSize:12,color:C.tx,textTransform:"capitalize",fontWeight:500,
-                    whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{pr.name}</div>
-                  {/* Delta */}
-                  {delta!==null&&delta!==0&&(
-                    <div style={{fontSize:9,fontFamily:mono,color:delta>0?C.green:C.red,flexShrink:0}}>
-                      {delta>0?"+":""}{delta}
-                    </div>
-                  )}
-                  {/* 1RM */}
-                  <div style={{textAlign:"right",flexShrink:0}}>
-                    <div style={{fontSize:15,fontWeight:900,color:C.tx,letterSpacing:-.5,fontFamily:sans}}>{pr.best1rm}<span style={{fontSize:8,fontWeight:400,color:C.tx3}}>kg</span></div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-    </div>
+    // ── Activity grid ──────────────────────────────────────────────────
+    e("div",{style:{background:C.bg3,border:"1px solid "+C.bd,borderRadius:12,padding:"12px 12px 10px",marginTop:4}},
+      e("div",{style:{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:10,textTransform:"uppercase"}},
+        es?"ACTIVIDAD ÚLTIMAS 10 SEMANAS":"LAST 10 WEEKS"
+      ),
+      e("div",{style:{display:"flex",gap:3}},
+        grid.map((week,wi)=>
+          e("div",{key:wi,style:{display:"flex",flexDirection:"column",gap:3}},
+            week.map((day,di)=>{
+              const opacity=day.vol>0?0.25+0.75*(day.vol/maxVol):0.06;
+              const bg=day.vol>0?`rgba(95,170,136,${opacity})`:"rgba(255,255,255,0.04)";
+              return e("div",{key:di,style:{
+                width:10,height:10,borderRadius:2,background:bg,
+                border:day.isToday?"1px solid rgba(232,224,208,0.6)":"1px solid transparent",
+              }});
+            })
+          )
+        )
+      ),
+      e("div",{style:{display:"flex",justifyContent:"flex-end",marginTop:6,gap:4,alignItems:"center"}},
+        e("span",{style:{fontSize:7,fontFamily:mono,color:C.tx3}},es?"menos":"less"),
+        e("div",{style:{width:8,height:8,borderRadius:1.5,background:"rgba(95,170,136,0.06)"}}),
+        e("div",{style:{width:8,height:8,borderRadius:1.5,background:"rgba(95,170,136,0.25)"}}),
+        e("div",{style:{width:8,height:8,borderRadius:1.5,background:"rgba(95,170,136,0.5)"}}),
+        e("div",{style:{width:8,height:8,borderRadius:1.5,background:"rgba(95,170,136,0.75)"}}),
+        e("div",{style:{width:8,height:8,borderRadius:1.5,background:"rgba(95,170,136,1)"}}),
+        e("span",{style:{fontSize:7,fontFamily:mono,color:C.tx3}},es?"más":"more")
+      )
+    )
   );
 }
 
