@@ -2623,12 +2623,51 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                   const cap = lang==="es"?"series":"sets";
                   return(
                     <div style={{marginTop:14,padding:"14px 16px",background:C.card,borderRadius:12,border:`1px solid ${C.borderL}`}}>
-                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:12}}>
-                        <div style={{fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:2}}>
-                          {lang==="es"?"// VOLUMEN SEMANAL":"// WEEKLY VOLUME"}
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                        <div style={{display:"flex",alignItems:"center",gap:6}}>
+                          <div style={{fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:2}}>
+                            {lang==="es"?"// VOLUMEN SEMANAL":"// WEEKLY VOLUME"}
+                          </div>
+                          <button onClick={()=>{const el=document.getElementById("vol-help");if(el)el.style.display=el.style.display==="none"?"":"none";}} style={{
+                            width:16,height:16,borderRadius:"50%",
+                            border:"1px solid rgba(255,255,255,.2)",background:"rgba(255,255,255,.06)",
+                            color:"rgba(255,255,255,.4)",fontSize:9,cursor:"pointer",
+                            display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0
+                          }}>?</button>
                         </div>
                         <div style={{fontSize:8,fontFamily:mono,color:C.tx3,opacity:.5}}>
-                          {lang==="es"?"primario · ½ secundario":"primary · ½ secondary"}
+                          {lang==="es"?"primario · ½ sec":"primary · ½ sec"}
+                        </div>
+                      </div>
+                      <div id="vol-help" style={{display:"none",marginBottom:12,padding:"10px 12px",
+                        borderRadius:8,background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.07)"}}>
+                        <div style={{fontSize:9,color:C.tx,fontWeight:600,marginBottom:8}}>
+                          {lang==="es"?"¿Cómo leer esto?":"How to read this?"}
+                        </div>
+                        <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                          {[
+                            {c:C.green,    t:lang==="es"?"Barra dorada/verde = en rango óptimo":"Gold/green = in optimal range",
+                                           s:lang==="es"?"Suficientes series para crecer. ✓":"Enough sets to grow. ✓"},
+                            {c:"rgba(255,255,255,.2)", t:lang==="es"?"Barra gris = falta volumen":"Grey = below minimum",
+                                           s:lang==="es"?"Agrega 1-2 series más esta semana.":"Add 1-2 more sets this week."},
+                            {c:"#e05555",  t:lang==="es"?"Barra roja = exceso":"Red = too much",
+                                           s:lang==="es"?"Riesgo de fatiga acumulada. Baja un poco.":"Fatigue risk. Back off a bit."},
+                          ].map((row,ri)=>(
+                            <div key={ri} style={{display:"flex",gap:8,alignItems:"flex-start"}}>
+                              <div style={{width:3,height:3,borderRadius:"50%",background:row.c,marginTop:4,flexShrink:0}}/>
+                              <div>
+                                <div style={{fontSize:8,fontFamily:mono,color:row.c}}>{row.t}</div>
+                                <div style={{fontSize:8,color:C.tx3,lineHeight:1.5,marginTop:1}}>{row.s}</div>
+                              </div>
+                            </div>
+                          ))}
+                          <div style={{borderTop:"1px solid rgba(255,255,255,.06)",paddingTop:6,marginTop:2,
+                            fontSize:8,fontFamily:mono,color:C.tx3,lineHeight:1.6}}>
+                            <span style={{color:"rgba(255,255,255,.3)"}}>MEV</span>
+                            {lang==="es"?" = mínimo para crecer  ":" = minimum to grow  "}
+                            <span style={{color:"rgba(255,255,255,.3)"}}>MRV</span>
+                            {lang==="es"?" = máximo recuperable":" = maximum recoverable"}
+                          </div>
                         </div>
                       </div>
                       <div style={{display:"flex",flexDirection:"column",gap:10}}>
