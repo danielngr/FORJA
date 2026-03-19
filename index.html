@@ -3467,8 +3467,8 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                     if(!cel)return;
                     setDays(cel.days);
                     setCelebData(cel);
-                    if(gymType==="gym"){
-                      // Gym completo: skip equipment, go to day builder
+                    if(gymType==="gym"||equipment.length>0){
+                      // Equipment already chosen — skip straight to day builder
                       setStep(23);
                     } else {
                       setStep(8);
