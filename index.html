@@ -2853,6 +2853,29 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
     );
   };
 
+  const Btn=({onClick,disabled,ghost,children,style={}})=>(
+    <button onClick={onClick} disabled={disabled} style={{
+      width:"100%",padding:"15px 20px",borderRadius:14,cursor:disabled?"not-allowed":"pointer",
+      border:ghost?"1px solid rgba(240,242,245,0.15)":"none",
+      background:ghost?"transparent":disabled?"rgba(240,242,245,0.08)":"#F0F2F5",
+      color:ghost?"rgba(240,242,245,0.6)":disabled?"rgba(240,242,245,0.3)":"#2c3040",
+      fontSize:11,fontFamily:mono,fontWeight:500,letterSpacing:2,
+      textTransform:"uppercase",transition:"all .2s",
+      opacity:disabled?0.5:1,...style
+    }}>{children}</button>
+  );
+
+  const Num=({val,set,min,max,label})=>(
+    <div>
+      <div style={{fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:8,textTransform:"uppercase"}}>{label}</div>
+      <div style={{display:"flex",alignItems:"center",gap:12}}>
+        <button onClick={()=>set(Math.max(min,val-1))} style={{width:36,height:36,borderRadius:"50%",border:"1.5px solid rgba(240,242,245,0.15)",background:"transparent",color:C.tx2,fontSize:18,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>-</button>
+        <div style={{fontSize:36,fontWeight:900,color:C.tx,flex:1,textAlign:"center",letterSpacing:-1}}>{val}</div>
+        <button onClick={()=>set(Math.min(max,val+1))} style={{width:36,height:36,borderRadius:"50%",border:"1.5px solid rgba(240,242,245,0.15)",background:"transparent",color:C.tx2,fontSize:18,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>+</button>
+      </div>
+    </div>
+  );
+
   return(
     <div style={{minHeight:"100vh",background:"#07080a",color:"#EEEAE3",
       fontFamily:"'DM Sans',sans-serif",position:"relative",overflowX:"hidden"}}>
