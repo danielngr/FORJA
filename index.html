@@ -3635,7 +3635,7 @@ function BodyHeatmapTab({logs, routine, lang, profile}){
     const scene=new THREE.Scene();
     scene.fog=new THREE.FogExp2(0x0a0a0d,0.018);
     const cam=new THREE.PerspectiveCamera(55,1,0.01,1000);
-    cam.position.set(0,-0.5,20);
+    cam.position.set(0,0,23);
     camRef.current=cam;
 
     scene.add(new THREE.AmbientLight(0x223344,0.5));
@@ -3717,7 +3717,7 @@ function BodyHeatmapTab({logs, routine, lang, profile}){
         });
         const box=new THREE.Box3().setFromObject(group);
         const center=box.getCenter(new THREE.Vector3()), size=box.getSize(new THREE.Vector3());
-        group.position.sub(center); group.position.y-=1.0;
+        group.position.sub(center); group.position.y-=0.0;
         group.scale.setScalar(20/Math.max(size.x,size.y,size.z));
         scene.add(group); modelRef.current=group;
         refreshMats(stRef.current);
