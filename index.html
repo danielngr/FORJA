@@ -4182,6 +4182,8 @@ function BodyHeatmapTab({logs, routine, lang, profile}){
 
   return e("div",{style:{paddingBottom:32}},
 
+
+
     // -- 3D Canvas ------------------------------------------------------
     e("div",{ref:wrapRef,style:{position:"relative",height:480,touchAction:"none",marginBottom:0},onClick:handleClick},
       e("canvas",{ref:cvsRef,style:{display:"block",width:"100%",height:"100%"}}),
@@ -4207,6 +4209,135 @@ function BodyHeatmapTab({logs, routine, lang, profile}){
         e("span",{style:{fontSize:8,fontFamily:mono,color:C.tx3}},x.l)
       ))
     ),
+
+
+    // -- Balance Detail (below mannequin, above PRs) ---------------------
+    (()=>{
+      const ZONES_MAIN=["pecho","dorsal","hombro_izq","bicep_izq","tricep_izq",
+        "quad","gluteos","isquiotibiales","abdomen","gemelos","trapecio","espalda_baja"];
+      const ZONE_PAIRS={hombro_izq:"hombro_der",bicep_izq:"bicep_der",
+        tricep_izq:"tricep_der",antebrazo_izq:"antebrazo_der"};
+      const mono_="'SF Mono','Fira Code','Courier New',monospace";
+      const sans_="-apple-system,BlinkMacSystemFont,sans-serif";
+
+      const zr=ZONES_MAIN.map(zk=>{
+        const ts=zoneState[zk]||zoneState[ZONE_PAIRS[zk]];
+        if(!ts) return{zk,pct:100,state:"never"};
+        const h=(Date.now()-ts)/3600000,rec=ZONE_REC_HOURS[zk]||72;
+        return{zk,pct:Math.min(100,Math.round((h/rec)*100)),state:getZoneState(zk,zoneState)};
+      });
+
+      const neverTrained=zr.filter(z=>z.state==="never").length;
+      const overFatigued=zr.filter(z=>z.state==="fresh").length;
+      const balanceScore=Math.max(5,Math.min(100,
+        Math.round(100 - neverTrained*(100/ZONES_MAIN.length)*1.2 - overFatigued*2)
+      ));
+      const scoreColor=balanceScore>=75?"#5faa88":balanceScore>=55?"#c0a870":"#d96060";
+
+      // Sort zones: untrained first, then most recovered, then fatigued
+      const sorted=[...zr].sort((a,b)=>{
+        if(a.state==="never"&&b.state!=="never") return -1;
+        if(b.state==="never"&&a.state!=="never") return 1;
+        return b.pct-a.pct;
+      });
+
+      // "Fix my balance" — top 3 zones to train
+      const toTrain=sorted.filter(z=>z.pct>=60).slice(0,3);
+
+      // Recovery banners: most fatigued + most ready
+      const mostFatigued=[...zr].sort((a,b)=>a.pct-b.pct).find(z=>z.state==="fresh"||z.state==="warm");
+      const mostReady=[...zr].sort((a,b)=>b.pct-a.pct).find(z=>z.state!=="never"&&z.pct===100);
+
+      return e(React.Fragment,null,
+
+        // ── Recovery pills row ──
+        (mostFatigued||mostReady)&&e("div",{style:{
+          display:"flex",gap:8,padding:"12px 0 4px",flexWrap:"wrap"
+        }},
+          mostFatigued&&e("div",{style:{
+            display:"flex",alignItems:"center",gap:7,
+            padding:"7px 12px",borderRadius:30,
+            background:"rgba(217,96,96,0.07)",
+            border:"1px solid rgba(217,96,96,0.18)",flex:1
+          }},
+            e("span",{style:{fontSize:12}},"🔥"),
+            e("div",{},
+              e("div",{style:{fontSize:9,color:"#d96060",fontFamily:mono_,letterSpacing:.5,lineHeight:1}},
+                `${ZONE_LABELS_3D[mostFatigued.zk]}: ${mostFatigued.pct}% ${es?"recuperado":"recovered"}`
+              ),
+              e("div",{style:{fontSize:7,color:"rgba(255,255,255,.25)",fontFamily:mono_,marginTop:2}},
+                (()=>{
+                  const hLeft=Math.round((ZONE_REC_HOURS[mostFatigued.zk]||72)*(1-mostFatigued.pct/100));
+                  return hLeft>0?(es?`${hLeft}h para descanso completo`:`${hLeft}h to full rest`):"";
+                })()
+              )
+            )
+          ),
+          mostReady&&e("div",{style:{
+            display:"flex",alignItems:"center",gap:7,
+            padding:"7px 12px",borderRadius:30,
+            background:"rgba(95,170,136,0.07)",
+            border:"1px solid rgba(95,170,136,0.18)",flex:1
+          }},
+            e("span",{style:{fontSize:12}},"✅"),
+            e("div",{style:{fontSize:9,color:"#5faa88",fontFamily:mono_,letterSpacing:.5,lineHeight:1.5}},
+              `${ZONE_LABELS_3D[mostReady.zk]} ${es?"listo para entrenar":"ready to train"}`
+            )
+          )
+        ),
+
+        // ── "Fix my balance" section ──
+        toTrain.length>0&&e("div",{style:{
+          marginTop:12,padding:"12px 14px",borderRadius:12,
+          background:"rgba(255,255,255,0.03)",
+          border:"1px solid rgba(255,255,255,0.07)"
+        }},
+          e("div",{style:{
+            display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10
+          }},
+            e("div",{style:{fontSize:8,fontFamily:mono_,color:C.tx3,letterSpacing:2}},
+              es?"// FIX MY BALANCE":"// FIX MY BALANCE"
+            ),
+            e("div",{style:{
+              fontSize:7,fontFamily:mono_,color:scoreColor,letterSpacing:1,
+              padding:"2px 8px",borderRadius:10,
+              background:`rgba(${balanceScore>=75?"95,170,136":balanceScore>=55?"192,168,112":"217,96,96"},0.12)`,
+            }},`+${Math.round(toTrain.length*(100/ZONES_MAIN.length)*1.2)} pts`)
+          ),
+          e("div",{style:{fontSize:9,color:"rgba(255,255,255,.4)",fontFamily:mono_,marginBottom:10,lineHeight:1.5}},
+            es?"Entrena estas zonas hoy para subir tu score:":"Train these zones today to raise your score:"
+          ),
+          e("div",{style:{display:"flex",flexDirection:"column",gap:6}},
+            ...toTrain.map(z=>{
+              const isNever=z.state==="never";
+              const c=isNever?"#c0a870":"#5faa88";
+              const ptGain=Math.round((100/ZONES_MAIN.length)*1.2);
+              return e("div",{key:z.zk,style:{
+                display:"flex",alignItems:"center",gap:10,
+                padding:"8px 10px",borderRadius:8,
+                background:"rgba(255,255,255,0.03)",
+                border:"1px solid rgba(255,255,255,0.05)"
+              }},
+                e("div",{style:{
+                  width:6,height:6,borderRadius:"50%",background:c,flexShrink:0
+                }}),
+                e("div",{style:{flex:1,fontSize:10,color:C.tx2}},(ZONE_LABELS_3D[z.zk]||z.zk)),
+                e("div",{style:{fontSize:8,fontFamily:mono_,color:C.tx3}},
+                  isNever?(es?"sin entrenar":"not trained"):
+                  `${z.pct}% ${es?"recuperado":"recovered"}`
+                ),
+                e("div",{style:{
+                  fontSize:7,fontFamily:mono_,color:c,letterSpacing:.5,
+                  padding:"2px 6px",borderRadius:8,
+                  background:`rgba(${isNever?"192,168,112":"95,170,136"},0.10)`
+                }},`+${ptGain}`)
+              )
+            })
+          )
+        )
+
+      );
+    })(),
 
     // -- PRs section ----------------------------------------------------
     prs.length>0&&e("div",{style:{marginTop:16}},
