@@ -2189,6 +2189,79 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
 
       {/* Arc popup close on outside click */}
       {arcPopOpen&&<div style={{position:"fixed",inset:0,zIndex:79}} onClick={()=>setArcPopOpen(false)}/>}
+
+      {/* ── WORKOUT TOUR ───────────────────────────────── */}
+      {wsTourStep!==null&&wsTourStep!==-1&&(()=>{
+        const mono_="'SF Mono','Fira Code','Courier New',monospace";
+        const sans_="'DM Sans',sans-serif";
+        const es=lang==="es";
+        const WS_START=4,TOTAL=12;
+        const wsIdx=wsTourStep-WS_START;
+        if(wsIdx<0||wsIdx>3) return null;
+        const stepDefs=[
+          {id:"ws-exercise",pad:12,
+           titleES:"Tu ejercicio",titleEN:"Your exercise",
+           textES:"Nombre del ejercicio y músculos que trabaja. Cada día tiene su selección específica.",
+           textEN:"Exercise name and muscles worked. Each day has its specific selection."},
+          {id:"ws-video",pad:4,
+           titleES:"Video de técnica",titleEN:"Technique video",
+           textES:"El video muestra la técnica correcta. Estúdialo antes de empezar cada ejercicio.",
+           textEN:"The video shows correct technique. Study it before starting each exercise."},
+          {id:"ws-sets",pad:8,
+           titleES:"Registra peso y reps",titleEN:"Log weight and reps",
+           textES:"Ingresa el peso en KG y las reps. FORJA recuerda y muestra si mejoraste vs. sesión anterior.",
+           textEN:"Enter weight in KG and reps. FORJA remembers and shows if you improved vs. last session."},
+          {id:"ws-check",pad:8,
+           titleES:"Marca la serie",titleEN:"Mark the set",
+           textES:"Toca ✓ al terminar la serie. Se pone verde y arranca el timer de descanso.",
+           textEN:"Tap ✓ when done. It turns green and the rest timer starts."},
+        ];
+        const step=stepDefs[wsIdx];
+        if(!step) return null;
+        const el=document.querySelector(`[data-tour="${step.id}"]`);
+        const bounds=el?el.getBoundingClientRect():null;
+        const pad=step.pad||8;
+        const vh=window.innerHeight;
+        const tooltipBelow=bounds&&(bounds.bottom+pad)<(vh*0.55);
+        const endTour=()=>{ try{localStorage.setItem('fv8_toured','1');}catch{} setTourStep(-1); };
+        const nextStep=()=>{ const ns=wsTourStep+1; if(ns===8) onBack(); setTourStep(ns); };
+        return(
+          <div style={{position:"fixed",inset:0,zIndex:9000,pointerEvents:"none"}}>
+            {bounds?<>
+              <div style={{position:"fixed",top:0,left:0,right:0,height:Math.max(0,bounds.top-pad),background:"rgba(0,0,0,0.88)",pointerEvents:"all"}}/>
+              <div style={{position:"fixed",left:0,right:0,top:bounds.bottom+pad,bottom:0,background:"rgba(0,0,0,0.88)",pointerEvents:"all"}}/>
+              <div style={{position:"fixed",top:bounds.top-pad,height:bounds.height+pad*2,left:0,width:Math.max(0,bounds.left-pad),background:"rgba(0,0,0,0.88)",pointerEvents:"all"}}/>
+              <div style={{position:"fixed",top:bounds.top-pad,height:bounds.height+pad*2,left:bounds.right+pad,right:0,background:"rgba(0,0,0,0.88)",pointerEvents:"all"}}/>
+              <div style={{position:"fixed",top:bounds.top-pad,left:bounds.left-pad,width:bounds.width+pad*2,height:bounds.height+pad*2,borderRadius:14,pointerEvents:"none",border:"2.5px solid rgba(191,169,138,1)",boxShadow:"0 0 0 1px rgba(191,169,138,0.25),0 0 20px rgba(191,169,138,0.5)"}}/>
+            </>:<div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.88)",pointerEvents:"all"}}/>}
+            <div style={{position:"absolute",left:20,right:20,
+              ...(tooltipBelow?{top:bounds?(bounds.bottom+pad+12):60}:{bottom:bounds?(vh-bounds.top+pad+12):40}),
+              background:"#141418",borderRadius:16,border:"1px solid rgba(255,255,255,0.1)",
+              padding:"20px 20px 16px",boxShadow:"0 24px 48px rgba(0,0,0,0.7)",pointerEvents:"all",zIndex:2}}>
+              <div style={{fontFamily:mono_,fontSize:8,color:"rgba(255,255,255,0.3)",letterSpacing:2,marginBottom:10}}>
+                {wsTourStep+1} / {TOTAL}
+                <span style={{display:"inline-block",marginLeft:10,width:60,height:2,verticalAlign:"middle",background:"rgba(255,255,255,0.08)",borderRadius:1,position:"relative",overflow:"hidden"}}>
+                  <span style={{position:"absolute",inset:0,width:`${((wsTourStep+1)/TOTAL)*100}%`,background:"#BFA98A",borderRadius:1,transition:"width 0.3s ease"}}/>
+                </span>
+              </div>
+              <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,letterSpacing:1.5,color:"#EEEAE3",marginBottom:10,lineHeight:1}}>
+                {es?step.titleES:step.titleEN}
+              </div>
+              <div style={{fontSize:14,color:"rgba(238,234,227,0.85)",lineHeight:1.7,marginBottom:20,fontFamily:sans_}}>
+                {es?step.textES:step.textEN}
+              </div>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
+                <button onClick={endTour} style={{background:"none",border:"none",padding:"8px 0",fontFamily:mono_,fontSize:9,letterSpacing:1,color:"rgba(255,255,255,0.25)",cursor:"pointer"}}>
+                  {es?"Saltar tour":"Skip tour"}
+                </button>
+                <button onClick={nextStep} style={{padding:"12px 24px",borderRadius:10,border:"none",background:"#EEEAE3",color:"#07080a",fontFamily:mono_,fontSize:11,fontWeight:700,letterSpacing:2,cursor:"pointer"}}>
+                  CONTINUAR →
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
@@ -2874,110 +2947,15 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
 
 
 
-      {/* ── WORKOUT TOUR ───────────────────────────────── */}
-      {wsTourStep!==null&&wsTourStep!==-1&&(()=>{
-        const mono_="'SF Mono','Fira Code','Courier New',monospace";
-        const sans_="'DM Sans',sans-serif";
-        const es=lang==="es";
+      
 
-        // Only handle wsStep steps here
-        const WS_STEPS=["ws-exercise","ws-video","ws-sets","ws-check"];
-        // Get current step id from parent STEPS array — we use tourStep index
-        // ws steps are indices 4-7 in the full STEPS array
-        const WS_START=4;
-        const wsIdx=wsTourStep-WS_START;
-        if(wsIdx<0||wsIdx>=WS_STEPS.length) return null;
 
-        const stepDefs=[
-          {id:"ws-exercise",pad:12,
-           titleES:"Tu ejercicio",titleEN:"Your exercise",
-           textES:"Nombre del ejercicio, músculos que trabaja y nivel. Cada día tiene su selección específica.",
-           textEN:"Exercise name, muscles worked and level. Each day has its specific selection."},
-          {id:"ws-video",pad:4,
-           titleES:"Video de técnica",titleEN:"Technique video",
-           textES:"El video se reproduce automáticamente con la técnica correcta. Estúdialo antes de empezar.",
-           textEN:"Video plays automatically with correct technique. Study it before starting."},
-          {id:"ws-sets",pad:8,
-           titleES:"Registra tu peso y reps",titleEN:"Log your weight and reps",
-           textES:"Ingresa el peso en KG y las repeticiones. FORJA recuerda y muestra si mejoraste la sesión anterior.",
-           textEN:"Enter weight in KG and reps. FORJA remembers and shows if you improved vs. last session."},
-          {id:"ws-check",pad:8,
-           titleES:"Marca la serie como hecha",titleEN:"Mark the set as done",
-           textES:"Toca ✓ al terminar cada serie. Se pone verde y arranca el timer de descanso.",
-           textEN:"Tap ✓ when you finish each set. It turns green and rest timer starts."},
-        ];
-        const step=stepDefs[wsIdx];
-        if(!step) return null;
 
-        const el=document.querySelector(`[data-tour="${step.id}"]`);
-        const bounds=el?el.getBoundingClientRect():null;
-        const pad=step.pad||8;
-        const vh=window.innerHeight;
-        const tooltipBelow=bounds&&(bounds.bottom+pad)<(vh*0.55);
-        const TOTAL=12; // total steps in full tour
+      
 
-        const nextStep=()=>{
-          const ns=wsTourStep+1;
-          if(ns===8) onBack(); // exit workout, Main handles vol-weekly step
-          setTourStep(ns);
-        };
-        const endTour=()=>{
-          try{localStorage.setItem('fv8_toured','1');}catch{}
-          setTourStep(-1);
-        };
 
-        return(
-          <div style={{position:"fixed",inset:0,zIndex:9000,pointerEvents:"none"}}>
-            <>
-              <div style={{position:"fixed",top:0,left:0,right:0,height:Math.max(0,(bounds?bounds.top:0)-pad),background:"rgba(0,0,0,0.88)",pointerEvents:"all"}}/>
-              <div style={{position:"fixed",left:0,right:0,top:(bounds?bounds.bottom:0)+pad,bottom:0,background:"rgba(0,0,0,0.88)",pointerEvents:"all"}}/>
-              <div style={{position:"fixed",top:(bounds?bounds.top:0)-pad,height:(bounds?bounds.height:0)+pad*2,left:0,width:Math.max(0,(bounds?bounds.left:0)-pad),background:"rgba(0,0,0,0.88)",pointerEvents:"all"}}/>
-              <div style={{position:"fixed",top:(bounds?bounds.top:0)-pad,height:(bounds?bounds.height:0)+pad*2,left:(bounds?bounds.right:0)+pad,right:0,background:"rgba(0,0,0,0.88)",pointerEvents:"all"}}/>
-              {bounds&&<div style={{position:"fixed",top:bounds.top-pad,left:bounds.left-pad,width:bounds.width+pad*2,height:bounds.height+pad*2,borderRadius:14,pointerEvents:"none",border:"2.5px solid rgba(191,169,138,1)",boxShadow:"0 0 0 1px rgba(191,169,138,0.25),0 0 20px rgba(191,169,138,0.5)"}}/>}
-            </>            <div style={{
-              position:"absolute",left:20,right:20,
-              ...(tooltipBelow
-                ?{top:bounds?(bounds.bottom+pad+12):undefined}
-                :{bottom:bounds?(vh-bounds.top+pad+12):40}),
-              background:"#141418",borderRadius:16,
-              border:"1px solid rgba(255,255,255,0.1)",
-              padding:"20px 20px 16px",
-              boxShadow:"0 24px 48px rgba(0,0,0,0.7)",
-              pointerEvents:"all",zIndex:2
-            }}>
-              <div style={{fontFamily:mono_,fontSize:8,color:"rgba(255,255,255,0.65)",letterSpacing:2,marginBottom:10}}>
-                {wsTourStep+1} / {TOTAL}
-                <span style={{display:"inline-block",marginLeft:10,width:60,height:2,verticalAlign:"middle",
-                  background:"rgba(255,255,255,0.08)",borderRadius:1,position:"relative",overflow:"hidden"}}>
-                  <span style={{position:"absolute",inset:0,width:`${((wsTourStep+1)/TOTAL)*100}%`,
-                    background:"#BFA98A",borderRadius:1,transition:"width 0.3s ease",
-                    boxShadow:"0 0 8px rgba(191,169,138,0.5)"}}/>
-                </span>
-              </div>
-              <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,letterSpacing:1.5,
-                color:"#EEEAE3",marginBottom:10,lineHeight:1}}>
-                {es?step.titleES:step.titleEN}
-              </div>
-              <div style={{fontSize:14,color:"rgba(238,234,227,0.85)",lineHeight:1.7,marginBottom:20,fontFamily:sans_}}>
-                {es?step.textES:step.textEN}
-              </div>
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
-                <button onClick={endTour} style={{background:"none",border:"none",padding:"8px 0",
-                  fontFamily:mono_,fontSize:9,letterSpacing:1,color:"rgba(255,255,255,0.6)",cursor:"pointer"}}>
-                  {es?"Saltar tour":"Skip tour"}
-                </button>
-                <button onClick={nextStep} style={{padding:"12px 24px",borderRadius:10,border:"none",
-                  background:"#EEEAE3",color:"#07080a",
-                  fontFamily:mono_,fontSize:11,fontWeight:700,letterSpacing:2,cursor:"pointer",
-                  display:"flex",alignItems:"center",gap:8}}>
-                  {wsIdx===stepDefs.length-1?(es?"CONTINUAR":"CONTINUE →"):(es?"CONTINUAR":"CONTINUE")}
-                  <span style={{fontSize:14}}>→</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
+
+      
 
 
     </div>
