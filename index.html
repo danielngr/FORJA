@@ -2985,7 +2985,8 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
           {id:"vol-weekly",sel:()=>document.querySelector('[data-tour="vol-weekly"]'),
            titleES:"Volumen semanal",titleEN:"Weekly volume",
            textES:"Las barras muestran cuánto has trabajado cada músculo vs. lo recomendado.",
-           textEN:"Bars show how much you've worked each muscle vs. recommendations.",pad:10},
+           textEN:"Bars show how much you've worked each muscle vs. recommendations.",
+           pad:10,onEnter:()=>{setTab("train");}},
           {id:"tab-body",sel:()=>document.querySelector('[data-tour="tab-body"]'),
            titleES:"Pestaña Cuerpo",titleEN:"Body tab",
            textES:"Aquí vive tu maniquí 3D. Te llevamos ahí ahora.",
@@ -4497,7 +4498,7 @@ function BodyHeatmapTab({logs, routine, lang, profile}){
         scoreA>=55?(es?"ASIMÉTRICO":"ASYMMETRIC"):
         scoreA>0?(es?"ESPECIALISTA":"SPECIALIST"):(es?"SIN DATOS":"NO DATA");
 
-      return e("div",{style:{
+      return e("div",{"data-tour":"balance-score",style:{
         display:"flex",alignItems:"center",gap:10,
         padding:"8px 16px",
         background:"rgba(255,255,255,0.02)",
