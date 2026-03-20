@@ -3246,6 +3246,97 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
           <BodyHeatmapTab logs={logs} routine={routine} lang={lang} muscleXP={muscleXP} xpLevelUps={xpLevelUps} setXpLevelUps={setXpLevelUps} showXPTooltip={showXPTooltip} setShowXPTooltip={setShowXPTooltip} xpAnimZone={xpAnimZone} setXpAnimZone={setXpAnimZone}/>
         )}
 
+        {/* ── XP TOOLTIP (JSX overlay, shown when tapping a muscle zone) ── */}
+        {tab==="body"&&showXPTooltip&&(()=>{
+          const zk=showXPTooltip;
+          const zd=muscleXP[zk]||muscleXP[zk.replace('_izq','_der')]||{xp:0};
+          const lvl=xpToLevel(zd.xp||0);
+          const xpCur=zd.xp||0;
+          const xpNext=xpForNextLevel(lvl);
+          const xpPrev=XP_THRESHOLDS[Math.max(0,lvl-2)]||0;
+          const pct=lvl>=10?100:Math.round(((xpCur-xpPrev)/Math.max(1,xpNext-xpPrev))*100);
+          const lvlC=xpLevelColor(lvl);
+          const ZLBL={pecho:'PECHO',dorsal:'DORSAL',hombro_izq:'HOMBROS',hombro_der:'HOMBROS',
+            bicep_izq:'BÍCEPS',bicep_der:'BÍCEPS',tricep_izq:'TRÍCEPS',tricep_der:'TRÍCEPS',
+            quad:'CUÁDRICEPS',quad_der:'CUÁDRICEPS',gluteos:'GLÚTEOS',gluteos_der:'GLÚTEOS',
+            isquiotibiales:'ISQUIO',isquiotibiales_der:'ISQUIO',
+            abdomen:'ABDOMEN',gemelos:'GEMELOS',gemelos_der:'GEMELOS',
+            trapecio:'TRAPECIO',espalda_baja:'LUMBAR',
+            antebrazo_izq:'ANTEBRAZO',antebrazo_der:'ANTEBRAZO'};
+          const label=ZLBL[zk]||zk.toUpperCase().replace(/_IZQ|_DER/,'');
+          return(
+            <div onClick={()=>setShowXPTooltip(null)} style={{
+              position:'fixed',bottom:90,left:16,right:16,zIndex:500,
+              borderRadius:16,overflow:'hidden',cursor:'pointer',
+              background:'linear-gradient(135deg,rgba(13,15,20,0.98) 0%,rgba(18,22,30,0.98) 100%)',
+              border:`1px solid ${lvlC}44`,
+              boxShadow:`0 0 0 1px ${lvlC}22,0 12px 40px rgba(0,0,0,0.7),inset 0 1px 0 rgba(255,255,255,0.05)`,
+              padding:'16px 18px 14px',
+            }}>
+              {/* Glow orb */}
+              <div style={{position:'absolute',top:-40,right:-40,width:120,height:120,borderRadius:'50%',
+                background:`radial-gradient(circle,${lvlC}28 0%,transparent 70%)`,pointerEvents:'none'}}/>
+              {/* Header */}
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
+                <div style={{display:'flex',alignItems:'center',gap:8}}>
+                  <div style={{width:8,height:8,borderRadius:'50%',background:lvlC,boxShadow:`0 0 8px ${lvlC}`}}/>
+                  <span style={{fontFamily:"'SF Mono','Fira Code',monospace",fontSize:11,fontWeight:700,letterSpacing:2,color:'rgba(255,255,255,0.9)'}}>{label}</span>
+                </div>
+                <div style={{display:'flex',alignItems:'center',gap:6,background:`${lvlC}18`,borderRadius:20,padding:'3px 10px 3px 8px',border:`1px solid ${lvlC}44`}}>
+                  <span style={{fontSize:9,color:lvlC,fontFamily:"'SF Mono','Fira Code',monospace",fontWeight:700}}>⬡</span>
+                  <span style={{fontFamily:"'SF Mono','Fira Code',monospace",fontSize:12,fontWeight:700,color:lvlC,letterSpacing:1}}>NV.{lvl}</span>
+                  {lvl<10&&<span style={{fontFamily:"'SF Mono','Fira Code',monospace",fontSize:8,color:'rgba(255,255,255,0.3)',letterSpacing:1}}> / 10</span>}
+                </div>
+              </div>
+              {/* XP bar */}
+              <div style={{height:6,borderRadius:3,background:'rgba(255,255,255,0.06)',overflow:'hidden',boxShadow:'inset 0 1px 3px rgba(0,0,0,0.4)',marginBottom:8}}>
+                <div style={{height:'100%',width:`${pct}%`,borderRadius:3,
+                  background:`linear-gradient(90deg,${lvlC}aa,${lvlC})`,
+                  boxShadow:`0 0 8px ${lvlC}66`,transition:'width 0.6s cubic-bezier(0.34,1.56,0.64,1)'}}/>
+              </div>
+              {/* XP numbers */}
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                <span style={{fontFamily:"'SF Mono','Fira Code',monospace",fontSize:10,color:'rgba(255,255,255,0.5)',letterSpacing:1}}>{xpCur.toLocaleString()} XP</span>
+                {lvl<10
+                  ?<span style={{fontFamily:"'SF Mono','Fira Code',monospace",fontSize:9,color:'rgba(255,255,255,0.3)',letterSpacing:1}}>{(xpNext-xpCur).toLocaleString()} para NV.{lvl+1}</span>
+                  :<span style={{fontFamily:"'SF Mono','Fira Code',monospace",fontSize:9,color:lvlC,letterSpacing:1,fontWeight:700}}>✦ NIVEL MÁXIMO</span>
+                }
+              </div>
+              <div style={{marginTop:8,textAlign:'center',fontFamily:"'SF Mono','Fira Code',monospace",fontSize:8,color:'rgba(255,255,255,0.15)',letterSpacing:1}}>TAP PARA CERRAR</div>
+            </div>
+          );
+        })()}
+
+        {/* ── LEVEL-UP BANNER ── */}
+        {tab==="body"&&xpLevelUps&&xpLevelUps.length>0&&(()=>{
+          const latest=xpLevelUps[xpLevelUps.length-1];
+          const lvlC=xpLevelColor(latest.level);
+          const ZLBL={pecho:'PECHO',dorsal:'DORSAL',hombro_izq:'HOMBROS',bicep_izq:'BÍCEPS',
+            tricep_izq:'TRÍCEPS',quad:'CUÁDRICEPS',gluteos:'GLÚTEOS',isquiotibiales:'ISQUIO',
+            abdomen:'ABDOMEN',gemelos:'GEMELOS',trapecio:'TRAPECIO',espalda_baja:'LUMBAR'};
+          const label=ZLBL[latest.zone]||latest.zone.toUpperCase().replace(/_IZQ|_DER/,'');
+          return(
+            <div onClick={()=>setXpLevelUps([])} style={{
+              position:'fixed',top:60,left:16,right:16,zIndex:600,cursor:'pointer',
+              borderRadius:14,overflow:'hidden',
+              background:`linear-gradient(135deg,${lvlC}18,${lvlC}08)`,
+              border:`1px solid ${lvlC}66`,padding:'14px 16px',
+              animation:'levelUpPulse 2s ease-in-out',
+            }}>
+              <div style={{display:'flex',alignItems:'center',gap:10}}>
+                <div style={{width:36,height:36,borderRadius:10,flexShrink:0,
+                  background:`${lvlC}22`,border:`1.5px solid ${lvlC}88`,
+                  display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>⬆</div>
+                <div>
+                  <div style={{fontFamily:"'SF Mono','Fira Code',monospace",fontSize:9,color:'rgba(255,255,255,0.4)',letterSpacing:2,marginBottom:3}}>LEVEL UP</div>
+                  <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:22,letterSpacing:2,color:lvlC,lineHeight:1}}>{label} → NV.{latest.level}</div>
+                </div>
+                {xpLevelUps.length>1&&<div style={{marginLeft:'auto',background:`${lvlC}22`,borderRadius:8,padding:'2px 8px',fontFamily:"'SF Mono','Fira Code',monospace",fontSize:9,color:lvlC}}>+{xpLevelUps.length}</div>}
+              </div>
+            </div>
+          );
+        })()}
+
       </div>
       {/* ── TOUR OVERLAY ─────────────────────────────────────── */}
       {/* ── MAIN TOUR ─────────────────────────────── */}
@@ -4812,6 +4903,9 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
     const mouse=new THREE.Vector2(((e.clientX-rect.left)/rect.width)*2-1,-((e.clientY-rect.top)/rect.height)*2+1);
     const ray=new THREE.Raycaster(); ray.setFromCamera(mouse,camRef.current);
     const hits=ray.intersectObjects(Object.values(meshMapRef.current));
+    if(!hits.length){setShowXPTooltip(null);return;}
+    const zk2=MESH_ZONE_3D[hits[0].object.name];
+    if(zk2&&zk2!=="base"){setActiveZone(zk2);setShowXPTooltip(zk2);}
     if(!hits.length) return;
     const zk=MESH_ZONE_3D[hits[0].object.name];
     if(zk&&zk!=="base") setActiveZone(zk);
@@ -5011,165 +5105,11 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
       )
     ),
 
-    // -- XP Tooltip (shown when user taps a muscle) ------------------
-    showXPTooltip&&(()=>{
-      const zk=showXPTooltip;
-      const zd=muscleXP[zk]||muscleXP[zk.replace('_izq','_der')]||{xp:0,level:1};
-      const lvl=xpToLevel(zd.xp);
-      const xpCurrent=zd.xp||0;
-      const xpNeeded=xpForNextLevel(lvl);
-      const xpPrev=XP_THRESHOLDS[Math.max(0,lvl-2)]||0;
-      const pct=lvl>=10?100:Math.round(((xpCurrent-xpPrev)/(xpNeeded-xpPrev))*100);
-      const lvlColor=xpLevelColor(lvl);
-      const ZONE_LABELS={
-        pecho:'PECHO',dorsal:'DORSAL',hombro_izq:'HOMBROS',hombro_der:'HOMBROS',
-        bicep_izq:'BÍCEPS',bicep_der:'BÍCEPS',tricep_izq:'TRÍCEPS',tricep_der:'TRÍCEPS',
-        quad:'CUÁDRICEPS',quad_der:'CUÁDRICEPS',gluteos:'GLÚTEOS',gluteos_der:'GLÚTEOS',
-        isquiotibiales:'ISQUIO',isquiotibiales_der:'ISQUIO',
-        abdomen:'ABDOMEN',gemelos:'GEMELOS',gemelos_der:'GEMELOS',
-        trapecio:'TRAPECIO',espalda_baja:'LUMBAR',
-        antebrazo_izq:'ANTEBRAZO',antebrazo_der:'ANTEBRAZO',
-      };
-      const label=ZONE_LABELS[zk]||zk.toUpperCase().replace(/_IZQ|_DER/,'');
-      const weekXP=(()=>{
-        // Approximate weekly XP from logs (last 7 days)
-        return 0; // placeholder — requires log scan
-      })();
-      return e('div',{
-        onClick:()=>setShowXPTooltip(null),
-        style:{
-          position:'relative',margin:'8px 0 4px',borderRadius:16,
-          background:'linear-gradient(135deg,rgba(15,18,24,0.97) 0%,rgba(20,24,32,0.97) 100%)',
-          border:`1px solid ${lvlColor}44`,
-          boxShadow:`0 0 0 1px ${lvlColor}22, 0 8px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05)`,
-          padding:'16px 18px 14px',overflow:'hidden',cursor:'pointer',
-        }
-      },
-        // Glow background orb
-        e('div',{style:{
-          position:'absolute',top:-40,right:-40,width:120,height:120,borderRadius:'50%',
-          background:`radial-gradient(circle,${lvlColor}28 0%,transparent 70%)`,pointerEvents:'none'
-        }}),
-        // Header row: zone name + level badge
-        e('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}},
-          e('div',{style:{display:'flex',alignItems:'center',gap:8}},
-            e('div',{style:{
-              width:8,height:8,borderRadius:'50%',
-              background:lvlColor,boxShadow:`0 0 8px ${lvlColor}`,
-            }}),
-            e('span',{style:{
-              fontFamily:"'SF Mono','Fira Code',monospace",fontSize:11,fontWeight:700,
-              letterSpacing:2,color:'rgba(255,255,255,0.9)'
-            }},label)
-          ),
-          e('div',{style:{
-            display:'flex',alignItems:'center',gap:6,
-            background:`${lvlColor}18`,borderRadius:20,padding:'3px 10px 3px 8px',
-            border:`1px solid ${lvlColor}44`,
-          }},
-            e('span',{style:{fontSize:9,color:lvlColor,fontFamily:"'SF Mono','Fira Code',monospace",fontWeight:700}},
-              '⬡'),
-            e('span',{style:{
-              fontFamily:"'SF Mono','Fira Code',monospace",fontSize:12,fontWeight:700,
-              color:lvlColor,letterSpacing:1
-            }},`NV.${lvl}`),
-            lvl<10&&e('span',{style:{
-              fontFamily:"'SF Mono','Fira Code',monospace",fontSize:8,
-              color:'rgba(255,255,255,0.3)',letterSpacing:1
-            }},` / 10`)
-          )
-        ),
-        // XP Progress bar
-        e('div',{style:{marginBottom:8}},
-          e('div',{style:{
-            height:6,borderRadius:3,background:'rgba(255,255,255,0.06)',overflow:'hidden',
-            boxShadow:'inset 0 1px 3px rgba(0,0,0,0.4)',
-          }},
-            e('div',{style:{
-              height:'100%',width:`${pct}%`,borderRadius:3,
-              background:`linear-gradient(90deg,${lvlColor}aa,${lvlColor})`,
-              boxShadow:`0 0 8px ${lvlColor}66`,
-              transition:'width 0.6s cubic-bezier(0.34,1.56,0.64,1)',
-            }})
-          )
-        ),
-        // XP numbers row
-        e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
-          e('span',{style:{
-            fontFamily:"'SF Mono','Fira Code',monospace",fontSize:10,
-            color:'rgba(255,255,255,0.5)',letterSpacing:1
-          }},
-            `${xpCurrent.toLocaleString()} XP`
-          ),
-          lvl<10
-            ? e('span',{style:{
-                fontFamily:"'SF Mono','Fira Code',monospace",fontSize:9,
-                color:'rgba(255,255,255,0.3)',letterSpacing:1
-              }},
-                `${(xpNeeded-xpCurrent).toLocaleString()} para NV.${lvl+1}`
-              )
-            : e('span',{style:{
-                fontFamily:"'SF Mono','Fira Code',monospace",fontSize:9,
-                color:lvlColor,letterSpacing:1,fontWeight:700
-              }},'✦ NIVEL MÁXIMO')
-        ),
-        // Tap to close hint
-        e('div',{style:{
-          marginTop:8,textAlign:'center',
-          fontFamily:"'SF Mono','Fira Code',monospace",fontSize:8,
-          color:'rgba(255,255,255,0.15)',letterSpacing:1
-        }},'TAP PARA CERRAR')
-      );
-    })(),
 
-    // -- Level-up banner (shown when opening CUERPO after leveling up) --
-    xpLevelUps&&xpLevelUps.length>0&&(()=>{
-      const latest=xpLevelUps[xpLevelUps.length-1];
-      const lvlColor=xpLevelColor(latest.level);
-      const ZONE_LABELS={
-        pecho:'PECHO',dorsal:'DORSAL',hombro_izq:'HOMBROS',
-        bicep_izq:'BÍCEPS',tricep_izq:'TRÍCEPS',quad:'CUÁDRICEPS',
-        gluteos:'GLÚTEOS',isquiotibiales:'ISQUIO',abdomen:'ABDOMEN',
-        gemelos:'GEMELOS',trapecio:'TRAPECIO',espalda_baja:'LUMBAR',
-      };
-      const label=ZONE_LABELS[latest.zone]||latest.zone.toUpperCase().replace(/_IZQ|_DER/,'');
-      return e('div',{
-        onClick:()=>setXpLevelUps([]),
-        style:{
-          margin:'0 0 12px',borderRadius:14,overflow:'hidden',cursor:'pointer',
-          background:`linear-gradient(135deg,${lvlColor}18,${lvlColor}08)`,
-          border:`1px solid ${lvlColor}66`,
-          padding:'14px 16px',
-          animation:'levelUpPulse 2s ease-in-out',
-        }
-      },
-        e('div',{style:{display:'flex',alignItems:'center',gap:10}},
-          e('div',{style:{
-            width:36,height:36,borderRadius:10,flexShrink:0,
-            background:`${lvlColor}22`,border:`1.5px solid ${lvlColor}88`,
-            display:'flex',alignItems:'center',justifyContent:'center',
-            fontSize:18,
-          }},'⬆'),
-          e('div',{},
-            e('div',{style:{
-              fontFamily:"'SF Mono','Fira Code',monospace",fontSize:9,
-              color:'rgba(255,255,255,0.4)',letterSpacing:2,marginBottom:3
-            }},'LEVEL UP'),
-            e('div',{style:{
-              fontFamily:"'Bebas Neue',sans-serif",fontSize:22,letterSpacing:2,
-              color:lvlColor,lineHeight:1
-            }},`${label} → NV.${latest.level}`)
-          ),
-          xpLevelUps.length>1&&e('div',{style:{
-            marginLeft:'auto',background:`${lvlColor}22`,borderRadius:8,
-            padding:'2px 8px',fontFamily:"'SF Mono','Fira Code',monospace",
-            fontSize:9,color:lvlColor
-          }},`+${xpLevelUps.length}`)
-        )
-      );
-    })(),
+    // XP tooltip rendered in Main
+    // Level-up banner rendered in Main
 
-    // -- Legend ---------------------------------------------------------
+        // -- Legend ---------------------------------------------------------
     e("div",{style:{display:"flex",gap:10,padding:"8px 0 14px",flexWrap:"wrap",borderBottom:"1px solid "+C.bd}},
       [{c:"#e53535",g:true,l:es?"activo 0–33%":"active 0–33%"},{c:"#ff7a1a",g:true,l:"33–66%"},{c:"#7ab82a",g:false,l:"66–99%"},{c:"#2a2a3a",g:false,l:es?"listo":"ready"}]
       .map((x,i)=>e("div",{key:i,style:{display:"flex",alignItems:"center",gap:4}},
