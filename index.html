@@ -1529,9 +1529,15 @@ const EX_META={
 
 
 function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBack,tourStep=null,setTourStep=()=>{}}){
-  // Sync tourStep from prop — use state to avoid batching issues
-  const[wsTourStep,setWsTourStep]=React.useState(tourStep);
-  React.useEffect(()=>{ setWsTourStep(tourStep); },[tourStep]);
+  // Sync tourStep from prop — delay 1 frame so exercise cards are in DOM
+  const[wsTourStep,setWsTourStep]=React.useState(null);
+  const[wsReady,setWsReady]=React.useState(false);
+  React.useEffect(()=>{ 
+    setWsTourStep(tourStep);
+    // Small delay so exercise cards render before tour overlay
+    const t=setTimeout(()=>setWsReady(true),80);
+    return()=>clearTimeout(t);
+  },[tourStep]);
   const exs=day.ex;
   const C2={bg:"#0d0f14",bgD:"#080a0e",card:"#131720",border:"#1e2535",borderL:"#19202e",
     tx:"#F0F2F5",tx2:"#b8c2d4",tx3:"#8892a8",
@@ -2191,7 +2197,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
       {arcPopOpen&&<div style={{position:"fixed",inset:0,zIndex:79}} onClick={()=>setArcPopOpen(false)}/>}
 
       {/* ── WORKOUT TOUR ─────────────────────────── */}
-      {wsTourStep!==null&&wsTourStep!==-1&&(()=>{
+      {wsTourStep!==null&&wsTourStep!==-1&&wsReady&&(()=>{
         const M_="'SF Mono','Fira Code',monospace";
         const S_="'DM Sans',sans-serif";
         const es=lang==="es";
@@ -2358,20 +2364,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
     }
   },[profile]);
 
-  // Scroll to focused element after tourStep changes (runs after React re-renders)
-  useEffect(()=>{
-    if(tourStep===null||tourStep===-1||tourStep===undefined) return;
-    if(tourStep===8){
-      // Vol-weekly: reset scroll so element is near bottom of viewport
-      const volEl=document.querySelector('[data-tour="vol-weekly"]');if(volEl){const r=volEl.getBoundingClientRect();const target=window.scrollY+r.top+r.height/2-window.innerHeight/2;window.scrollTo({top:Math.max(0,target),behavior:'instant'});}else{window.scrollTo({top:300,behavior:'instant'});}
-    }
-    if(tourStep===10||tourStep===11){
-      // Mannequin/balance: scroll to element
-      const ids=['mannequin','balance-score'];
-      const el=document.querySelector('[data-tour="'+ids[tourStep-10]+'"]');
-      if(el) el.scrollIntoView({behavior:'instant',block:'center'});
-    }
-  },[tourStep]);
+
 
   // Delay ask modal: only show 1.5s after first render, so user sees the app first
   const[tourReady,setTourReady]=useState(false);
@@ -3132,8 +3125,12 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
           // Enter workout
           if(ns===4){ if(day&&day.ex&&day.ex.length) setInWorkout(true); setTourStep(ns); return; }
           // Exit workout → train tab → scroll to vol-weekly → then show step
-          if(ns===8){ setInWorkout(false); setTab("train"); }
-          if(ns===9) setTab("body");
+          if(ns===8){ 
+            setInWorkout(false); setTab("train");
+            // Scroll page so vol-weekly is in upper half of viewport (not squished at bottom)
+            window.scrollTo({top:220,behavior:'instant'});
+          }
+          if(ns===9){ setTab("body"); window.scrollTo({top:0,behavior:'instant'}); }
           // Just advance
           setTourStep(ns);
         };
