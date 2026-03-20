@@ -2264,6 +2264,13 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                 borderRadius:14,pointerEvents:"none",
                 border:"2.5px solid rgba(191,169,138,1)",
                 boxShadow:"0 0 0 1px rgba(191,169,138,0.2),0 0 24px rgba(191,169,138,0.45)"}}/>
+              {/* Block clicks on focused element — except mannequin canvas */}
+              {step.id!=="mannequin"&&<div style={{position:"fixed",
+                top:bounds.top-pad,left:bounds.left-pad,
+                width:bounds.width+pad*2,height:bounds.height+pad*2,
+                borderRadius:14,pointerEvents:"all",
+                background:"transparent",cursor:"default"}}
+                onClick={e=>e.stopPropagation()}/>}
             </>:<div style={{position:"absolute",inset:0,
               background:"rgba(0,0,0,0.88)",pointerEvents:"all"}}/>}
             <div style={{
@@ -2337,6 +2344,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   const[confirmR,setConfirmR]=useState(false);
   const[weekOff,setWeekOff]=useState(0);
   const[tourStep,setTourStep]=useState(null);    // null=ask, 0-N=active, -1=done
+  const[scrollVersion,setScrollVersion]=useState(0); // increments after scroll to trigger re-render
   const[tourAskVisible,setTourAskVisible]=useState(()=>{
     try{
       // Never show if localStorage flag set
@@ -2354,6 +2362,23 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   },[w]);
 
   const sd=useCallback(n=>{setDone(n);FStore.saveDone(w,n);},[w]);
+
+  // Scroll to appropriate position when tourStep changes (fires after render)
+  useEffect(()=>{
+    if(tourStep===8){
+      const el=document.querySelector('[data-tour="vol-weekly"]');
+      if(el){
+        const r=el.getBoundingClientRect();
+        const target=window.scrollY+r.top+r.height/2-window.innerHeight/2;
+        window.scrollTo({top:Math.max(0,Math.round(target)),behavior:'instant'});
+        setScrollVersion(v=>v+1); // force overlay to re-render with new positions
+      }
+    }
+    if(tourStep===9||tourStep===10||tourStep===11){
+      window.scrollTo({top:0,behavior:'instant'});
+      setScrollVersion(v=>v+1);
+    }
+  },[tourStep]);
 
   // Hide tour if already toured; delay ask modal so user sees the screen first
   useEffect(()=>{
@@ -3125,12 +3150,8 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
           // Enter workout
           if(ns===4){ if(day&&day.ex&&day.ex.length) setInWorkout(true); setTourStep(ns); return; }
           // Exit workout → train tab → scroll to vol-weekly → then show step
-          if(ns===8){ 
-            setInWorkout(false); setTab("train");
-            // Scroll page so vol-weekly is in upper half of viewport (not squished at bottom)
-            window.scrollTo({top:220,behavior:'instant'});
-          }
-          if(ns===9){ setTab("body"); window.scrollTo({top:0,behavior:'instant'}); }
+          if(ns===8){ setInWorkout(false); setTab('train'); }
+          if(ns===9) setTab('body');
           // Just advance
           setTourStep(ns);
         };
@@ -3159,6 +3180,13 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                 borderRadius:14,pointerEvents:"none",
                 border:"2.5px solid rgba(191,169,138,1)",
                 boxShadow:"0 0 0 1px rgba(191,169,138,0.2),0 0 24px rgba(191,169,138,0.45)"}}/>
+              {/* Block clicks on focused element — except mannequin canvas */}
+              {step.id!=="mannequin"&&<div style={{position:"fixed",
+                top:bounds.top-pad,left:bounds.left-pad,
+                width:bounds.width+pad*2,height:bounds.height+pad*2,
+                borderRadius:14,pointerEvents:"all",
+                background:"transparent",cursor:"default"}}
+                onClick={e=>e.stopPropagation()}/>}
             </>:<div style={{position:"absolute",inset:0,
               background:"rgba(0,0,0,0.88)",pointerEvents:"all"}}/>}
 
