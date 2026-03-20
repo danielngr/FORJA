@@ -2150,6 +2150,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                     </div>
                     <div id={"sc-help-"+ex.id} style={{display:"none",marginBottom:10,padding:"8px 10px",background:"rgba(255,255,255,0.04)",borderRadius:8,borderLeft:"2px solid #e8a020",fontFamily:"'SF Mono','Fira Code',monospace",fontSize:9,color:C2.tx2,letterSpacing:1,lineHeight:1.7}}>{lang==="es"?"1RM estimado con fórmula Epley basado en tus mejores sets. Muestra tu progresión de fuerza.":"Estimated 1RM using Epley formula from your best sets. Shows your strength progression."}</div>
                     {hasHist?(
+                      <>
                       <svg width="100%" viewBox={"0 0 "+W+" "+(H+pad*2)} style={{overflow:"visible",marginBottom:4}}>
                           <line x1={pad} y1={pad} x2={W-pad} y2={pad} stroke="rgba(255,255,255,0.05)" strokeWidth="1"/>
                           <line x1={pad} y1={H/2+pad} x2={W-pad} y2={H/2+pad} stroke="rgba(255,255,255,0.05)" strokeWidth="1"/>
@@ -2161,6 +2162,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                           <div><div style={{fontFamily:"'SF Mono','Fira Code',monospace",fontSize:8,color:C2.tx3,letterSpacing:1}}>{lang==="es"?"MÁX HISTÓRICO":"ALL-TIME BEST"}</div><div style={{fontFamily:"'SF Mono','Fira Code',monospace",fontSize:13,fontWeight:700,color:C2.tx}}>{Math.round(maxRM)} kg</div></div>
                           <div style={{textAlign:"right"}}><div style={{fontFamily:"'SF Mono','Fira Code',monospace",fontSize:8,color:C2.tx3,letterSpacing:1}}>{lang==="es"?"ÚLTIMA SESIÓN":"LAST SESSION"}</div><div style={{fontFamily:"'SF Mono','Fira Code',monospace",fontSize:13,fontWeight:700,color:"#BFA98A"}}>{Math.round(newest?.rm||0)} kg</div></div>
                         </div>
+                    </>
                     ):(
                       <div style={{textAlign:"center",padding:"12px 0",fontFamily:"'SF Mono','Fira Code',monospace",fontSize:9,color:C2.tx3,letterSpacing:1}}>{lang==="es"?"COMPLETA SETS PARA VER TU PROGRESIÓN":"COMPLETE SETS TO SEE PROGRESSION"}</div>
                     )}
