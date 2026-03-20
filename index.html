@@ -2207,14 +2207,10 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   const[weekOff,setWeekOff]=useState(0);
   const[tourStep,setTourStep]=useState(null);    // null=ask, 0-N=active, -1=done
   const[tourAskVisible,setTourAskVisible]=useState(()=>{
-    // Show tour ask if: no localStorage flag AND profile was just created (new user)
-    // profile prop comes from App — it's set after onboarding completes
-    // If profile has a "toured" flag or localStorage has it → skip
     try{
+      // Never show if localStorage flag set
       if(localStorage.getItem('fv8_toured')) return false;
-      // profile is not available at useState init time (it's a prop)
-      // We handle the profile.toured check in a useEffect below
-      return true;
+      return true; // profile.toured checked in useEffect below
     }catch{ return false; }
   });
   const w=wk(weekOff),today=tdy();
@@ -2228,14 +2224,27 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
 
   const sd=useCallback(n=>{setDone(n);FStore.saveDone(w,n);},[w]);
 
-  // Hide tour if profile already has toured flag (survives cache clears)
+  // Hide tour if: profile has toured flag, OR profile already existed before tour feature
+  // "already existed" = profile exists but no toured flag = old user, skip tour
   useEffect(()=>{
-    if(profile&&profile.toured){
+    if(!profile) return;
+    if(profile.toured){
+      // Already did tour — mark in localStorage and hide
       try{localStorage.setItem('fv8_toured','1');}catch{}
       setTourAskVisible(false);
       setTourStep(-1);
+    } else {
+      // Profile exists but no toured flag — this is an EXISTING user
+      // They already know how the app works — skip tour silently
+      // (Only truly new users go through onboarding right now → setTourAskVisible stays true)
+      // But if they have routine data, they're not new
+      if(routine&&routine.length>0){
+        try{localStorage.setItem('fv8_toured','1');}catch{}
+        setTourAskVisible(false);
+        setTourStep(-1);
+      }
     }
-  },[profile]);
+  },[profile,routine]);
   const slg=useCallback(n=>{setLogs(n);FStore.saveLogs(n);},[]);
   const sm=useCallback(n=>{setMacros(n);FStore.saveMacros(today,n);},[today]);
 
