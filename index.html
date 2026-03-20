@@ -2398,7 +2398,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
               // Completion dot color: green if done, dim if future/rest
               const hasDone=dd>0;
               return(
-                <button key={i} {...(isSel?{"data-tour":"cal-day"}:{})} onClick={()=>{setSel(i);setTab("train");setAddEx(false);setAddF(false);setInWorkout(false);}}
+                <button key={i} data-tour={i===todayDayIdx?"cal-day":undefined} onClick={()=>{setSel(i);setTab("train");setAddEx(false);setAddF(false);setInWorkout(false);}}
                   style={{flex:1,padding:"10px 0 8px",borderRadius:10,
                     border:`1px solid ${isSel?(cc||C.tx):"rgba(255,255,255,0.06)"}`,
                     background:isSel?"rgba(255,255,255,0.07)":"transparent",
@@ -2441,7 +2441,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
           {[{id:"train",l:lang==="es"?"ENTRENO":"TRAIN",icon:"⚡"},{id:"body",l:lang==="es"?"CUERPO":"BODY",icon:"🫀"}].map(tb=>{
             const active=tab===tb.id;
             return(
-            <button key={tb.id} {...(tb.id==="body"?{"data-tour":"tab-body"}:{})} onClick={()=>{setTab(tb.id);setAddEx(false);setAddF(false);}}
+            <button key={tb.id} data-tour={tb.id==="body"?"tab-body":undefined} onClick={()=>{setTab(tb.id);setAddEx(false);setAddF(false);}}
               style={{flex:1,padding:"9px 0",border:"none",borderRadius:10,cursor:"pointer",
                 background:active?"rgba(255,255,255,0.10)":"transparent",
                 color:active?C.tx:C.tx3,
