@@ -15,6 +15,13 @@ body{overscroll-behavior:none;}
 input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;}
 input[type=number]{-moz-appearance:textfield;}
 @keyframes spin{to{transform:rotate(360deg)}}
+@keyframes levelUpPulse{
+  0%{opacity:0;transform:translateY(-8px) scale(0.96);}
+  15%{opacity:1;transform:translateY(0) scale(1.02);}
+  30%{transform:scale(1);}
+  70%{opacity:1;}
+  100%{opacity:1;}
+}
 @keyframes fu{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fogIn{from{opacity:0;filter:blur(6px)}to{opacity:1;filter:blur(0)}}
 @keyframes pulse{0%,100%{opacity:0.6;transform:translateX(-50%) scale(1)}50%{opacity:1;transform:translateX(-50%) scale(1.04)}}
@@ -325,7 +332,62 @@ const FStore={
   },
   loadMacros(dateKey){
     try{const r=localStorage.getItem(`fv8m:${dateKey}`);return r?JSON.parse(r):{};}catch(_){return{};}
-  }
+  },
+  loadMuscleXP(){
+    try{const r=localStorage.getItem('fv8_mxp');return r?JSON.parse(r):{};}catch(_){return{};}
+  },
+  saveMuscleXP(data){
+    try{localStorage.setItem('fv8_mxp',JSON.stringify(data));}catch(_){}
+    // Supabase sync (fire and forget)
+    const sb=getSB();const user=typeof ensureAuth==='function'?null:null;
+    (async()=>{
+      const sb2=getSB();if(!sb2)return;
+      const u=await ensureAuth();if(!u)return;
+      try{
+        await sb2.from('muscle_xp').upsert({user_id:u.id,xp_data:data,updated_at:new Date().toISOString()},{onConflict:'user_id'});
+      }catch(_){}
+    })();
+  },
+  calcSessionXP(exercises, setsData, EX_META_REF, exMetaKeyFn){
+    // exercises: array of {e: name, id}
+    // setsData: array of arrays of {kg, rp, done}
+    // Returns: {zone: deltaXP}
+    const BASE_W={
+      'press banca':60,'press inclinado':50,'aperturas':30,'flexión':0,
+      'press sobre cabeza':40,'elevación lateral':12,'press arnold':30,
+      'peso muerto':100,'sentadilla':80,'sentadilla frontal':70,'hip thrust':80,
+      'remo con barra':60,'dominada':0,'jalón al pecho':60,'remo con mancuerna':25,
+      'curl bíceps':15,'curl martillo':15,'curl z-bar':20,
+      'extensión tríceps':15,'fondos':0,'press francés':20,
+      'zancada':40,'step-up':30,'leg press':100,'curl femoral':40,
+      'elevación de talones':40,'crunch':0,'plancha':0,'elevación de piernas':0,
+      'default':30
+    };
+    const delta={};
+    exercises.forEach((ex,ei)=>{
+      const sets=setsData[ei]||[];
+      const meta=EX_META_REF[exMetaKeyFn(ex.e)]||{};
+      const muscles=[...(meta.p||[]),...(meta.s||[]).map(z=>({z,factor:0.4}))];
+      if(!muscles.length)return;
+      const nameLow=(ex.e||'').toLowerCase();
+      const baseW=BASE_W[nameLow]||BASE_W['default'];
+      sets.forEach(s=>{
+        if(!s.done)return;
+        const kg=parseFloat(s.kg)||0;
+        const rp=parseInt(s.rp)||0;
+        if(rp<=0)return;
+        const wFactor=baseW>0?Math.min(2,Math.max(0.5,kg/baseW)):1.0;
+        const rawXP=Math.round(1*rp*wFactor); // 1 set = reps × weight_factor
+        muscles.forEach(m=>{
+          const zone=typeof m==='string'?m:m.z;
+          const mFactor=typeof m==='string'?1.0:(m.factor||1.0);
+          if(!zone)return;
+          delta[zone]=(delta[zone]||0)+Math.round(rawXP*mFactor);
+        });
+      });
+    });
+    return delta;
+  },
 };
 
 // Backwards-compat: keep old store{} pointing to FStore sync ops
@@ -2406,6 +2468,28 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
   );
 }
 
+
+// ── Muscle XP System ─────────────────────────────────────────────────────
+const XP_THRESHOLDS=[0,400,1300,3100,6300,11800,20800,34800,55800,85800]; // index = level-1
+const XP_LEVEL_COLORS=[
+  '#3a3f4a', // Nv1 gris azulado
+  '#2d4a6e', // Nv2 azul oscuro
+  '#1a6b8a', // Nv3 azul
+  '#1a8a6b', // Nv4 verde azul
+  '#2da84a', // Nv5 verde
+  '#8ab82d', // Nv6 verde amarillo
+  '#e8a020', // Nv7 naranja
+  '#e86020', // Nv8 naranja rojo
+  '#e83020', // Nv9 rojo
+  '#ff1a1a', // Nv10 rojo intenso
+];
+function xpToLevel(xp){
+  for(let i=XP_THRESHOLDS.length-1;i>=0;i--){if(xp>=XP_THRESHOLDS[i])return i+1;}
+  return 1;
+}
+function xpForNextLevel(level){return level>=10?Infinity:XP_THRESHOLDS[level];}
+function xpLevelColor(level){return XP_LEVEL_COLORS[Math.min(9,Math.max(0,level-1))];}
+
 function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   const t=L[lang];
   const[sel,setSel]=useState(()=>{const d=new Date().getDay();return d===0?6:d-1;});
@@ -2422,6 +2506,10 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   const[confirmR,setConfirmR]=useState(false);
   const[weekOff,setWeekOff]=useState(0);
   const[tourStep,setTourStep]=useState(null);    // null=ask, 0-N=active, -1=done
+  const[muscleXP,setMuscleXP]=useState(()=>FStore.loadMuscleXP());
+  const[xpLevelUps,setXpLevelUps]=useState([]); // zones that leveled up since last visit
+  const[showXPTooltip,setShowXPTooltip]=useState(null); // zone name
+  const[xpAnimZone,setXpAnimZone]=useState(null); // zone currently animating level up
   const[scrollVersion,setScrollVersion]=useState(0); // increments after scroll to trigger re-render
   const[tourAskVisible,setTourAskVisible]=useState(()=>{
     try{
@@ -2486,7 +2574,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   const entries=macros.entries||[];
   const tot=entries.reduce((a,e)=>({cal:a.cal+(+e.cal||0),prot:a.prot+(+e.prot||0),carbs:a.carbs+(+e.carbs||0),fat:a.fat+(+e.fat||0)}),{cal:0,prot:0,carbs:0,fat:0});
 
-  const toggle=id=>{const k=`${sel}-${id}`;sd({...done,[k]:!done[k]});};
+  const toggle=id=>{const k=`${sel}-${id}`;if(!done[k])sd({...done,[k]:true});};
   const BW_EXERCISES=new Set(["pull up","weighted pull up","chin up","push up","decline push up","dips","bench dips","diamond push ups","plank","mountain climber","hanging knee raises","box jump","bodyweight squat"]);
   const saveLog=(id,kg,rp,exName)=>{
     // For bodyweight exercises with kg=0, use bodyweight from profile
@@ -2498,6 +2586,54 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
     nl[id]=[{d:today,w:effKg,r:rp,rm:rm1},...nl[id]].slice(0,60);
     slg(nl);
     FStore.saveLogEntry(id,exName||id,effKg,rp,rm1);
+    // ── Muscle XP ──────────────────────────────────────────────────
+    const nameLow=(exName||id||'').toLowerCase().trim();
+    const md=EXERCISE_MUSCLE_MAP[nameLow]||EXERCISE_MUSCLE_MAP[ES_TO_META[nameLow]];
+    if(md){
+      const BASE_W_MAP={
+        'bench press':60,'dumbbell bench press':50,'incline bench press':55,'incline dumbbell press':45,
+        'overhead press':40,'dumbbell shoulder press':30,'seated overhead press':35,'press arnold':25,
+        'lateral raise':12,'dumbbell front raise':10,'reverse fly':10,
+        'deadlift':100,'romanian deadlift':80,'squat':80,'front squat':70,'goblet squat':40,
+        'leg press':100,'hip thrust':80,'bulgarian split squat':40,'dumbbell bulgarian split squat':30,
+        'leg curl':40,'leg extension':40,'calf raise':40,
+        'barbell row':60,'dumbbell row':25,'cable row':50,'pendlay row':60,
+        'lat pulldown':50,'machine pulldown':50,'pull up':0,'chin up':0,
+        'dumbbell curl':15,'barbell curl':25,'hammer curl':15,'preacher curl':20,'concentration curl':12,
+        'tricep pushdown':20,'overhead tricep extension':20,'skull crusher':25,'dips':0,'close grip bench press':50,
+        'plank':0,'crunch':0,'hanging knee raises':0,'mountain climber':0,
+        'default':30
+      };
+      const baseW=BASE_W_MAP[nameLow]||BASE_W_MAP['default'];
+      const wFactor=baseW>0?Math.min(2.0,Math.max(0.5,effKg/baseW)):1.0;
+      const reps=parseInt(rp)||0;
+      const rawXP=Math.max(1,Math.round(reps*wFactor));
+      const newXP={...muscleXP};
+      const levelUps=[];
+      const allMuscles=[...(md.p||[]).map(m=>({m,f:1.0})),...(md.s||[]).map(m=>({m,f:0.4}))];
+      allMuscles.forEach(({m,f})=>{
+        const zk=FORJA_TO_ZONE[m.toLowerCase()];
+        if(!zk)return;
+        const zones=[zk];
+        // bilateral: if left zone, also update right
+        if(zk.endsWith('_izq'))zones.push(zk.replace('_izq','_der'));
+        if(zk.endsWith('_der'))zones.push(zk.replace('_der','_izq'));
+        zones.forEach(z=>{
+          if(!newXP[z])newXP[z]={xp:0,level:1};
+          const prevLevel=newXP[z].level;
+          newXP[z]={...newXP[z],xp:newXP[z].xp+Math.max(1,Math.round(rawXP*f))};
+          const newLevel=xpToLevel(newXP[z].xp);
+          if(newLevel>prevLevel){
+            newXP[z].level=newLevel;
+            newXP[z].lastLevelUp=today;
+            levelUps.push({zone:z,level:newLevel});
+          }
+        });
+      });
+      setMuscleXP(newXP);
+      FStore.saveMuscleXP(newXP);
+      if(levelUps.length>0) setXpLevelUps(prev=>[...prev,...levelUps]);
+    }
   };
 
   const exportData=()=>{
@@ -3107,7 +3243,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
         )}
 
         {tab==="body"&&(
-          <BodyHeatmapTab logs={logs} routine={routine} lang={lang}/>
+          <BodyHeatmapTab logs={logs} routine={routine} lang={lang} muscleXP={muscleXP} xpLevelUps={xpLevelUps} setXpLevelUps={setXpLevelUps} showXPTooltip={showXPTooltip} setShowXPTooltip={setShowXPTooltip} xpAnimZone={xpAnimZone} setXpAnimZone={setXpAnimZone}/>
         )}
 
       </div>
@@ -4488,9 +4624,10 @@ function MuscleHeatmap({muscleVol,lang}){
     lang==="es"?"→ Pestaña CUERPO":"→ BODY tab");
 }
 
-function BodyHeatmapTab({logs, routine, lang, profile}){
+function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[], setXpLevelUps=()=>{}, showXPTooltip, setShowXPTooltip=()=>{}, xpAnimZone, setXpAnimZone=()=>{}}){
   const cvsRef  = React.useRef(null);
   const wrapRef = React.useRef(null);
+  const mxpRef  = React.useRef(muscleXP);
   const matMapRef  = React.useRef({});
   const meshMapRef = React.useRef({});
   const modelRef   = React.useRef(null);
@@ -4525,14 +4662,32 @@ function BodyHeatmapTab({logs, routine, lang, profile}){
 
   function refreshMats(st){
     if(typeof THREE==="undefined") return;
+    const XP_RGB=[
+      [0.23,0.25,0.29],[0.18,0.29,0.43],[0.10,0.42,0.54],[0.10,0.54,0.42],
+      [0.18,0.66,0.29],[0.54,0.72,0.18],[0.91,0.63,0.13],[0.91,0.38,0.13],
+      [0.91,0.19,0.13],[1.00,0.10,0.10]
+    ];
+    const mxp=mxpRef.current||{};
     Object.entries(matMapRef.current).forEach(([name,mat])=>{
       const zk=MESH_ZONE_3D[name]||"base";
       const s=getZoneState(zk,st);
-      const [r,g,b]=ZONE_COLOR_VALS[s]||ZONE_COLOR_VALS.base;
+      let [r,g,b]=ZONE_COLOR_VALS[s]||ZONE_COLOR_VALS.base;
+      // Blend XP level color into rec/base states (not active training states)
+      if(s==="rec"||s==="base"){
+        const zd=mxp[zk]||mxp[zk.replace('_izq','_der')]||mxp[zk.replace('_der','_izq')];
+        const lvl=zd?xpToLevel(zd.xp):1;
+        if(lvl>1){
+          const [xr,xg,xb]=XP_RGB[Math.min(9,lvl-1)];
+          const blend=(lvl-1)/9*0.55; // max 55% blend at level 10
+          r=r*(1-blend)+xr*blend;
+          g=g*(1-blend)+xg*blend;
+          b=b*(1-blend)+xb*blend;
+        }
+      }
       mat.color.setRGB(r,g,b);
     });
   }
-  React.useEffect(()=>{ stRef.current=zoneState; refreshMats(zoneState); },[zoneState]);
+  React.useEffect(()=>{ stRef.current=zoneState; mxpRef.current=muscleXP; refreshMats(zoneState); },[zoneState,muscleXP]);
 
   // Init Three.js
   React.useEffect(()=>{
@@ -4855,6 +5010,164 @@ function BodyHeatmapTab({logs, routine, lang, profile}){
         (ZONE_LABELS_3D[activeZone]||activeZone).toUpperCase()+" . "+getStatusText(activeZone)
       )
     ),
+
+    // -- XP Tooltip (shown when user taps a muscle) ------------------
+    showXPTooltip&&(()=>{
+      const zk=showXPTooltip;
+      const zd=muscleXP[zk]||muscleXP[zk.replace('_izq','_der')]||{xp:0,level:1};
+      const lvl=xpToLevel(zd.xp);
+      const xpCurrent=zd.xp||0;
+      const xpNeeded=xpForNextLevel(lvl);
+      const xpPrev=XP_THRESHOLDS[Math.max(0,lvl-2)]||0;
+      const pct=lvl>=10?100:Math.round(((xpCurrent-xpPrev)/(xpNeeded-xpPrev))*100);
+      const lvlColor=xpLevelColor(lvl);
+      const ZONE_LABELS={
+        pecho:'PECHO',dorsal:'DORSAL',hombro_izq:'HOMBROS',hombro_der:'HOMBROS',
+        bicep_izq:'BÍCEPS',bicep_der:'BÍCEPS',tricep_izq:'TRÍCEPS',tricep_der:'TRÍCEPS',
+        quad:'CUÁDRICEPS',quad_der:'CUÁDRICEPS',gluteos:'GLÚTEOS',gluteos_der:'GLÚTEOS',
+        isquiotibiales:'ISQUIO',isquiotibiales_der:'ISQUIO',
+        abdomen:'ABDOMEN',gemelos:'GEMELOS',gemelos_der:'GEMELOS',
+        trapecio:'TRAPECIO',espalda_baja:'LUMBAR',
+        antebrazo_izq:'ANTEBRAZO',antebrazo_der:'ANTEBRAZO',
+      };
+      const label=ZONE_LABELS[zk]||zk.toUpperCase().replace(/_IZQ|_DER/,'');
+      const weekXP=(()=>{
+        // Approximate weekly XP from logs (last 7 days)
+        return 0; // placeholder — requires log scan
+      })();
+      return e('div',{
+        onClick:()=>setShowXPTooltip(null),
+        style:{
+          position:'relative',margin:'8px 0 4px',borderRadius:16,
+          background:'linear-gradient(135deg,rgba(15,18,24,0.97) 0%,rgba(20,24,32,0.97) 100%)',
+          border:`1px solid ${lvlColor}44`,
+          boxShadow:`0 0 0 1px ${lvlColor}22, 0 8px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05)`,
+          padding:'16px 18px 14px',overflow:'hidden',cursor:'pointer',
+        }
+      },
+        // Glow background orb
+        e('div',{style:{
+          position:'absolute',top:-40,right:-40,width:120,height:120,borderRadius:'50%',
+          background:`radial-gradient(circle,${lvlColor}28 0%,transparent 70%)`,pointerEvents:'none'
+        }}),
+        // Header row: zone name + level badge
+        e('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}},
+          e('div',{style:{display:'flex',alignItems:'center',gap:8}},
+            e('div',{style:{
+              width:8,height:8,borderRadius:'50%',
+              background:lvlColor,boxShadow:`0 0 8px ${lvlColor}`,
+            }}),
+            e('span',{style:{
+              fontFamily:"'SF Mono','Fira Code',monospace",fontSize:11,fontWeight:700,
+              letterSpacing:2,color:'rgba(255,255,255,0.9)'
+            }},label)
+          ),
+          e('div',{style:{
+            display:'flex',alignItems:'center',gap:6,
+            background:`${lvlColor}18`,borderRadius:20,padding:'3px 10px 3px 8px',
+            border:`1px solid ${lvlColor}44`,
+          }},
+            e('span',{style:{fontSize:9,color:lvlColor,fontFamily:"'SF Mono','Fira Code',monospace",fontWeight:700}},
+              '⬡'),
+            e('span',{style:{
+              fontFamily:"'SF Mono','Fira Code',monospace",fontSize:12,fontWeight:700,
+              color:lvlColor,letterSpacing:1
+            }},`NV.${lvl}`),
+            lvl<10&&e('span',{style:{
+              fontFamily:"'SF Mono','Fira Code',monospace",fontSize:8,
+              color:'rgba(255,255,255,0.3)',letterSpacing:1
+            }},` / 10`)
+          )
+        ),
+        // XP Progress bar
+        e('div',{style:{marginBottom:8}},
+          e('div',{style:{
+            height:6,borderRadius:3,background:'rgba(255,255,255,0.06)',overflow:'hidden',
+            boxShadow:'inset 0 1px 3px rgba(0,0,0,0.4)',
+          }},
+            e('div',{style:{
+              height:'100%',width:`${pct}%`,borderRadius:3,
+              background:`linear-gradient(90deg,${lvlColor}aa,${lvlColor})`,
+              boxShadow:`0 0 8px ${lvlColor}66`,
+              transition:'width 0.6s cubic-bezier(0.34,1.56,0.64,1)',
+            }})
+          )
+        ),
+        // XP numbers row
+        e('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
+          e('span',{style:{
+            fontFamily:"'SF Mono','Fira Code',monospace",fontSize:10,
+            color:'rgba(255,255,255,0.5)',letterSpacing:1
+          }},
+            `${xpCurrent.toLocaleString()} XP`
+          ),
+          lvl<10
+            ? e('span',{style:{
+                fontFamily:"'SF Mono','Fira Code',monospace",fontSize:9,
+                color:'rgba(255,255,255,0.3)',letterSpacing:1
+              }},
+                `${(xpNeeded-xpCurrent).toLocaleString()} para NV.${lvl+1}`
+              )
+            : e('span',{style:{
+                fontFamily:"'SF Mono','Fira Code',monospace",fontSize:9,
+                color:lvlColor,letterSpacing:1,fontWeight:700
+              }},'✦ NIVEL MÁXIMO')
+        ),
+        // Tap to close hint
+        e('div',{style:{
+          marginTop:8,textAlign:'center',
+          fontFamily:"'SF Mono','Fira Code',monospace",fontSize:8,
+          color:'rgba(255,255,255,0.15)',letterSpacing:1
+        }},'TAP PARA CERRAR')
+      );
+    })(),
+
+    // -- Level-up banner (shown when opening CUERPO after leveling up) --
+    xpLevelUps&&xpLevelUps.length>0&&(()=>{
+      const latest=xpLevelUps[xpLevelUps.length-1];
+      const lvlColor=xpLevelColor(latest.level);
+      const ZONE_LABELS={
+        pecho:'PECHO',dorsal:'DORSAL',hombro_izq:'HOMBROS',
+        bicep_izq:'BÍCEPS',tricep_izq:'TRÍCEPS',quad:'CUÁDRICEPS',
+        gluteos:'GLÚTEOS',isquiotibiales:'ISQUIO',abdomen:'ABDOMEN',
+        gemelos:'GEMELOS',trapecio:'TRAPECIO',espalda_baja:'LUMBAR',
+      };
+      const label=ZONE_LABELS[latest.zone]||latest.zone.toUpperCase().replace(/_IZQ|_DER/,'');
+      return e('div',{
+        onClick:()=>setXpLevelUps([]),
+        style:{
+          margin:'0 0 12px',borderRadius:14,overflow:'hidden',cursor:'pointer',
+          background:`linear-gradient(135deg,${lvlColor}18,${lvlColor}08)`,
+          border:`1px solid ${lvlColor}66`,
+          padding:'14px 16px',
+          animation:'levelUpPulse 2s ease-in-out',
+        }
+      },
+        e('div',{style:{display:'flex',alignItems:'center',gap:10}},
+          e('div',{style:{
+            width:36,height:36,borderRadius:10,flexShrink:0,
+            background:`${lvlColor}22`,border:`1.5px solid ${lvlColor}88`,
+            display:'flex',alignItems:'center',justifyContent:'center',
+            fontSize:18,
+          }},'⬆'),
+          e('div',{},
+            e('div',{style:{
+              fontFamily:"'SF Mono','Fira Code',monospace",fontSize:9,
+              color:'rgba(255,255,255,0.4)',letterSpacing:2,marginBottom:3
+            }},'LEVEL UP'),
+            e('div',{style:{
+              fontFamily:"'Bebas Neue',sans-serif",fontSize:22,letterSpacing:2,
+              color:lvlColor,lineHeight:1
+            }},`${label} → NV.${latest.level}`)
+          ),
+          xpLevelUps.length>1&&e('div',{style:{
+            marginLeft:'auto',background:`${lvlColor}22`,borderRadius:8,
+            padding:'2px 8px',fontFamily:"'SF Mono','Fira Code',monospace",
+            fontSize:9,color:lvlColor
+          }},`+${xpLevelUps.length}`)
+        )
+      );
+    })(),
 
     // -- Legend ---------------------------------------------------------
     e("div",{style:{display:"flex",gap:10,padding:"8px 0 14px",flexWrap:"wrap",borderBottom:"1px solid "+C.bd}},
