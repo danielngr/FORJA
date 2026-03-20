@@ -2262,16 +2262,14 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
               background:"rgba(0,0,0,0.88)",pointerEvents:"all"}}/>}
             <div style={{
               position:"fixed",left:16,right:16,
-              // Smart positioning: always keep tooltip in viewport
+              // Tooltip: below if space, above if not, never overlapping element
               ...(()=>{
-                if(!bounds) return {bottom:44};
-                const spaceBelow = vh - bounds.bottom - pad - 10;
-                const spaceAbove = bounds.top - pad - 10;
-                const tipH = 160; // approximate tooltip height
-                if(spaceBelow >= tipH) return {top: bounds.bottom+pad+10};
-                if(spaceAbove >= tipH) return {bottom: vh-bounds.top+pad+10};
-                // Not enough space either side — put at bottom of screen
-                return {bottom: 16, maxHeight: Math.min(vh*0.45, 280)+'px', overflowY:'auto'};
+                if(!bounds) return {bottom:20};
+                const spaceBelow = vh - bounds.bottom - pad;
+                const spaceAbove = bounds.top - pad;
+                if(spaceBelow >= 170) return {top: Math.round(bounds.bottom+pad+8)};
+                if(spaceAbove >= 170) return {bottom: Math.round(vh - bounds.top + pad + 8)};
+                return {bottom: 20};
               })(),
               background:"#141418",borderRadius:16,
               border:"1px solid rgba(255,255,255,0.1)",
@@ -2359,6 +2357,21 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
       setTourStep(-1);
     }
   },[profile]);
+
+  // Scroll to focused element after tourStep changes (runs after React re-renders)
+  useEffect(()=>{
+    if(tourStep===null||tourStep===-1||tourStep===undefined) return;
+    if(tourStep===8){
+      // Vol-weekly: reset scroll so element is near bottom of viewport
+      const volEl=document.querySelector('[data-tour="vol-weekly"]');if(volEl){const r=volEl.getBoundingClientRect();const target=window.scrollY+r.top+r.height/2-window.innerHeight/2;window.scrollTo({top:Math.max(0,target),behavior:'instant'});}else{window.scrollTo({top:300,behavior:'instant'});}
+    }
+    if(tourStep===10||tourStep===11){
+      // Mannequin/balance: scroll to element
+      const ids=['mannequin','balance-score'];
+      const el=document.querySelector('[data-tour="'+ids[tourStep-10]+'"]');
+      if(el) el.scrollIntoView({behavior:'instant',block:'center'});
+    }
+  },[tourStep]);
 
   // Delay ask modal: only show 1.5s after first render, so user sees the app first
   const[tourReady,setTourReady]=useState(false);
@@ -3116,23 +3129,12 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
         const nextStep=()=>{
           const ns=tourStep+1;
           if(ns>=TOTAL){endTour();return;}
-          if(ns===4){ if(day&&day.ex&&day.ex.length) setInWorkout(true); }
-          if(ns===8){
-            setInWorkout(false); setTab("train");
-            // Scroll to vol-weekly after a short delay for re-render
-            setTimeout(()=>{
-              const el=document.querySelector('[data-tour="vol-weekly"]');
-              if(el) el.scrollIntoView({behavior:'smooth',block:'center'});
-            },150);
-          }
+          // Enter workout
+          if(ns===4){ if(day&&day.ex&&day.ex.length) setInWorkout(true); setTourStep(ns); return; }
+          // Exit workout → train tab → scroll to vol-weekly → then show step
+          if(ns===8){ setInWorkout(false); setTab("train"); }
           if(ns===9) setTab("body");
-          if(ns===10||ns===11){
-            setTimeout(()=>{
-              const id=['mannequin','balance-score'][ns-10];
-              const el=document.querySelector('[data-tour="'+id+'"]');
-              if(el) el.scrollIntoView({behavior:'smooth',block:'start'});
-            },150);
-          }
+          // Just advance
           setTourStep(ns);
         };
 
@@ -3166,16 +3168,14 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
             {/* Tooltip */}
             <div style={{
               position:"fixed",left:16,right:16,
-              // Smart positioning: always keep tooltip in viewport
+              // Tooltip: below if space, above if not, never overlapping element
               ...(()=>{
-                if(!bounds) return {bottom:44};
-                const spaceBelow = vh - bounds.bottom - pad - 10;
-                const spaceAbove = bounds.top - pad - 10;
-                const tipH = 160; // approximate tooltip height
-                if(spaceBelow >= tipH) return {top: bounds.bottom+pad+10};
-                if(spaceAbove >= tipH) return {bottom: vh-bounds.top+pad+10};
-                // Not enough space either side — put at bottom of screen
-                return {bottom: 16, maxHeight: Math.min(vh*0.45, 280)+'px', overflowY:'auto'};
+                if(!bounds) return {bottom:20};
+                const spaceBelow = vh - bounds.bottom - pad;
+                const spaceAbove = bounds.top - pad;
+                if(spaceBelow >= 170) return {top: Math.round(bounds.bottom+pad+8)};
+                if(spaceAbove >= 170) return {bottom: Math.round(vh - bounds.top + pad + 8)};
+                return {bottom: 20};
               })(),
               background:"#141418",borderRadius:16,
               border:"1px solid rgba(255,255,255,0.1)",
