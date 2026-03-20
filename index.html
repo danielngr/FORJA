@@ -2943,20 +2943,179 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
 
       </div>
       {/* ── TOUR OVERLAY ─────────────────────────────────────── */}
-      
+      {(tourAskVisible||(tourStep!==null&&tourStep!==-1&&(tourStep<4||tourStep>7)))&&(()=>{
+        const mono_="'SF Mono','Fira Code','Courier New',monospace";
+        const sans_="'DM Sans',sans-serif";
+        const es=lang==="es";
 
+        const STEPS=[
+          {id:"cal-day",sel:()=>document.querySelector('[data-tour="cal-day"]'),
+           titleES:"Tu día de entrenamiento",titleEN:"Your training day",
+           textES:"El día marcado es hoy. Tu rutina semanal vive aquí — toca cualquier día para verla.",
+           textEN:"The highlighted day is today. Your weekly routine lives here — tap any day to see it.",pad:8},
+          {id:"cal-nav",sel:()=>document.querySelector('[data-tour="cal-nav"]'),
+           titleES:"Historial semanal",titleEN:"Weekly history",
+           textES:"Navega semanas anteriores con estas flechas para revisar qué entrenaste.",
+           textEN:"Use these arrows to browse past weeks and review what you trained.",pad:8},
+          {id:"day-progress",sel:()=>document.querySelector('[data-tour="day-progress"]'),
+           titleES:"Tu progreso de hoy",titleEN:"Today's progress",
+           textES:"Este contador muestra cuántos ejercicios completaste hoy.",
+           textEN:"This counter shows how many exercises you've completed today.",pad:10},
+          {id:"start-workout",sel:()=>document.querySelector('[data-tour="start-workout"]'),
+           titleES:"Entra a tu entreno",titleEN:"Enter your workout",
+           textES:"Al tocar CONTINUAR entraremos al entreno para mostrarte cómo registrar tus series.",
+           textEN:"When you tap CONTINUE we'll enter the workout to show you how to log your sets.",
+           pad:8,onEnter:()=>{setTab("train");}},
+          {id:"ws-exercise",sel:()=>document.querySelector('[data-tour="ws-exercise"]'),
+           titleES:"Tu ejercicio",titleEN:"Your exercise",
+           textES:"Nombre del ejercicio y músculos que trabaja. Cada día tiene su selección específica.",
+           textEN:"Exercise name and muscles worked. Each day has its specific selection.",pad:12,wsStep:true},
+          {id:"ws-video",sel:()=>document.querySelector('[data-tour="ws-video"]'),
+           titleES:"Video de técnica",titleEN:"Technique video",
+           textES:"El video muestra la técnica correcta. Estúdialo antes de empezar.",
+           textEN:"The video shows correct technique. Study it before starting.",pad:4,wsStep:true},
+          {id:"ws-sets",sel:()=>document.querySelector('[data-tour="ws-sets"]'),
+           titleES:"Registra peso y reps",titleEN:"Log weight and reps",
+           textES:"Ingresa el peso en KG y las reps. FORJA recuerda y muestra si mejoraste vs. sesión anterior.",
+           textEN:"Enter weight in KG and reps. FORJA remembers if you improved vs. last session.",pad:8,wsStep:true},
+          {id:"ws-check",sel:()=>document.querySelector('[data-tour="ws-check"]'),
+           titleES:"Marca la serie",titleEN:"Mark the set",
+           textES:"Toca ✓ al terminar la serie. Se pone verde y arranca el timer de descanso.",
+           textEN:"Tap ✓ when done. It turns green and the rest timer starts.",pad:8,wsStep:true},
+          {id:"vol-weekly",sel:()=>document.querySelector('[data-tour="vol-weekly"]'),
+           titleES:"Volumen semanal",titleEN:"Weekly volume",
+           textES:"Las barras muestran cuánto has trabajado cada músculo vs. lo recomendado.",
+           textEN:"Bars show how much you've worked each muscle vs. recommendations.",pad:10},
+          {id:"tab-body",sel:()=>document.querySelector('[data-tour="tab-body"]'),
+           titleES:"Pestaña Cuerpo",titleEN:"Body tab",
+           textES:"Aquí vive tu maniquí 3D. Te llevamos ahí ahora.",
+           textEN:"Your 3D mannequin lives here. We'll take you there now.",
+           pad:8,onEnter:()=>{setTab("body");}},
+          {id:"mannequin",sel:()=>document.querySelector('[data-tour="mannequin"]'),
+           titleES:"Tu maniquí 3D",titleEN:"Your 3D mannequin",
+           textES:"Los músculos se colorean por estado: rojo=activo, naranja=recuperando, verde=listo. Gíralo con el dedo.",
+           textEN:"Muscles colored by state: red=active, orange=recovering, green=ready. Drag to rotate.",pad:4},
+          {id:"balance-score",sel:()=>document.querySelector('[data-tour="balance-score"]'),
+           titleES:"Balance Score",titleEN:"Balance Score",
+           textES:"Sube entrenando todos los grupos musculares. Úsalo para no olvidar ninguna zona.",
+           textEN:"Raise it by training all muscle groups. Use it so you never neglect a zone.",pad:10},
+        ];
 
+        // ── Ask modal ──────────────────────────────────────────
+        if(tourAskVisible&&tourReady&&tourStep===null) return(
+          <div style={{position:"fixed",inset:0,zIndex:9000,
+            background:"rgba(0,0,0,0.75)",backdropFilter:"blur(4px)",
+            display:"flex",alignItems:"flex-end",justifyContent:"center",
+            padding:"0 0 40px"}}>
+            <div style={{width:"calc(100% - 40px)",maxWidth:420,
+              background:"#141418",borderRadius:20,
+              border:"1px solid rgba(255,255,255,0.1)",
+              padding:"28px 24px 24px",
+              boxShadow:"0 32px 64px rgba(0,0,0,0.6)"}}>
+              <div style={{fontSize:22,marginBottom:6}}>👋</div>
+              <div style={{fontFamily:"'Bebas Neue',cursive",
+                fontSize:28,letterSpacing:2,color:"#EEEAE3",marginBottom:8}}>
+                {es?"Descubre cómo funciona FORJA":"Discover how FORJA works"}
+              </div>
+              <div style={{fontSize:13,color:"rgba(238,234,227,0.65)",
+                lineHeight:1.6,marginBottom:24,fontFamily:sans_}}>
+                {es?"Un tour rápido de 12 pasos te muestra todo lo que puedes hacer."
+                   :"A quick 12-step tour shows you everything you can do."}
+              </div>
+              <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                <button onClick={()=>{setTourAskVisible(false);setTourStep(0);}}
+                  style={{padding:"14px",borderRadius:12,border:"none",
+                    background:"#EEEAE3",color:"#07080a",
+                    fontFamily:mono_,fontSize:11,fontWeight:700,
+                    letterSpacing:2,cursor:"pointer"}}>
+                  {es?"EMPEZAR TOUR →":"START TOUR →"}
+                </button>
+                <button onClick={()=>{
+                  try{localStorage.setItem('fv8_toured','1');}catch{}
+                  if(profile){const p={...profile,toured:true};sp(p);FStore.saveProfile(p,routine||[]);}
+                  setTourAskVisible(false);setTourStep(-1);
+                }} style={{padding:"12px",borderRadius:12,
+                  border:"1px solid rgba(255,255,255,0.1)",
+                  background:"transparent",color:"rgba(238,234,227,0.4)",
+                  fontFamily:mono_,fontSize:10,letterSpacing:1,cursor:"pointer"}}>
+                  {es?"Saltar":"Skip"}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
 
-      
+        if(tourStep===null||tourStep===-1) return null;
 
+        const step=STEPS[tourStep];
+        if(!step) return null;
 
+        const el=step.sel?step.sel():null;
+        const bounds=el?el.getBoundingClientRect():null;
+        const pad=step.pad||8;
+        const vh=window.innerHeight;
+        const tooltipBelow=bounds&&(bounds.bottom+pad)<(vh*0.6);
 
-      
+        const endTour=()=>{
+          try{localStorage.setItem('fv8_toured','1');}catch{}
+          if(profile){const p={...profile,toured:true};sp(p);FStore.saveProfile(p,routine||[]);}
+          setTourAskVisible(false);setTourStep(-1);
+        };
+        const nextStep=()=>{
+          const ns=tourStep+1;
+          if(ns>=STEPS.length){endTour();return;}
+          if(ns===4&&day&&day.ex&&day.ex.length) setInWorkout(true);
+          if(ns===8) setInWorkout(false);
+          if(STEPS[ns].onEnter) STEPS[ns].onEnter();
+          setTourStep(ns);
+        };
 
-
-
-      
-
+        return(
+          <div style={{position:"fixed",inset:0,zIndex:9000,pointerEvents:"none"}}>
+            {bounds?<>
+              <div style={{position:"fixed",top:0,left:0,right:0,height:Math.max(0,bounds.top-pad),background:"rgba(0,0,0,0.88)",pointerEvents:"all"}}/>
+              <div style={{position:"fixed",left:0,right:0,top:bounds.bottom+pad,bottom:0,background:"rgba(0,0,0,0.88)",pointerEvents:"all"}}/>
+              <div style={{position:"fixed",top:bounds.top-pad,height:bounds.height+pad*2,left:0,width:Math.max(0,bounds.left-pad),background:"rgba(0,0,0,0.88)",pointerEvents:"all"}}/>
+              <div style={{position:"fixed",top:bounds.top-pad,height:bounds.height+pad*2,left:bounds.right+pad,right:0,background:"rgba(0,0,0,0.88)",pointerEvents:"all"}}/>
+              <div style={{position:"fixed",top:bounds.top-pad,left:bounds.left-pad,width:bounds.width+pad*2,height:bounds.height+pad*2,borderRadius:14,pointerEvents:"none",border:"2.5px solid rgba(191,169,138,1)",boxShadow:"0 0 0 1px rgba(191,169,138,0.25),0 0 20px rgba(191,169,138,0.5)",transition:"all 0.35s cubic-bezier(0.4,0,0.2,1)"}}/>
+            </>:<div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.88)",pointerEvents:"all"}}/>}
+            <div style={{position:"absolute",left:20,right:20,
+              ...(tooltipBelow
+                ?{top:bounds?(bounds.bottom+pad+12):60,bottom:undefined}
+                :{bottom:bounds?(vh-bounds.top+pad+12):40,top:undefined}),
+              background:"#141418",borderRadius:16,
+              border:"1px solid rgba(255,255,255,0.1)",
+              padding:"20px 20px 16px",
+              boxShadow:"0 24px 48px rgba(0,0,0,0.7)",
+              pointerEvents:"all",zIndex:2}}>
+              <div style={{fontFamily:mono_,fontSize:8,color:"rgba(255,255,255,0.3)",letterSpacing:2,marginBottom:10}}>
+                {tourStep+1} / {STEPS.length}
+                <span style={{display:"inline-block",marginLeft:10,width:60,height:2,verticalAlign:"middle",background:"rgba(255,255,255,0.08)",borderRadius:1,position:"relative",overflow:"hidden"}}>
+                  <span style={{position:"absolute",inset:0,width:`${((tourStep+1)/STEPS.length)*100}%`,background:"#BFA98A",borderRadius:1,transition:"width 0.3s ease",boxShadow:"0 0 8px rgba(191,169,138,0.5)"}}/>
+                </span>
+              </div>
+              <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,letterSpacing:1.5,color:"#EEEAE3",marginBottom:10,lineHeight:1}}>
+                {es?step.titleES:step.titleEN}
+              </div>
+              <div style={{fontSize:14,color:"rgba(238,234,227,0.85)",lineHeight:1.7,marginBottom:20,fontFamily:sans_}}>
+                {es?step.textES:step.textEN}
+              </div>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
+                <button onClick={endTour} style={{background:"none",border:"none",padding:"8px 0",
+                  fontFamily:mono_,fontSize:9,letterSpacing:1,color:"rgba(255,255,255,0.25)",cursor:"pointer"}}>
+                  {es?"Saltar tour":"Skip tour"}
+                </button>
+                <button onClick={nextStep} style={{padding:"12px 24px",borderRadius:10,border:"none",
+                  background:"#EEEAE3",color:"#07080a",
+                  fontFamily:mono_,fontSize:11,fontWeight:700,letterSpacing:2,cursor:"pointer",
+                  display:"flex",alignItems:"center",gap:8}}>
+                  {tourStep===STEPS.length-1?(es?"¡LISTO!":"DONE!"):"CONTINUAR →"}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
     </div>
   );
