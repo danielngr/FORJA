@@ -2723,7 +2723,6 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                   });
 
                   const entries=Object.entries(vol).sort((a,b)=>b[1]-a[1]);
-                  if(!entries.length) return null;
                   const cap = lang==="es"?"series":"sets";
                   return(
                     <div data-tour="vol-weekly" style={{marginTop:14,padding:"14px 16px",background:C.card,borderRadius:12,border:`1px solid ${C.borderL}`}}>
@@ -2775,7 +2774,13 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                         </div>
                       </div>
                       <div style={{display:"flex",flexDirection:"column",gap:10}}>
-                        {entries.map(([m,s])=>{
+                        {entries.length===0?(
+                          <div style={{padding:"20px 0",textAlign:"center",
+                            color:"rgba(255,255,255,0.3)",fontFamily:"'SF Mono','Fira Code',monospace",
+                            fontSize:9,letterSpacing:2}}>
+                            {lang==="es"?"ENTRENA PARA VER TU VOLUMEN SEMANAL":"TRAIN TO SEE YOUR WEEKLY VOLUME"}
+                          </div>
+                        ):entries.map(([m,s])=>{
                           const color = groupColor[m] || C.tx3;
                           const target = mev[m] || 8;
                           const max = mrv[m] || 20;
@@ -2807,7 +2812,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                               </div>
                             </div>
                           </div>
-                        );})}
+                        );})})
                       </div>
                     </div>
                   );
@@ -3069,17 +3074,16 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
           if(ns===8){ setInWorkout(false); setTab("train"); }
           if(ns===9) setTab("body");
           if(STEPS[ns].onEnter) STEPS[ns].onEnter();
-          if(ns===8||ns===9){
-            setTimeout(()=>{
+          // Small delay for tab-switch steps so DOM updates before querySelector
+          const delay = (ns===8||ns===9) ? 150 : 0;
+          setTimeout(()=>{
+            // Scroll focused element into view (except tab-switch steps)
+            if(ns!==8&&ns!==9){
               const el=STEPS[ns].sel?STEPS[ns].sel():null;
               if(el) el.scrollIntoView({block:"center",behavior:"smooth"});
-              setTourStep(ns);
-            },150);
-          } else {
-            const el=STEPS[ns].sel?STEPS[ns].sel():null;
-            if(el) el.scrollIntoView({block:"center",behavior:"smooth"});
+            }
             setTourStep(ns);
-          }
+          }, delay);
         };
 
         return(
