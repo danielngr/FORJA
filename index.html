@@ -2611,11 +2611,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   const[xpLevelUps,setXpLevelUps]=useState([]);
   const[showXPTooltip,setShowXPTooltip]=useState(null);
   const[xpAnimZone,setXpAnimZone]=useState(null);
-  const[muscleXP,setMuscleXP]=useState(()=>FStore.loadMuscleXP());
-  const[xpLevelUps,setXpLevelUps]=useState([]); // zones that leveled up since last visit
-  const[showXPTooltip,setShowXPTooltip]=useState(null); // zone name
-  const[xpAnimZone,setXpAnimZone]=useState(null); // zone currently animating level up
-  const[scrollVersion,setScrollVersion]=useState(0); // increments after scroll to trigger re-render
+    const[scrollVersion,setScrollVersion]=useState(0); // increments after scroll to trigger re-render
   const[tourAskVisible,setTourAskVisible]=useState(()=>{
     try{
       // Never show if localStorage flag set
