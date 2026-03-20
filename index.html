@@ -4854,7 +4854,7 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
 
     // Load GLB
     setProgress(10); setPTxt(es?"cargando...":"loading...");
-    fetch("https://forjavideos.b-cdn.net/forja_body.glb")
+    fetch("https://danielngr.github.io/FORJA/forja_body.glb")
       .then(r=>{ if(!r.ok) throw new Error("GLB 404"); setProgress(35); return r.arrayBuffer(); })
       .then(buf=>{
         setProgress(60); setPTxt(es?"parseando...":"parsing...");
