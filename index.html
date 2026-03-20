@@ -2425,15 +2425,26 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
           })()}
         </div>
       </div>
-      <div style={{display:"flex",borderBottom:"1px solid rgba(255,255,255,0.05)",padding:"0 18px",background:"rgba(8,10,14,0.95)"}}>
-        {[{id:"train",l:t.train},{id:"body",l:lang==="es"?"CUERPO":"BODY"}].map(tb=>(
-          <button key={tb.id} onClick={()=>{setTab(tb.id);setAddEx(false);setAddF(false);}}
-            style={{padding:"13px 0",marginRight:22,border:"none",
-              borderBottom:`2px solid ${tab===tb.id?C.tx:"transparent"}`,background:"transparent",
-              color:tab===tb.id?C.tx:C.tx3,fontSize:10,fontWeight:700,fontFamily:mono,letterSpacing:2,cursor:"pointer",transition:"all 0.2s"}}>
-            {tb.l}
-          </button>
-        ))}
+      <div style={{padding:"10px 20px 0",background:"rgba(8,10,14,0.95)",
+        borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
+        <div style={{display:"flex",background:"rgba(255,255,255,0.05)",
+          borderRadius:12,padding:3,gap:0}}>
+          {[{id:"train",l:lang==="es"?"ENTRENO":"TRAIN",icon:"⚡"},{id:"body",l:lang==="es"?"CUERPO":"BODY",icon:"🫀"}].map(tb=>{
+            const active=tab===tb.id;
+            return(
+            <button key={tb.id} onClick={()=>{setTab(tb.id);setAddEx(false);setAddF(false);}}
+              style={{flex:1,padding:"9px 0",border:"none",borderRadius:10,cursor:"pointer",
+                background:active?"rgba(255,255,255,0.10)":"transparent",
+                color:active?C.tx:C.tx3,
+                fontSize:10,fontWeight:700,fontFamily:mono,letterSpacing:2,
+                transition:"all .2s",
+                boxShadow:active?"0 1px 8px rgba(0,0,0,.3)":"none",
+                display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+              <span style={{fontSize:11,opacity:active?1:0.5}}>{tb.icon}</span>
+              {tb.l}
+            </button>
+          );})}
+        </div>
       </div>
 
       <div style={{padding:"14px 18px 90px"}}>
