@@ -4687,7 +4687,7 @@ function logsToZoneTimestamps(logs, routine) {
     if(!entries||!entries.length) return;
     // Resolve exercise name from routine (same pattern as computeWeeklyMuscleVol)
     let nm=id;
-    if(routine) routine.forEach(d=>{if(!d)return;(d.ex||[]).forEach(ex=>{if(ex.id===id)nm=ex.e;});});
+    if(routine){const rArr=Array.isArray(routine)?routine:Object.values(routine);rArr.forEach(d=>{if(!d)return;(d.ex||[]).forEach(ex=>{if(ex.id===id)nm=ex.e;});});}
     const nmLow=nm?.toLowerCase()?.trim()||"";
     // Use same fallback chain as computeWeeklyMuscleVol
     const md=EXERCISE_MUSCLE_MAP[nmLow]||EXERCISE_MUSCLE_MAP[ES_TO_META[nmLow]];
