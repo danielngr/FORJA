@@ -4265,8 +4265,9 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             </div>
           </>)}
 
-      {step===25&&(<>
-            {(()=>{
+      {step===25&&(
+        <div style={{minHeight:"100vh",padding:"64px 26px 40px",boxSizing:"border-box"}}>
+          {(()=>{
               const CELEB_CARDS=[
                 {id:"arnold",    img:IMGS_C.arnold,    ac:"#f0a830", label:"IRON ARNOLD",    name:{es:"SCHWARZENEGGER",en:"SCHWARZENEGGER"}, badge:"CHEST+BACK",days:6, split:"Pecho+Espalda / Hombros+Brazos / Piernas (×2)", lvl:{es:"EXTREMO",en:"EXTREME"},  source:"The New Encyclopedia of Modern Bodybuilding — Schwarzenegger & Dobbins (1998)", desc:{es:"Split documentado en su libro: Pecho+Espalda, Hombros+Brazos, Piernas — repetido 2x/semana. 5-6 series × 6-10 reps, pirámide invertida hasta fallo. Sesiones de 90-120 min.",en:"Documented in his book: Chest+Back, Shoulders+Arms, Legs — twice weekly. 5-6 sets x 6-10 reps, inverted pyramid to failure. 90-120 min sessions."}},
                 {id:"hemsworth", img:IMGS_C.hemsworth, ac:"#4898e8", label:"THOR WEEK",      name:{es:"HEMSWORTH",en:"HEMSWORTH"},           badge:"PPL+HIIT",  days:5, split:"Push / Pull / Legs / Full / Athletic",          lvl:{es:"ALTO",en:"HIGH"},        source:"Luke Zocchi (trainer) . Centr App . Men's Health 2022", desc:{es:"Documentado por Luke Zocchi en Centr: press banca 8 series pirámide 12→4 reps. Fuerza heavy + HIIT funcional. Máx 60 min/sesión. Énfasis hombros y espalda para el look Thor.",en:"Documented by Luke Zocchi on Centr: bench press 8 sets pyramid 12→4 reps. Heavy strength + functional HIIT. Max 60 min/session. Shoulder and back emphasis for the Thor look."}},
@@ -4365,7 +4366,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
 
                 {/* Detail panel */}
                 {selCeleb&&(()=>{
-                  const card=CELEB_CARDS.find(x=>x.id===selCeleb);
+                  const card=[...CELEB_CARDS,...CELEB_CARDS_F].find(x=>x.id===selCeleb);
                   if(!card)return null;
                   return(
                     <div style={{borderRadius:18,overflow:"hidden",marginBottom:16,background:"rgba(255,255,255,.04)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",border:`1px solid ${card.ac}33`,boxShadow:`inset 0 1px 0 rgba(255,255,255,.08),0 0 24px ${card.ac}18`}}>
@@ -4385,7 +4386,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                 <div style={{display:"flex",gap:10}}>
                   <div style={{flex:1}}><Btn ghost onClick={()=>setStep(2)}>{t.back}</Btn></div>
                   <div style={{flex:2}}><Btn disabled={!selCeleb} onClick={()=>{
-                    const cel=CELEB_CARDS.find(x=>x.id===selCeleb);
+                    const cel=[...CELEB_CARDS,...CELEB_CARDS_F].find(x=>x.id===selCeleb);
                     if(!cel)return;
                     setDays(cel.days);
                     setCelebData(cel);
@@ -4395,7 +4396,8 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                 </div>
               </>);
             })()}
-          </>)}
+        </div>
+      )}
 
       {step===26&&(
         <div style={{position:"fixed",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"0 28px",background:"#07080a",zIndex:50,animation:"forjaFadeSlide .38s ease"}}>
