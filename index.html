@@ -2290,11 +2290,6 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
       onBlur={e=>e.target.style.borderColor=C.borderL}/>
   );
 
-  // If tour reaches vol-weekly step (8) while in workout, go back to Main
-  useEffect(()=>{
-    if(tourStep===8&&inWorkout) setInWorkout(false);
-  },[tourStep]);
-
   if(inWorkout&&day&&day.ex&&day.ex.length){
     return <WorkoutScreen day={day} sel={sel} done={done} logs={logs}
       onToggle={toggle} onSaveLog={saveLog} t={t} lang={lang} profile={profile} onBack={()=>{setInWorkout(false);window.__tourBackFromWorkout=null;}} tourStep={tourStep} setTourStep={setTourStep}/>;
@@ -2872,7 +2867,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
 
       </div>
       {/* ── TOUR OVERLAY ─────────────────────────────────────── */}
-      {(tourStep!==null&&tourStep!==-1||tourAskVisible)&&(()=>{
+      {(tourAskVisible||(tourStep!==null&&tourStep!==-1&&(tourStep<4||tourStep>7)))&&(()=>{
         const mono_="'SF Mono','Fira Code','Courier New',monospace";
         const sans_="'DM Sans',sans-serif";
         const es=lang==="es";
@@ -2906,10 +2901,10 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
             id:"start-workout",
             sel:()=>document.querySelector('[data-tour="start-workout"]'),
             titleES:"Entra a tu entreno",titleEN:"Enter your workout",
-            textES:"Toca aquí para iniciar. Te llevamos adentro para mostrarte cómo loggear tu entreno.",
-            textEN:"Tap here to start. We'll take you inside to show you how to log your workout.",
+            textES:"Al tocar CONTINUAR entraremos al entreno para mostrarte cómo registrar tus series.",
+            textEN:"When you tap CONTINUE we'll enter the workout to show you how to log your sets.",
             pad:8,
-            onEnter:()=>{ document.querySelector('[data-tour="start-workout"]')?.click(); }
+            onEnter:()=>{ setTab("train"); }
           },
           {
             id:"ws-exercise",
@@ -3056,6 +3051,12 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
         const nextStep=()=>{
           const ns=tourStep+1;
           if(ns>=STEPS.length){ endTour(); return; }
+          // Step 4 = ws-exercise (first workout step) — enter workout mode
+          if(ns===4){
+            if(day&&day.ex&&day.ex.length) setInWorkout(true);
+          }
+          // Step 9 = vol-weekly — exit workout mode back to Main
+          if(ns===8) setInWorkout(false);
           if(STEPS[ns].onEnter) STEPS[ns].onEnter();
           setTourStep(ns);
         };
