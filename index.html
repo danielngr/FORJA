@@ -2858,56 +2858,6 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
         )}
 
       </div>
-    </div>
-  );
-}
-
-// Thumbnail lazy — solo carga cuando entra al viewport
-function VideoThumb({src,size=56}){
-  const[thumb,setThumb]=useState(null);
-  const[playing,setPlaying]=useState(false);
-  const[visible,setVisible]=useState(false);
-  const wrapRef=React.useRef(null);
-  const vidRef=React.useRef(null);
-
-  // IntersectionObserver — dispara carga solo cuando el elemento es visible
-  useEffect(()=>{
-    if(!wrapRef.current) return;
-    const obs=new IntersectionObserver(([e])=>{
-      if(e.isIntersecting){setVisible(true);obs.disconnect();}
-    },{rootMargin:"80px"});
-    obs.observe(wrapRef.current);
-    return()=>obs.disconnect();
-  },[]);
-
-  // Capturar primer frame solo cuando visible y aún no hay thumb
-  useEffect(()=>{
-    if(!visible||!src||thumb) return;
-    const v=document.createElement("video");
-    v.crossOrigin="anonymous";
-    v.muted=true;
-    v.preload="metadata";
-    v.src=src;
-    v.currentTime=0.5;
-    v.addEventListener("seeked",()=>{
-      try{
-        const c=document.createElement("canvas");
-        c.width=v.videoWidth||160; c.height=v.videoHeight||160;
-        c.getContext("2d").drawImage(v,0,0);
-        setThumb(c.toDataURL("image/jpeg",0.65));
-      }catch(e){}
-    },{once:true});
-    v.load();
-  },[visible,src]);
-
-  return(
-    <div ref={wrapRef} style={{width:size,height:size,borderRadius:10,overflow:"hidden",background:"#2c3040",flexShrink:0,position:"relative"}}
-      onMouseEnter={()=>{setPlaying(true);vidRef.current?.play();}}
-      onMouseLeave={()=>{setPlaying(false);if(vidRef.current){vidRef.current.pause();vidRef.current.currentTime=0;}}}>
-      {thumb&&<img src={thumb} style={{width:"100%",height:"100%",objectFit:"cover",position:"absolute",inset:0,opacity:playing?0:1,transition:"opacity .2s"}}/>}
-      {src&&playing&&<video ref={vidRef} src={src} muted loop playsInline preload="none" autoPlay
-        style={{width:"100%",height:"100%",objectFit:"cover",position:"absolute",inset:0}}/>}
-      {!thumb&&!playing&&<div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",opacity:.25,fontSize:18}}>▶</div>}
       {/* ── TOUR OVERLAY ─────────────────────────────────────── */}
       {(tourStep!==null&&tourStep!==-1||tourAskVisible)&&(()=>{
         const mono_="'SF Mono','Fira Code','Courier New',monospace";
@@ -2933,12 +2883,21 @@ function VideoThumb({src,size=56}){
             pad:8
           },
           {
-            id:"start-workout",
-            sel:()=>document.querySelector('[data-tour="start-workout"]'),
-            titleES:"Inicia tu entreno",
-            titleEN:"Start your workout",
-            textES:"Toca aquí para entrar al modo entreno. Verás cada ejercicio con video de técnica, series y reps para registrar.",
-            textEN:"Tap here to enter workout mode. You'll see each exercise with technique video, sets and reps to log.",
+            id:"exercise-card",
+            sel:()=>document.querySelector('[data-tour="exercise-card"]'),
+            titleES:"Tu ejercicio",
+            titleEN:"Your exercise",
+            textES:"Cada tarjeta muestra el ejercicio, series × reps y el video de técnica. Tócala para expandir.",
+            textEN:"Each card shows the exercise, sets × reps and a technique video. Tap to expand.",
+            pad:8
+          },
+          {
+            id:"exercise-check",
+            sel:()=>document.querySelector('[data-tour="exercise-check"]'),
+            titleES:"Marcar como hecho",
+            titleEN:"Mark as done",
+            textES:"Toca el círculo para marcar la serie como completada. El progreso se guarda solo.",
+            textEN:"Tap the circle to mark the set as done. Progress saves automatically.",
             pad:8
           },
           {
@@ -3039,7 +2998,7 @@ function VideoThumb({src,size=56}){
                   background:"transparent",color:"rgba(238,234,227,0.4)",
                   fontFamily:mono_,fontSize:10,letterSpacing:1,cursor:"pointer"
                 }}>
-                  {es?"Saltar":"Skip"}
+                  {es?"Ya sé cómo funciona":"I already know how it works"}
                 </button>
               </div>
             </div>
@@ -3061,9 +3020,6 @@ function VideoThumb({src,size=56}){
 
         const endTour=()=>{
           try{localStorage.setItem('fv8_toured','1');}catch{}
-          // Also persist in Supabase profile so it survives cache clears
-          if(profile){ sp({...profile,toured:true}); FStore.saveProfile({...profile,toured:true},routine||[]); }
-          setTourAskVisible(false);
           setTourStep(-1);
         };
         const nextStep=()=>{
@@ -3178,6 +3134,58 @@ function VideoThumb({src,size=56}){
           </div>
         );
       })()}
+
+
+    </div>
+  );
+}
+
+// Thumbnail lazy — solo carga cuando entra al viewport
+function VideoThumb({src,size=56}){
+  const[thumb,setThumb]=useState(null);
+  const[playing,setPlaying]=useState(false);
+  const[visible,setVisible]=useState(false);
+  const wrapRef=React.useRef(null);
+  const vidRef=React.useRef(null);
+
+  // IntersectionObserver — dispara carga solo cuando el elemento es visible
+  useEffect(()=>{
+    if(!wrapRef.current) return;
+    const obs=new IntersectionObserver(([e])=>{
+      if(e.isIntersecting){setVisible(true);obs.disconnect();}
+    },{rootMargin:"80px"});
+    obs.observe(wrapRef.current);
+    return()=>obs.disconnect();
+  },[]);
+
+  // Capturar primer frame solo cuando visible y aún no hay thumb
+  useEffect(()=>{
+    if(!visible||!src||thumb) return;
+    const v=document.createElement("video");
+    v.crossOrigin="anonymous";
+    v.muted=true;
+    v.preload="metadata";
+    v.src=src;
+    v.currentTime=0.5;
+    v.addEventListener("seeked",()=>{
+      try{
+        const c=document.createElement("canvas");
+        c.width=v.videoWidth||160; c.height=v.videoHeight||160;
+        c.getContext("2d").drawImage(v,0,0);
+        setThumb(c.toDataURL("image/jpeg",0.65));
+      }catch(e){}
+    },{once:true});
+    v.load();
+  },[visible,src]);
+
+  return(
+    <div ref={wrapRef} style={{width:size,height:size,borderRadius:10,overflow:"hidden",background:"#2c3040",flexShrink:0,position:"relative"}}
+      onMouseEnter={()=>{setPlaying(true);vidRef.current?.play();}}
+      onMouseLeave={()=>{setPlaying(false);if(vidRef.current){vidRef.current.pause();vidRef.current.currentTime=0;}}}>
+      {thumb&&<img src={thumb} style={{width:"100%",height:"100%",objectFit:"cover",position:"absolute",inset:0,opacity:playing?0:1,transition:"opacity .2s"}}/>}
+      {src&&playing&&<video ref={vidRef} src={src} muted loop playsInline preload="none" autoPlay
+        style={{width:"100%",height:"100%",objectFit:"cover",position:"absolute",inset:0}}/>}
+      {!thumb&&!playing&&<div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",opacity:.25,fontSize:18}}>▶</div>}
 
 
     </div>
