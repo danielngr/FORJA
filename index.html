@@ -4555,7 +4555,7 @@ function BodyHeatmapTab({logs, routine, lang, profile}){
         if(ZPAIRS_A[zk]) zks.push(ZPAIRS_A[zk]);
         const avgPct=zks.reduce((s,k)=>{
           const d=logsToZoneTimestamps(logs,k);
-          return s+getPct(d);
+          return s+getPct(k,d);
         },0)/zks.length;
         totalPct+=avgPct; count++;
       });
@@ -4651,8 +4651,8 @@ function BodyHeatmapTab({logs, routine, lang, profile}){
           e("div",{style:{display:"flex",gap:3,alignItems:"flex-end",height:20}},
             ...ZONES_A.map(zk=>{
               const d=logsToZoneTimestamps(logs,zk);
-              const pct=getPct(d);
-              const s=getZoneState(d);
+              const pct=getPct(zk,d);
+              const s=getZoneState(zk,d);
               const c=s==="never"?"rgba(255,255,255,0.1)":
                         s==="tired"?"#e05555":
                         s==="fresh"?"#f0b429":"#3fcf8e";
