@@ -4311,15 +4311,17 @@ function BodyHeatmapTab({logs, routine, lang, profile}){
       ));
       const scoreColor=balanceScore>=75?"#5faa88":balanceScore>=55?"#c0a870":"#d96060";
 
-      // Sort zones: untrained first, then most recovered, then fatigued
-      const sorted=[...zr].sort((a,b)=>{
-        if(a.state==="never"&&b.state!=="never") return -1;
-        if(b.state==="never"&&a.state!=="never") return 1;
-        return b.pct-a.pct;
-      });
+      // Priority: biggest compound muscles first (most impact on score + physique)
+      const PRIORITY=["quad","gluteos","dorsal","isquiotibiales","pecho","trapecio",
+        "hombro_izq","espalda_baja","abdomen","bicep_izq","tricep_izq","gemelos"];
+      const prioOf=zk=>{ const i=PRIORITY.indexOf(zk); return i<0?99:i; };
 
-      // "Fix my balance" — top 3 zones to train
-      const toTrain=sorted.filter(z=>z.pct>=60).slice(0,3);
+      // Fix my balance: untrained big muscles first, then recovered ones
+      const neverSorted=[...zr].filter(z=>z.state==="never")
+        .sort((a,b)=>prioOf(a.zk)-prioOf(b.zk));
+      const readySorted=[...zr].filter(z=>z.state!=="never"&&z.pct>=80)
+        .sort((a,b)=>b.pct-a.pct);
+      const toTrain=[...neverSorted,...readySorted].slice(0,4);
 
       // Recovery banners: most fatigued + most ready
       const mostFatigued=[...zr].sort((a,b)=>a.pct-b.pct).find(z=>z.state==="fresh"||z.state==="warm");
@@ -4382,7 +4384,9 @@ function BodyHeatmapTab({logs, routine, lang, profile}){
             }},`+${Math.round(toTrain.length*(100/ZONES_MAIN.length)*1.2)} pts`)
           ),
           e("div",{style:{fontSize:9,color:"rgba(255,255,255,.4)",fontFamily:mono_,marginBottom:10,lineHeight:1.5}},
-            es?"Entrena estas zonas hoy para subir tu score:":"Train these zones today to raise your score:"
+            neverSorted.length>=PRIORITY.length
+              ?(es?"Empieza por los músculos con más impacto en tu físico:":"Start with the highest-impact muscles:")
+              :(es?"Sin entrenar en los últimos 14 días — trabájalos para subir el score:":"Not trained in 14 days — work them to raise your score:")
           ),
           e("div",{style:{display:"flex",flexDirection:"column",gap:6}},
             ...toTrain.map(z=>{
