@@ -2818,10 +2818,13 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                       </div>
                       <div style={{display:"flex",flexDirection:"column",gap:10}}>
                         {entries.length===0?(
-                          <div style={{padding:"20px 0",textAlign:"center",
-                            color:"rgba(255,255,255,0.3)",fontFamily:"'SF Mono','Fira Code',monospace",
-                            fontSize:9,letterSpacing:2}}>
-                            {lang==="es"?"ENTRENA PARA VER TU VOLUMEN SEMANAL":"TRAIN TO SEE YOUR WEEKLY VOLUME"}
+                          <div style={{padding:"24px 16px",textAlign:"center"}}>
+                            <div style={{fontSize:28,marginBottom:8,opacity:0.3}}>📊</div>
+                            <div style={{color:"rgba(255,255,255,0.4)",fontFamily:"'SF Mono','Fira Code',monospace",
+                              fontSize:9,letterSpacing:2,lineHeight:1.8}}>
+                              <div>{lang==="es"?"COMPLETA TU PRIMER ENTRENO":"COMPLETE YOUR FIRST WORKOUT"}</div>
+                              <div style={{opacity:0.6}}>{lang==="es"?"PARA VER TU VOLUMEN":"TO SEE YOUR VOLUME"}</div>
+                            </div>
                           </div>
                         ):entries.map(([m,s])=>{
                           const color = groupColor[m] || C.tx3;
@@ -2855,7 +2858,8 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                               </div>
                             </div>
                           </div>
-                        );})})
+                        );})
+                      }
                       </div>
                     </div>
                   );
@@ -4555,11 +4559,13 @@ function BodyHeatmapTab({logs, routine, lang, profile}){
         if(ZPAIRS_A[zk]) zks.push(ZPAIRS_A[zk]);
         const avgPct=zks.reduce((s,k)=>{
           const d=logsToZoneTimestamps(logs,k);
-          return s+getPct(k,d);
+          const st=getZoneState(k,d);
+          // "never" trained zones count as 0 for balance score
+          return s+(st==="never"?0:getPct(k,d));
         },0)/zks.length;
         totalPct+=avgPct; count++;
       });
-      const balanceScore=count>0?Math.round((totalPct/count)*100):0;
+      const balanceScore=count>0?Math.min(100,Math.max(0,Math.round(totalPct/count))):0;
 
       // Level definitions
       const LEVELS=[
@@ -4570,7 +4576,7 @@ function BodyHeatmapTab({logs, routine, lang, profile}){
         {min:80, max:101,label:"MAESTRO",      color:"#BFA98A", next:null},
       ];
       const lvl=LEVELS.find(l=>balanceScore>=l.min&&balanceScore<l.max)||LEVELS[0];
-      const pctInLevel=Math.round(((balanceScore-lvl.min)/(lvl.max-lvl.min))*100);
+      const pctInLevel=lvl.max===lvl.min?100:Math.min(100,Math.max(0,Math.round(((balanceScore-lvl.min)/(lvl.max-lvl.min))*100)));
       const mono="\'SF Mono\',\'Fira Code\',monospace";
       const lang_=lang||"es";
       const isES=lang_==="es";
