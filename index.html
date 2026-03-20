@@ -2150,8 +2150,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                     </div>
                     <div id={"sc-help-"+ex.id} style={{display:"none",marginBottom:10,padding:"8px 10px",background:"rgba(255,255,255,0.04)",borderRadius:8,borderLeft:"2px solid #e8a020",fontFamily:"'SF Mono','Fira Code',monospace",fontSize:9,color:C2.tx2,letterSpacing:1,lineHeight:1.7}}>{lang==="es"?"1RM estimado con fórmula Epley basado en tus mejores sets. Muestra tu progresión de fuerza.":"Estimated 1RM using Epley formula from your best sets. Shows your strength progression."}</div>
                     {hasHist?(
-                      <>
-                        <svg width="100%" viewBox={"0 0 "+W+" "+(H+pad*2)} style={{overflow:"visible",marginBottom:4}}>
+                      <svg width="100%" viewBox={"0 0 "+W+" "+(H+pad*2)} style={{overflow:"visible",marginBottom:4}}>
                           <line x1={pad} y1={pad} x2={W-pad} y2={pad} stroke="rgba(255,255,255,0.05)" strokeWidth="1"/>
                           <line x1={pad} y1={H/2+pad} x2={W-pad} y2={H/2+pad} stroke="rgba(255,255,255,0.05)" strokeWidth="1"/>
                           {hist.length>1&&(()=>{const pts=hist.map((h,i)=>{const x=pad+(i/(hist.length-1))*(W-pad*2);const y=pad+H-((h.rm-minRM)/range)*H;return x+","+y;});const f=pts[0].split(",");const l=pts[pts.length-1].split(",");return<path d={"M"+pts[0]+" L"+pts.join(" L")+" L"+l[0]+","+(H+pad)+" L"+f[0]+","+(H+pad)+" Z"} fill="rgba(191,169,138,0.08)" stroke="none"/>;})()}
@@ -2162,7 +2161,6 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                           <div><div style={{fontFamily:"'SF Mono','Fira Code',monospace",fontSize:8,color:C2.tx3,letterSpacing:1}}>{lang==="es"?"MÁX HISTÓRICO":"ALL-TIME BEST"}</div><div style={{fontFamily:"'SF Mono','Fira Code',monospace",fontSize:13,fontWeight:700,color:C2.tx}}>{Math.round(maxRM)} kg</div></div>
                           <div style={{textAlign:"right"}}><div style={{fontFamily:"'SF Mono','Fira Code',monospace",fontSize:8,color:C2.tx3,letterSpacing:1}}>{lang==="es"?"ÚLTIMA SESIÓN":"LAST SESSION"}</div><div style={{fontFamily:"'SF Mono','Fira Code',monospace",fontSize:13,fontWeight:700,color:"#BFA98A"}}>{Math.round(newest?.rm||0)} kg</div></div>
                         </div>
-                      </>
                     ):(
                       <div style={{textAlign:"center",padding:"12px 0",fontFamily:"'SF Mono','Fira Code',monospace",fontSize:9,color:C2.tx3,letterSpacing:1}}>{lang==="es"?"COMPLETA SETS PARA VER TU PROGRESIÓN":"COMPLETE SETS TO SEE PROGRESSION"}</div>
                     )}
@@ -2476,8 +2474,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
 
         return(
           <div style={{position:"fixed",inset:0,zIndex:9000,pointerEvents:"none"}}>
-            {bounds?<>
-              <div style={{position:"fixed",top:0,left:0,right:0,
+            {bounds?<div style={{position:"fixed",top:0,left:0,right:0,
                 height:Math.max(0,bounds.top-pad),
                 background:"rgba(0,0,0,0.88)",pointerEvents:"all"}}/>
               <div style={{position:"fixed",left:0,right:0,
@@ -2503,8 +2500,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                 width:bounds.width+pad*2,height:bounds.height+pad*2,
                 borderRadius:14,pointerEvents:"all",
                 background:"transparent",cursor:"default"}}
-                onClick={e=>e.stopPropagation()}/>}
-            </>:<div style={{position:"absolute",inset:0,
+                onClick={e=>e.stopPropagation()}/>}:<div style={{position:"absolute",inset:0,
               background:"rgba(0,0,0,0.88)",pointerEvents:"all"}}/>}
             <div style={{
               position:"fixed",left:16,right:16,
@@ -2968,8 +2964,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                 <div style={{fontSize:13,color:C.tx3,marginTop:8}}>{t.restSub}</div>
               </div>
             ):(
-              <>
-                {/* HERO CARD — alma de la pantalla */}
+              {/* HERO CARD — alma de la pantalla */}
                 <div style={{
                   width:"100%",borderRadius:22,background:"linear-gradient(135deg,#1A2540 0%,#0D1520 100%)",cursor:"default",
                   marginBottom:16,padding:"26px 22px 22px",
@@ -3042,7 +3037,6 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                   const barW=ratio>0?Math.min(100,Math.round((ratio/2)*100)):0;
                   
                   return(
-                    <>
                     <div style={{marginTop:14,padding:"14px 16px",background:C.card,borderRadius:12,border:"1px solid "+(hasData?zoneColor+"44":"rgba(255,255,255,0.06)"),marginBottom:4}}>
                       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:hasData?10:0}}>
                         <div style={{display:"flex",alignItems:"center",gap:6}}>
@@ -3063,8 +3057,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                           ))}
                         </div>
                       </div>}
-                      {hasData?(<>
-                        <div style={{height:5,borderRadius:3,background:"rgba(255,255,255,0.06)",overflow:"hidden",marginBottom:8,position:"relative"}}>
+                      {hasData?(<div style={{height:5,borderRadius:3,background:"rgba(255,255,255,0.06)",overflow:"hidden",marginBottom:8,position:"relative"}}>
                           <div style={{position:"absolute",left:"40%",width:"25%",height:"100%",background:"rgba(45,168,74,0.15)",borderRadius:3}}/>
                           <div style={{height:"100%",width:barW+"%",borderRadius:3,background:"linear-gradient(90deg,"+zoneColor+"88,"+zoneColor+")",transition:"width 0.8s ease"}}/>
                           <div style={{position:"absolute",left:"75%",top:0,width:1,height:"100%",background:"rgba(232,48,32,0.4)"}}/>
@@ -3073,8 +3066,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                           <div style={{textAlign:"center"}}><div style={{fontFamily:mono,fontSize:14,fontWeight:700,color:C.tx}}>{(acute/1000).toFixed(1)}<span style={{fontSize:9,color:C.tx3}}> t</span></div><div style={{fontFamily:mono,fontSize:8,color:C.tx3,letterSpacing:1}}>{lang==="es"?"AGUDA 7d":"ACUTE 7d"}</div></div>
                           <div style={{textAlign:"center"}}><div style={{fontFamily:mono,fontSize:14,fontWeight:700,color:C.tx}}>{(chronic/1000).toFixed(1)}<span style={{fontSize:9,color:C.tx3}}> t</span></div><div style={{fontFamily:mono,fontSize:8,color:C.tx3,letterSpacing:1}}>{lang==="es"?"CRÓNICA 28d":"CHRONIC 28d"}</div></div>
                           <div style={{textAlign:"center"}}><div style={{fontFamily:mono,fontSize:14,fontWeight:700,color:zoneColor}}>{ratio.toFixed(2)}</div><div style={{fontFamily:mono,fontSize:8,color:C.tx3,letterSpacing:1}}>RATIO</div></div>
-                        </div>
-                      </>):(<div style={{textAlign:"center",padding:"8px 0",fontFamily:mono,fontSize:9,color:C.tx3,letterSpacing:1}}>{lang==="es"?"REGISTRA SETS PARA VER TU CARGA":"LOG SETS TO SEE YOUR LOAD"}</div>)}
+                        </div>):(<div style={{textAlign:"center",padding:"8px 0",fontFamily:mono,fontSize:9,color:C.tx3,letterSpacing:1}}>{lang==="es"?"REGISTRA SETS PARA VER TU CARGA":"LOG SETS TO SEE YOUR LOAD"}</div>)}
                     </div>
                   );
                 })()}
@@ -3297,8 +3289,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
 
                 <div style={{textAlign:"center",marginTop:22,display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap"}}>
                   {!confirmR?(
-                    <>
-                      <button onClick={()=>setConfirmR(true)} style={{background:"none",border:`1px solid ${C.borderL}`,borderRadius:8,padding:"8px 18px",color:C.tx3,fontSize:9,fontFamily:mono,letterSpacing:2,cursor:"pointer"}}>{t.reset.toUpperCase()}</button>
+                    <button onClick={()=>setConfirmR(true)} style={{background:"none",border:`1px solid ${C.borderL}`,borderRadius:8,padding:"8px 18px",color:C.tx3,fontSize:9,fontFamily:mono,letterSpacing:2,cursor:"pointer"}}>{t.reset.toUpperCase()}</button>
                       <button onClick={exportData} style={{background:"none",border:`1px solid ${C.borderL}`,borderRadius:8,padding:"8px 18px",color:C.tx3,fontSize:9,fontFamily:mono,letterSpacing:2,cursor:"pointer"}}>
                         {lang==="es"?"↓ EXPORTAR":"↓ EXPORT"}
                       </button>
@@ -3311,7 +3302,6 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                       }} style={{background:"none",border:`1px solid rgba(217,96,96,.35)`,borderRadius:8,padding:"8px 18px",color:"rgba(217,96,96,.6)",fontSize:9,fontFamily:mono,letterSpacing:2,cursor:"pointer"}}>
                         🧪 RESET TEST
                       </button>
-                    </>
                   ):(
                     <div style={{display:"flex",gap:8,justifyContent:"center"}}>
                       <button onClick={()=>{sd({});setConfirmR(false);}} style={{padding:"8px 18px",borderRadius:8,border:"none",background:C.tx,color:C.white,fontSize:9,fontFamily:mono,letterSpacing:2,cursor:"pointer"}}>{t.yes.toUpperCase()}</button>
@@ -3319,7 +3309,6 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                     </div>
                   )}
                 </div>
-              </>
             )}
           </div>
         )}
@@ -3619,8 +3608,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
         return(
           <div style={{position:"fixed",inset:0,zIndex:9000,pointerEvents:"none"}}>
             {/* 4-rect cutout */}
-            {bounds?<>
-              <div style={{position:"fixed",top:0,left:0,right:0,
+            {bounds?<div style={{position:"fixed",top:0,left:0,right:0,
                 height:Math.max(0,bounds.top-pad),
                 background:"rgba(0,0,0,0.88)",pointerEvents:"all"}}/>
               <div style={{position:"fixed",left:0,right:0,
@@ -3646,8 +3634,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                 width:bounds.width+pad*2,height:bounds.height+pad*2,
                 borderRadius:14,pointerEvents:"all",
                 background:"transparent",cursor:"default"}}
-                onClick={e=>e.stopPropagation()}/>}
-            </>:<div style={{position:"absolute",inset:0,
+                onClick={e=>e.stopPropagation()}/>}:<div style={{position:"absolute",inset:0,
               background:"rgba(0,0,0,0.88)",pointerEvents:"all"}}/>}
 
             {/* Tooltip */}
@@ -4161,8 +4148,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
           <div style={{display:"flex",gap:6,marginBottom:36}}>
             {Array.from({length:TOTAL_STEPS},(_,i)=><div key={i} style={{height:2,flex:1,borderRadius:1,background:i<step-1?"#BFA98A":"rgba(238,234,227,.12)",transition:"background .4s"}}/>)}
           </div>
-                    {step===3&&(<>
-            <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,.55)",letterSpacing:4,marginBottom:16,textTransform:"uppercase"}}>{t.goal}</div>
+                    {step===3&&(<div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,.55)",letterSpacing:4,marginBottom:16,textTransform:"uppercase"}}>{t.goal}</div>
             <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:24,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"¿Qué buscas?":"What's your goal?"}</div>
             <div style={{display:"flex",flexDirection:"column",borderTop:`1px solid rgba(240,242,245,0.12)`}}>
               {[["muscle",t.muscle],["strength",t.strength],["lose",t.lose],["recomp",t.recomp],["general",t.general]].map(([id,lb])=>(
@@ -4172,10 +4158,8 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             <div style={{display:"flex",gap:10,marginTop:28}}>
               <div style={{flex:1}}><Btn ghost onClick={()=>setStep(2)}>{t.back}</Btn></div>
               <div style={{flex:2}}><Btn onClick={()=>setStep(4)} disabled={!goal}>{t.next}</Btn></div>
-            </div>
-          </>)}
-                    {step===4&&mode==="auto"&&(<>
-            <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,.55)",letterSpacing:4,marginBottom:16,textTransform:"uppercase"}}>{t.level}</div>
+            </div>)}
+                    {step===4&&mode==="auto"&&(<div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,.55)",letterSpacing:4,marginBottom:16,textTransform:"uppercase"}}>{t.level}</div>
             <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:24,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"Tu experiencia":"Your experience"}</div>
             <div style={{display:"flex",flexDirection:"column",borderTop:`1px solid rgba(240,242,245,0.12)`}}>
               {[["beg",t.beg],["int",t.int],["adv",t.adv]].map(([id,lb])=>(
@@ -4185,10 +4169,8 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             <div style={{display:"flex",gap:10,marginTop:28}}>
               <div style={{flex:1}}><Btn ghost onClick={()=>setStep(3)}>{t.back}</Btn></div>
               <div style={{flex:2}}><Btn onClick={()=>setStep(5)} disabled={!level}>{t.next}</Btn></div>
-            </div>
-          </>)}
-                    {step===4&&mode!=="auto"&&(<>
-            <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,.55)",letterSpacing:4,marginBottom:16,textTransform:"uppercase"}}>{lang==="es"?"UNIDADES":"UNITS"}</div>
+            </div>)}
+                    {step===4&&mode!=="auto"&&(<div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,.55)",letterSpacing:4,marginBottom:16,textTransform:"uppercase"}}>{lang==="es"?"UNIDADES":"UNITS"}</div>
             <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:32,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"Sistema de medida":"Measurement"}</div>
             <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:32}}>
               {[
@@ -4213,10 +4195,8 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             <div style={{display:"flex",gap:10,marginTop:8}}>
               <div style={{flex:1}}><Btn ghost onClick={()=>setStep(3)}>{t.back}</Btn></div>
               <div style={{flex:2}}><Btn onClick={()=>setStep(5)}>{t.next}</Btn></div>
-            </div>
-          </>)}
-                    {step===5&&(<>
-            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{lang==="es"?"DATOS FÍSICOS":"BODY DATA"}</div>
+            </div>)}
+                    {step===5&&(<div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{lang==="es"?"DATOS FÍSICOS":"BODY DATA"}</div>
             <div style={{fontSize:36,fontWeight:900,letterSpacing:-1.5,marginBottom:24,lineHeight:.9}}>{lang==="es"?"Tu cuerpo":"Your body"}</div>
             <div style={{display:"flex",flexDirection:"column",gap:20,marginBottom:32}}>
               <Num val={age} set={setAge} min={13} max={80} label={lang==="es"?"EDAD":"AGE"}/>
@@ -4236,8 +4216,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             <div style={{display:"flex",gap:10,marginTop:8}}>
               <div style={{flex:1}}><Btn ghost onClick={()=>setStep(4)}>{t.back}</Btn></div>
               <div style={{flex:2}}><Btn onClick={()=>setStep(6)}>{t.next}</Btn></div>
-            </div>
-          </>)}
+            </div>)}
         </div>
       )}}
 
@@ -4315,8 +4294,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
         </div>
       )}
 
-      {(step===22||step===8)&&(<>
-            <div style={{fontSize:10,fontFamily:mono,color:"rgba(255,255,255,.18)",letterSpacing:3,marginBottom:10,textTransform:"uppercase"}}>
+      {(step===22||step===8)&&(<div style={{fontSize:10,fontFamily:mono,color:"rgba(255,255,255,.18)",letterSpacing:3,marginBottom:10,textTransform:"uppercase"}}>
               {lang==="es"?"EQUIPAMIENTO":"EQUIPMENT"}
             </div>
             <div style={{fontSize:30,fontWeight:900,letterSpacing:-1.2,marginBottom:6,lineHeight:1,
@@ -4329,8 +4307,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             {(()=>{
               // EQ_CARDS defined above
               const tot=[...equipment].reduce((s,id)=>{const c=EQ_CARDS.find(x=>x.id===id);return s+(c?.ex||0);},15);
-              return(<>
-                <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:12}}>
+              return(<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:12}}>
                   {EQ_CARDS.map(({id,n,c,ex,img})=>{
                     const on=equipment.includes(id);
                     const cardBg=on?"rgba(255,255,255,.08)":"rgba(255,255,255,.04)";
@@ -4389,8 +4366,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                       :equipment.map(id=>{const card=EQ_CARDS.find(x=>x.id===id);return card?(<div key={id} onClick={()=>setEquipment(equipment.filter(x=>x!==id))} style={{display:"inline-flex",alignItems:"center",gap:5,padding:"5px 12px",borderRadius:50,cursor:"pointer",fontFamily:mono,fontSize:9,color:"rgba(255,255,255,.5)",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.07)",backdropFilter:"blur(8px)",transition:"all .15s"}}><div style={{width:5,height:5,borderRadius:"50%",background:card.c,flexShrink:0}}/>{lang==="es"?card.n.es:card.n.en}<span style={{opacity:.25,fontSize:13,marginLeft:2}}>×</span></div>):null;})
                     }
                   </div>
-                </div>
-              </>);
+                </div>);
             })()}
             <div style={{display:"flex",gap:10}}>
               <div style={{flex:1}}><Btn ghost onClick={()=>setStep(step===22?21:mode==="celebrity"?25:gymType==="homegym"?7:6)}>{t.back}</Btn></div>
@@ -4411,11 +4387,9 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                   FStore.saveProfile(pf,r);sp(pf);sr(r);setStep(99);
                 }
               }}>{mode==="celebrity"?(lang==="es"?"EMPEZAR →":"START →"):step===22?(lang==="es"?"VER CATÁLOGO →":"CATALOG →"):t.next}</Btn></div>
-            </div>
-          </>)}
+            </div>)}
 
-      {step===20&&(<>
-            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{lang==="es"?"DÍAS / SEMANA":"DAYS / WEEK"}</div>
+      {step===20&&(<div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{lang==="es"?"DÍAS / SEMANA":"DAYS / WEEK"}</div>
             <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:32,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"¿Cuántos días?":"How many days?"}</div>
             <div style={{display:"flex",gap:10,justifyContent:"center"}}>
               {[3,4,5,6].map(n=>(
@@ -4429,11 +4403,9 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             <div style={{display:"flex",gap:10,marginTop:32}}>
               <div style={{flex:1}}><Btn ghost onClick={()=>setStep(2)}>{t.back}</Btn></div>
               <div style={{flex:2}}><Btn onClick={()=>setStep(21)} disabled={!manualDays}>{t.next}</Btn></div>
-            </div>
-          </>)}
+            </div>)}
 
-      {step===21&&(<>
-            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{lang==="es"?"QUÉ DÍAS":"WHICH DAYS"}</div>
+      {step===21&&(<div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{lang==="es"?"QUÉ DÍAS":"WHICH DAYS"}</div>
             <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:8,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"¿Qué días?":"Which days?"}</div>
             <div style={{fontFamily:mono,fontSize:10,color:C.tx3,letterSpacing:1,marginBottom:28,opacity:.7}}>
               {lang==="es"?`Selecciona ${manualDays} días`:`Select ${manualDays} days`}
@@ -4479,11 +4451,9 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             <div style={{display:"flex",gap:10}}>
               <div style={{flex:1}}><Btn ghost onClick={()=>setStep(20)}>{t.back}</Btn></div>
               <div style={{flex:2}}><Btn onClick={()=>setStep(22)} disabled={manualSelDays.length!==manualDays}>{t.next}</Btn></div>
-            </div>
-          </>)}
+            </div>)}
 
-      {step===23&&(<>
-            {/* Header sticky con días */}
+      {step===23&&({/* Header sticky con días */}
             <div style={{position:"sticky",top:0,zIndex:5,background:"rgba(44,48,64,0.92)",backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",marginBottom:16,paddingBottom:12,borderBottom:"1px solid rgba(240,242,245,0.07)"}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
                 <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2}}>{lang==="es"?"CATÁLOGO":"CATALOG"}</div>
@@ -4644,8 +4614,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             <div style={{display:"flex",gap:10}}>
               <div style={{flex:1}}><Btn ghost onClick={()=>setStep(22)}>{t.back}</Btn></div>
               <div style={{flex:2}}><Btn onClick={finishManual} disabled={manualSelDays.some((_,i)=>(manualRoutine[i]||[]).length===0)}>{t.go}</Btn></div>
-            </div>
-          </>)}
+            </div>)}
 
       {step===25&&(
         <div style={{minHeight:"100vh",padding:"64px 26px 40px",boxSizing:"border-box"}}>
@@ -4675,8 +4644,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                 {id:"rihanna",  img:IMGS_C.rihanna,  ac:"#e91e63", label:"RIHANNA RUN",      name:{es:"RIHANNA",en:"RIHANNA"},                    badge:"CARDIO+FUERZA",days:4, split:"Cardio+Pilates+Fuerza / Cardio+Fuerza / Pilates+Core / Repetir D1", lvl:{es:"MEDIO",en:"MEDIUM"}, source:"Rihanna training declaration — 5K run + Pilates + light strength 3-5x/week", desc:{es:"Carrera 5K + Pilates 30 min + 25 reps: squats, lunges, reverse crunches. Simple pero consistente. Pilates enfocado en core día 3. Sin excesos.",en:"5K run + 30 min Pilates + 25 reps: squats, lunges, reverse crunches. Simple but consistent. Core-focused Pilates day 3. No overcomplication."}},
               ];
 
-              return(<>
-                <div style={{fontSize:10,fontFamily:mono,color:"rgba(255,255,255,.18)",letterSpacing:3,marginBottom:8,textTransform:"uppercase"}}>{lang==="es"?"ELIGE TU RETO":"CHOOSE YOUR CHALLENGE"}</div>
+              return(<div style={{fontSize:10,fontFamily:mono,color:"rgba(255,255,255,.18)",letterSpacing:3,marginBottom:8,textTransform:"uppercase"}}>{lang==="es"?"ELIGE TU RETO":"CHOOSE YOUR CHALLENGE"}</div>
                 <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:36,letterSpacing:3,lineHeight:.9,marginBottom:4,
                   background:"linear-gradient(135deg,rgba(255,255,255,.95) 0%,rgba(255,255,255,.4) 100%)",
                   WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"
@@ -4775,8 +4743,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                     // Celebrity: pick which days
                     setStep(26);
                   }}>{lang==="es"?(gymType==="gym"?"ELEGIR ESTA RUTINA →":"ELEGIR EQUIPO →"):(gymType==="gym"?"SELECT THIS ROUTINE →":"SELECT EQUIPMENT →")}</Btn></div>
-                </div>
-              </>);
+                </div>);
             })()}
         </div>
       )}
@@ -6116,8 +6083,6 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 </script>
 </body>
 </html>
-
-                    </>
 </div>
                       
                         </div>
