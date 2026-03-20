@@ -1966,9 +1966,9 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                     </span>
                   )}
                 </div>
-                <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between"}}>
+                <div data-tour={ei===0?"ws-exercise":undefined} style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between"}}>
                   <div>
-                    <div data-tour={ei===0?"ws-exercise":undefined} style={{fontSize:24,fontWeight:900,letterSpacing:-1,textTransform:"uppercase",color:C2.tx,lineHeight:1}}>{ex.e}</div>
+                    <div style={{fontSize:24,fontWeight:900,letterSpacing:-1,textTransform:"uppercase",color:C2.tx,lineHeight:1}}>{ex.e}</div>
                     {/* Músculos debajo del nombre */}
                     {EX_META[exMetaKey(ex.e)]&&(
                       <div style={{display:"flex",gap:5,flexWrap:"wrap",marginTop:5}}>
@@ -3066,9 +3066,20 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
           const ns=tourStep+1;
           if(ns>=STEPS.length){endTour();return;}
           if(ns===4&&day&&day.ex&&day.ex.length) setInWorkout(true);
-          if(ns===8) setInWorkout(false);
+          if(ns===8){ setInWorkout(false); setTab("train"); }
+          if(ns===9) setTab("body");
           if(STEPS[ns].onEnter) STEPS[ns].onEnter();
-          setTourStep(ns);
+          if(ns===8||ns===9){
+            setTimeout(()=>{
+              const el=STEPS[ns].sel?STEPS[ns].sel():null;
+              if(el) el.scrollIntoView({block:"center",behavior:"smooth"});
+              setTourStep(ns);
+            },150);
+          } else {
+            const el=STEPS[ns].sel?STEPS[ns].sel():null;
+            if(el) el.scrollIntoView({block:"center",behavior:"smooth"});
+            setTourStep(ns);
+          }
         };
 
         return(
@@ -4471,75 +4482,124 @@ function BodyHeatmapTab({logs, routine, lang, profile}){
 
 
 
-    // -- Balance Score strip (compact, above mannequin) ------------------
+    // -- Balance Score strip (level-up style) ---------------------------
     (()=>{
       const ZONES_A=["pecho","dorsal","hombro_izq","bicep_izq","tricep_izq",
         "quad","gluteos","isquiotibiales","abdomen","gemelos","trapecio","espalda_baja"];
-      const ZPAIRS_A={hombro_izq:"hombro_der",bicep_izq:"bicep_der",
-        tricep_izq:"tricep_der",antebrazo_izq:"antebrazo_der"};
-      const WIN_A=14*24;
-      const M_A="'SF Mono','Fira Code','Courier New',monospace";
-      const zrA=ZONES_A.map(zk=>{
-        const ts=zoneState[zk]||zoneState[ZPAIRS_A[zk]];
-        if(!ts) return{zk,state:"never"};
-        const h=(Date.now()-ts)/3600000;
-        if(h>WIN_A) return{zk,state:"never"};
-        return{zk,state:getZoneState(zk,zoneState),pct:Math.min(100,Math.round((h/(ZONE_REC_HOURS[zk]||72))*100))};
+      const ZPAIRS_A={hombro_izq:"hombro_der",bicep_izq:"bicep_der",tricep_izq:"tricep_der",
+        quad:"quad_der",gluteos:"gluteos_der",isquiotibiales:"isquiotibiales_der",
+        gemelos:"gemelos_der",antebrazo_izq:"antebrazo_der"};
+      let totalPct=0, count=0;
+      ZONES_A.forEach(zk=>{
+        const zks=[zk];
+        if(ZPAIRS_A[zk]) zks.push(ZPAIRS_A[zk]);
+        const avgPct=zks.reduce((s,k)=>{
+          const d=logsToZoneTimestamps(logs,k);
+          return s+getPct(d);
+        },0)/zks.length;
+        totalPct+=avgPct; count++;
       });
-      const neverA=zrA.filter(z=>z.state==="never").length;
-      const freshA=zrA.filter(z=>z.state==="fresh").length;
-      const hasA=zrA.some(z=>z.state!=="never");
-      const scoreA=!hasA?0:Math.max(5,Math.min(100,
-        Math.round(100-neverA*(100/ZONES_A.length)*1.1-freshA*2)
-      ));
-      const cA=scoreA>=75?"#5faa88":scoreA>=55?"#c0a870":scoreA>0?"#d96060":"rgba(255,255,255,.2)";
-      const titleA=scoreA>=90?(es?"ATLETA COMPLETO":"COMPLETE ATHLETE"):
-        scoreA>=75?(es?"BUEN BALANCE":"GOOD BALANCE"):
-        scoreA>=55?(es?"ASIMÉTRICO":"ASYMMETRIC"):
-        scoreA>0?(es?"ESPECIALISTA":"SPECIALIST"):(es?"SIN DATOS":"NO DATA");
+      const balanceScore=count>0?Math.round((totalPct/count)*100):0;
+
+      // Level definitions
+      const LEVELS=[
+        {min:0,  max:20, label:"PRINCIPIANTE", color:"#6a7a9b", next:"INTERMEDIO"},
+        {min:20, max:40, label:"INTERMEDIO",   color:"#4f8ef7", next:"AVANZADO"},
+        {min:40, max:60, label:"AVANZADO",     color:"#3fcf8e", next:"ÉLITE"},
+        {min:60, max:80, label:"ÉLITE",        color:"#f0b429", next:"MAESTRO"},
+        {min:80, max:101,label:"MAESTRO",      color:"#BFA98A", next:null},
+      ];
+      const lvl=LEVELS.find(l=>balanceScore>=l.min&&balanceScore<l.max)||LEVELS[0];
+      const pctInLevel=Math.round(((balanceScore-lvl.min)/(lvl.max-lvl.min))*100);
+      const mono="\'SF Mono\',\'Fira Code\',monospace";
+      const lang_=lang||"es";
+      const isES=lang_==="es";
 
       return e("div",{"data-tour":"balance-score",style:{
-        display:"flex",alignItems:"center",gap:10,
-        padding:"8px 16px",
-        background:"rgba(255,255,255,0.02)",
-        borderBottom:"1px solid rgba(255,255,255,0.05)"
+        margin:"0 0 16px 0",
+        padding:"16px",
+        background:"linear-gradient(135deg,rgba(20,20,24,1) 0%,rgba(28,28,36,1) 100%)",
+        borderRadius:16,
+        border:`1px solid ${lvl.color}33`,
+        boxShadow:`0 0 24px ${lvl.color}18`,
+        position:"relative",overflow:"hidden"
       }},
-        // Tiny score circle
+        // Background glow
         e("div",{style:{
-          width:36,height:36,borderRadius:"50%",flexShrink:0,position:"relative",
-          background:scoreA>0
-            ?`conic-gradient(${cA} ${scoreA*3.6}deg, rgba(255,255,255,0.07) 0deg)`
-            :"rgba(255,255,255,0.04)",
-        }},
+          position:"absolute",top:-30,right:-30,
+          width:120,height:120,borderRadius:"50%",
+          background:`radial-gradient(circle, ${lvl.color}22 0%, transparent 70%)`,
+          pointerEvents:"none"
+        }}),
+
+        // Top row: label + score
+        e("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}},
+          e("div",{style:{display:"flex",alignItems:"center",gap:8}},
+            e("div",{style:{
+              padding:"3px 10px",borderRadius:20,
+              background:`${lvl.color}22`,
+              border:`1px solid ${lvl.color}55`,
+              fontFamily:mono,fontSize:9,letterSpacing:2,
+              color:lvl.color,fontWeight:700
+            }},lvl.label),
+            lvl.next&&e("div",{style:{
+              fontFamily:mono,fontSize:8,
+              color:"rgba(255,255,255,0.3)",letterSpacing:1
+            }},isES?`→ ${lvl.next}`:`→ ${lvl.next}`)
+          ),
+          e("div",{style:{display:"flex",alignItems:"baseline",gap:3}},
+            e("div",{style:{
+              fontFamily:"'Bebas Neue',cursive",
+              fontSize:36,lineHeight:1,
+              color:lvl.color,
+              textShadow:`0 0 20px ${lvl.color}66`
+            }},balanceScore),
+            e("div",{style:{
+              fontFamily:mono,fontSize:10,
+              color:"rgba(255,255,255,0.4)",
+              letterSpacing:1
+            }},"/100")
+          )
+        ),
+
+        // Progress bar to next level
+        e("div",{style:{marginBottom:6}},
           e("div",{style:{
-            position:"absolute",inset:3,borderRadius:"50%",background:"#0a0a0d",
-            display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"
+            height:6,borderRadius:3,
+            background:"rgba(255,255,255,0.07)",
+            overflow:"hidden"
           }},
-            e("div",{style:{fontSize:scoreA>0?10:7,fontWeight:900,color:cA,
-              lineHeight:1,fontFamily:"-apple-system,sans-serif"}},scoreA>0?scoreA:"—")
+            e("div",{style:{
+              height:"100%",
+              width:`${pctInLevel}%`,
+              borderRadius:3,
+              background:`linear-gradient(90deg, ${lvl.color}99, ${lvl.color})`,
+              boxShadow:`0 0 8px ${lvl.color}88`,
+              transition:"width 0.8s cubic-bezier(0.4,0,0.2,1)"
+            }})
           )
         ),
-        // Title + insight
-        e("div",{style:{flex:1,minWidth:0}},
-          e("div",{style:{fontSize:7,fontFamily:M_A,color:cA,
-            letterSpacing:2,lineHeight:1,marginBottom:3}},titleA+" · BALANCE"),
-          e("div",{style:{fontSize:8,color:"rgba(255,255,255,.65)",
-            fontFamily:M_A,lineHeight:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},
-            !hasA?(es?"Registra entrenamientos para ver tu balance":"Log workouts to see your balance"):
-            neverA>0?(es?`${neverA} zona${neverA>1?"s":""} sin entrenar en 14d`
-                        :`${neverA} zone${neverA>1?"s":""} untrained in 14d`):
-            (es?"Todo en balance · últimas 2 semanas":"Balanced · last 2 weeks")
+
+        // Bottom row: XP progress text + zone mini-bars
+        e("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between"}},
+          e("div",{style:{fontFamily:mono,fontSize:8,color:"rgba(255,255,255,0.35)",letterSpacing:1}},
+            lvl.next
+              ?(isES?`${pctInLevel}% hacia ${lvl.next}`:`${pctInLevel}% to ${lvl.next}`)
+              :(isES?"NIVEL MÁXIMO ALCANZADO":"MAX LEVEL REACHED")
+          ),
+          // Mini zone bars
+          e("div",{style:{display:"flex",gap:3,alignItems:"flex-end",height:20}},
+            ...ZONES_A.map(zk=>{
+              const d=logsToZoneTimestamps(logs,zk);
+              const pct=getPct(d);
+              const s=getZoneState(d);
+              const c=s==="never"?"rgba(255,255,255,0.1)":
+                        s==="tired"?"#e05555":
+                        s==="fresh"?"#f0b429":"#3fcf8e";
+              const h=Math.max(3,Math.round(pct*18));
+              return e("div",{key:zk,style:{width:4,height:h,borderRadius:2,background:c}});
+            })
           )
-        ),
-        // Zone bar strip
-        e("div",{style:{display:"flex",gap:2,alignItems:"flex-end",height:20,flexShrink:0}},
-          ...zrA.map(z=>{
-            const c=z.state==="fresh"?"#d96060":z.state==="warm"?"#e07820":
-              z.state==="yel"?"#7ab82a":z.state==="rec"?"#5faa88":"rgba(255,255,255,0.08)";
-            const h=z.state==="fresh"?20:z.state==="warm"?16:z.state==="yel"?12:
-              z.state==="rec"?9:5;
-            return e("div",{key:z.zk,style:{width:4,height:h,borderRadius:2,background:c}});
-          })
         )
       );
     })(),
