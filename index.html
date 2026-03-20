@@ -2143,11 +2143,12 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:hasHist?10:6}}>
                       <div style={{display:"flex",alignItems:"center",gap:6}}>
                         <span style={{fontFamily:"'SF Mono','Fira Code',monospace",fontSize:9,color:C2.tx3,letterSpacing:2}}>// {lang==="es"?"PROGRESIÓN DE FUERZA":"STRENGTH CURVE"}</span>
+                        <button onClick={()=>{const el=document.getElementById("sc-help-"+ex.id);if(el)el.style.display=el.style.display==="none"?"":"none";}} style={{width:16,height:16,borderRadius:"50%",border:"1px solid rgba(255,255,255,.2)",background:"rgba(255,255,255,.06)",color:"rgba(255,255,255,.75)",fontSize:9,cursor:"pointer",display:"inline-flex",alignItems:"center",justifyContent:"center",padding:0,flexShrink:0}}>?</button>
                         <span  style={{cursor:"pointer",fontFamily:"'SF Mono','Fira Code',monospace",fontSize:9,color:C2.tx3,opacity:0.6,width:14,height:14,borderRadius:"50%",border:"1px solid rgba(255,255,255,0.2)",display:"inline-flex",alignItems:"center",justifyContent:"center"}}>?</span>
                       </div>
                       {pct!==null&&<span style={{fontFamily:"'SF Mono','Fira Code',monospace",fontSize:11,fontWeight:700,color:pct>=0?"#2da84a":"#e83020"}}>{pct>=0?"+":""}{pct}%</span>}
                     </div>
-                    {false&&<div style={{marginBottom:10,padding:"8px 10px",background:"rgba(255,255,255,0.04)",borderRadius:8,borderLeft:"2px solid #e8a020",fontFamily:"'SF Mono','Fira Code',monospace",fontSize:9,color:C2.tx2,letterSpacing:1,lineHeight:1.7}}>{lang==="es"?"1RM estimado con fórmula Epley basado en tus mejores sets. Muestra tu progresión de fuerza.":"Estimated 1RM using Epley formula from your best sets. Shows your strength progression."}</div>}
+                    <div id={"sc-help-"+ex.id} style={{display:"none",marginBottom:10,padding:"8px 10px",background:"rgba(255,255,255,0.04)",borderRadius:8,borderLeft:"2px solid #e8a020",fontFamily:"'SF Mono','Fira Code',monospace",fontSize:9,color:C2.tx2,letterSpacing:1,lineHeight:1.7}}>{lang==="es"?"1RM estimado con fórmula Epley basado en tus mejores sets. Muestra tu progresión de fuerza.":"Estimated 1RM using Epley formula from your best sets. Shows your strength progression."}</div>
                     {hasHist?(
                       <>
                         <svg width="100%" viewBox={"0 0 "+W+" "+(H+pad*2)} style={{overflow:"visible",marginBottom:4}}>
@@ -3045,14 +3046,14 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:hasData?10:0}}>
                         <div style={{display:"flex",alignItems:"center",gap:6}}>
                           <span style={{fontFamily:mono,fontSize:9,color:C.tx3,letterSpacing:2}}>// {lang==="es"?"CARGA SEMANAL":"WEEKLY LOAD"}</span>
-                          <span onClick={e=>{const p=e.currentTarget.closest("[data-acwr]");p.dataset.info=p.dataset.info==="1"?"0":"1";e.currentTarget.closest("[data-acwr]").querySelectorAll("[data-acwrinfo]").forEach(el=>el.style.display=p.dataset.info==="1"?"block":"none");}} style={{cursor:"pointer",fontFamily:mono,fontSize:9,color:C.tx3,opacity:0.6,width:14,height:14,borderRadius:"50%",border:"1px solid rgba(255,255,255,0.2)",display:"inline-flex",alignItems:"center",justifyContent:"center"}}>?</span>
+                          <button onClick={()=>{const el=document.getElementById("acwr-help");if(el)el.style.display=el.style.display==="none"?"":"none";}} style={{width:16,height:16,borderRadius:"50%",border:"1px solid rgba(255,255,255,.2)",background:"rgba(255,255,255,.06)",color:"rgba(255,255,255,.75)",fontSize:9,cursor:"pointer",display:"inline-flex",alignItems:"center",justifyContent:"center",padding:0,flexShrink:0}}>?</button>
                         </div>
                         {hasData&&<div style={{display:"flex",alignItems:"center",gap:6}}>
                           <span style={{fontFamily:mono,fontSize:9,color:zoneColor,letterSpacing:1,fontWeight:700}}>{zoneLabel}</span>
                           <span style={{fontFamily:mono,fontSize:16,fontWeight:700,color:zoneColor}}>{ratio.toFixed(2)}</span>
-                        </div>}
+                        </div>
                       </div>
-                      {false&&<div style={{marginBottom:10,padding:"10px 12px",background:"rgba(255,255,255,0.04)",borderRadius:8,borderLeft:"2px solid "+zoneColor}}>
+                      <div id="acwr-help" style={{display:"none",marginBottom:10,padding:"10px 12px",background:"rgba(255,255,255,0.04)",borderRadius:8,borderLeft:"2px solid "+zoneColor}}>
                         <div style={{fontFamily:mono,fontSize:9,color:C.tx2,letterSpacing:1,lineHeight:1.7}}>{lang==="es"?"Relación carga aguda/crónica. Mide si estás entrenando más de lo habitual. Rango óptimo: 0.8–1.3. Por encima de 1.5 aumenta el riesgo de lesión.":"Acute:Chronic Workload Ratio. Optimal range: 0.8–1.3. Above 1.5 increases injury risk."}</div>
                         <div style={{display:"flex",gap:12,marginTop:8,flexWrap:"wrap"}}>
                           {[["0–0.8",lang==="es"?"Subentreno":"Undertrained","#4898e8"],["0.8–1.3",lang==="es"?"Óptimo":"Optimal","#2da84a"],["1.3–1.5",lang==="es"?"Precaución":"Caution","#e8a020"],[">1.5",lang==="es"?"Riesgo":"Risk","#e83020"]].map(([range,label,color])=>(
