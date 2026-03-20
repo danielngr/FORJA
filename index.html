@@ -53,7 +53,7 @@ input[type=number]{-moz-appearance:textfield;}
 // ⚠️  CONFIGURAR: reemplaza con tus credenciales de Supabase
 //     Dashboard → Settings → API → Project URL + anon key
 const FORJA_SUPABASE_URL  = 'https://ittzbjaaudlsbirzhvkz.supabase.co';
-const FORJA_SUPABASE_KEY  = 'sb_publishable_X9mp6YCa9SSBiNO2hLyUQg_3-C0tfEr';
+const FORJA_SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0dHpiamF1dWRsc2Jpcnpodmt6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3ODQzMDcsImV4cCI6MjA4OTM2MDMwN30.qxr-ZT9fytPsHdLDmmso6wkOSm8VdBSdxTBepah_Aks';
 
 let _sb = null, _user = null, _authReady = false;
 const _authCbs = [];
@@ -3059,7 +3059,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                         </div>
                         <div style={{display:"flex",flexDirection:"column",gap:6}}>
                           {[
-                            {c:C.green,    t:lang==="es"?"Barra dorada/verde = en rango óptimo":"Gold/green = in optimal range",
+                            {c:"#BFA98A",  t:lang==="es"?"Barra dorada = en rango óptimo":"Gold = in optimal range",
                                            s:lang==="es"?"Suficientes series para crecer. ✓":"Enough sets to grow. ✓"},
                             {c:"rgba(255,255,255,.2)", t:lang==="es"?"Barra gris = falta volumen":"Grey = below minimum",
                                            s:lang==="es"?"Agrega 1-2 series más esta semana.":"Add 1-2 more sets this week."},
@@ -3107,7 +3107,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                               <div style={{flex:1,height:5,background:C.borderL,borderRadius:3,overflow:"hidden"}}>
                                 <div style={{height:"100%",
                                   width:`${pct}%`,
-                                  background:atMrv?"#e05555":atMev?color:"rgba(255,255,255,.55)",
+                                  background:atMrv?"#e05555":atMev?"#BFA98A":"rgba(255,255,255,.25)",
                                   borderRadius:3,transition:"width .5s ease"}}/>
                               </div>
                               <div style={{fontSize:10,fontFamily:mono,color:atMrv?"#e05555":atMev?color:C.tx3,
@@ -4644,7 +4644,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
         <div style={{position:"fixed",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"0 28px",background:"#07080a",zIndex:50,animation:"forjaFadeSlide .38s ease"}}>
           <div style={{fontFamily:mono,fontSize:9,letterSpacing:4,color:"rgba(238,234,227,.85)",textTransform:"uppercase",marginBottom:14,display:"flex",alignItems:"center",gap:10}}><span style={{width:18,height:1,background:"rgba(238,234,227,.1)",display:"block"}}/>{lang==="es"?"HORARIO":"SCHEDULE"}<span style={{width:18,height:1,background:"rgba(238,234,227,.1)",display:"block"}}/></div>
           <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:60,letterSpacing:2,lineHeight:.92,textAlign:"center",marginBottom:6}}>{lang==="es"?"QUÉ":"WHICH"}<br/><span style={{color:"#BFA98A"}}>{lang==="es"?"DÍAS":"DAYS"}</span></div>
-          <div style={{fontSize:11,color:"rgba(238,234,227,.65)",textAlign:"center",marginBottom:32,fontFamily:mono}}>{celebData&&`${celebData.days}x/${lang==="es"?"semana":"week"} . ${celebData.name||celebData.id}`}</div>
+          <div style={{fontSize:11,color:"rgba(238,234,227,.65)",textAlign:"center",marginBottom:32,fontFamily:mono}}>{celebData&&`${celebData.days}x/${lang==="es"?"semana":"week"} . ${(typeof celebData.name==="object"?(celebData.name[lang]||celebData.name.es):celebData.name)||celebData.id}`}</div>
           <div style={{display:"flex",gap:5,marginBottom:36}}>{celebData&&Array.from({length:celebData.days}).map((_,i)=>(<div key={i} style={{width:5,height:5,borderRadius:"50%",background:selDays.length>i?"#BFA98A":"rgba(238,234,227,.12)",transform:selDays.length>i?"scale(1.3)":"scale(1)",transition:"all .3s"}}/>))}</div>
           <div style={{display:"flex",gap:7,width:"100%",maxWidth:390,marginBottom:20}}>
             {(lang==="es"?["L","M","X","J","V","S","D"]:["M","T","W","T","F","S","S"]).map((letter,i)=>{
