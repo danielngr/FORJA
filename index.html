@@ -1376,7 +1376,7 @@ const getImg=name=>IMG[name.toLowerCase().trim()]||null;
 
 const BASE="https://forjavideos.b-cdn.net/";
 const VID={
-  // PECHO
+  // PECHO — exact matches only
   "bench press":                    BASE+"barbell-bench-press.mp4",
   "incline bench press":            BASE+"barbell-incline-bench-press.mp4",
   "close grip bench press":         BASE+"barbell-close-grip-bench-press.mp4",
@@ -1398,10 +1398,8 @@ const VID={
   "weighted pull up":               BASE+"pull-ups.mp4",
   "chin up":                        BASE+"chin-ups.mp4",
   "barbell row":                    BASE+"barbell-bent-over-row.mp4",
-  "pendlay row":                    BASE+"barbell-bent-over-row.mp4",
   "barbell bent over row":          BASE+"barbell-bent-over-row.mp4",
   "dumbbell row":                   BASE+"dumbbell-row-unilateral.mp4",
-  "cable row":                      BASE+"machine-neutral-row.mp4",
   "machine neutral row":            BASE+"machine-neutral-row.mp4",
   "machine pulldown":               BASE+"machine-pulldown.mp4",
   "lat pulldown":                   BASE+"machine-pulldown.mp4",
@@ -1414,9 +1412,7 @@ const VID={
   "barbell overhead press":         BASE+"barbell-overhead-press.mp4",
   "dumbbell shoulder press":        BASE+"dumbbell-seated-overhead-press.mp4",
   "seated overhead press":          BASE+"dumbbell-seated-overhead-press.mp4",
-  "lateral raise":                  BASE+"dumbbell-rear-delt-fly.mp4",
   "dumbbell front raise":           BASE+"dumbbell-front-raise.mp4",
-  "reverse fly":                    BASE+"dumbbell-laying-reverse-fly.mp4",
   "dumbbell rear delt fly":         BASE+"dumbbell-rear-delt-fly.mp4",
   "dumbbell laying reverse fly":    BASE+"dumbbell-laying-reverse-fly.mp4",
   "face pull":                      BASE+"cable-bar-face-pull.mp4",
@@ -1429,33 +1425,21 @@ const VID={
   "hammer curl":                    BASE+"dumbbell-hammer-curl.mp4",
   "preacher curl":                  BASE+"dumbbell-preacher-curl.mp4",
   "concentration curl":             BASE+"dumbbell-concentration-curl.mp4",
-  "reverse curl":                   BASE+"dumbbell-hammer-curl.mp4",
   // TRÍCEPS
   "skull crusher":                  BASE+"dumbbell-skullcrusher.mp4",
-  "overhead tricep extension":      BASE+"dumbbell-skullcrusher.mp4",
-  "tricep pushdown":                BASE+"barbell-close-grip-bench-press.mp4",
   // PIERNAS
   "barbell squat":                  BASE+"barbell-squat.mp4",
-  "squat":                          BASE+"barbell-squat.mp4",
-  "front squat":                    BASE+"barbell-squat.mp4",
   "bodyweight squat":               BASE+"bodyweight-squat.mp4",
-  "goblet squat":                   BASE+"bodyweight-squat.mp4",
-  "bulgarian split squat":          BASE+"dumbbell-bulgarian-split-squat.mp4",
   "dumbbell bulgarian split squat": BASE+"dumbbell-bulgarian-split-squat.mp4",
+  "bulgarian split squat":          BASE+"dumbbell-bulgarian-split-squat.mp4",
   "leg extension":                  BASE+"machine-leg-extension.mp4",
-  // "leg curl": pendiente video propio
   "leg press":                      BASE+"machine-leg-press.mp4",
-  // "romanian deadlift": pendiente video propio
-  "deadlift":                       BASE+"barbell-rack-pull.mp4",
-  // "hip thrust": pendiente video propio
   "calf raise":                     BASE+"dumbbell-single-leg-calf-raise.mp4",
-  // "seated calf raise": pendiente video propio
   "barbell thruster":               BASE+"barbell-thruster.mp4",
   "box jump":                       BASE+"box-jump.mp4",
   // CORE
   "hanging knee raises":            BASE+"hanging-knee-raises.mp4",
   "mountain climber":               BASE+"mountain-climber.mp4",
-  "plank":                          BASE+"mountain-climber.mp4",
   "supermans":                      BASE+"supermans.mp4",
   "machine crunch":                 BASE+"machine-crunch.mp4",
 };
