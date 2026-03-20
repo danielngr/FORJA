@@ -2224,27 +2224,14 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
 
   const sd=useCallback(n=>{setDone(n);FStore.saveDone(w,n);},[w]);
 
-  // Hide tour if: profile has toured flag, OR profile already existed before tour feature
-  // "already existed" = profile exists but no toured flag = old user, skip tour
+  // Hide tour only if profile has toured:true flag (persisted in Supabase)
   useEffect(()=>{
-    if(!profile) return;
-    if(profile.toured){
-      // Already did tour — mark in localStorage and hide
+    if(profile&&profile.toured){
       try{localStorage.setItem('fv8_toured','1');}catch{}
       setTourAskVisible(false);
       setTourStep(-1);
-    } else {
-      // Profile exists but no toured flag — this is an EXISTING user
-      // They already know how the app works — skip tour silently
-      // (Only truly new users go through onboarding right now → setTourAskVisible stays true)
-      // But if they have routine data, they're not new
-      if(routine&&routine.length>0){
-        try{localStorage.setItem('fv8_toured','1');}catch{}
-        setTourAskVisible(false);
-        setTourStep(-1);
-      }
     }
-  },[profile,routine]);
+  },[profile]);
   const slg=useCallback(n=>{setLogs(n);FStore.saveLogs(n);},[]);
   const sm=useCallback(n=>{setMacros(n);FStore.saveMacros(today,n);},[today]);
 
@@ -2331,6 +2318,14 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
             <button onClick={()=>{setStep(0);setShowSet(false);}}
               style={{padding:"7px 12px",borderRadius:7,border:`1.5px solid ${C.borderL}`,background:C.card,color:C.tx2,fontSize:10,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>
               {t.reconfig.toUpperCase()}
+            </button>
+            <button onClick={()=>{
+              try{localStorage.removeItem('fv8_toured');}catch{}
+              setTourAskVisible(true);
+              setTourStep(null);
+              setShowSet(false);
+            }} style={{padding:"7px 12px",borderRadius:7,border:`1.5px solid ${C.borderL}`,background:C.card,color:C.tx2,fontSize:10,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>
+              {lang==="es"?"TUTORIAL":"TUTORIAL"}
             </button>
           </div>
         )}
