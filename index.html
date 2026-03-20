@@ -2262,9 +2262,17 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
               background:"rgba(0,0,0,0.88)",pointerEvents:"all"}}/>}
             <div style={{
               position:"fixed",left:16,right:16,
-              ...(tooltipBelow
-                ?{top:(bounds?bounds.bottom+pad+10:60)}
-                :{bottom:(bounds?(vh-bounds.top+pad+10):44)}),
+              // Smart positioning: always keep tooltip in viewport
+              ...(()=>{
+                if(!bounds) return {bottom:44};
+                const spaceBelow = vh - bounds.bottom - pad - 10;
+                const spaceAbove = bounds.top - pad - 10;
+                const tipH = 160; // approximate tooltip height
+                if(spaceBelow >= tipH) return {top: bounds.bottom+pad+10};
+                if(spaceAbove >= tipH) return {bottom: vh-bounds.top+pad+10};
+                // Not enough space either side — put at bottom of screen
+                return {bottom: 16, maxHeight: Math.min(vh*0.45, 280)+'px', overflowY:'auto'};
+              })(),
               background:"#141418",borderRadius:16,
               border:"1px solid rgba(255,255,255,0.1)",
               padding:"18px 18px 14px",
@@ -3109,8 +3117,22 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
           const ns=tourStep+1;
           if(ns>=TOTAL){endTour();return;}
           if(ns===4){ if(day&&day.ex&&day.ex.length) setInWorkout(true); }
-          if(ns===8){ setInWorkout(false); setTab("train"); }
+          if(ns===8){
+            setInWorkout(false); setTab("train");
+            // Scroll to vol-weekly after a short delay for re-render
+            setTimeout(()=>{
+              const el=document.querySelector('[data-tour="vol-weekly"]');
+              if(el) el.scrollIntoView({behavior:'smooth',block:'center'});
+            },150);
+          }
           if(ns===9) setTab("body");
+          if(ns===10||ns===11){
+            setTimeout(()=>{
+              const id=['mannequin','balance-score'][ns-10];
+              const el=document.querySelector('[data-tour="'+id+'"]');
+              if(el) el.scrollIntoView({behavior:'smooth',block:'start'});
+            },150);
+          }
           setTourStep(ns);
         };
 
@@ -3144,9 +3166,17 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
             {/* Tooltip */}
             <div style={{
               position:"fixed",left:16,right:16,
-              ...(tooltipBelow
-                ?{top:(bounds?bounds.bottom+pad+10:60)}
-                :{bottom:(bounds?(vh-bounds.top+pad+10):44)}),
+              // Smart positioning: always keep tooltip in viewport
+              ...(()=>{
+                if(!bounds) return {bottom:44};
+                const spaceBelow = vh - bounds.bottom - pad - 10;
+                const spaceAbove = bounds.top - pad - 10;
+                const tipH = 160; // approximate tooltip height
+                if(spaceBelow >= tipH) return {top: bounds.bottom+pad+10};
+                if(spaceAbove >= tipH) return {bottom: vh-bounds.top+pad+10};
+                // Not enough space either side — put at bottom of screen
+                return {bottom: 16, maxHeight: Math.min(vh*0.45, 280)+'px', overflowY:'auto'};
+              })(),
               background:"#141418",borderRadius:16,
               border:"1px solid rgba(255,255,255,0.1)",
               padding:"18px 18px 14px",
@@ -4559,9 +4589,9 @@ function BodyHeatmapTab({logs, routine, lang, profile}){
         if(ZPAIRS_A[zk]) zks.push(ZPAIRS_A[zk]);
         const avgPct=zks.reduce((s,k)=>{
           const d=logsToZoneTimestamps(logs,k);
-          const st=getZoneState(k,d);
-          // "never" trained zones count as 0 for balance score
-          return s+(st==="never"?0:getPct(k,d));
+          // If no timestamp data for this zone, it was never trained → 0 contribution
+          if(!d||!d[k]) return s+0;
+          return s+getPct(k,d);
         },0)/zks.length;
         totalPct+=avgPct; count++;
       });
@@ -4657,7 +4687,8 @@ function BodyHeatmapTab({logs, routine, lang, profile}){
           e("div",{style:{display:"flex",gap:3,alignItems:"flex-end",height:20}},
             ...ZONES_A.map(zk=>{
               const d=logsToZoneTimestamps(logs,zk);
-              const pct=getPct(zk,d);
+              const hasData=d&&d[zk];
+              const pct=hasData?getPct(zk,d):0;
               const s=getZoneState(zk,d);
               const c=s==="never"?"rgba(255,255,255,0.1)":
                         s==="tired"?"#e05555":
