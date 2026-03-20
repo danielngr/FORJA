@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
 <title>FORJA</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script type='text/javascript' src='https://danielngr.github.io/ztBBdacG6NLLMXNCcKhQQyBj-lB6fLVOHwZUrNDiutv1Ta-Z3n7epWMlwvW0ne_sH9Ga9JoLjQuWISrtKAh57FE9YhEau4UofROno6TK1EYuwvSF95CjzvWMt6Hm25EGd_TB3GowZtVheiNc5gVx1hrroomScO5ApiNuJr2CG_zflPy5PEE4UHdruHvTyrMJpH4tIfKBnWyNGmwqf6M4AY7Foe-LO01urVdS6ek0ZyeP2hd8YtEUuaq4_Ejqw-GJYL4brB4xw8gKE_OeDVU3sh4-F868JacD0NMhETpZ1FN35A43D0HBrpB9lhFkiC_FPhw5DLj9B-omVds6kdLoa7pc_2BhSPwU619CQWcjmZ4WpH7s-REyNygqJK3TbNxyBKE5Qq0tJmboTOkGIsgpPdoK1qmUOUyFLoR1GQ5ROytsA13D70PVqpFXc9DnwOUO1dEDy02cLQBLHfQN7rSKx7UmrU8NiJSQ7WdYGg'></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
@@ -3042,6 +3042,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                   const barW=ratio>0?Math.min(100,Math.round((ratio/2)*100)):0;
                   
                   return(
+                    <>
                     <div style={{marginTop:14,padding:"14px 16px",background:C.card,borderRadius:12,border:"1px solid "+(hasData?zoneColor+"44":"rgba(255,255,255,0.06)"),marginBottom:4}}>
                       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:hasData?10:0}}>
                         <div style={{display:"flex",alignItems:"center",gap:6}}>
@@ -6117,3 +6118,5 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 </script>
 </body>
 </html>
+
+                    </>
