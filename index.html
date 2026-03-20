@@ -3104,12 +3104,9 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
         const nextStep=()=>{
           const ns=tourStep+1;
           if(ns>=TOTAL){endTour();return;}
-          // Enter workout for ws steps
-          if(ns===4){ if(day&&day.ex&&day.ex.length) setInWorkout(true); setTourStep(ns); return; }
-          // Exit workout + switch to train for vol-weekly
-          if(ns===8){ setInWorkout(false); setTab("train"); setTimeout(()=>setTourStep(ns),120); return; }
-          // Switch to body tab
-          if(ns===9){ setTab("body"); setTimeout(()=>setTourStep(ns),120); return; }
+          if(ns===4){ if(day&&day.ex&&day.ex.length) setInWorkout(true); }
+          if(ns===8){ setInWorkout(false); setTab("train"); }
+          if(ns===9) setTab("body");
           setTourStep(ns);
         };
 
