@@ -2205,6 +2205,18 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   const[showSet,setShowSet]=useState(false);
   const[confirmR,setConfirmR]=useState(false);
   const[weekOff,setWeekOff]=useState(0);
+  const[tourStep,setTourStep]=useState(null);    // null=ask, 0-N=active, -1=done
+  const[tourAskVisible,setTourAskVisible]=useState(()=>{
+    // Show tour ask if: no localStorage flag AND profile was just created (new user)
+    // profile prop comes from App — it's set after onboarding completes
+    // If profile has a "toured" flag or localStorage has it → skip
+    try{
+      if(localStorage.getItem('fv8_toured')) return false;
+      // profile is not available at useState init time (it's a prop)
+      // We handle the profile.toured check in a useEffect below
+      return true;
+    }catch{ return false; }
+  });
   const w=wk(weekOff),today=tdy();
   const mt={cal:2000,prot:150,carbs:200,fat:60};
 
@@ -2215,6 +2227,15 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   },[w]);
 
   const sd=useCallback(n=>{setDone(n);FStore.saveDone(w,n);},[w]);
+
+  // Hide tour if profile already has toured flag (survives cache clears)
+  useEffect(()=>{
+    if(profile&&profile.toured){
+      try{localStorage.setItem('fv8_toured','1');}catch{}
+      setTourAskVisible(false);
+      setTourStep(-1);
+    }
+  },[profile]);
   const slg=useCallback(n=>{setLogs(n);FStore.saveLogs(n);},[]);
   const sm=useCallback(n=>{setMacros(n);FStore.saveMacros(today,n);},[today]);
 
@@ -2283,7 +2304,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
           <div style={{display:"flex",alignItems:"flex-start",gap:10,paddingTop:2}}>
             {day&&exs.length>0&&(
               <div style={{textAlign:"right"}}>
-                <div style={{fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:1,marginBottom:4}}>{dc}/{exs.length}</div>
+                <div data-tour="day-progress" style={{fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:1,marginBottom:4}}>{dc}/{exs.length}</div>
                 <div style={{width:52,height:2,background:C.borderL,borderRadius:1,overflow:"hidden"}}>
                   <div style={{height:"100%",background:`linear-gradient(90deg,${pct===1?"#3fcf8e":"rgba(255,255,255,.7)"},${pct===1?"#2ea878":"rgba(255,255,255,.4)"})`,width:`${pct*100}%`,transition:"width 0.4s"}}/>
                 </div>
@@ -2321,7 +2342,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
               ? (lang==="es"?"Semana pasada":"Last week")
               : `${fmt(monDate)} – ${fmt(sunDate)}`;
           return (
-            <div style={{display:"flex",alignItems:"center",gap:8,marginTop:12,marginBottom:6}}>
+            <div data-tour="cal-nav" style={{display:"flex",alignItems:"center",gap:8,marginTop:12,marginBottom:6}}>
               <button onClick={()=>setWeekOff(p=>Math.max(-12,p-1))}
                 style={{width:28,height:28,borderRadius:8,flexShrink:0,
                   border:`1px solid ${C.borderL}`,background:"transparent",
@@ -2373,7 +2394,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
               // Completion dot color: green if done, dim if future/rest
               const hasDone=dd>0;
               return(
-                <button key={i} onClick={()=>{setSel(i);setTab("train");setAddEx(false);setAddF(false);setInWorkout(false);}}
+                <button key={i} {...(isSel?{"data-tour":"cal-day"}:{})} onClick={()=>{setSel(i);setTab("train");setAddEx(false);setAddF(false);setInWorkout(false);}}
                   style={{flex:1,padding:"10px 0 8px",borderRadius:10,
                     border:`1px solid ${isSel?(cc||C.tx):"rgba(255,255,255,0.06)"}`,
                     background:isSel?"rgba(255,255,255,0.07)":"transparent",
@@ -2416,7 +2437,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
           {[{id:"train",l:lang==="es"?"ENTRENO":"TRAIN",icon:"⚡"},{id:"body",l:lang==="es"?"CUERPO":"BODY",icon:"🫀"}].map(tb=>{
             const active=tab===tb.id;
             return(
-            <button key={tb.id} onClick={()=>{setTab(tb.id);setAddEx(false);setAddF(false);}}
+            <button key={tb.id} {...(tb.id==="body"?{"data-tour":"tab-body"}:{})} onClick={()=>{setTab(tb.id);setAddEx(false);setAddF(false);}}
               style={{flex:1,padding:"9px 0",border:"none",borderRadius:10,cursor:"pointer",
                 background:active?"rgba(255,255,255,0.10)":"transparent",
                 color:active?C.tx:C.tx3,
@@ -2503,7 +2524,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                 </div>
 
                 {/* -- PESA 3D — tap to start workout -- */}
-                <div id="forja-dumbbell-wrap" style={{width:"100%",height:260,marginTop:16,borderRadius:16,overflow:"hidden",position:"relative",background:C.bg,cursor:"pointer"}}
+                <div id="forja-dumbbell-wrap" data-tour="start-workout" style={{width:"100%",height:260,marginTop:16,borderRadius:16,overflow:"hidden",position:"relative",background:C.bg,cursor:"pointer"}}
                   onClick={()=>{if(day&&day.ex&&day.ex.length)setInWorkout(true);}}
                 >
                   <canvas id="forja-dumbbell-canvas" style={{width:"100%",height:"100%",display:"block"}}></canvas>
@@ -2617,7 +2638,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                   if(!entries.length) return null;
                   const cap = lang==="es"?"series":"sets";
                   return(
-                    <div style={{marginTop:14,padding:"14px 16px",background:C.card,borderRadius:12,border:`1px solid ${C.borderL}`}}>
+                    <div data-tour="vol-weekly" style={{marginTop:14,padding:"14px 16px",background:C.card,borderRadius:12,border:`1px solid ${C.borderL}`}}>
                       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
                         <div style={{display:"flex",alignItems:"center",gap:6}}>
                           <div style={{fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:2}}>
@@ -2883,6 +2904,278 @@ function VideoThumb({src,size=56}){
       {src&&playing&&<video ref={vidRef} src={src} muted loop playsInline preload="none" autoPlay
         style={{width:"100%",height:"100%",objectFit:"cover",position:"absolute",inset:0}}/>}
       {!thumb&&!playing&&<div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",opacity:.25,fontSize:18}}>▶</div>}
+      {/* ── TOUR OVERLAY ─────────────────────────────────────── */}
+      {(tourStep!==null&&tourStep!==-1||tourAskVisible)&&(()=>{
+        const mono_="'SF Mono','Fira Code','Courier New',monospace";
+        const sans_="'DM Sans',sans-serif";
+
+        const STEPS=[
+          {
+            id:"cal-day",
+            sel:()=>document.querySelector('[data-tour="cal-day"]'),
+            titleES:"Tu día de entrenamiento",
+            titleEN:"Your training day",
+            textES:"El día destacado es hoy. Tu rutina semanal vive aquí — toca cualquier día para verla.",
+            textEN:"The highlighted day is today. Your weekly routine lives here — tap any day to see it.",
+            pad:8
+          },
+          {
+            id:"cal-nav",
+            sel:()=>document.querySelector('[data-tour="cal-nav"]'),
+            titleES:"Historial semanal",
+            titleEN:"Weekly history",
+            textES:"Navega semanas anteriores con estas flechas para revisar qué entrenaste.",
+            textEN:"Use these arrows to browse past weeks and review what you trained.",
+            pad:8
+          },
+          {
+            id:"start-workout",
+            sel:()=>document.querySelector('[data-tour="start-workout"]'),
+            titleES:"Inicia tu entreno",
+            titleEN:"Start your workout",
+            textES:"Toca aquí para entrar al modo entreno. Verás cada ejercicio con video de técnica, series y reps para registrar.",
+            textEN:"Tap here to enter workout mode. You'll see each exercise with technique video, sets and reps to log.",
+            pad:8
+          },
+          {
+            id:"day-progress",
+            sel:()=>document.querySelector('[data-tour="day-progress"]'),
+            titleES:"Tu progreso de hoy",
+            titleEN:"Today's progress",
+            textES:"Este contador muestra cuántos ejercicios completaste en el día.",
+            textEN:"This counter shows how many exercises you've completed today.",
+            pad:10
+          },
+          {
+            id:"vol-weekly",
+            sel:()=>document.querySelector('[data-tour="vol-weekly"]'),
+            titleES:"Volumen semanal",
+            titleEN:"Weekly volume",
+            textES:"Las barras muestran cuánto has trabajado cada músculo vs. lo recomendado por la ciencia.",
+            textEN:"Bars show how much you've worked each muscle vs. science-based recommendations.",
+            pad:10
+          },
+          {
+            id:"tab-body",
+            sel:()=>document.querySelector('[data-tour="tab-body"]'),
+            titleES:"Pestaña Cuerpo",
+            titleEN:"Body tab",
+            textES:"Aquí vive tu maniquí 3D. Te llevamos ahí ahora.",
+            textEN:"Your 3D mannequin lives here. We'll take you there now.",
+            pad:8,
+            onEnter:()=>{ setTab("body"); }
+          },
+          {
+            id:"mannequin",
+            sel:()=>document.querySelector('[data-tour="mannequin"]'),
+            titleES:"Tu maniquí 3D",
+            titleEN:"Your 3D mannequin",
+            textES:"Los músculos se colorean según su estado: rojo = activo, naranja = recuperando, verde = listo. Gíralo con el dedo.",
+            textEN:"Muscles are colored by state: red = active, orange = recovering, green = ready. Drag to rotate.",
+            pad:4
+          },
+          {
+            id:"balance-score",
+            sel:()=>document.querySelector('[data-tour="balance-score"]'),
+            titleES:"Balance Score",
+            titleEN:"Balance Score",
+            textES:"Sube entrenando todos los grupos musculares. Úsalo para no olvidar ninguna zona.",
+            textEN:"Raise it by training all muscle groups. Use it so you never neglect a zone.",
+            pad:10
+          },
+        ];
+
+        // ── Ask modal ──────────────────────────────────────────
+        if(tourAskVisible&&tourStep===null) return(
+          <div style={{position:"fixed",inset:0,zIndex:9000,
+            background:"rgba(0,0,0,0.75)",backdropFilter:"blur(4px)",
+            display:"flex",alignItems:"flex-end",justifyContent:"center",
+            padding:"0 0 40px"}}>
+            <div style={{
+              width:"calc(100% - 40px)",maxWidth:420,
+              background:"#141418",borderRadius:20,
+              border:"1px solid rgba(255,255,255,0.1)",
+              padding:"28px 24px 24px",
+              boxShadow:"0 32px 64px rgba(0,0,0,0.6)"
+            }}>
+              <div style={{fontSize:22,marginBottom:6}}>👋</div>
+              <div style={{
+                fontFamily:"'Bebas Neue',cursive",
+                fontSize:28,letterSpacing:2,color:"#EEEAE3",marginBottom:8
+              }}>
+                {es?"Descubre cómo funciona FORJA":"Discover how FORJA works"}
+              </div>
+              <div style={{
+                fontSize:13,color:"rgba(238,234,227,0.5)",
+                lineHeight:1.6,marginBottom:24,fontFamily:sans_
+              }}>
+                {es?"Un tour rápido de 9 pasos te muestra todo lo que puedes hacer."
+                   :"A quick 9-step tour shows you everything you can do."}
+              </div>
+              <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                <button onClick={()=>{
+                  setTourAskVisible(false);
+                  setTourStep(0);
+                  // trigger onEnter for step 0 if needed
+                }} style={{
+                  padding:"14px",borderRadius:12,border:"none",
+                  background:"#EEEAE3",color:"#07080a",
+                  fontFamily:mono_,fontSize:11,fontWeight:700,
+                  letterSpacing:2,cursor:"pointer"
+                }}>
+                  {es?"EMPEZAR TOUR →":"START TOUR →"}
+                </button>
+                <button onClick={()=>{
+                  try{localStorage.setItem('fv8_toured','1');}catch{}
+                  setTourAskVisible(false);
+                  setTourStep(-1);
+                }} style={{
+                  padding:"12px",borderRadius:12,
+                  border:"1px solid rgba(255,255,255,0.1)",
+                  background:"transparent",color:"rgba(238,234,227,0.4)",
+                  fontFamily:mono_,fontSize:10,letterSpacing:1,cursor:"pointer"
+                }}>
+                  {es?"Saltar":"Skip"}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+
+        // ── Active tour step ───────────────────────────────────
+        if(tourStep===null||tourStep===-1) return null;
+
+        const step=STEPS[tourStep];
+        if(!step) return null;
+
+        // Get element bounds
+        const el=step.sel?step.sel():null;
+        const bounds=el?el.getBoundingClientRect():null;
+        const pad=step.pad||8;
+        const vh=window.innerHeight;
+        const tooltipBelow=bounds&&(bounds.bottom+pad)<(vh*0.6);
+
+        const endTour=()=>{
+          try{localStorage.setItem('fv8_toured','1');}catch{}
+          // Also persist in Supabase profile so it survives cache clears
+          if(profile){ sp({...profile,toured:true}); FStore.saveProfile({...profile,toured:true},routine||[]); }
+          setTourAskVisible(false);
+          setTourStep(-1);
+        };
+        const nextStep=()=>{
+          const ns=tourStep+1;
+          if(ns>=STEPS.length){ endTour(); return; }
+          if(STEPS[ns].onEnter) STEPS[ns].onEnter();
+          setTourStep(ns);
+        };
+
+        return(
+          <div style={{position:"fixed",inset:0,zIndex:9000,pointerEvents:"none"}}>
+            {/* Dark overlay behind focused element */}
+            <div style={{
+              position:"absolute",inset:0,
+              background:"rgba(0,0,0,0.82)",
+              pointerEvents:"all"
+            }}/>
+
+            {/* Focused element highlight — box-shadow punch-out */}
+            {bounds&&<div style={{
+              position:"absolute",
+              top:bounds.top-pad,
+              left:bounds.left-pad,
+              width:bounds.width+pad*2,
+              height:bounds.height+pad*2,
+              borderRadius:16,
+              boxShadow:"0 0 0 9999px rgba(0,0,0,0.82)",
+              border:"1.5px solid rgba(255,255,255,0.18)",
+              pointerEvents:"none",
+              zIndex:1,
+              transition:"all 0.35s cubic-bezier(0.4,0,0.2,1)"
+            }}/>}
+
+            {/* Tooltip */}
+            <div style={{
+              position:"absolute",
+              left:20,right:20,
+              ...(tooltipBelow
+                ? {top: bounds?(bounds.bottom+pad+12):undefined,bottom:undefined}
+                : {bottom: bounds?(vh-bounds.top+pad+12):40,top:undefined}
+              ),
+              background:"#141418",
+              borderRadius:16,
+              border:"1px solid rgba(255,255,255,0.1)",
+              padding:"20px 20px 16px",
+              boxShadow:"0 24px 48px rgba(0,0,0,0.7)",
+              pointerEvents:"all",
+              zIndex:2
+            }}>
+              {/* Step counter */}
+              <div style={{
+                fontFamily:mono_,fontSize:8,
+                color:"rgba(255,255,255,0.3)",
+                letterSpacing:2,marginBottom:10
+              }}>
+                {tourStep+1} / {STEPS.length}
+                <span style={{
+                  display:"inline-block",marginLeft:10,
+                  width:60,height:2,verticalAlign:"middle",
+                  background:"rgba(255,255,255,0.08)",borderRadius:1,
+                  position:"relative",overflow:"hidden"
+                }}>
+                  <span style={{
+                    position:"absolute",inset:0,
+                    width:`${((tourStep+1)/STEPS.length)*100}%`,
+                    background:"#BFA98A",borderRadius:1,
+                    transition:"width 0.3s ease"
+                  }}/>
+                </span>
+              </div>
+
+              {/* Title */}
+              <div style={{
+                fontFamily:"'Bebas Neue',cursive",
+                fontSize:22,letterSpacing:1.5,
+                color:"#EEEAE3",marginBottom:8,lineHeight:1
+              }}>
+                {es?step.titleES:step.titleEN}
+              </div>
+
+              {/* Body */}
+              <div style={{
+                fontSize:13,color:"rgba(238,234,227,0.55)",
+                lineHeight:1.65,marginBottom:20,fontFamily:sans_
+              }}>
+                {es?step.textES:step.textEN}
+              </div>
+
+              {/* Buttons */}
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
+                <button onClick={endTour} style={{
+                  background:"none",border:"none",padding:"8px 0",
+                  fontFamily:mono_,fontSize:9,letterSpacing:1,
+                  color:"rgba(255,255,255,0.25)",cursor:"pointer"
+                }}>
+                  {es?"Saltar tour":"Skip tour"}
+                </button>
+                <button onClick={nextStep} style={{
+                  padding:"12px 24px",borderRadius:10,border:"none",
+                  background:"#EEEAE3",color:"#07080a",
+                  fontFamily:mono_,fontSize:11,fontWeight:700,
+                  letterSpacing:2,cursor:"pointer",
+                  display:"flex",alignItems:"center",gap:8
+                }}>
+                  {tourStep===STEPS.length-1
+                    ?(es?"¡LISTO!":"DONE!")
+                    :(es?"CONTINUAR":"CONTINUE")}
+                  {tourStep<STEPS.length-1&&<span style={{fontSize:14}}>→</span>}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+
     </div>
   );
 }
@@ -4259,7 +4552,7 @@ function BodyHeatmapTab({logs, routine, lang, profile}){
 
 
     // -- 3D Canvas ------------------------------------------------------
-    e("div",{ref:wrapRef,style:{position:"relative",height:480,touchAction:"none",marginBottom:0},onClick:handleClick},
+    e("div",{ref:wrapRef,"data-tour":"mannequin",style:{position:"relative",height:480,touchAction:"none",marginBottom:0},onClick:handleClick},
       e("canvas",{ref:cvsRef,style:{display:"block",width:"100%",height:"100%"}}),
       e("div",{style:{position:"absolute",inset:0,background:"radial-gradient(ellipse 80% 90% at 50% 50%, transparent 40%, rgba(10,10,13,0.65) 100%)",pointerEvents:"none"}}),
       !loaded&&e("div",{style:{position:"absolute",inset:0,background:C.bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}},
