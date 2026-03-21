@@ -2728,6 +2728,7 @@ function computeACWR(loads){
 function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   const t=L[lang];
   const[sel,setSel]=useState(()=>{const d=new Date().getDay();return d===0?6:d-1;});
+  const[tourOriginalSel,setTourOriginalSel]=useState(null);
   const[tab,setTab]=useState("train");
   const setTabR=useCallback((t)=>{setTab(t);if(t==="train"){const l=FStore.loadACWRLocal();setAcwr(computeACWR(l));}},[setAcwr]);
   const[done,setDone]=useState({});
@@ -2819,8 +2820,9 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
       try{localStorage.setItem('fv8_toured','1');}catch{}
       setTourAskVisible(false);
       setTourStep(-1);
+      if(tourOriginalSel!==null){setSel(tourOriginalSel);setTourOriginalSel(null);}
     }
-  },[profile]);
+  },[profile,tourOriginalSel,setSel,setTourOriginalSel]);
 
 
 
@@ -3771,7 +3773,19 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                    :"A quick 12-step tour shows you everything."}
               </div>
               <div style={{display:"flex",flexDirection:"column",gap:10}}>
-                <button onClick={()=>{setTourAskVisible(false);setTourStep(0);}} style={{
+                <button onClick={()=>{setTourAskVisible(false);
+                  // If today is a rest day, switch to first workout day for the tour
+                  if(routine){
+                    const curDay=routine[sel];
+                    if(!curDay||!curDay.ex||!curDay.ex.length){
+                      const firstWorkoutDay=routine.findIndex(d=>d&&d.ex&&d.ex.length>0);
+                      if(firstWorkoutDay>=0){
+                        setTourOriginalSel(sel);
+                        setSel(firstWorkoutDay);
+                      }
+                    }
+                  }
+                  setTourStep(0);}} style={{
                   padding:"14px",borderRadius:12,border:"none",background:"#EEEAE3",color:"#07080a",
                   fontFamily:M_,fontSize:11,fontWeight:700,letterSpacing:2,cursor:"pointer"}}>
                   {es?"EMPEZAR TOUR →":"START TOUR →"}
@@ -3779,6 +3793,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                 <button onClick={()=>{
                   try{localStorage.setItem('fv8_toured','1');}catch{}
                   setTourAskVisible(false);setTourStep(-1);
+                  if(tourOriginalSel!==null){setSel(tourOriginalSel);setTourOriginalSel(null);}
                 }} style={{padding:"12px",borderRadius:12,
                   border:"1px solid rgba(255,255,255,0.1)",background:"transparent",
                   color:"rgba(238,234,227,0.4)",fontFamily:M_,fontSize:10,letterSpacing:1,cursor:"pointer"}}>
@@ -3804,6 +3819,8 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
         const endTour=()=>{
           try{localStorage.setItem('fv8_toured','1');}catch{}
           setTourAskVisible(false);setTourStep(-1);
+          // Restore original day if we switched for the tour
+          if(tourOriginalSel!==null){setSel(tourOriginalSel);setTourOriginalSel(null);}
         };
 
         const nextStep=()=>{
