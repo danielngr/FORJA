@@ -2729,6 +2729,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   const t=L[lang];
   const[sel,setSel]=useState(()=>{const d=new Date().getDay();return d===0?6:d-1;});
   const[tab,setTab]=useState("train");
+  const setTabR=useCallback((t)=>{setTab(t);if(t==="train"){const l=FStore.loadACWRLocal();setAcwr(computeACWR(l));}},[setAcwr]);
   const[done,setDone]=useState({});
   const[logs,setLogs]=useState({});
   const[macros,setMacros]=useState({});
@@ -2743,6 +2744,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   const[tourStep,setTourStep]=useState(null);    // null=ask, 0-N=active, -1=done
   const[muscleXP,setMuscleXP]=useState(()=>FStore.loadMuscleXP());
   const[acwr,setAcwr]=useState({acute:0,chronic:0,ratio:0,loads:{}});
+  const refreshAcwr=useCallback(()=>{const l=FStore.loadACWRLocal();setAcwr(computeACWR(l));},[setAcwr]);
   const[xpLevelUps,setXpLevelUps]=useState([]); // zones that leveled up since last visit
   const[showXPTooltip,setShowXPTooltip]=useState(null); // zone name
   const[xpAnimZone,setXpAnimZone]=useState(null); // zone currently animating level up
@@ -3023,7 +3025,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
               // Completion dot color: green if done, dim if future/rest
               const hasDone=dd>0;
               return(
-                <button key={i} data-tour={i===todayDayIdx?"cal-day":undefined} onClick={()=>{setSel(i);setTab("train");setAddEx(false);setAddF(false);setInWorkout(false);}}
+                <button key={i} data-tour={i===todayDayIdx?"cal-day":undefined} onClick={()=>{setSel(i);setTabR("train");setAddEx(false);setAddF(false);setInWorkout(false);}}
                   style={{flex:1,padding:"10px 0 8px",borderRadius:10,
                     border:`1px solid ${isSel?(cc||C.tx):"rgba(255,255,255,0.06)"}`,
                     background:isSel?"rgba(255,255,255,0.07)":"transparent",
@@ -3184,7 +3186,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                   }[zone];
                   const barW=ratio>0?Math.min(100,Math.round((ratio/2)*100)):0;
                   return(
-                    <div style={{marginTop:14,padding:"14px 16px",background:C.card,borderRadius:12,border:`1px solid ${hasData?zoneColor+"44":"rgba(255,255,255,0.06)"}`,marginBottom:4}}>
+                    <div data-tour="carga-semanal" style={{marginTop:14,padding:"14px 16px",background:C.card,borderRadius:12,border:`1px solid ${hasData?zoneColor+"44":"rgba(255,255,255,0.06)"}`,marginBottom:4}}>
                       {/* Header */}
                       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:hasData?10:0}}>
                         <div style={{display:"flex",alignItems:"center",gap:6}}>
@@ -3588,6 +3590,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
             trapecio:'TRAPECIO',espalda_baja:'LUMBAR',
             antebrazo_izq:'ANTEBRAZO',antebrazo_der:'ANTEBRAZO'};
           const label=ZLBL[zk]||zk.toUpperCase().replace(/_IZQ|_DER/,'');
+          const sideLabel=zk.endsWith('_izq')?(lang==='es'?' · IZQ':' · LEFT'):zk.endsWith('_der')?(lang==='es'?' · DER':' · RIGHT'):'';
           return(
             <div onClick={()=>setShowXPTooltip(null)} style={{
               position:'fixed',bottom:90,left:16,right:16,zIndex:500,
@@ -3604,7 +3607,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
               <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
                 <div style={{display:'flex',alignItems:'center',gap:8}}>
                   <div style={{width:8,height:8,borderRadius:'50%',background:lvlC,boxShadow:`0 0 8px ${lvlC}`}}/>
-                  <span style={{fontFamily:"'SF Mono','Fira Code',monospace",fontSize:11,fontWeight:700,letterSpacing:2,color:'rgba(255,255,255,0.9)'}}>{label}</span>
+                  <span style={{fontFamily:"'SF Mono','Fira Code',monospace",fontSize:11,fontWeight:700,letterSpacing:2,color:'rgba(255,255,255,0.9)'}}>{label}{sideLabel}</span>
                 </div>
                 <div style={{display:'flex',alignItems:'center',gap:6,background:`${lvlC}18`,borderRadius:20,padding:'3px 10px 3px 8px',border:`1px solid ${lvlC}44`}}>
                   <span style={{fontSize:9,color:lvlC,fontFamily:"'SF Mono','Fira Code',monospace",fontWeight:700}}>⬡</span>
@@ -3697,6 +3700,11 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
            tES:"Volumen semanal",             tEN:"Weekly volume",
            xES:"Las barras muestran cuánto has trabajado cada músculo vs. lo recomendado.",
            xEN:"Bars show how much you've worked each muscle vs. science recommendations."},
+          // 8b: CARGA SEMANAL
+          {id:"carga-semanal", pad:10, tabNeeded:"train",
+           tES:"Carga semanal (ACWR)",        tEN:"Weekly load (ACWR)",
+           xES:"Mide si estás entrenando más de lo habitual. Rango óptimo: 0.8–1.3. Se registra automáticamente al guardar sets.",
+           xEN:"Measures if you're training more than usual. Optimal: 0.8–1.3. Recorded automatically when you log sets."},
           // 9
           {id:"tab-body",    pad:8,  tabNeeded:"train",
            tES:"Pestaña Cuerpo",              tEN:"Body tab",
@@ -3779,7 +3787,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
           // Enter workout
           if(ns===4){ if(day&&day.ex&&day.ex.length) setInWorkout(true); setTourStep(ns); return; }
           // Exit workout → train tab → scroll to vol-weekly → then show step
-          if(ns===8){ setInWorkout(false); setTab('train'); }
+          if(ns===8){ setInWorkout(false); setTabR("train"); }
           if(ns===9) setTab('body');
           // Just advance
           setTourStep(ns);
@@ -4184,7 +4192,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
 
   return(
     <div style={{minHeight:"100vh",background:"#07080a",color:"#EEEAE3",
-      fontFamily:"'DM Sans',sans-serif",position:"relative",overflowX:"hidden"}}>
+      fontFamily:"'DM Sans',sans-serif",position:"relative",overflowX:"hidden",overflowY:step>0&&step<99?"hidden":undefined}}>
 
       {step>0&&step<99&&<div style={{position:"fixed",top:0,left:0,right:0,
         height:"1.5px",background:"rgba(238,234,227,.1)",zIndex:200}}>
@@ -5326,8 +5334,12 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
         {min:60, max:80, label:"ÉLITE",        color:"#f0b429", next:"MAESTRO"},
         {min:80, max:101,label:"MAESTRO",      color:"#BFA98A", next:null},
       ];
-      const lvl=LEVELS.find(l=>balanceScore>=l.min&&balanceScore<l.max)||LEVELS[0];
-      const pctInLevel=lvl.max===lvl.min?100:Math.min(100,Math.max(0,Math.round(((balanceScore-lvl.min)/(lvl.max-lvl.min))*100)));
+      // Use max of balanceScore and XP-based score so any training shows progress
+      const totalXP=Object.values(muscleXP||{}).reduce((s,z)=>s+(z?.xp||0),0);
+      const xpScore=Math.min(80,Math.round(totalXP/200)); // 16000 XP = 80% (ÉLITE)
+      const displayScore=Math.max(balanceScore,xpScore);
+      const lvl=LEVELS.find(l=>displayScore>=l.min&&displayScore<l.max)||LEVELS[0];
+      const pctInLevel=lvl.max===lvl.min?100:Math.min(100,Math.max(0,Math.round(((displayScore-lvl.min)/(lvl.max-lvl.min))*100)));
       const mono="\'SF Mono\',\'Fira Code\',monospace";
       const lang_=lang||"es";
       const isES=lang_==="es";
@@ -5619,7 +5631,7 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
         e("div",{style:{display:"flex",gap:14,marginBottom:12}},
           e("div",null,e("div",{style:{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:1,marginBottom:2}},"PESO"),e("div",{style:{fontSize:16,fontWeight:700,color:C.tx}},prView.bestW,e("span",{style:{fontSize:9,color:C.tx3,fontWeight:400}},"kg"))),
           e("div",{style:{width:1,background:C.borderL}}),
-          e("div",null,e("div",{style:{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:1,marginBottom:2}},"REPS"),e("div",{style:{fontSize:16,fontWeight:700,color:C.tx}},prView.bestR)),
+          e("div",null,e("div",{style:{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:1,marginBottom:2}},"REPS"),e("div",{style:{fontSize:16,fontWeight:700,color:C.tx}},prView.bestR||"-")),
           e("div",{style:{width:1,background:C.borderL}}),
           e("div",null,e("div",{style:{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:1,marginBottom:2}},"FECHA"),e("div",{style:{fontSize:12,fontWeight:600,color:C.tx2}},prView.date))
         ),
