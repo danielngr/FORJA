@@ -376,8 +376,7 @@ const FStore={
         const kg=parseFloat(s.kg)||0;
         const rp=parseInt(s.rp)||0;
         if(rp<=0)return;
-        const effKgCS=kg>0?kg:75;
-        const wFactor=baseW>0?Math.min(2,Math.max(0.5,effKgCS/baseW)):1.0;
+        const wFactor=baseW>0?Math.min(2,Math.max(0.3,kg>0?kg/baseW:0.3)):1.0;
         const rawXP=Math.round(1*rp*wFactor); // 1 set = reps × weight_factor
         muscles.forEach(m=>{
           const zone=typeof m==='string'?m:m.z;
@@ -2850,7 +2849,9 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   const BW_EXERCISES=new Set(["pull up","weighted pull up","chin up","push up","decline push up","dips","bench dips","diamond push ups","plank","mountain climber","hanging knee raises","box jump","bodyweight squat","dominadas","dominadas agarre supino","dominadas lastradas","fondos","fondos en banco","flexiones","flexión","sentadilla peso corporal","sentadilla con salto","burpee","plancha","crunch","abs","zancada con salto","pistol squat","step up","mountain climber","superman","hiperextensión","elevación de piernas","flutter kicks","russian twist","hollow body","v-up","sit up","salto al cajón","saltar la cuerda","sprint","caminar","subir escaleras","remo australiano"]);
   const saveLog=(id,kg,rp,exName)=>{
     // For bodyweight exercises with kg=0, use bodyweight from profile
-    const effKg=(+kg>0)?+kg:(+profile?.weight||75); // if no weight entered, always use bodyweight
+    const bwKg=+profile?.weight||75;
+    const isBW=BW_EXERCISES.has((exName||'').toLowerCase().trim());
+    const effKg=(+kg>0)?+kg:(isBW?bwKg:0);
     if((!effKg||effKg<=0)&&(!rp||+rp<=0))return;
     const nl={...logs};
     if(!nl[id])nl[id]=[];
@@ -2882,7 +2883,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
         'default':30
       };
       const baseW=BASE_W_MAP[nameLow]||BASE_W_MAP['default'];
-      const wFactor=baseW>0?Math.min(2.0,Math.max(0.5,effKg/baseW)):1.0;
+      const wFactor=baseW>0?Math.min(2.0,Math.max(0.3,effKg>0?effKg/baseW:0.3)):1.0;
       const reps=parseInt(rp)||0;
       const rawXP=Math.max(1,Math.round(reps*wFactor));
       const newXP={...muscleXP};
@@ -5323,7 +5324,7 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
   const weekStart=new Date(today); weekStart.setDate(today.getDate()-daysToMon); weekStart.setHours(0,0,0,0);
   const weekStr=weekStart.toISOString().slice(0,10);
   let weekVol=0,weekSets=0;
-  Object.entries(logs).forEach(([id,entries])=>entries.forEach(e=>{if(e.d>=weekStr){weekVol+=((+e.w||0)*Math.max(1,+e.r||0));weekSets++;}}));
+  Object.entries(logs).forEach(([id,entries])=>entries.forEach(e=>{if(e.d>=weekStr){if(+e.w>0)weekVol+=((+e.w||0)*(+e.r||1));weekSets++;}}));
 
   const allDays=new Set();
   Object.values(logs).forEach(entries=>entries.forEach(e=>{if(e.d)allDays.add(e.d);}));
