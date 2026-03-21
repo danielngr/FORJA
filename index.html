@@ -1816,7 +1816,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
     const numSets=ex.s||1;
     return Array.from({length:numSets},(_,si)=>{
       const kg=h&&h[si]?String(h[si].w):h&&h[0]?String(h[0].w):"";
-      const rp=h&&h[si]?String(h[si].r):h&&h[0]?String(h[0].r):"";
+      const rp=h&&h[si]?String(h[si].r):h&&h[0]?String(h[0].r):String(ex.r||"8");
       return {kg,rp,done:false};
     });
   }));
@@ -1913,7 +1913,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
       // Haptic
       try{navigator.vibrate&&navigator.vibrate(40);}catch{}
       // Save log
-      onSaveLog(exs[ei].id,ns[ei][si].kg,ns[ei][si].rp,exs[ei].e);
+      onSaveLog(exs[ei].id,ns[ei][si].kg,ns[ei][si].rp||exs[ei].r||'8',exs[ei].e);
       onToggle(exs[ei].id);
       // Rest
       startRest(ei,si);
@@ -2845,7 +2845,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   const tot=entries.reduce((a,e)=>({cal:a.cal+(+e.cal||0),prot:a.prot+(+e.prot||0),carbs:a.carbs+(+e.carbs||0),fat:a.fat+(+e.fat||0)}),{cal:0,prot:0,carbs:0,fat:0});
 
   const toggle=id=>{const k=`${sel}-${id}`;if(!done[k])sd({...done,[k]:true});};
-  const BW_EXERCISES=new Set(["pull up","weighted pull up","chin up","push up","decline push up","dips","bench dips","diamond push ups","plank","mountain climber","hanging knee raises","box jump","bodyweight squat"]);
+  const BW_EXERCISES=new Set(["pull up","weighted pull up","chin up","push up","decline push up","dips","bench dips","diamond push ups","plank","mountain climber","hanging knee raises","box jump","bodyweight squat","dominadas","dominadas agarre supino","dominadas lastradas","fondos","fondos en banco","flexiones","flexión","sentadilla peso corporal","sentadilla con salto","burpee","plancha","crunch","abs","zancada con salto","pistol squat","step up","mountain climber","superman","hiperextensión","elevación de piernas","flutter kicks","russian twist","hollow body","v-up","sit up","salto al cajón","saltar la cuerda","sprint","caminar","subir escaleras","remo australiano"]);
   const saveLog=(id,kg,rp,exName)=>{
     // For bodyweight exercises with kg=0, use bodyweight from profile
     const effKg=(+kg>0)?+kg:(+profile?.weight||75); // if no weight entered, always use bodyweight
@@ -5321,7 +5321,7 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
   const weekStart=new Date(today); weekStart.setDate(today.getDate()-daysToMon); weekStart.setHours(0,0,0,0);
   const weekStr=weekStart.toISOString().slice(0,10);
   let weekVol=0,weekSets=0;
-  Object.entries(logs).forEach(([id,entries])=>entries.forEach(e=>{if(e.d>=weekStr){weekVol+=((+e.w||0)*(+e.r||0));weekSets++;}}));
+  Object.entries(logs).forEach(([id,entries])=>entries.forEach(e=>{if(e.d>=weekStr){weekVol+=((+e.w||0)*Math.max(1,+e.r||0));weekSets++;}}));
 
   const allDays=new Set();
   Object.values(logs).forEach(entries=>entries.forEach(e=>{if(e.d)allDays.add(e.d);}));
