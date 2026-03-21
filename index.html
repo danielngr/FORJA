@@ -2797,9 +2797,10 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
     }
   },[tourStep]);
 
-  // Lock body scroll during tour
+  // Lock body scroll during tour (only when step is an actual number >= 0)
   useEffect(()=>{
-    if(tourStep>=0){
+    const active = typeof tourStep === 'number' && tourStep >= 0;
+    if(active){
       document.body.style.overflow='hidden';
       document.body.style.touchAction='none';
     } else {
@@ -3809,7 +3810,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
           const ns=tourStep+1;
           if(ns>=TOTAL){endTour();return;}
           // Enter workout
-          if(ns===4){ if(day&&day.ex&&day.ex.length) setInWorkout(true); setTourStep(ns); return; }
+          if(ns===4){ if(day&&day.ex&&day.ex.length){ setInWorkout(true); setTourStep(ns); } else { setTabR('train'); setTourStep(8); } return; }
           // Exit workout → train tab → scroll to vol-weekly → then show step
           if(ns===8){ setInWorkout(false); setTabR("train"); }
           if(ns===10){setTabR('body');}
@@ -4216,7 +4217,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
 
   return(
     <div style={{minHeight:"100vh",background:"#07080a",color:"#EEEAE3",
-      fontFamily:"'DM Sans',sans-serif",position:"relative",overflowX:"hidden",overflowY:step>0&&step<99?"hidden":undefined}}>
+      fontFamily:"'DM Sans',sans-serif",position:"relative",overflowX:"hidden",overflowY:(typeof step==="number"&&step>0&&step<99)?"hidden":undefined}}>
 
       {step>0&&step<99&&<div style={{position:"fixed",top:0,left:0,right:0,
         height:"1.5px",background:"rgba(238,234,227,.1)",zIndex:200}}>
