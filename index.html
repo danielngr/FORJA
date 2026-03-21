@@ -4455,7 +4455,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
         </div>
       )}
 
-      {(step>=3&&step<=5||step>=20&&step<=22)&&(
+      {(step>=3&&step<=5)&&(
         <div style={{padding:"0 28px",paddingTop:"8vh",paddingBottom:48,animation:"fu 0.4s ease"}}>
           <div style={{display:"flex",gap:6,marginBottom:36}}>
             {Array.from({length:TOTAL_STEPS},(_,i)=><div key={i} style={{height:2,flex:1,borderRadius:1,background:i<step-1?"#BFA98A":"rgba(238,234,227,.12)",transition:"background .4s"}}/>)}
@@ -4626,39 +4626,25 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               {lang==="es"?"DÓNDE":"WHERE DO"}<br/>
               <span style={{color:"#BFA98A"}}>{lang==="es"?"ENTRENAS":"YOU TRAIN"}</span>
             </div>
-            <div style={{fontSize:12,color:"rgba(238,234,227,.5)",letterSpacing:.3,lineHeight:1.65}}>
-              {lang==="es"?"Adapta cada ejercicio al equipamiento que tienes.":"Adapts every exercise to your available equipment."}
-            </div>
+            <div style={{fontSize:12,color:"rgba(238,234,227,.5)",letterSpacing:.3,lineHeight:1.65}}>{lang==="es"?"Adapta cada ejercicio al equipamiento que tienes.":"Adapts every exercise to your available equipment."}</div>
           </div>
           <div style={{padding:"20px 0 0"}}>
-            {[{type:"gym",label:{es:"GYM COMPLETO",en:"FULL GYM"},sub:{es:"Todo el equipamiento",en:"All equipment"},col:"rgba(61,150,104"},
-              {type:"homegym",label:{es:"GYM EN CASA",en:"HOME GYM"},sub:{es:"Selecciona qué tienes",en:"Select what you have"},col:"rgba(184,149,64"}
-            ].map(({type,label,sub,col})=>{
+            {[{type:"gym",label:{es:"GYM COMPLETO",en:"FULL GYM"},sub:{es:"Todo el equipamiento",en:"All equipment"},col:"rgba(61,150,104"},{type:"homegym",label:{es:"GYM EN CASA",en:"HOME GYM"},sub:{es:"Selecciona qué tienes",en:"Select what you have"},col:"rgba(184,149,64"}].map(({type,label,sub,col})=>{
               const sel=gymType===type;
               return(
                 <div key={type} style={{borderTop:"1px solid rgba(238,234,227,.05)",borderLeft:sel?`3px solid ${col},.7)`:"3px solid transparent",background:sel?`${col},.04)`:"transparent",transition:"all .25s"}}>
-                  <div onClick={()=>{setGymType(type);if(type==="gym")setEquipment(["Rack+Barra","Banco","Mancuernas","Dominadas","Paralelas","Barra Z/EZ","Leg Ext/Curl","Polea","Chaleco","Kettlebell","Bandas"]);else setEquipment([]);}}
-                    style={{padding:"20px 28px",cursor:"pointer",display:"flex",alignItems:"center",gap:16,minHeight:80}}>
+                  <div onClick={()=>{setGymType(type);if(type==="gym")setEquipment(["Rack+Barra","Banco","Mancuernas","Dominadas","Paralelas","Barra Z/EZ","Leg Ext/Curl","Polea","Chaleco","Kettlebell","Bandas"]);else setEquipment([]);}} style={{padding:"20px 28px",cursor:"pointer",display:"flex",alignItems:"center",gap:16,minHeight:80}}>
                     <div style={{flex:1}}>
                       <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,letterSpacing:2,color:sel?"#EEEAE3":"rgba(238,234,227,.4)",transition:"color .2s",lineHeight:1}}>{lang==="es"?label.es:label.en}</div>
                       <div style={{fontSize:11,fontFamily:mono,letterSpacing:.3,marginTop:5,color:sel?`${col},.75)`:"rgba(238,234,227,.2)",transition:"color .2s"}}>{lang==="es"?sub.es:sub.en}</div>
                     </div>
-                    <div style={{width:22,height:22,borderRadius:"50%",border:`2px solid ${sel?`${col},.7)`:"rgba(238,234,227,.15)"}`,background:sel?`${col},.12)`:"transparent",display:"flex",alignItems:"center",justifyContent:"center",transition:"all .2s",flexShrink:0}}>
-                      {sel&&<div style={{width:9,height:9,borderRadius:"50%",background:`${col},1)`}}/>}
-                    </div>
+                    <div style={{width:22,height:22,borderRadius:"50%",border:`2px solid ${sel?`${col},.7)`:"rgba(238,234,227,.15)"}`,background:sel?`${col},.12)`:"transparent",display:"flex",alignItems:"center",justifyContent:"center",transition:"all .2s",flexShrink:0}}>{sel&&<div style={{width:9,height:9,borderRadius:"50%",background:`${col},1)`}}/>}</div>
                   </div>
                   {sel&&type==="homegym"&&(
                     <div style={{padding:"0 28px 24px",display:"flex",flexWrap:"wrap",gap:8}}>
                       {[{id:"Rack+Barra",es:"Rack + Barra",en:"Rack + Bar"},{id:"Banco",es:"Banco",en:"Bench"},{id:"Mancuernas",es:"Mancuernas",en:"Dumbbells"},{id:"Dominadas",es:"Barra Dominadas",en:"Pull-up Bar"},{id:"Paralelas",es:"Paralelas",en:"Dip Bars"},{id:"Barra Z/EZ",es:"Barra Z/EZ",en:"EZ Bar"},{id:"Leg Ext/Curl",es:"Leg Ext/Curl",en:"Leg Ext/Curl"},{id:"Polea",es:"Polea",en:"Cable"},{id:"Chaleco",es:"Chaleco Lastre",en:"Weight Vest"},{id:"Kettlebell",es:"Kettlebell",en:"Kettlebell"},{id:"Bandas",es:"Bandas",en:"Bands"}].map(item=>{
                         const on=equipment.includes(item.id);
-                        return(<div key={item.id} onClick={()=>setEquipment(p=>on?p.filter(x=>x!==item.id):[...p,item.id])}
-                          style={{display:"flex",alignItems:"center",gap:6,padding:"9px 16px",borderRadius:40,cursor:"pointer",userSelect:"none",
-                            border:`1.5px solid ${on?"rgba(191,169,138,.5)":"rgba(255,255,255,.07)"}`,
-                            background:on?"rgba(191,169,138,.1)":"rgba(255,255,255,.02)",
-                            fontSize:11,color:on?"#BFA98A":"rgba(238,234,227,.3)",letterSpacing:.3,transition:"all .15s"}}>
-                          <span style={{width:6,height:6,borderRadius:"50%",background:on?"#BFA98A":"rgba(238,234,227,.2)",flexShrink:0}}/>
-                          {lang==="es"?item.es:item.en}
-                        </div>);
+                        return(<div key={item.id} onClick={()=>setEquipment(p=>on?p.filter(x=>x!==item.id):[...p,item.id])} style={{display:"flex",alignItems:"center",gap:6,padding:"9px 16px",borderRadius:40,cursor:"pointer",userSelect:"none",border:`1.5px solid ${on?"rgba(191,169,138,.5)":"rgba(255,255,255,.07)"}`,background:on?"rgba(191,169,138,.1)":"rgba(255,255,255,.02)",fontSize:11,color:on?"#BFA98A":"rgba(238,234,227,.3)",letterSpacing:.3,transition:"all .15s"}}><span style={{width:6,height:6,borderRadius:"50%",background:on?"#BFA98A":"rgba(238,234,227,.2)",flexShrink:0}}/>{lang==="es"?item.es:item.en}</div>);
                       })}
                     </div>
                   )}
@@ -4669,12 +4655,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
           <div style={{flex:1}}/>
           <div style={{display:"flex",gap:8,padding:"20px 28px 44px"}}>
             <button onClick={()=>setStep(21)} style={{flex:1,padding:"16px",borderRadius:14,cursor:"pointer",background:"transparent",color:"rgba(238,234,227,.6)",border:"1px solid rgba(238,234,227,.08)",fontFamily:mono,fontSize:11,letterSpacing:1}}>{t.back}</button>
-            <button onClick={()=>{setCatalogDay(0);setCatalogMuscle("");setStep(23);}}
-              disabled={!gymType||(gymType==="homegym"&&equipment.length===0)}
-              style={{flex:2,padding:"16px",borderRadius:14,cursor:"pointer",background:"#EEEAE3",color:"#07080a",border:"none",fontFamily:mono,fontSize:11,fontWeight:600,letterSpacing:2,textTransform:"uppercase",opacity:(!gymType||(gymType==="homegym"&&equipment.length===0))?0.2:1,transition:"all .2s",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
-              {t.next}
-              <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2.5 6.5h8M6.5 2.5l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            </button>
+            <button onClick={()=>{setCatalogDay(0);setCatalogMuscle("");setStep(23);}} disabled={!gymType||(gymType==="homegym"&&equipment.length===0)} style={{flex:2,padding:"16px",borderRadius:14,cursor:"pointer",background:"#EEEAE3",color:"#07080a",border:"none",fontFamily:mono,fontSize:11,fontWeight:600,letterSpacing:2,textTransform:"uppercase",opacity:(!gymType||(gymType==="homegym"&&equipment.length===0))?0.2:1,transition:"all .2s",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>{t.next}<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2.5 6.5h8M6.5 2.5l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg></button>
           </div>
         </div>
       )}
@@ -4777,21 +4758,16 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             </div>
           </>)}
 
-      {step===20&&(<>
+      {(step===20||step===21)&&(
+        <div style={{padding:"0 28px",paddingTop:"8vh",paddingBottom:48,animation:"fu 0.4s ease"}}>
+          {step===20&&(<>
             <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,.55)",letterSpacing:4,marginBottom:16,textTransform:"uppercase"}}>{lang==="es"?"DÍAS / SEMANA":"DAYS / WEEK"}</div>
             <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:24,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"¿Cuántos días?":"How many days?"}</div>
             <div style={{display:"flex",flexDirection:"column",borderTop:"1px solid rgba(240,242,245,0.12)"}}>
-              {[[3,lang==="es"?"3 días":"3 days",lang==="es"?"Lun · Mié · Vie":"Mon · Wed · Fri"],
-                [4,lang==="es"?"4 días":"4 days",lang==="es"?"Lun · Mar · Jue · Vie":"Mon · Tue · Thu · Fri"],
-                [5,lang==="es"?"5 días":"5 days",lang==="es"?"Lun a Vie":"Mon to Fri"],
-                [6,lang==="es"?"6 días":"6 days",lang==="es"?"Lun a Sáb":"Mon to Sat"],
-              ].map(([n,lb,sub])=>(
+              {[[3,lang==="es"?"3 días":"3 days",lang==="es"?"Lun · Mié · Vie":"Mon · Wed · Fri"],[4,lang==="es"?"4 días":"4 days",lang==="es"?"Lun · Mar · Jue · Vie":"Mon · Tue · Thu · Fri"],[5,lang==="es"?"5 días":"5 days",lang==="es"?"Lun a Vie":"Mon to Fri"],[6,lang==="es"?"6 días":"6 days",lang==="es"?"Lun a Sáb":"Mon to Sat"]].map(([n,lb,sub])=>(
                 <button key={n} onClick={()=>{setManualDays(n);setManualSelDays([]);setManualRoutine(Array(7).fill(null).map(()=>[]));}}
-                  style={{display:"flex",alignItems:"center",gap:12,width:"100%",padding:"18px 4px",background:"transparent",border:"none",
-                    borderBottom:"1px solid rgba(240,242,245,0.07)",cursor:"pointer",textAlign:"left"}}>
-                  <div style={{width:28,height:28,borderRadius:8,border:`1.5px solid ${manualDays===n?"#BFA98A":"rgba(240,242,245,.15)"}`,
-                    background:manualDays===n?"rgba(191,169,138,.15)":"transparent",
-                    display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all .2s"}}>
+                  style={{display:"flex",alignItems:"center",gap:12,width:"100%",padding:"18px 4px",background:"transparent",border:"none",borderBottom:"1px solid rgba(240,242,245,0.07)",cursor:"pointer",textAlign:"left"}}>
+                  <div style={{width:28,height:28,borderRadius:8,border:`1.5px solid ${manualDays===n?"#BFA98A":"rgba(240,242,245,.15)"}`,background:manualDays===n?"rgba(191,169,138,.15)":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all .2s"}}>
                     {manualDays===n&&<div style={{width:10,height:10,borderRadius:3,background:"#BFA98A"}}/>}
                   </div>
                   <div style={{flex:1}}>
@@ -4811,26 +4787,15 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
       {step===21&&(<>
             <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,.55)",letterSpacing:4,marginBottom:16,textTransform:"uppercase"}}>{lang==="es"?"QUÉ DÍAS":"WHICH DAYS"}</div>
             <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:8,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"¿Qué días?":"Which days?"}</div>
-            <div style={{fontSize:12,color:"rgba(255,255,255,.35)",fontFamily:mono,letterSpacing:.5,marginBottom:20}}>
-              {lang==="es"?`Selecciona ${manualDays} días`:`Select ${manualDays} days`}
-            </div>
+            <div style={{fontSize:12,color:"rgba(255,255,255,.35)",fontFamily:mono,letterSpacing:.5,marginBottom:20}}>{lang==="es"?`Selecciona ${manualDays} días`:`Select ${manualDays} days`}</div>
             <div style={{display:"flex",flexDirection:"column",borderTop:"1px solid rgba(240,242,245,0.12)"}}>
               {(lang==="es"?["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"]:["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]).map((d,i)=>{
                 const sel=manualSelDays.includes(i);
                 const letter=(lang==="es"?["L","M","X","J","V","S","D"]:["M","T","W","T","F","S","S"])[i];
                 return(
-                  <button key={i} onClick={()=>{
-                    const ns=sel?manualSelDays.filter(x=>x!==i):[...manualSelDays,i].slice(0,manualDays);
-                    setManualSelDays([...ns].sort((a,b)=>a-b));
-                  }} style={{display:"flex",alignItems:"center",gap:12,width:"100%",padding:"16px 4px",background:"transparent",border:"none",
-                    borderBottom:"1px solid rgba(240,242,245,0.07)",cursor:"pointer",textAlign:"left"}}>
-                    <div style={{width:28,height:28,borderRadius:8,
-                      border:`1.5px solid ${sel?"#BFA98A":"rgba(240,242,245,.12)"}`,
-                      background:sel?"rgba(191,169,138,.15)":"transparent",
-                      display:"flex",alignItems:"center",justifyContent:"center",
-                      fontFamily:mono,fontSize:10,fontWeight:700,
-                      color:sel?"#BFA98A":"rgba(240,242,245,.3)",
-                      flexShrink:0,transition:"all .2s"}}>{letter}</div>
+                  <button key={i} onClick={()=>{const ns=sel?manualSelDays.filter(x=>x!==i):[...manualSelDays,i].slice(0,manualDays);setManualSelDays([...ns].sort((a,b)=>a-b));}}
+                    style={{display:"flex",alignItems:"center",gap:12,width:"100%",padding:"16px 4px",background:"transparent",border:"none",borderBottom:"1px solid rgba(240,242,245,0.07)",cursor:"pointer",textAlign:"left"}}>
+                    <div style={{width:28,height:28,borderRadius:8,border:`1.5px solid ${sel?"#BFA98A":"rgba(240,242,245,.12)"}`,background:sel?"rgba(191,169,138,.15)":"transparent",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:mono,fontSize:10,fontWeight:700,color:sel?"#BFA98A":"rgba(240,242,245,.3)",flexShrink:0,transition:"all .2s"}}>{letter}</div>
                     <div style={{fontSize:16,fontWeight:sel?700:400,color:sel?"#EEEAE3":"rgba(240,242,245,.45)",letterSpacing:-.2,transition:"color .2s",flex:1}}>{d}</div>
                     {sel&&<div style={{width:6,height:6,borderRadius:"50%",background:"#BFA98A",flexShrink:0}}/>}
                   </button>
@@ -4842,11 +4807,11 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               <div style={{flex:2}}><Btn onClick={()=>setStep(22)} disabled={manualSelDays.length!==manualDays}>{t.next}</Btn></div>
             </div>
           </>)}
+        </div>
+      )}
 
-      
-      step===23&&(
+      {step===23&&(
         <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",background:"#07080a",color:"#EEEAE3"}}>
-          {/* STICKY HEADER */}
           <div style={{position:"sticky",top:0,zIndex:20,background:"rgba(7,8,10,.97)",backdropFilter:"blur(24px)",WebkitBackdropFilter:"blur(24px)",borderBottom:"1px solid rgba(255,255,255,.05)"}}>
             <div style={{padding:"52px 20px 14px",display:"flex",alignItems:"flex-end",justifyContent:"space-between"}}>
               <div>
@@ -4858,44 +4823,29 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                 <div style={{fontFamily:mono,fontSize:8,color:"rgba(255,255,255,.25)",letterSpacing:2}}>{lang==="es"?"TOTAL":"TOTAL"}</div>
               </div>
             </div>
-            {/* Day tabs */}
             <div style={{display:"flex",gap:5,overflowX:"auto",padding:"0 16px 12px",scrollbarWidth:"none"}}>
               {manualSelDays.map((dayIdx,i)=>{
                 const DN=lang==="es"?["LU","MA","MI","JU","VI","SÁ","DO"]:["MO","TU","WE","TH","FR","SA","SU"];
                 const cnt=(manualRoutine[i]||[]).length;
                 const sel=catalogDay===i;
-                return(
-                  <button key={i} onClick={()=>{setCatalogDay(i);setCatalogMuscle("");}}
-                    style={{flexShrink:0,minWidth:50,padding:"9px 12px",borderRadius:12,cursor:"pointer",transition:"all .15s",
-                      border:`1.5px solid ${sel?"rgba(191,169,138,.5)":cnt>0?"rgba(95,210,136,.2)":"rgba(255,255,255,.06)"}`,
-                      background:sel?"rgba(191,169,138,.1)":cnt>0?"rgba(95,210,136,.05)":"rgba(255,255,255,.02)",
-                      display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
-                    <span style={{fontFamily:mono,fontSize:10,fontWeight:700,letterSpacing:1,color:sel?"#BFA98A":cnt>0?"rgba(95,210,136,.8)":"rgba(255,255,255,.3)"}}>{DN[dayIdx]}</span>
-                    <span style={{fontFamily:mono,fontSize:8,color:sel?"rgba(191,169,138,.5)":cnt>0?"rgba(95,210,136,.4)":"rgba(255,255,255,.15)"}}>{cnt>0?cnt:"—"}</span>
-                  </button>
-                );
+                return(<button key={i} onClick={()=>{setCatalogDay(i);setCatalogMuscle("");}} style={{flexShrink:0,minWidth:50,padding:"9px 12px",borderRadius:12,cursor:"pointer",transition:"all .15s",border:`1.5px solid ${sel?"rgba(191,169,138,.5)":cnt>0?"rgba(95,210,136,.2)":"rgba(255,255,255,.06)"}`,background:sel?"rgba(191,169,138,.1)":cnt>0?"rgba(95,210,136,.05)":"rgba(255,255,255,.02)",display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
+                  <span style={{fontFamily:mono,fontSize:10,fontWeight:700,letterSpacing:1,color:sel?"#BFA98A":cnt>0?"rgba(95,210,136,.8)":"rgba(255,255,255,.3)"}}>{DN[dayIdx]}</span>
+                  <span style={{fontFamily:mono,fontSize:8,color:sel?"rgba(191,169,138,.5)":cnt>0?"rgba(95,210,136,.4)":"rgba(255,255,255,.15)"}}>{cnt>0?cnt:"—"}</span>
+                </button>);
               })}
             </div>
-            {/* Muscle filter */}
             <div style={{display:"flex",gap:5,overflowX:"auto",padding:"0 16px 14px",scrollbarWidth:"none"}}>
-              <button onClick={()=>setCatalogMuscle("")} style={{flexShrink:0,padding:"6px 14px",borderRadius:20,cursor:"pointer",fontFamily:mono,fontSize:9,letterSpacing:.5,whiteSpace:"nowrap",transition:"all .15s",border:`1px solid ${catalogMuscle===""?"rgba(255,255,255,.35)":"rgba(255,255,255,.07)"}`,background:catalogMuscle===""?"rgba(255,255,255,.08)":"transparent",color:catalogMuscle===""?"#EEEAE3":"rgba(255,255,255,.3)"}}>
-                {lang==="es"?"Todo":"All"}
-              </button>
+              <button onClick={()=>setCatalogMuscle("")} style={{flexShrink:0,padding:"6px 14px",borderRadius:20,cursor:"pointer",fontFamily:mono,fontSize:9,letterSpacing:.5,whiteSpace:"nowrap",transition:"all .15s",border:`1px solid ${catalogMuscle===""?"rgba(255,255,255,.35)":"rgba(255,255,255,.07)"}`,background:catalogMuscle===""?"rgba(255,255,255,.08)":"transparent",color:catalogMuscle===""?"#EEEAE3":"rgba(255,255,255,.3)"}}>{lang==="es"?"Todo":"All"}</button>
               {CATALOG.map(({muscle,color})=>{
                 const active=catalogMuscle===muscle;
                 return(<button key={muscle} onClick={()=>setCatalogMuscle(active?"":muscle)} style={{flexShrink:0,padding:"6px 14px",borderRadius:20,cursor:"pointer",fontFamily:mono,fontSize:9,letterSpacing:.5,whiteSpace:"nowrap",transition:"all .15s",border:`1px solid ${active?color+"88":"rgba(255,255,255,.07)"}`,background:active?color+"15":"transparent",color:active?color:"rgba(255,255,255,.3)"}}>{muscle}</button>);
               })}
             </div>
           </div>
-
-          {/* CONTENT */}
           <div style={{flex:1,overflowY:"auto",padding:"14px 16px 120px"}}>
-            {/* Added today */}
             {(manualRoutine[catalogDay]||[]).length>0&&(
               <div style={{marginBottom:18,padding:"12px 14px",borderRadius:14,background:"rgba(95,210,136,.05)",border:"1px solid rgba(95,210,136,.1)"}}>
-                <div style={{fontFamily:mono,fontSize:8,color:"rgba(95,210,136,.5)",letterSpacing:2,textTransform:"uppercase",marginBottom:8}}>
-                  {lang==="es"?"EN ESTE DÍA":"THIS DAY"} · {(manualRoutine[catalogDay]||[]).length}
-                </div>
+                <div style={{fontFamily:mono,fontSize:8,color:"rgba(95,210,136,.5)",letterSpacing:2,textTransform:"uppercase",marginBottom:8}}>{lang==="es"?"EN ESTE DÍA":"THIS DAY"} · {(manualRoutine[catalogDay]||[]).length}</div>
                 <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
                   {(manualRoutine[catalogDay]||[]).map(ex=>{
                     const esKey=Object.entries(ES_TO_META||{}).find(([k,v])=>v===ex)?.[0]||ex;
@@ -4907,7 +4857,6 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                 </div>
               </div>
             )}
-            {/* Exercise groups */}
             {CATALOG.filter(g=>!catalogMuscle||g.muscle===catalogMuscle).map(group=>{
               const filtered=group.exs.filter(ex=>hasEquip(ex));
               if(filtered.length===0) return null;
@@ -4930,24 +4879,15 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                       const DC={beginner:"#5fd288",intermediate:"#f0b43c",advanced:"#e85040"};
                       const DL={beginner:lang==="es"?"Básico":"Basic",intermediate:lang==="es"?"Medio":"Mid",advanced:lang==="es"?"Avanzado":"Adv"};
                       return(
-                        <div key={ex} onClick={()=>{
-                          const r=[...manualRoutine];
-                          added?r[catalogDay]=(r[catalogDay]||[]).filter(x=>x!==ex):r[catalogDay]=[...(r[catalogDay]||[]),ex];
-                          setManualRoutine(r);
-                        }} style={{display:"flex",alignItems:"stretch",borderRadius:14,overflow:"hidden",cursor:"pointer",
-                          border:`1px solid ${added?"rgba(95,210,136,.25)":"rgba(255,255,255,.05)"}`,
-                          background:added?"rgba(95,210,136,.04)":"rgba(255,255,255,.015)",
-                          transition:"all .15s",minHeight:64}}>
+                        <div key={ex} onClick={()=>{const r=[...manualRoutine];added?r[catalogDay]=(r[catalogDay]||[]).filter(x=>x!==ex):r[catalogDay]=[...(r[catalogDay]||[]),ex];setManualRoutine(r);}} style={{display:"flex",alignItems:"stretch",borderRadius:14,overflow:"hidden",cursor:"pointer",border:`1px solid ${added?"rgba(95,210,136,.25)":"rgba(255,255,255,.05)"}`,background:added?"rgba(95,210,136,.04)":"rgba(255,255,255,.015)",transition:"all .15s",minHeight:64}}>
                           <div style={{width:3,flexShrink:0,background:added?"rgba(95,210,136,.6)":group.color+"33"}}/>
                           {vidUrl?(
                             <div style={{width:72,flexShrink:0,background:"rgba(0,0,0,.4)",overflow:"hidden"}}>
-                              <video src={vidUrl} muted loop playsInline preload="metadata"
-                                style={{width:"100%",height:"100%",objectFit:"cover",opacity:.5,display:"block"}}
-                                onMouseEnter={e=>e.currentTarget.play()} onMouseLeave={e=>{e.currentTarget.pause();e.currentTarget.currentTime=0;}}/>
+                              <video src={vidUrl} muted loop playsInline preload="metadata" style={{width:"100%",height:"100%",objectFit:"cover",opacity:.5,display:"block"}} onMouseEnter={e=>e.currentTarget.play()} onMouseLeave={e=>{e.currentTarget.pause();e.currentTarget.currentTime=0;}}/>
                             </div>
                           ):(
                             <div style={{width:72,flexShrink:0,background:"rgba(255,255,255,.02)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                              <div style={{fontFamily:mono,fontSize:8,color:"rgba(255,255,255,.1)",letterSpacing:1}}>NO VID</div>
+                              <div style={{fontFamily:mono,fontSize:7,color:"rgba(255,255,255,.1)",letterSpacing:1}}>—</div>
                             </div>
                           )}
                           <div style={{flex:1,padding:"11px 10px",display:"flex",flexDirection:"column",justifyContent:"center",gap:4,minWidth:0}}>
@@ -4958,14 +4898,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                             </div>
                           </div>
                           <div style={{width:50,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                            <div style={{width:30,height:30,borderRadius:"50%",transition:"all .15s",
-                              border:`1.5px solid ${added?"rgba(95,210,136,.5)":"rgba(255,255,255,.1)"}`,
-                              background:added?"rgba(95,210,136,.15)":"rgba(255,255,255,.03)",
-                              display:"flex",alignItems:"center",justifyContent:"center",
-                              color:added?"rgba(95,210,136,.9)":"rgba(255,255,255,.3)",
-                              fontSize:added?13:20,fontWeight:added?700:300,lineHeight:1}}>
-                              {added?"✓":"+"}
-                            </div>
+                            <div style={{width:30,height:30,borderRadius:"50%",transition:"all .15s",border:`1.5px solid ${added?"rgba(95,210,136,.5)":"rgba(255,255,255,.1)"}`,background:added?"rgba(95,210,136,.15)":"rgba(255,255,255,.03)",display:"flex",alignItems:"center",justifyContent:"center",color:added?"rgba(95,210,136,.9)":"rgba(255,255,255,.3)",fontSize:added?13:20,fontWeight:added?700:300,lineHeight:1}}>{added?"✓":"+"}</div>
                           </div>
                         </div>
                       );
@@ -4975,24 +4908,11 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               );
             })}
           </div>
-
-          {/* BOTTOM */}
           <div style={{position:"sticky",bottom:0,background:"rgba(7,8,10,.98)",backdropFilter:"blur(24px)",padding:"14px 20px 34px",borderTop:"1px solid rgba(255,255,255,.05)"}}>
             {manualSelDays.some((_,i)=>(manualRoutine[i]||[]).length===0)&&(
-              <div style={{fontFamily:mono,fontSize:9,color:"rgba(255,255,255,.2)",letterSpacing:1,textAlign:"center",marginBottom:10}}>
-                {lang==="es"?"Agrega al menos 1 ejercicio por día":"Add at least 1 exercise per day"}
-              </div>
+              <div style={{fontFamily:mono,fontSize:9,color:"rgba(255,255,255,.2)",letterSpacing:1,textAlign:"center",marginBottom:10}}>{lang==="es"?"Agrega al menos 1 ejercicio por día":"Add at least 1 exercise per day"}</div>
             )}
-            <button onClick={()=>{
-              const pf={lang,goal,level:levelSel,days:manualDays,age,weight,height,units,selDays:manualSelDays,gender,equipment};
-              const r=manualSelDays.map((_,i)=>(manualRoutine[i]||[]).map((ex,j)=>({e:Object.entries(ES_TO_META||{}).find(([k,v])=>v===ex)?.[0]||ex,s:3,r:"8-12",id:`m${i}${j}${ex}`})));
-              FStore.saveProfile(pf,r);sp(pf);sr(r);setStep(99);
-            }} disabled={manualSelDays.some((_,i)=>(manualRoutine[i]||[]).length===0)}
-              style={{width:"100%",padding:"16px",borderRadius:14,cursor:"pointer",
-                background:"#EEEAE3",color:"#07080a",border:"none",
-                fontFamily:mono,fontSize:12,fontWeight:600,letterSpacing:3,textTransform:"uppercase",
-                opacity:manualSelDays.some((_,i)=>(manualRoutine[i]||[]).length===0)?0.2:1,
-                transition:"all .2s"}}>
+            <button onClick={()=>{const pf={lang,goal,level:levelSel,days:manualDays,age,weight,height,units,selDays:manualSelDays,gender,equipment};const r=manualSelDays.map((_,i)=>(manualRoutine[i]||[]).map((ex,j)=>({e:Object.entries(ES_TO_META||{}).find(([k,v])=>v===ex)?.[0]||ex,s:3,r:"8-12",id:`m${i}${j}${ex}`})));FStore.saveProfile(pf,r);sp(pf);sr(r);setStep(99);}} disabled={manualSelDays.some((_,i)=>(manualRoutine[i]||[]).length===0)} style={{width:"100%",padding:"16px",borderRadius:14,cursor:"pointer",background:"#EEEAE3",color:"#07080a",border:"none",fontFamily:mono,fontSize:12,fontWeight:600,letterSpacing:3,textTransform:"uppercase",opacity:manualSelDays.some((_,i)=>(manualRoutine[i]||[]).length===0)?0.2:1,transition:"all .2s"}}>
               {lang==="es"?"FORJAR RUTINA →":"FORGE ROUTINE →"}
             </button>
           </div>
