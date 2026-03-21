@@ -4789,58 +4789,86 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
 
       {step===23&&(
         <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",background:"#07080a",color:"#EEEAE3"}}>
-          <div style={{position:"sticky",top:0,zIndex:20,background:"rgba(7,8,10,.97)",backdropFilter:"blur(24px)",WebkitBackdropFilter:"blur(24px)",borderBottom:"1px solid rgba(255,255,255,.05)"}}>
-            <div style={{padding:"52px 20px 14px",display:"flex",alignItems:"flex-end",justifyContent:"space-between"}}>
-              <div>
-                <div style={{fontFamily:mono,fontSize:8,color:"rgba(255,255,255,.25)",letterSpacing:3,textTransform:"uppercase",marginBottom:6}}>{lang==="es"?"ELIGE EJERCICIOS":"CHOOSE EXERCISES"}</div>
-                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:36,letterSpacing:1,lineHeight:.9,color:"#EEEAE3"}}>{lang==="es"?"TU RUTINA":"YOUR ROUTINE"}</div>
+
+          {/* TOP NAV */}
+          <div style={{position:"sticky",top:0,zIndex:20,background:"rgba(7,8,10,.97)",backdropFilter:"blur(24px)",WebkitBackdropFilter:"blur(24px)",borderBottom:"1px solid rgba(255,255,255,.06)",padding:"52px 20px 0"}}>
+
+            {/* Progress: DÍA X DE Y */}
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+              <button onClick={()=>{if(catalogDay===0)setStep(21);else setCatalogDay(p=>p-1);}} style={{background:"none",border:"none",color:"rgba(255,255,255,.4)",cursor:"pointer",fontSize:20,padding:"0 4px 0 0",lineHeight:1,display:"flex",alignItems:"center"}}>‹</button>
+              <div style={{flex:1,padding:"0 12px"}}>
+                <div style={{display:"flex",gap:4,alignItems:"center"}}>
+                  {manualSelDays.map((_,i)=>(
+                    <div key={i} onClick={()=>setCatalogDay(i)} style={{flex:1,height:3,borderRadius:2,cursor:"pointer",transition:"all .3s",
+                      background:i<catalogDay?"#BFA98A":i===catalogDay?"#EEEAE3":"rgba(255,255,255,.1)"}}/>
+                  ))}
+                </div>
+                <div style={{fontFamily:mono,fontSize:8,color:"rgba(255,255,255,.3)",letterSpacing:2,textAlign:"center",marginTop:6}}>
+                  {lang==="es"?`DÍA ${catalogDay+1} DE ${manualSelDays.length}`:`DAY ${catalogDay+1} OF ${manualSelDays.length}`}
+                </div>
               </div>
-              <div style={{textAlign:"right",paddingBottom:3}}>
-                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:34,color:"#BFA98A",lineHeight:1}}>{manualSelDays.reduce((t,_,i)=>t+(manualRoutine[i]||[]).length,0)}</div>
-                <div style={{fontFamily:mono,fontSize:8,color:"rgba(255,255,255,.25)",letterSpacing:2}}>{lang==="es"?"TOTAL":"TOTAL"}</div>
+              <div style={{width:24,color:"rgba(255,255,255,.4)",fontSize:8,fontFamily:mono,textAlign:"right"}}>
+                {(manualRoutine[catalogDay]||[]).length>0&&`${(manualRoutine[catalogDay]||[]).length}✓`}
               </div>
             </div>
-            <div style={{display:"flex",gap:5,overflowX:"auto",padding:"0 16px 12px",scrollbarWidth:"none"}}>
-              {manualSelDays.map((dayIdx,i)=>{
-                const DN=lang==="es"?["LU","MA","MI","JU","VI","SÁ","DO"]:["MO","TU","WE","TH","FR","SA","SU"];
-                const cnt=(manualRoutine[i]||[]).length;
-                const sel=catalogDay===i;
-                return(<button key={i} onClick={()=>{setCatalogDay(i);setCatalogMuscle("");}} style={{flexShrink:0,minWidth:50,padding:"9px 12px",borderRadius:12,cursor:"pointer",transition:"all .15s",border:`1.5px solid ${sel?"rgba(191,169,138,.5)":cnt>0?"rgba(95,210,136,.2)":"rgba(255,255,255,.06)"}`,background:sel?"rgba(191,169,138,.1)":cnt>0?"rgba(95,210,136,.05)":"rgba(255,255,255,.02)",display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
-                  <span style={{fontFamily:mono,fontSize:10,fontWeight:700,letterSpacing:1,color:sel?"#BFA98A":cnt>0?"rgba(95,210,136,.8)":"rgba(255,255,255,.3)"}}>{DN[dayIdx]}</span>
-                  <span style={{fontFamily:mono,fontSize:8,color:sel?"rgba(191,169,138,.5)":cnt>0?"rgba(95,210,136,.4)":"rgba(255,255,255,.15)"}}>{cnt>0?cnt:"—"}</span>
-                </button>);
-              })}
-            </div>
-            <div style={{display:"flex",gap:5,overflowX:"auto",padding:"0 16px 14px",scrollbarWidth:"none"}}>
-              <button onClick={()=>setCatalogMuscle("")} style={{flexShrink:0,padding:"6px 14px",borderRadius:20,cursor:"pointer",fontFamily:mono,fontSize:9,letterSpacing:.5,whiteSpace:"nowrap",transition:"all .15s",border:`1px solid ${catalogMuscle===""?"rgba(255,255,255,.35)":"rgba(255,255,255,.07)"}`,background:catalogMuscle===""?"rgba(255,255,255,.08)":"transparent",color:catalogMuscle===""?"#EEEAE3":"rgba(255,255,255,.3)"}}>{lang==="es"?"Todo":"All"}</button>
+
+            {/* Day name big */}
+            {(()=>{
+              const dayIdx=manualSelDays[catalogDay];
+              const DAY_FULL=lang==="es"?["LUNES","MARTES","MIÉRCOLES","JUEVES","VIERNES","SÁBADO","DOMINGO"]:["MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY","SUNDAY"];
+              const cnt=(manualRoutine[catalogDay]||[]).length;
+              return(
+                <div style={{marginBottom:14}}>
+                  <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:44,letterSpacing:2,lineHeight:.9,color:"#EEEAE3"}}>{DAY_FULL[dayIdx]}</div>
+                  <div style={{fontFamily:mono,fontSize:9,color:"rgba(255,255,255,.25)",letterSpacing:2,marginTop:5,display:"flex",alignItems:"center",gap:8}}>
+                    <span>{lang==="es"?"ELIGE TUS EJERCICIOS":"CHOOSE YOUR EXERCISES"}</span>
+                    {cnt>0&&<span style={{color:"rgba(95,210,136,.6)"}}>· {cnt} {lang==="es"?"agregados":"added"}</span>}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Muscle group filter */}
+            <div style={{display:"flex",gap:5,overflowX:"auto",paddingBottom:14,scrollbarWidth:"none"}}>
+              <button onClick={()=>setCatalogMuscle("")} style={{flexShrink:0,padding:"6px 14px",borderRadius:20,cursor:"pointer",fontFamily:mono,fontSize:9,letterSpacing:.5,whiteSpace:"nowrap",transition:"all .15s",border:`1px solid ${catalogMuscle===""?"rgba(255,255,255,.35)":"rgba(255,255,255,.07)"}`,background:catalogMuscle===""?"rgba(255,255,255,.08)":"transparent",color:catalogMuscle===""?"#EEEAE3":"rgba(255,255,255,.3)"}}>
+                {lang==="es"?"Todo":"All"}
+              </button>
               {CATALOG.map(({muscle,color})=>{
                 const active=catalogMuscle===muscle;
                 return(<button key={muscle} onClick={()=>setCatalogMuscle(active?"":muscle)} style={{flexShrink:0,padding:"6px 14px",borderRadius:20,cursor:"pointer",fontFamily:mono,fontSize:9,letterSpacing:.5,whiteSpace:"nowrap",transition:"all .15s",border:`1px solid ${active?color+"88":"rgba(255,255,255,.07)"}`,background:active?color+"15":"transparent",color:active?color:"rgba(255,255,255,.3)"}}>{muscle}</button>);
               })}
             </div>
           </div>
-          <div style={{flex:1,overflowY:"auto",padding:"14px 16px 120px"}}>
+
+          {/* EXERCISE LIST */}
+          <div style={{flex:1,overflowY:"auto",padding:"14px 16px 140px"}}>
+
+            {/* Added today — chips */}
             {(manualRoutine[catalogDay]||[]).length>0&&(
-              <div style={{marginBottom:18,padding:"12px 14px",borderRadius:14,background:"rgba(95,210,136,.05)",border:"1px solid rgba(95,210,136,.1)"}}>
-                <div style={{fontFamily:mono,fontSize:8,color:"rgba(95,210,136,.5)",letterSpacing:2,textTransform:"uppercase",marginBottom:8}}>{lang==="es"?"EN ESTE DÍA":"THIS DAY"} · {(manualRoutine[catalogDay]||[]).length}</div>
+              <div style={{marginBottom:16,padding:"10px 14px",borderRadius:12,background:"rgba(95,210,136,.05)",border:"1px solid rgba(95,210,136,.1)"}}>
+                <div style={{fontFamily:mono,fontSize:8,color:"rgba(95,210,136,.5)",letterSpacing:2,textTransform:"uppercase",marginBottom:8}}>
+                  {lang==="es"?"EN ESTE DÍA":"THIS DAY"} · {(manualRoutine[catalogDay]||[]).length}
+                </div>
                 <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
                   {(manualRoutine[catalogDay]||[]).map(ex=>{
                     const esKey=Object.entries(ES_TO_META||{}).find(([k,v])=>v===ex)?.[0]||ex;
                     return(<div key={ex} style={{display:"flex",alignItems:"center",gap:5,padding:"5px 10px 5px 13px",borderRadius:20,background:"rgba(95,210,136,.1)",border:"1px solid rgba(95,210,136,.18)"}}>
                       <span style={{fontSize:11,color:"rgba(95,210,136,.9)",letterSpacing:-.2}}>{esKey.charAt(0).toUpperCase()+esKey.slice(1)}</span>
-                      <button onClick={e=>{e.stopPropagation();const r=[...manualRoutine];r[catalogDay]=(r[catalogDay]||[]).filter(x=>x!==ex);setManualRoutine(r);}} style={{background:"none",border:"none",color:"rgba(95,210,136,.4)",cursor:"pointer",fontSize:17,lineHeight:1,padding:"0 0 0 2px",display:"flex",alignItems:"center"}}>×</button>
+                      <button onClick={e=>{e.stopPropagation();const r=[...manualRoutine];r[catalogDay]=(r[catalogDay]||[]).filter(x=>x!==ex);setManualRoutine(r);}} style={{background:"none",border:"none",color:"rgba(95,210,136,.4)",cursor:"pointer",fontSize:17,lineHeight:1,padding:"0 0 0 2px"}}>×</button>
                     </div>);
                   })}
                 </div>
               </div>
             )}
+
+            {/* Exercise cards */}
             {CATALOG.filter(g=>!catalogMuscle||g.muscle===catalogMuscle).map(group=>{
               const filtered=group.exs.filter(ex=>hasEquip(ex));
               if(filtered.length===0) return null;
               return(
                 <React.Fragment key={group.muscle}>
                   {!catalogMuscle&&(
-                    <div style={{display:"flex",alignItems:"center",gap:10,padding:"6px 0 10px",marginTop:6}}>
+                    <div style={{display:"flex",alignItems:"center",gap:10,padding:"6px 0 10px",marginTop:4}}>
                       <div style={{width:2,height:16,borderRadius:2,background:group.color,flexShrink:0}}/>
                       <div style={{fontFamily:mono,fontSize:9,color:group.color,letterSpacing:3,textTransform:"uppercase",fontWeight:700}}>{group.muscle}</div>
                       <div style={{flex:1,height:1,background:"rgba(255,255,255,.04)"}}/>
@@ -4856,7 +4884,8 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                       const DC={beginner:"#5fd288",intermediate:"#f0b43c",advanced:"#e85040"};
                       const DL={beginner:lang==="es"?"Básico":"Basic",intermediate:lang==="es"?"Medio":"Mid",advanced:lang==="es"?"Avanzado":"Adv"};
                       return(
-                        <div key={ex} onClick={()=>{const r=[...manualRoutine];added?r[catalogDay]=(r[catalogDay]||[]).filter(x=>x!==ex):r[catalogDay]=[...(r[catalogDay]||[]),ex];setManualRoutine(r);}} style={{display:"flex",alignItems:"stretch",borderRadius:14,overflow:"hidden",cursor:"pointer",border:`1px solid ${added?"rgba(95,210,136,.25)":"rgba(255,255,255,.05)"}`,background:added?"rgba(95,210,136,.04)":"rgba(255,255,255,.015)",transition:"all .15s",minHeight:64}}>
+                        <div key={ex} onClick={()=>{const r=[...manualRoutine];added?r[catalogDay]=(r[catalogDay]||[]).filter(x=>x!==ex):r[catalogDay]=[...(r[catalogDay]||[]),ex];setManualRoutine(r);}}
+                          style={{display:"flex",alignItems:"stretch",borderRadius:14,overflow:"hidden",cursor:"pointer",border:`1px solid ${added?"rgba(95,210,136,.25)":"rgba(255,255,255,.05)"}`,background:added?"rgba(95,210,136,.04)":"rgba(255,255,255,.015)",transition:"all .15s",minHeight:64}}>
                           <div style={{width:3,flexShrink:0,background:added?"rgba(95,210,136,.6)":group.color+"33"}}/>
                           {vidUrl?(
                             <div style={{width:72,flexShrink:0,background:"rgba(0,0,0,.4)",overflow:"hidden"}}>
@@ -4885,13 +4914,31 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               );
             })}
           </div>
-          <div style={{position:"sticky",bottom:0,background:"rgba(7,8,10,.98)",backdropFilter:"blur(24px)",padding:"14px 20px 34px",borderTop:"1px solid rgba(255,255,255,.05)"}}>
-            {manualSelDays.some((_,i)=>(manualRoutine[i]||[]).length===0)&&(
-              <div style={{fontFamily:mono,fontSize:9,color:"rgba(255,255,255,.2)",letterSpacing:1,textAlign:"center",marginBottom:10}}>{lang==="es"?"Agrega al menos 1 ejercicio por día":"Add at least 1 exercise per day"}</div>
+
+          {/* BOTTOM CTA */}
+          <div style={{position:"sticky",bottom:0,background:"rgba(7,8,10,.98)",backdropFilter:"blur(24px)",padding:"14px 20px 36px",borderTop:"1px solid rgba(255,255,255,.05)"}}>
+            {(manualRoutine[catalogDay]||[]).length===0&&(
+              <div style={{fontFamily:mono,fontSize:9,color:"rgba(255,255,255,.2)",letterSpacing:1,textAlign:"center",marginBottom:10}}>
+                {lang==="es"?"Agrega al menos 1 ejercicio":"Add at least 1 exercise"}
+              </div>
             )}
-            <button onClick={()=>{const pf={lang,goal,level:levelSel,days:manualDays,age,weight,height,units,selDays:manualSelDays,gender,equipment};const r=manualSelDays.map((_,i)=>(manualRoutine[i]||[]).map((ex,j)=>({e:Object.entries(ES_TO_META||{}).find(([k,v])=>v===ex)?.[0]||ex,s:3,r:"8-12",id:`m${i}${j}${ex}`})));FStore.saveProfile(pf,r);sp(pf);sr(r);setStep(99);}} disabled={manualSelDays.some((_,i)=>(manualRoutine[i]||[]).length===0)} style={{width:"100%",padding:"16px",borderRadius:14,cursor:"pointer",background:"#EEEAE3",color:"#07080a",border:"none",fontFamily:mono,fontSize:12,fontWeight:600,letterSpacing:3,textTransform:"uppercase",opacity:manualSelDays.some((_,i)=>(manualRoutine[i]||[]).length===0)?0.2:1,transition:"all .2s"}}>
-              {lang==="es"?"FORJAR RUTINA →":"FORGE ROUTINE →"}
-            </button>
+            {catalogDay<manualSelDays.length-1?(
+              <button onClick={()=>{if((manualRoutine[catalogDay]||[]).length>0){setCatalogDay(p=>p+1);setCatalogMuscle("");window.scrollTo(0,0);}}}
+                disabled={(manualRoutine[catalogDay]||[]).length===0}
+                style={{width:"100%",padding:"16px",borderRadius:14,cursor:"pointer",background:"#EEEAE3",color:"#07080a",border:"none",fontFamily:mono,fontSize:12,fontWeight:600,letterSpacing:2,textTransform:"uppercase",opacity:(manualRoutine[catalogDay]||[]).length===0?0.2:1,transition:"all .2s",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
+                {lang==="es"?"SIGUIENTE DÍA":"NEXT DAY"}
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M7 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </button>
+            ):(
+              <button onClick={()=>{
+                const pf={lang,goal,level:levelSel,days:manualDays,age,weight,height,units,selDays:manualSelDays,gender,equipment};
+                const r=manualSelDays.map((_,i)=>(manualRoutine[i]||[]).map((ex,j)=>({e:Object.entries(ES_TO_META||{}).find(([k,v])=>v===ex)?.[0]||ex,s:3,r:"8-12",id:`m${i}${j}${ex}`})));
+                FStore.saveProfile(pf,r);sp(pf);sr(r);setStep(99);
+              }} disabled={(manualRoutine[catalogDay]||[]).length===0}
+                style={{width:"100%",padding:"16px",borderRadius:14,cursor:"pointer",background:"#BFA98A",color:"#07080a",border:"none",fontFamily:mono,fontSize:12,fontWeight:600,letterSpacing:3,textTransform:"uppercase",opacity:(manualRoutine[catalogDay]||[]).length===0?0.2:1,transition:"all .2s"}}>
+                {lang==="es"?"FORJAR RUTINA →":"FORGE ROUTINE →"}
+              </button>
+            )}
           </div>
         </div>
       )}
