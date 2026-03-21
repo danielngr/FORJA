@@ -2779,13 +2779,37 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
         const r=el.getBoundingClientRect();
         const target=window.scrollY+r.top+r.height/2-window.innerHeight/2;
         window.scrollTo({top:Math.max(0,Math.round(target)),behavior:'instant'});
-        setScrollVersion(v=>v+1); // force overlay to re-render with new positions
+        setScrollVersion(v=>v+1);
       }
     }
-    if(tourStep===9||tourStep===10||tourStep===11){
+    if(tourStep===9){
+      const el=document.querySelector('[data-tour="carga-semanal"]');
+      if(el){
+        const r=el.getBoundingClientRect();
+        const target=window.scrollY+r.top+r.height/2-window.innerHeight/2;
+        window.scrollTo({top:Math.max(0,Math.round(target)),behavior:'instant'});
+        setScrollVersion(v=>v+1);
+      }
+    }
+    if(tourStep===10||tourStep===11||tourStep===12||tourStep===13){
       window.scrollTo({top:0,behavior:'instant'});
       setScrollVersion(v=>v+1);
     }
+  },[tourStep]);
+
+  // Lock body scroll during tour
+  useEffect(()=>{
+    if(tourStep>=0){
+      document.body.style.overflow='hidden';
+      document.body.style.touchAction='none';
+    } else {
+      document.body.style.overflow='';
+      document.body.style.touchAction='';
+    }
+    return ()=>{
+      document.body.style.overflow='';
+      document.body.style.touchAction='';
+    };
   },[tourStep]);
 
   // Hide tour if already toured; delay ask modal so user sees the screen first
@@ -3710,7 +3734,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
            tES:"Pestaña Cuerpo",              tEN:"Body tab",
            xES:"Aquí vive tu maniquí 3D. Toca CONTINUAR para ir ahí.",
            xEN:"Your 3D mannequin lives here. Tap CONTINUE to go there.",
-           onEnter:()=>{setTab("body");}},
+           onEnter:()=>{setTabR("body");}},
           // 10
           {id:"mannequin",   pad:4,  tabNeeded:"body",
            tES:"Tu maniquí 3D",               tEN:"Your 3D mannequin",
@@ -3724,7 +3748,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
         ];
 
         // Map tourStep → STEPS index (steps 4-7 are WS, so Main uses 0-3 and 8-11→mapped to 4-7)
-        const STEP_MAP={0:0,1:1,2:2,3:3,8:4,9:5,10:6,11:7};
+        const STEP_MAP={0:0,1:1,2:2,3:3,8:4,9:5,10:6,11:7,12:8};
         const si=STEP_MAP[tourStep];
 
         // ── ASK MODAL ─────────────────────────────────────────
@@ -3788,7 +3812,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
           if(ns===4){ if(day&&day.ex&&day.ex.length) setInWorkout(true); setTourStep(ns); return; }
           // Exit workout → train tab → scroll to vol-weekly → then show step
           if(ns===8){ setInWorkout(false); setTabR("train"); }
-          if(ns===9) setTab('body');
+          if(ns===10){setTabR('body');}
           // Just advance
           setTourStep(ns);
         };
@@ -4204,7 +4228,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
       </div>}
 
       {step>0&&step!==99&&<button onClick={()=>{
-        const map={1:0,15:1,2:15,3:2,4:3,5:4,6:5,7:6,8:7,
+        const map={1:0,15:1,2:15,3:2,4:3,5:4,6:5,7:6,8:7,9:8,10:9,
                    20:2,21:20,22:21,23:22,25:2,26:25};
         if(map[step]!==undefined) setStep(map[step]);
       }} style={{position:"fixed",top:18,left:18,zIndex:300,width:34,height:34,
