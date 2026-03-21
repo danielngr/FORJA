@@ -5712,7 +5712,20 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
        {l:es?"RACHA":"STREAK",v:streak,sub:streak>=3?"🔥":"días"},
        {l:"PRs",v:prs.length,sub:es?"ejercicios":"exercises"},
       ].map((s,i)=>e("div",{key:i,style:{flex:1,background:C.bg3,border:"1px solid "+C.bd,borderRadius:10,padding:"10px 10px 8px"}},
-        e("div",{style:{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:4}},s.l),
+        e("div",{style:{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:4,display:"flex",alignItems:"center",gap:4}},
+          s.l,
+          i===0&&e("button",{onClick:()=>{const el=document.getElementById("weekvol-help");if(el)el.style.display=el.style.display==="none"?"":"none";},
+            style:{width:13,height:13,borderRadius:"50%",border:"1px solid rgba(255,255,255,.2)",background:"rgba(255,255,255,.06)",
+              color:"rgba(255,255,255,.6)",fontSize:8,cursor:"pointer",display:"inline-flex",alignItems:"center",justifyContent:"center",
+              padding:0,flexShrink:0,lineHeight:1}},
+            "?")
+        ),
+        i===0&&e("div",{id:"weekvol-help",style:{display:"none",fontSize:9,color:"rgba(255,255,255,.55)",fontFamily:mono,
+          lineHeight:1.5,marginBottom:6,padding:"6px 8px",background:"rgba(255,255,255,.04)",
+          borderRadius:6,border:"1px solid rgba(255,255,255,.08)"}},
+          es?"Tonelaje = series × reps × kg. Con 10kg × 10 reps × 3 series = 300kg. Suma de todos los ejercicios de la semana."
+            :"Tonnage = sets × reps × kg. E.g. 10kg × 10 reps × 3 sets = 300kg. Sum of all weekly exercises."
+        ),
         e("div",{style:{fontSize:22,fontWeight:900,color:C.tx,fontFamily:sans,letterSpacing:-1}},s.v),
         e("div",{style:{fontSize:8,fontFamily:mono,color:C.tx3,marginTop:2}},s.sub)
       ))
