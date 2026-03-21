@@ -4132,10 +4132,10 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
 
   // Mapa equipo por ejercicio
   const EQ_MAP={
-    "bench press":["barbell","bench"],"incline bench press":["barbell","bench"],"dumbbell bench press":["dumbbells","bench"],"incline dumbbell press":["dumbbells","bench"],"dumbbell chest fly":["dumbbells","bench"],"cable fly":["cable_machine"],"machine chest press":["machine"],"machine pec fly":["machine"],"push up":[],"decline push up":[],"dips":["dip_bar"],
-    "pull up":["pull_up_bar"],"chin up":["pull_up_bar"],"barbell row":["barbell"],"pendlay row":["barbell"],"dumbbell row":["dumbbells","bench"],"cable row":["cable_machine"],"machine neutral row":["machine"],"lat pulldown":["cable_machine"],"machine pulldown":["machine"],"barbell pullover":["barbell","bench"],"barbell rack pull":["barbell","rack"],"supermans":[],
-    "overhead press":["barbell"],"dumbbell shoulder press":["dumbbells"],"seated overhead press":["dumbbells","bench"],"lateral raise":["dumbbells"],"dumbbell front raise":["dumbbells"],"face pull":["cable_machine"],"cable face pull":["cable_machine"],"machine face pulls":["machine"],"barbell upright row":["barbell"],"barbell shrug":["barbell"],"dumbbell shrug":["dumbbells"],"reverse fly":["dumbbells"],"dumbbell rear delt fly":["dumbbells"],"dumbbell laying reverse fly":["dumbbells","bench"],
-    "squat":["barbell","rack"],"front squat":["barbell","rack"],"goblet squat":["dumbbells"],"leg press":["machine"],"deadlift":["barbell"],"romanian deadlift":["barbell"],"bulgarian split squat":["dumbbells","bench"],"dumbbell bulgarian split squat":["dumbbells","bench"],"leg curl":["machine"],"leg extension":["machine"],"calf raise":[],"seated calf raise":["machine"],"hip thrust":["barbell","bench"],"box jump":["box"],"barbell thruster":["barbell"],
+    "bench press":["barbell","bench"],"incline bench press":["barbell","bench"],"dumbbell bench press":["dumbbells"],"incline dumbbell press":["dumbbells","bench"],"dumbbell chest fly":["dumbbells"],"cable fly":["cable_machine"],"machine chest press":["machine"],"machine pec fly":["machine"],"push up":[],"decline push up":[],"dips":["dip_bar"],
+    "pull up":["pull_up_bar"],"chin up":["pull_up_bar"],"barbell row":["barbell"],"pendlay row":["barbell"],"dumbbell row":["dumbbells"],"cable row":["cable_machine"],"machine neutral row":["machine"],"lat pulldown":["cable_machine"],"machine pulldown":["machine"],"barbell pullover":["barbell","bench"],"barbell rack pull":["barbell","rack"],"supermans":[],
+    "overhead press":["barbell"],"dumbbell shoulder press":["dumbbells"],"seated overhead press":["dumbbells","bench"],"lateral raise":["dumbbells"],"dumbbell front raise":["dumbbells"],"face pull":["cable_machine"],"cable face pull":["cable_machine"],"machine face pulls":["machine"],"barbell upright row":["barbell"],"barbell shrug":["barbell"],"dumbbell shrug":["dumbbells"],"reverse fly":["dumbbells"],"dumbbell rear delt fly":["dumbbells"],"dumbbell laying reverse fly":["dumbbells"],
+    "squat":["barbell","rack"],"front squat":["barbell","rack"],"goblet squat":["dumbbells"],"leg press":["machine"],"deadlift":["barbell"],"romanian deadlift":["barbell"],"bulgarian split squat":["dumbbells","bench"],"dumbbell bulgarian split squat":["dumbbells"],"leg curl":["machine"],"leg extension":["machine"],"calf raise":[],"seated calf raise":["machine"],"hip thrust":["barbell","bench"],"box jump":["box"],"barbell thruster":["barbell"],
     "barbell curl":["barbell"],"dumbbell curl":["dumbbells"],"hammer curl":["dumbbells"],"concentration curl":["dumbbells"],"preacher curl":["barbell","bench"],"reverse curl":["barbell"],
     "tricep pushdown":["cable_machine"],"overhead tricep extension":["dumbbells"],"skull crusher":["barbell","bench"],"bench dips":["bench"],"close grip bench press":["barbell","bench"],"diamond push ups":[],
     "plank":[],"hanging knee raises":["pull_up_bar"],"machine crunch":["machine"],"mountain climber":[],
@@ -4185,7 +4185,17 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
   const hasEquip=(ex)=>{
     const needed=EQ_MAP[ex]||[];
     if(needed.length===0) return true; // bodyweight siempre disponible
-    return needed.every(e=>equipment.includes(e));
+    // Normalize user equipment to internal keys
+    const USER_TO_INT={
+      "Rack+Barra":["barbell","rack"],"Banco":["bench"],"Mancuernas":["dumbbells"],
+      "Dominadas":["pull_up_bar"],"Paralelas":["dip_bar"],"Barra Z/EZ":["ez_bar","barbell"],
+      "Leg Ext/Curl":["leg_extension","machine"],"Polea":["cable_machine"],
+      "Chaleco":["weight_vest"],"Kettlebell":["kettlebell"],"Bandas":["bands"],
+    };
+    const gymFull=gymType==="gym";
+    const normEq=new Set(gymFull?["barbell","rack","bench","dumbbells","pull_up_bar","dip_bar","ez_bar","leg_extension","machine","cable_machine","weight_vest","kettlebell","bands","box"]:[]);
+    if(!gymFull) equipment.forEach(e=>{(USER_TO_INT[e]||[e]).forEach(k=>normEq.add(k));});
+    return needed.every(e=>normEq.has(e));
   };
 
   const CATALOG=[
