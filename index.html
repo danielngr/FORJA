@@ -4390,11 +4390,18 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
       {step===0&&(
         <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:"#07080a",position:"relative",overflow:"hidden"}}>
 
-          {/* Canvas de partículas FORJA */}
-          <canvas id="forja-logo-canvas" style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none"}}/>
+          {/* Canvas de partículas FORJA — se carga en background */}
+          <canvas id="forja-logo-canvas" style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none",opacity:.6}}/>
 
           {/* Contenido centrado */}
           <div style={{position:"relative",zIndex:2,display:"flex",flexDirection:"column",alignItems:"center",width:"100%",maxWidth:340,padding:"0 28px"}}>
+
+            {/* Logo FORJA siempre visible */}
+            <div style={{marginBottom:8,textAlign:"center"}}>
+              <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:72,letterSpacing:16,color:"#EEEAE3",lineHeight:1,
+                textShadow:"0 0 60px rgba(191,169,138,.2)"}}>FORJA</div>
+              <div style={{width:32,height:1,background:"#BFA98A",opacity:.4,margin:"0 auto 0"}}/>
+            </div>
 
             {/* Selector de idioma — discreto, solo si no hay lang */}
             {!lang&&(
@@ -4413,7 +4420,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
 
             {/* Tagline */}
             <div style={{fontFamily:"'SF Mono','Courier New',monospace",fontSize:9,letterSpacing:4,
-              color:"rgba(238,234,227,.25)",textTransform:"uppercase",marginBottom:48,textAlign:"center"}}>
+              color:"rgba(238,234,227,.25)",textTransform:"uppercase",marginBottom:36,marginTop:20,textAlign:"center"}}>
               {(lang||'es')==="es"?"FORJA TU CUERPO":"BUILD YOUR BODY"}
             </div>
 
