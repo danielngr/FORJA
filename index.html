@@ -5931,6 +5931,7 @@ function App(){
   const[ready,setReady]=useState(false);
 
   useEffect(()=>{
+    // Initial load
     FStore.loadProfile().then(data=>{
       if(data&&data.profile){
         setProfile(data.profile);
@@ -5940,6 +5941,31 @@ function App(){
       }
       setReady(true);
     }).catch(()=>setReady(true));
+
+    // Listen for Google OAuth callback — fires when user returns from Google
+    const sb=getSB();
+    if(!sb) return;
+    const{data:{subscription}}=sb.auth.onAuthStateChange((event,session)=>{
+      if((event==='SIGNED_IN'||event==='TOKEN_REFRESHED')&&session?.user){
+        _user=session.user;
+        // If we're still on the onboarding/login screen, reload profile
+        // Use a small delay to let Supabase finish session setup
+        setTimeout(()=>{
+          FStore.loadProfile().then(data=>{
+            if(data&&data.profile){
+              setProfile(data.profile);
+              setLang(data.profile.lang||null);
+              if(data.routine)setRoutine(data.routine);
+              setStep(99);
+            } else {
+              // New Google user — no profile yet, go to step 0 logged in
+              setReady(true);
+            }
+          }).catch(()=>{});
+        },300);
+      }
+    });
+    return ()=>subscription.unsubscribe();
   },[]);
 
   const sp=useCallback(p=>{setProfile(p);},[]);
