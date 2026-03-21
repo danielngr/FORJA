@@ -2845,7 +2845,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   const tot=entries.reduce((a,e)=>({cal:a.cal+(+e.cal||0),prot:a.prot+(+e.prot||0),carbs:a.carbs+(+e.carbs||0),fat:a.fat+(+e.fat||0)}),{cal:0,prot:0,carbs:0,fat:0});
 
   const toggle=id=>{const k=`${sel}-${id}`;if(!done[k])sd({...done,[k]:true});};
-  const BW_EXERCISES=new Set(["pull up","weighted pull up","chin up","push up","decline push up","dips","bench dips","diamond push ups","plank","mountain climber","hanging knee raises","box jump","bodyweight squat","dominadas","dominadas agarre supino","dominadas lastradas","fondos","fondos en banco","flexiones","sentadilla peso corporal","sentadilla con salto","burpee","plancha","crunch","zancada con salto","pistol squat","step up","superman","hiperextensión","elevación de piernas","russian twist","sit up","salto al cajón","remo australiano"]);
+  const BW_EXERCISES=new Set(["pull up","weighted pull up","chin up","push up","decline push up","dips","bench dips","diamond push ups","plank","mountain climber","hanging knee raises","box jump","bodyweight squat"]);
   const saveLog=(id,kg,rp,exName)=>{
     // For bodyweight exercises with kg=0, use bodyweight from profile
     const effKg=(+kg>0)?+kg:(+profile?.weight||75); // if no weight entered, always use bodyweight
