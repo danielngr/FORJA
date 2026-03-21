@@ -2862,8 +2862,10 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
     slg(nl);
     FStore.saveLogEntry(id,exName||id,effKg,rp,rm1);
     // ── Daily Load (for ACWR) ───────────────────────────────────────
+    // Daily load: use set tonnage / 100 to keep numbers readable
+    // ACWR ratio is the same regardless of scale
     const setLoadKg=effKg*parseInt(rp||0);
-    if(setLoadKg>0) FStore.saveDailyLoad(setLoadKg);
+    if(setLoadKg>0) FStore.saveDailyLoad(Math.round(setLoadKg/10));
     // ── Strength History (for progression curve) ────────────────────
     FStore.saveStrengthHistory(id,exName||id,rm1,effKg,parseInt(rp||0));
     // ── Muscle XP ──────────────────────────────────────────────────
@@ -3206,7 +3208,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                 {/* -- CARGA SEMANAL (ACWR) -- */}
                 {tab==="train"&&(()=>{
                   const{acute,chronic,ratio}=acwr;
-                  const hasData=acute>0||chronic>0;
+                  const hasData=acute>=10||chronic>=10; // ignore tiny amounts (< 10 units)
                   const hasRatio=ratio>0; // true only when >= 7 days of history
                   // Zone: 0.8-1.3 optimal, 1.3-1.5 caution, >1.5 danger, <0.8 undertraining
                   const zone=!hasRatio?"none":ratio<0.8?"low":ratio<=1.3?"ok":ratio<=1.5?"caution":"danger";
@@ -3252,8 +3254,8 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                         <>
                           {/* Bar */}
                           <div style={{height:5,borderRadius:3,background:"rgba(255,255,255,0.06)",overflow:"hidden",marginBottom:8,position:"relative"}}>
-                            {/* Optimal zone marker */}
-                            <div style={{position:"absolute",left:"40%",width:"25%",height:"100%",background:"rgba(45,168,74,0.15)",borderRadius:3}}/>
+                            {/* Optimal zone marker — only when ratio is valid */}
+                            {hasRatio&&<div style={{position:"absolute",left:"40%",width:"25%",height:"100%",background:"rgba(45,168,74,0.15)",borderRadius:3}}/>}
                             <div style={{height:"100%",width:`${barW}%`,borderRadius:3,background:`linear-gradient(90deg,${zoneColor}88,${zoneColor})`,transition:"width 0.8s ease"}}/>
                             {/* Danger line at 75% (ratio=1.5) */}
                             <div style={{position:"absolute",left:"75%",top:0,width:1,height:"100%",background:"rgba(232,48,32,0.4)"}}/>
