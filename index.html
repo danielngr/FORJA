@@ -102,11 +102,13 @@ async function ensureAuth(){
 }
 
 async function signInWithGoogle(){
-  const sb=getSB();if(!sb)return;
-  await sb.auth.signInWithOAuth({
+  const sb=getSB();if(!sb){alert('Supabase no disponible');return;}
+  const redirectTo='https://danielngr.github.io/FORJA/';
+  const{error}=await sb.auth.signInWithOAuth({
     provider:'google',
-    options:{redirectTo:window.location.href.split('?')[0]}
+    options:{redirectTo,scopes:'email profile'}
   });
+  if(error) console.error('Google OAuth error:',error.message);
 }
 
 async function signOut(){
@@ -4390,16 +4392,16 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
       {step===0&&(
         <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:"#07080a",position:"relative",overflow:"hidden"}}>
 
-          {/* Canvas de partículas FORJA — se carga en background */}
-          <canvas id="forja-logo-canvas" style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none",opacity:.6}}/>
+          {/* Canvas de partículas — zIndex 0, texto encima en zIndex 2 */}
+          <canvas id="forja-logo-canvas" style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none",zIndex:0}}/>
 
-          {/* Contenido centrado */}
+          {/* Contenido centrado — siempre encima del canvas */}
           <div style={{position:"relative",zIndex:2,display:"flex",flexDirection:"column",alignItems:"center",width:"100%",maxWidth:340,padding:"0 28px"}}>
 
-            {/* Logo FORJA siempre visible */}
+            {/* Logo FORJA — texto siempre visible */}
             <div style={{marginBottom:8,textAlign:"center"}}>
               <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:72,letterSpacing:16,color:"#EEEAE3",lineHeight:1,
-                textShadow:"0 0 60px rgba(191,169,138,.2)"}}>FORJA</div>
+                textShadow:"0 0 60px rgba(191,169,138,.15)"}}>FORJA</div>
               <div style={{width:32,height:1,background:"#BFA98A",opacity:.4,margin:"0 auto 0"}}/>
             </div>
 
@@ -4462,9 +4464,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                     fontFamily:"-apple-system,'SF Pro Display',sans-serif",
                     fontSize:15,fontWeight:600,letterSpacing:-.2,
                     display:"flex",alignItems:"center",justifyContent:"center",gap:12,
-                    boxShadow:"0 2px 20px rgba(0,0,0,.4)",transition:"transform .15s,box-shadow .15s"}}
-                  onMouseEnter={e=>{e.currentTarget.style.transform="scale(1.02)";e.currentTarget.style.boxShadow="0 4px 28px rgba(0,0,0,.5)";}}
-                  onMouseLeave={e=>{e.currentTarget.style.transform="scale(1)";e.currentTarget.style.boxShadow="0 2px 20px rgba(0,0,0,.4)";}}>
+                    boxShadow:"0 2px 20px rgba(0,0,0,.4)"}}>
                   <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
                     <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
