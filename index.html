@@ -2723,7 +2723,9 @@ function computeACWR(loads){
     chronic+=v;
   }
   const weeklyAvg=chronic/4; // chronic / 4 weeks = average weekly load
-  const ratio=weeklyAvg>0?Math.round((acute/weeklyAvg)*100)/100:0;
+  // Only show ratio if there are 7+ days of data in the last 28 days
+  const daysWithData=Object.keys(loads).filter(k=>{const d=new Date(k);return(new Date()-d)/86400000<=28;}).length;
+  const ratio=weeklyAvg>0&&daysWithData>=7?Math.round((acute/weeklyAvg)*100)/100:0;
   return{acute:Math.round(acute),chronic:Math.round(chronic),ratio,loads};
 }
 
@@ -3516,7 +3518,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                     </>
                   ):(
                     <div style={{display:"flex",gap:8,justifyContent:"center"}}>
-                      <button onClick={()=>{sd({});setConfirmR(false);}} style={{padding:"8px 18px",borderRadius:8,border:"none",background:C.tx,color:C.white,fontSize:9,fontFamily:mono,letterSpacing:2,cursor:"pointer"}}>{t.yes.toUpperCase()}</button>
+                      <button onClick={()=>{sd({});slg({});try{localStorage.removeItem('fv8_dl');localStorage.removeItem('fv8_sh');}catch(_){}setConfirmR(false);refreshAcwr();}} style={{padding:"8px 18px",borderRadius:8,border:"none",background:C.tx,color:C.white,fontSize:9,fontFamily:mono,letterSpacing:2,cursor:"pointer"}}>{t.yes.toUpperCase()}</button>
                       <button onClick={()=>setConfirmR(false)} style={{padding:"8px 18px",borderRadius:8,border:`1px solid ${C.borderL}`,background:"transparent",color:C.tx3,fontSize:9,fontFamily:mono,letterSpacing:2,cursor:"pointer"}}>{t.cancel.toUpperCase()}</button>
                     </div>
                   )}
@@ -5706,7 +5708,7 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
 
     // -- Weekly stats ---------------------------------------------------
     e("div",{style:{display:"flex",gap:8,marginTop:14,marginBottom:14}},
-      [{l:es?"SEMANA":"WEEK",v:Math.round(weekVol)+"kg",sub:weekSets+" sets"},
+      [{l:es?"SEMANA":"WEEK",v:weekVol>=1000?(Math.round(weekVol/100)/10)+"t":Math.round(weekVol)+"kg",sub:weekSets+" sets"},
        {l:es?"RACHA":"STREAK",v:streak,sub:streak>=3?"🔥":"días"},
        {l:"PRs",v:prs.length,sub:es?"ejercicios":"exercises"},
       ].map((s,i)=>e("div",{key:i,style:{flex:1,background:C.bg3,border:"1px solid "+C.bd,borderRadius:10,padding:"10px 10px 8px"}},
