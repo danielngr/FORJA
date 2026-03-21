@@ -1790,6 +1790,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
   const[expandedEx,setExpandedEx]=React.useState(null);
   const[strengthData,setStrengthData]=React.useState({});
   const[wsReady,setWsReady]=React.useState(false);
+  const[wsScrollV,setWsScrollV]=React.useState(0);
   // Load strength history when exercise is expanded
   React.useEffect(()=>{
     if(expandedEx===null||!exs[expandedEx])return;
@@ -1801,9 +1802,10 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
 
   React.useEffect(()=>{ 
     setWsTourStep(tourStep);
-    // Small delay so exercise cards render before tour overlay
-    const t=setTimeout(()=>setWsReady(true),80);
-    return()=>clearTimeout(t);
+    // Delay so exercise cards are fully rendered and positioned before tour overlay
+    const t1=setTimeout(()=>setWsReady(true),250);
+    const t2=setTimeout(()=>setWsScrollV(v=>v+1),450); // second pass for accurate bounds
+    return()=>{clearTimeout(t1);clearTimeout(t2);};
   },[tourStep]);
   const exs=day.ex;
   const C2={bg:"#0d0f14",bgD:"#080a0e",card:"#131720",border:"#1e2535",borderL:"#19202e",
@@ -2555,7 +2557,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
       {arcPopOpen&&<div style={{position:"fixed",inset:0,zIndex:79}} onClick={()=>setArcPopOpen(false)}/>}
 
       {/* ── WORKOUT TOUR ─────────────────────────── */}
-      {wsTourStep!==null&&wsTourStep!==-1&&wsReady&&(()=>{
+      {wsTourStep!==null&&wsTourStep!==-1&&wsReady&&(wsScrollV>=0)&&(()=>{
         const M_="'SF Mono','Fira Code',monospace";
         const S_="'DM Sans',sans-serif";
         const es=lang==="es";
