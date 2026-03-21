@@ -4759,54 +4759,78 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
           </>)}
 
       {(step===20||step===21)&&(
-        <div style={{padding:"0 28px",paddingTop:"8vh",paddingBottom:48,animation:"fu 0.4s ease"}}>
+        <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"0 24px",animation:"fu 0.4s ease"}}>
           {step===20&&(<>
-            <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,.55)",letterSpacing:4,marginBottom:16,textTransform:"uppercase"}}>{lang==="es"?"DÍAS / SEMANA":"DAYS / WEEK"}</div>
-            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:24,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"¿Cuántos días?":"How many days?"}</div>
-            <div style={{display:"flex",flexDirection:"column",borderTop:"1px solid rgba(240,242,245,0.12)"}}>
-              {[[3,lang==="es"?"3 días":"3 days",lang==="es"?"Lun · Mié · Vie":"Mon · Wed · Fri"],[4,lang==="es"?"4 días":"4 days",lang==="es"?"Lun · Mar · Jue · Vie":"Mon · Tue · Thu · Fri"],[5,lang==="es"?"5 días":"5 days",lang==="es"?"Lun a Vie":"Mon to Fri"],[6,lang==="es"?"6 días":"6 days",lang==="es"?"Lun a Sáb":"Mon to Sat"]].map(([n,lb,sub])=>(
-                <button key={n} onClick={()=>{setManualDays(n);setManualSelDays([]);setManualRoutine(Array(7).fill(null).map(()=>[]));}}
-                  style={{display:"flex",alignItems:"center",gap:12,width:"100%",padding:"18px 4px",background:"transparent",border:"none",borderBottom:"1px solid rgba(240,242,245,0.07)",cursor:"pointer",textAlign:"left"}}>
-                  <div style={{width:28,height:28,borderRadius:8,border:`1.5px solid ${manualDays===n?"#BFA98A":"rgba(240,242,245,.15)"}`,background:manualDays===n?"rgba(191,169,138,.15)":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all .2s"}}>
-                    {manualDays===n&&<div style={{width:10,height:10,borderRadius:3,background:"#BFA98A"}}/>}
-                  </div>
-                  <div style={{flex:1}}>
-                    <div style={{fontSize:18,fontWeight:700,color:manualDays===n?"#EEEAE3":"rgba(240,242,245,.55)",letterSpacing:-.3,transition:"color .2s"}}>{lb}</div>
-                    <div style={{fontSize:11,fontFamily:mono,color:manualDays===n?"rgba(191,169,138,.7)":"rgba(240,242,245,.2)",letterSpacing:.3,marginTop:3,transition:"color .2s"}}>{sub}</div>
-                  </div>
-                  {manualDays===n&&<div style={{width:6,height:6,borderRadius:"50%",background:"#BFA98A",flexShrink:0}}/>}
-                </button>
+            <div style={{fontFamily:mono,fontSize:9,letterSpacing:4,color:"rgba(238,234,227,.85)",textTransform:"uppercase",marginBottom:14,display:"flex",alignItems:"center",gap:10}}>
+              <span style={{width:18,height:1,background:"rgba(238,234,227,.1)",display:"block"}}/>
+              {lang==="es"?"FRECUENCIA":"FREQUENCY"}
+              <span style={{width:18,height:1,background:"rgba(238,234,227,.1)",display:"block"}}/>
+            </div>
+            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:60,letterSpacing:2,lineHeight:.92,textAlign:"center",marginBottom:28}}>
+              {lang==="es"?"CUÁNTOS":"HOW MANY"}<br/>
+              <span style={{color:"#BFA98A"}}>{lang==="es"?"DÍAS":"DAYS"}</span>
+            </div>
+            <div style={{display:"flex",gap:10,justifyContent:"center",marginBottom:32}}>
+              {[3,4,5,6].map(n=>(
+                <div key={n} onClick={()=>{setManualDays(n);setManualSelDays([]);setManualRoutine(Array(7).fill(null).map(()=>[]));}}
+                  style={{width:72,height:92,borderRadius:16,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",
+                    border:`1.5px solid ${manualDays===n?"rgba(191,169,138,.6)":"rgba(238,234,227,.08)"}`,
+                    background:manualDays===n?"rgba(191,169,138,.1)":"transparent",
+                    transform:manualDays===n?"scale(1.08)":"scale(1)",
+                    transition:"all .25s cubic-bezier(.34,1.56,.64,1)"}}>
+                  <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:40,letterSpacing:1,color:manualDays===n?"#EEEAE3":"rgba(238,234,227,.3)",lineHeight:1}}>{n}</div>
+                  <div style={{fontFamily:mono,fontSize:7,letterSpacing:1,color:manualDays===n?"#BFA98A":"rgba(238,234,227,.2)",marginTop:4}}>{lang==="es"?"DÍAS":"DAYS"}</div>
+                </div>
               ))}
             </div>
-            <div style={{display:"flex",gap:10,marginTop:28}}>
-              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(2)}>{t.back}</Btn></div>
-              <div style={{flex:2}}><Btn onClick={()=>setStep(21)} disabled={!manualDays}>{t.next}</Btn></div>
+            <div style={{display:"flex",gap:8,width:"100%",maxWidth:390}}>
+              <button onClick={()=>setStep(2)} style={{flex:1,padding:"16px",borderRadius:14,cursor:"pointer",background:"transparent",color:"rgba(238,234,227,.8)",border:"1px solid rgba(238,234,227,.1)",fontFamily:mono,fontSize:11,letterSpacing:1}}>{t.back}</button>
+              <button onClick={()=>setStep(21)} disabled={!manualDays} style={{flex:2,padding:"16px",borderRadius:14,cursor:"pointer",background:"#EEEAE3",color:"#07080a",border:"none",fontFamily:mono,fontSize:11,fontWeight:500,letterSpacing:2,textTransform:"uppercase",opacity:!manualDays?0.28:1,transition:"all .18s",display:"flex",alignItems:"center",justifyContent:"center",gap:9}}>
+                {t.next}<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2.5 6.5h8M6.5 2.5l4 4-4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </button>
             </div>
           </>)}
 
       {step===21&&(<>
-            <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,.55)",letterSpacing:4,marginBottom:16,textTransform:"uppercase"}}>{lang==="es"?"QUÉ DÍAS":"WHICH DAYS"}</div>
-            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:8,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"¿Qué días?":"Which days?"}</div>
-            <div style={{fontSize:12,color:"rgba(255,255,255,.35)",fontFamily:mono,letterSpacing:.5,marginBottom:20}}>{lang==="es"?`Selecciona ${manualDays} días`:`Select ${manualDays} days`}</div>
-            <div style={{display:"flex",flexDirection:"column",borderTop:"1px solid rgba(240,242,245,0.12)"}}>
-              {(lang==="es"?["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"]:["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]).map((d,i)=>{
-                const sel=manualSelDays.includes(i);
-                const letter=(lang==="es"?["L","M","X","J","V","S","D"]:["M","T","W","T","F","S","S"])[i];
+            <div style={{fontFamily:mono,fontSize:9,letterSpacing:4,color:"rgba(238,234,227,.85)",textTransform:"uppercase",marginBottom:14,display:"flex",alignItems:"center",gap:10}}>
+              <span style={{width:18,height:1,background:"rgba(238,234,227,.1)",display:"block"}}/>
+              {lang==="es"?"HORARIO":"SCHEDULE"}
+              <span style={{width:18,height:1,background:"rgba(238,234,227,.1)",display:"block"}}/>
+            </div>
+            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:60,letterSpacing:2,lineHeight:.92,textAlign:"center",marginBottom:6}}>
+              {lang==="es"?"QUÉ":"WHICH"}<br/>
+              <span style={{color:"#BFA98A"}}>{lang==="es"?"DÍAS":"DAYS"}</span>
+            </div>
+            <div style={{fontSize:11,color:"rgba(238,234,227,.55)",textAlign:"center",marginBottom:28,fontFamily:mono}}>
+              {manualDays}x/{lang==="es"?"semana":"week"} · {lang==="es"?"PERSONALIZADA":"CUSTOM"}
+            </div>
+            <div style={{display:"flex",gap:5,marginBottom:36}}>
+              {Array.from({length:manualDays}).map((_,i)=>(<div key={i} style={{width:5,height:5,borderRadius:"50%",background:manualSelDays.length>i?"#BFA98A":"rgba(238,234,227,.12)",transform:manualSelDays.length>i?"scale(1.3)":"scale(1)",transition:"all .3s cubic-bezier(.34,1.56,.64,1)"}}/>))}
+            </div>
+            <div style={{display:"flex",gap:7,width:"100%",maxWidth:390,marginBottom:20}}>
+              {(lang==="es"?["L","M","X","J","V","S","D"]:["M","T","W","T","F","S","S"]).map((letter,i)=>{
+                const full=lang==="es"?["LUN","MAR","MIÉ","JUE","VIE","SÁB","DOM"]:["MON","TUE","WED","THU","FRI","SAT","SUN"];
+                const sel=manualSelDays.includes(i),dim=!sel&&manualSelDays.length>=manualDays;
                 return(
-                  <button key={i} onClick={()=>{const ns=sel?manualSelDays.filter(x=>x!==i):[...manualSelDays,i].slice(0,manualDays);setManualSelDays([...ns].sort((a,b)=>a-b));}}
-                    style={{display:"flex",alignItems:"center",gap:12,width:"100%",padding:"16px 4px",background:"transparent",border:"none",borderBottom:"1px solid rgba(240,242,245,0.07)",cursor:"pointer",textAlign:"left"}}>
-                    <div style={{width:28,height:28,borderRadius:8,border:`1.5px solid ${sel?"#BFA98A":"rgba(240,242,245,.12)"}`,background:sel?"rgba(191,169,138,.15)":"transparent",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:mono,fontSize:10,fontWeight:700,color:sel?"#BFA98A":"rgba(240,242,245,.3)",flexShrink:0,transition:"all .2s"}}>{letter}</div>
-                    <div style={{fontSize:16,fontWeight:sel?700:400,color:sel?"#EEEAE3":"rgba(240,242,245,.45)",letterSpacing:-.2,transition:"color .2s",flex:1}}>{d}</div>
-                    {sel&&<div style={{width:6,height:6,borderRadius:"50%",background:"#BFA98A",flexShrink:0}}/>}
-                  </button>
+                <div key={i} onClick={()=>{if(sel)setManualSelDays(p=>p.filter(x=>x!==i));else if(!dim)setManualSelDays(p=>[...p,i].sort((a,b)=>a-b));}} style={{flex:1,aspectRatio:"1",borderRadius:"50%",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:dim?"default":"pointer",border:`1.5px solid ${sel?"rgba(191,169,138,.55)":"rgba(238,234,227,.08)"}`,background:sel?"rgba(191,169,138,.09)":"transparent",transform:sel?"scale(1.1)":"scale(1)",opacity:dim?0.2:1,transition:"all .25s cubic-bezier(.34,1.56,.64,1)",position:"relative"}}>
+                  <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:15,letterSpacing:1,color:sel?"#EEEAE3":"rgba(238,234,227,.3)",lineHeight:1}}>{letter}</div>
+                  <div style={{fontFamily:mono,fontSize:6.5,letterSpacing:1,color:sel?"#BFA98A":"rgba(238,234,227,.2)",marginTop:2}}>{full[i]}</div>
+                  {sel&&<div style={{position:"absolute",top:-3,right:-3,width:13,height:13,borderRadius:"50%",background:"#BFA98A",display:"flex",alignItems:"center",justifyContent:"center"}}><svg width="6" height="6" viewBox="0 0 6 6" fill="none"><path d="M1 3l1.5 1.5 2.5-2.5" stroke="#07080a" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg></div>}
+                </div>
                 );
               })}
             </div>
-            <div style={{display:"flex",gap:10,marginTop:28}}>
-              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(20)}>{t.back}</Btn></div>
-              <div style={{flex:2}}><Btn onClick={()=>setStep(22)} disabled={manualSelDays.length!==manualDays}>{t.next}</Btn></div>
+            <div style={{fontSize:12,color:"rgba(238,234,227,.8)",textAlign:"center",minHeight:18,marginBottom:32}}>
+              {manualSelDays.length===manualDays?(lang==="es"?"¡Listo. Tu semana está set.":"All set."):(lang==="es"?`${manualDays-manualSelDays.length} día${manualDays-manualSelDays.length!==1?"s":""} más`:`${manualDays-manualSelDays.length} more day${manualDays-manualSelDays.length!==1?"s":""}`)}
+            </div>
+            <div style={{display:"flex",gap:8,width:"100%",maxWidth:390}}>
+              <button onClick={()=>setStep(20)} style={{flex:1,padding:"16px",borderRadius:14,cursor:"pointer",background:"transparent",color:"rgba(238,234,227,.8)",border:"1px solid rgba(238,234,227,.1)",fontFamily:mono,fontSize:11,letterSpacing:1}}>{t.back}</button>
+              <button onClick={()=>setStep(22)} disabled={manualSelDays.length!==manualDays} style={{flex:2,padding:"16px",borderRadius:14,cursor:"pointer",background:"#EEEAE3",color:"#07080a",border:"none",fontFamily:mono,fontSize:11,fontWeight:500,letterSpacing:2,textTransform:"uppercase",opacity:manualSelDays.length!==manualDays?0.28:1,transition:"all .18s",display:"flex",alignItems:"center",justifyContent:"center",gap:9}}>
+                {t.next}<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2.5 6.5h8M6.5 2.5l4 4-4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </button>
             </div>
           </>)}
+        
         </div>
       )}
 
