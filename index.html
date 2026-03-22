@@ -2763,8 +2763,8 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
         let rawBounds=el?el.getBoundingClientRect():null;
         const pad=step.pad||8;
         const vh=window.innerHeight;
-        // For tall elements (mannequin), clip to top portion so tooltip fits
-        const MAX_H=Math.round(vh*0.55);
+        // For tall elements (mannequin), clip to top portion so tooltip fits below
+        const MAX_H=Math.round(vh*0.42);
         const bounds=rawBounds&&rawBounds.height>MAX_H
           ?{...rawBounds,height:MAX_H,bottom:rawBounds.top+MAX_H}
           :rawBounds;
@@ -3020,13 +3020,28 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
         setScrollVersion(v=>v+1);
       }
     }
-    if(tourStep===10||tourStep===11||tourStep===12){
+    if(tourStep===10){
       window.scrollTo({top:0,behavior:'instant'});
       setScrollVersion(v=>v+1);
     }
-    if(tourStep===13){
-      // Sube de nivel — highlights mannequin canvas, scroll to top
-      window.scrollTo({top:0,behavior:'instant'});
+    if(tourStep===11||tourStep===13){
+      // Scroll mannequin to ~60px from top so tooltip fits BELOW the clipped canvas
+      const el=document.querySelector('[data-tour="mannequin"]');
+      if(el){
+        const r=el.getBoundingClientRect();
+        const target=Math.max(0,Math.round(window.scrollY+r.top-60));
+        window.scrollTo({top:target,behavior:'instant'});
+      }
+      setScrollVersion(v=>v+1);
+    }
+    if(tourStep===12){
+      // Balance score card — scroll to 60px from top
+      const el=document.querySelector('[data-tour="balance-score"]');
+      if(el){
+        const r=el.getBoundingClientRect();
+        const target=Math.max(0,Math.round(window.scrollY+r.top-60));
+        window.scrollTo({top:target,behavior:'instant'});
+      }
       setScrollVersion(v=>v+1);
     }
     if(tourStep===14||tourStep===15){
