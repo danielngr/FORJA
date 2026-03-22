@@ -5405,6 +5405,32 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
   const rafRef     = React.useRef(null);
 
   const [loaded,     setLoaded]     = React.useState(false);
+
+  // Global level from total XP across all muscles
+  const globalLevel=React.useMemo(()=>{
+    const totalXP=Object.values(muscleXP||{}).reduce((s,z)=>s+(z?.xp||0),0);
+    return xpToLevel(totalXP);
+  },[muscleXP]);
+
+  // Aura glow — CSS drop-shadow on canvas follows exact body silhouette
+  const AURA_COLS=['#2a3040','#2d4a6e','#1a6b8a','#1a9e7a','#2da84a','#8ab82d','#e8a020','#e86020','#d42020','#FFD700'];
+  React.useEffect(()=>{
+    const cvs=cvsRef.current;
+    if(!cvs) return;
+    const i=Math.max(0,globalLevel-1); // 0-9
+    const col=AURA_COLS[Math.min(9,i)];
+    if(globalLevel<=1){
+      cvs.style.filter='none';
+    } else {
+      const sz1=3+i*3, sz2=7+i*6, sz3=13+i*9;
+      const h=n=>Math.round(n*255).toString(16).padStart(2,'0');
+      cvs.style.filter=[
+        `drop-shadow(0 0 ${sz1}px ${col}${h(.5+i*.04)})`,
+        `drop-shadow(0 0 ${sz2}px ${col}${h(.22+i*.025)})`,
+        `drop-shadow(0 0 ${sz3}px ${col}${h(.08+i*.01)})`,
+      ].join(' ');
+    }
+  },[globalLevel,loaded]);
   const [progress,   setProgress]   = React.useState(0);
   const [pTxt,       setPTxt]       = React.useState("iniciando...");
   const [activeZone, setActiveZone] = React.useState(null);
