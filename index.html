@@ -2759,13 +2759,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
         if(!step) return null;
 
         const el=document.querySelector(`[data-tour="${step.id}"]`);
-        // Scroll element into view before computing bounds
-        if(el){
-          const r=el.getBoundingClientRect();
-          if(r.bottom>window.innerHeight||r.top<0){
-            el.scrollIntoView({block:"center",behavior:"instant"});
-          }
-        }
+        // Compute bounds — scroll is handled by useEffect before this render
         let rawBounds=el?el.getBoundingClientRect():null;
         const pad=step.pad||8;
         const vh=window.innerHeight;
@@ -3036,37 +3030,29 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
       setScrollVersion(v=>v+1);
     }
     if(tourStep===14){
-      // fix-my-balance — scroll so element is in upper third
+      // fix-my-balance: scroll so element sits 70px below screen top (just below fixed header)
       const el=document.querySelector('[data-tour="fix-my-balance"]');
       if(el){
         const r=el.getBoundingClientRect();
-        const target=window.scrollY+r.top-window.innerHeight*0.3;
-        window.scrollTo({top:Math.max(0,Math.round(target)),behavior:'instant'});
+        // target = current scrollY + element's current top - desired top offset
+        const desiredTop=72; // px from screen top (header=56px + 16px gap)
+        const target=Math.max(0,Math.round(window.scrollY+r.top-desiredTop));
+        window.scrollTo({top:target,behavior:'instant'});
       } else {
-        window.scrollTo({top:600,behavior:'instant'});
+        window.scrollTo({top:500,behavior:'instant'});
       }
       setScrollVersion(v=>v+1);
     }
     if(tourStep===15){
-      // prs-section — scroll to it
+      // prs-section: same — 70px below screen top
       const el=document.querySelector('[data-tour="prs-section"]');
       if(el){
         const r=el.getBoundingClientRect();
-        const target=window.scrollY+r.top-window.innerHeight*0.3;
-        window.scrollTo({top:Math.max(0,Math.round(target)),behavior:'instant'});
+        const desiredTop=72;
+        const target=Math.max(0,Math.round(window.scrollY+r.top-desiredTop));
+        window.scrollTo({top:target,behavior:'instant'});
       } else {
-        window.scrollTo({top:1200,behavior:'instant'});
-      }
-      setScrollVersion(v=>v+1);
-    }
-    if(tourStep===15){
-      const el=document.querySelector('[data-tour="prs-section"]');
-      if(el){
-        const r=el.getBoundingClientRect();
-        const target=window.scrollY+r.top-window.innerHeight*0.3;
-        window.scrollTo({top:Math.max(0,Math.round(target)),behavior:'instant'});
-      } else {
-        window.scrollTo({top:1400,behavior:'instant'});
+        window.scrollTo({top:900,behavior:'instant'});
       }
       setScrollVersion(v=>v+1);
     }
