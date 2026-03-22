@@ -3025,7 +3025,9 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
       setScrollVersion(v=>v+1);
     }
     if(tourStep===11||tourStep===13){
-      const el=document.querySelector('[data-tour="mannequin"]');
+      // Use the canvas element directly — has exact 3D area bounds
+      const cvs=document.getElementById('forja-canvas-3d');
+      const el=cvs||document.querySelector('[data-tour="mannequin"]');
       if(el){
         window.scrollTo({top:Math.max(0,el.offsetTop-115),behavior:'instant'});
         setScrollVersion(v=>v+1);
@@ -4088,7 +4090,11 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
         const step=STEPS[si];
         if(!step) return null;
 
-        const el=document.querySelector(`[data-tour="${step.id}"]`);
+        // For mannequin steps, highlight the canvas directly (exact 3D bounds)
+        const _elRaw = step.id==='mannequin'
+          ? (document.getElementById('forja-canvas-3d') || document.querySelector('[data-tour="mannequin"]'))
+          : document.querySelector(`[data-tour="${step.id}"]`);
+        const el=_elRaw;
         const bounds=el?el.getBoundingClientRect():null;
         const pad=step.pad||8;
         const vh=window.innerHeight;
@@ -5892,7 +5898,7 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
 
     // -- 3D Canvas ------------------------------------------------------
     e("div",{ref:wrapRef,"data-tour":"mannequin",style:{position:"relative",height:480,touchAction:"none",marginBottom:0},onClick:handleClick},
-      e("canvas",{ref:cvsRef,style:{display:"block",width:"100%",height:"100%"}}),
+      e("canvas",{ref:cvsRef,id:"forja-canvas-3d",style:{display:"block",width:"100%",height:"100%"}}),
       e("div",{style:{position:"absolute",inset:0,background:"radial-gradient(ellipse 80% 90% at 50% 50%, transparent 40%, rgba(10,10,13,0.65) 100%)",pointerEvents:"none"}}),
       !loaded&&e("div",{style:{position:"absolute",inset:0,background:C.bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}},
         e("div",{style:{fontSize:14,fontWeight:600,letterSpacing:"0.2em",color:C.acc,marginBottom:12}},"FORJA"),
