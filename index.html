@@ -3026,22 +3026,17 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
         setScrollVersion(v=>v+1);
       }
     }
-    if(tourStep===10||tourStep===11){
+    if(tourStep===10||tourStep===11||tourStep===12){
       window.scrollTo({top:0,behavior:'instant'});
       setScrollVersion(v=>v+1);
     }
-    if(tourStep===12){
-      // balance-score card is just below the mannequin canvas
-      const el=document.querySelector('[data-tour="balance-score"]');
-      if(el){
-        const r=el.getBoundingClientRect();
-        const target=window.scrollY+r.top-window.innerHeight*0.25;
-        window.scrollTo({top:Math.max(0,Math.round(target)),behavior:'instant'});
-      }
+    if(tourStep===13){
+      // Sube de nivel — highlights mannequin canvas, scroll to top
+      window.scrollTo({top:0,behavior:'instant'});
       setScrollVersion(v=>v+1);
     }
-    if(tourStep===13){
-      // fix-my-balance is lower on the page — scroll to it
+    if(tourStep===14){
+      // fix-my-balance — scroll so element is in upper third
       const el=document.querySelector('[data-tour="fix-my-balance"]');
       if(el){
         const r=el.getBoundingClientRect();
@@ -3052,8 +3047,8 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
       }
       setScrollVersion(v=>v+1);
     }
-    if(tourStep===14){
-      // prs-section is further down
+    if(tourStep===15){
+      // prs-section — scroll to it
       const el=document.querySelector('[data-tour="prs-section"]');
       if(el){
         const r=el.getBoundingClientRect();
@@ -3061,6 +3056,17 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
         window.scrollTo({top:Math.max(0,Math.round(target)),behavior:'instant'});
       } else {
         window.scrollTo({top:1200,behavior:'instant'});
+      }
+      setScrollVersion(v=>v+1);
+    }
+    if(tourStep===15){
+      const el=document.querySelector('[data-tour="prs-section"]');
+      if(el){
+        const r=el.getBoundingClientRect();
+        const target=window.scrollY+r.top-window.innerHeight*0.3;
+        window.scrollTo({top:Math.max(0,Math.round(target)),behavior:'instant'});
+      } else {
+        window.scrollTo({top:1400,behavior:'instant'});
       }
       setScrollVersion(v=>v+1);
     }
@@ -3975,7 +3981,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
         const M_="'SF Mono','Fira Code',monospace";
         const S_="'DM Sans',sans-serif";
         const es=lang==="es";
-        const TOTAL=15;
+        const TOTAL=16;
 
         const STEPS=[
           // 0
@@ -4027,7 +4033,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
            xES:"Sube entrenando todos los grupos. Úsalo para no olvidar ninguna zona.",
            xEN:"Raise it by training all muscle groups. Use it so you never skip a zone."},
           // 12
-          {id:"balance-score", pad:10, tabNeeded:"body",
+          {id:"mannequin", pad:4, tabNeeded:"body",
            tES:"Sube de nivel",               tEN:"Level up",
            xES:"Cada set que registras da XP a esos músculos. Sube de nivel y el maniquí brilla — de gris en nivel 1 hasta corona dorada en nivel 10. Si dejas de entrenar más de 7 días, el nivel empieza a bajar. ¡La consistencia es todo!",
            xEN:"Every set you log gives XP to those muscles. Level up and the mannequin glows — from gray at level 1 to gold crown at level 10. Stop training for 7+ days and your level starts dropping. Consistency is everything!"},
@@ -4044,7 +4050,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
         ];
 
         // Map tourStep → STEPS index (steps 4-7 are WS, so Main uses 0-3 and 8-11→mapped to 4-7)
-        const STEP_MAP={0:0,1:1,2:2,3:3,8:4,9:5,10:6,11:7,12:8,13:9,14:10};
+        const STEP_MAP={0:0,1:1,2:2,3:3,8:4,9:5,10:6,11:7,12:8,13:9,14:10,15:11};
         const si=STEP_MAP[tourStep];
 
         // ── ASK MODAL ─────────────────────────────────────────
