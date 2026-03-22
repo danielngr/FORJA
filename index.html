@@ -101,25 +101,33 @@ async function ensureAuth(){
   syncDot('error');return null;
 }
 
-async function signInWithGoogle(){
-  const sb=getSB();if(!sb){alert('Supabase no disponible');return;}
+function signInWithGoogle(){
+  const sb=getSB();
+  if(!sb){console.error('Supabase not available');return;}
   const redirectTo='https://danielngr.github.io/FORJA/';
-  const{error}=await sb.auth.signInWithOAuth({
+  console.log('Starting Google OAuth, redirectTo:', redirectTo);
+  sb.auth.signInWithOAuth({
     provider:'google',
     options:{redirectTo,scopes:'email profile'}
+  }).then(({error})=>{
+    if(error) console.error('Google OAuth error:',error.message);
   });
-  if(error) console.error('Google OAuth error:',error.message);
 }
+window.signInWithGoogle=signInWithGoogle;
 
-async function signOut(){
-  const sb=getSB();if(!sb)return;
-  await sb.auth.signOut();
-  _user=null;
-  ['fv8p','fv8r','fv8l','fv8_mxp','fv8_dl','fv8_sh','fv8_toured'].forEach(k=>{
-    try{localStorage.removeItem(k);}catch(_){}
-  });
-  window.location.reload();
+function signOut(){
+  const sb=getSB();
+  const doSignOut=()=>{
+    _user=null;
+    ['fv8p','fv8r','fv8l','fv8_mxp','fv8_dl','fv8_sh','fv8_toured'].forEach(k=>{
+      try{localStorage.removeItem(k);}catch(_){}
+    });
+    window.location.reload();
+  };
+  if(sb) sb.auth.signOut().then(doSignOut).catch(doSignOut);
+  else doSignOut();
 }
+window.signOut=signOut;
 function isUserAnonymous(){
   return !_user || _user.app_metadata?.provider === 'anonymous' || !_user.email;
 }
@@ -4390,12 +4398,9 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
       </button>}
 
       {step===0&&(
-        <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:"#07080a",position:"relative",overflow:"hidden"}}>
+        <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:"radial-gradient(ellipse 120% 80% at 50% 110%, rgba(191,169,138,.06) 0%, #07080a 60%)",position:"relative",overflow:"hidden"}}>
 
-          {/* Canvas de partículas — zIndex 0, texto encima en zIndex 2 */}
-          <canvas id="forja-logo-canvas" style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none",zIndex:0}}/>
-
-          {/* Contenido centrado — siempre encima del canvas */}
+          {/* Contenido centrado */}
           <div style={{position:"relative",zIndex:2,display:"flex",flexDirection:"column",alignItems:"center",width:"100%",maxWidth:340,padding:"0 28px"}}>
 
             {/* Logo FORJA — texto siempre visible */}
