@@ -3980,20 +3980,20 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
            xES:"Sube entrenando todos los grupos. Úsalo para no olvidar ninguna zona.",
            xEN:"Raise it by training all muscle groups. Use it so you never skip a zone."},
           // 12
-          {id:"mannequin", pad:4, tabNeeded:"body",
+          {id:"level-badge", pad:8, tabNeeded:"body",
            tES:"Sube de nivel",               tEN:"Level up",
-           xES:"Cada set que registras da XP a esos músculos. Al subir de nivel el maniquí brilla — de gris en nivel 1 hasta dorado en nivel 10. ¡Entrena consistente y míralo evolucionar!",
-           xEN:"Every set you log gives XP to those muscles. Level up and the mannequin glows — from gray at level 1 to gold at level 10. Train consistently and watch it evolve!"},
+           xES:"Cada set que registras da XP a esos músculos. Sube de nivel y el maniquí brilla — de gris en nivel 1 hasta corona dorada en nivel 10. Si dejas de entrenar más de 7 días, el nivel empieza a bajar. ¡La consistencia es todo!",
+           xEN:"Every set you log gives XP to those muscles. Level up and the mannequin glows — from gray at level 1 to gold crown at level 10. Stop training for 7+ days and your level starts dropping. Consistency is everything!"},
           // 13
-          {id:"balance-score", pad:10, tabNeeded:"body",
+          {id:"fix-my-balance", pad:10, tabNeeded:"body",
            tES:"Fix My Balance",              tEN:"Fix My Balance",
-           xES:"Esta sección te dice qué músculos no has trabajado en 14 días y cuántos puntos de Balance Score recuperarías entrenándolos. Es tu guía para no descuidar nada.",
-           xEN:"This section tells you which muscles you haven't worked in 14 days and how many Balance Score points you'd recover training them. Your guide to never skip a zone."},
+           xES:"Esta sección te dice qué músculos llevan más de 14 días sin trabajar y cuántos puntos de Balance Score recuperarías si los entrenas. Es tu guía para no descuidar ninguna zona.",
+           xEN:"This section tells you which muscles haven't been worked in 14+ days and how many Balance Score points you'd recover training them. Your guide to never neglect a zone."},
           // 14
-          {id:"vol-weekly", pad:10, tabNeeded:"train",
+          {id:"prs-section", pad:10, tabNeeded:"body",
            tES:"PRs y tonelaje",              tEN:"PRs & tonnage",
-           xES:"FORJA registra tu 1RM estimado en cada ejercicio automáticamente. En la pestaña CUERPO ves tus PRs y la curva de progresión. El tonelaje semanal (series × reps × kg) te dice si estás progresando semana a semana.",
-           xEN:"FORJA automatically tracks your estimated 1RM for every exercise. In the BODY tab you'll see your PRs and progression curve. Weekly tonnage (sets × reps × kg) tells you if you're progressing week over week."},
+           xES:"FORJA registra tu 1RM estimado en cada ejercicio automáticamente. Aquí ves tus récords personales y la curva de progresión por ejercicio. El tonelaje semanal (series × reps × kg) te muestra si estás progresando semana a semana.",
+           xEN:"FORJA automatically tracks your estimated 1RM for every exercise. Here you see your personal records and progression curve. Weekly tonnage (sets × reps × kg) shows if you're improving week over week."},
         ];
 
         // Map tourStep → STEPS index (steps 4-7 are WS, so Main uses 0-3 and 8-11→mapped to 4-7)
@@ -5854,7 +5854,8 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
 
 
     // -- 3D Canvas ------------------------------------------------------
-    e("div",{ref:wrapRef,"data-tour":"mannequin",style:{position:"relative",height:480,touchAction:"none",marginBottom:0},onClick:handleClick},
+    e("div",{"data-tour":"level-badge",style:{position:"absolute",top:0,left:0,right:0,height:0,pointerEvents:"none",zIndex:-1}}),
+      e("div",{ref:wrapRef,"data-tour":"mannequin",style:{position:"relative",height:480,touchAction:"none",marginBottom:0},onClick:handleClick},
       e("canvas",{ref:cvsRef,style:{display:"block",width:"100%",height:"100%"}}),
       e("div",{style:{position:"absolute",inset:0,background:"radial-gradient(ellipse 80% 90% at 50% 50%, transparent 40%, rgba(10,10,13,0.65) 100%)",pointerEvents:"none"}}),
       !loaded&&e("div",{style:{position:"absolute",inset:0,background:C.bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}},
@@ -5965,7 +5966,7 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
         ),
 
         // ── "Fix my balance" section ──
-        toTrain.length>0&&e("div",{style:{
+        toTrain.length>0&&e("div",{"data-tour":"fix-my-balance",style:{
           marginTop:12,padding:"12px 14px",borderRadius:12,
           background:"rgba(255,255,255,0.03)",
           border:"1px solid rgba(255,255,255,0.07)"
@@ -6020,7 +6021,7 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
     })(),
 
     // -- PRs section ----------------------------------------------------
-    prs.length>0&&e("div",{style:{marginTop:16}},
+    prs.length>0&&e("div",{"data-tour":"prs-section",style:{marginTop:16}},
       e("div",{style:{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:3,marginBottom:12,textTransform:"uppercase"}},
         "🏆 "+(es?"MIS PRs":"MY PRs")
       ),
