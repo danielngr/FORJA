@@ -3029,32 +3029,22 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
       window.scrollTo({top:0,behavior:'instant'});
       setScrollVersion(v=>v+1);
     }
-    if(tourStep===14){
-      // fix-my-balance: scroll so element sits 70px below screen top (just below fixed header)
-      const el=document.querySelector('[data-tour="fix-my-balance"]');
-      if(el){
-        const r=el.getBoundingClientRect();
-        // target = current scrollY + element's current top - desired top offset
-        const desiredTop=72; // px from screen top (header=56px + 16px gap)
-        const target=Math.max(0,Math.round(window.scrollY+r.top-desiredTop));
-        window.scrollTo({top:target,behavior:'instant'});
-      } else {
-        window.scrollTo({top:500,behavior:'instant'});
-      }
-      setScrollVersion(v=>v+1);
-    }
-    if(tourStep===15){
-      // prs-section: same — 70px below screen top
-      const el=document.querySelector('[data-tour="prs-section"]');
-      if(el){
-        const r=el.getBoundingClientRect();
-        const desiredTop=72;
-        const target=Math.max(0,Math.round(window.scrollY+r.top-desiredTop));
-        window.scrollTo({top:target,behavior:'instant'});
-      } else {
-        window.scrollTo({top:1400,behavior:'instant'});
-      }
-      setScrollVersion(v=>v+1);
+    if(tourStep===14||tourStep===15){
+      // Defer so React finishes rendering BodyHeatmapTab before we query DOM
+      const _ts=tourStep;
+      setTimeout(()=>{
+        const id=_ts===14?'fix-my-balance':'prs-section';
+        const el=document.querySelector('[data-tour="'+id+'"]');
+        if(el){
+          const r=el.getBoundingClientRect();
+          const target=Math.max(0,Math.round(window.scrollY+r.top-80));
+          window.scrollTo({top:target,behavior:'instant'});
+        } else {
+          // fallback: prs is below fix-my-balance (~350px lower)
+          window.scrollTo({top:_ts===14?700:1100,behavior:'instant'});
+        }
+        setScrollVersion(v=>v+1);
+      },250);
     }
   },[tourStep]);
 
