@@ -6076,31 +6076,50 @@ function App(){
       search.includes('code=');
 
     if(hasOAuthHash&&sb){
-      // Supabase PKCE: calling getSession() triggers the code exchange automatically
-      // Then onAuthStateChange fires SIGNED_IN with the Google session
+      console.log('FORJA: OAuth callback detected, exchanging code...');
+      // PKCE: Supabase needs to exchange ?code= for tokens
+      // Listen for SIGNED_IN first
       const{data:{subscription}}=sb.auth.onAuthStateChange((event,session)=>{
+        console.log('FORJA: Auth event during callback:', event, session?.user?.email || 'no email');
         if(event==='SIGNED_IN'&&session?.user){
           _user=session.user;
           subscription.unsubscribe();
-          // Clean URL AFTER processing
           window.history.replaceState(null,'',window.location.pathname);
           loadAndRoute(true);
+        } else if(event==='SIGNED_OUT'){
+          subscription.unsubscribe();
+          window.history.replaceState(null,'',window.location.pathname);
+          setReady(true);
+          setAuthChecked(true);
         }
       });
-      // Trigger code exchange by calling getSession
+      // Calling getSession() triggers the PKCE code exchange
       sb.auth.getSession().then(({data:{session},error})=>{
-        if(error) console.error('FORJA: getSession error:', error.message);
-        if(session?.user){
+        if(error) console.error('FORJA: code exchange error:', error.message);
+        console.log('FORJA: getSession result:', session?.user?.email || 'no session yet');
+        // If session already resolved (e.g. returning user), route now
+        if(session?.user&&session.user.app_metadata?.provider==='google'){
           _user=session.user;
+          subscription.unsubscribe();
           window.history.replaceState(null,'',window.location.pathname);
           loadAndRoute(true);
-        } else {
-          // Exchange not done yet — wait for onAuthStateChange
-          console.log('FORJA: Waiting for auth state change...');
         }
+        // Otherwise wait for SIGNED_IN event above
+      }).catch(e=>{
+        console.error('FORJA: getSession catch:', e.message);
+        window.history.replaceState(null,'',window.location.pathname);
+        setReady(true);
+        setAuthChecked(true);
       });
-      // Fallback after 5s
-      setTimeout(()=>{if(!authChecked){window.history.replaceState(null,'',window.location.pathname);loadAndRoute(true);}},5000);
+      // Fallback: if nothing fires in 6s, show login screen
+      setTimeout(()=>{
+        if(!authChecked){
+          console.log('FORJA: OAuth timeout, showing login screen');
+          window.history.replaceState(null,'',window.location.pathname);
+          setReady(true);
+          setAuthChecked(true);
+        }
+      },6000);
     } else {
       // Normal startup — check existing session first, then localStorage
       if(sb){
