@@ -2732,7 +2732,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
         const M_="'SF Mono','Fira Code',monospace";
         const S_="'DM Sans',sans-serif";
         const es=lang==="es";
-        const TOTAL=12;
+        const TOTAL=15;
         const WS_START=4;
         const wsIdx=wsTourStep-WS_START;
         if(wsIdx<0||wsIdx>3) return null;
@@ -2919,7 +2919,53 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   const[confirmR,setConfirmR]=useState(false);
   const[weekOff,setWeekOff]=useState(0);
   const[tourStep,setTourStep]=useState(null);    // null=ask, 0-N=active, -1=done
-  const[muscleXP,setMuscleXP]=useState(()=>FStore.loadMuscleXP());
+  const[muscleXP,setMuscleXP]=useState(()=>{
+    const mxp=FStore.loadMuscleXP();
+    // XP Decay: after GRACE days without training, lose XP per day
+    // Runs on every app open — calculates days since LAST OPEN
+    // so even if you skip 10 days, all accumulated decay applies at once
+    const today=new Date().toISOString().slice(0,10);
+    const lastOpen=localStorage.getItem('fv8_lastOpen')||today;
+    const daysSinceOpen=Math.floor((new Date(today)-new Date(lastOpen))/86400000);
+    // Update last open date
+    try{localStorage.setItem('fv8_lastOpen',today);}catch(_){}
+    if(daysSinceOpen<1) return mxp; // opened today already, skip
+    const logs=JSON.parse(localStorage.getItem('fv8l')||'{}');
+    const DECAY_GRACE=7;    // days without training before decay starts
+    const DECAY_RATE=0.012; // 1.2% per day (gentle but meaningful)
+    const MIN_XP=100;       // never drop below 100 XP (level 1 floor)
+    let changed=false;
+    Object.keys(mxp).forEach(zk=>{
+      const zd=mxp[zk];if(!zd||!zd.xp||zd.xp<=MIN_XP) return;
+      // Find most recent training date for THIS zone from logs
+      // Use zone key to find relevant exercises
+      let lastTrainDate=null;
+      Object.entries(logs).forEach(([id,entries])=>{
+        (entries||[]).forEach(e=>{
+          if(!e.d) return;
+          if(!lastTrainDate||e.d>lastTrainDate) lastTrainDate=e.d;
+        });
+      });
+      if(!lastTrainDate) return;
+      const daysSinceTrain=Math.floor((new Date(today)-new Date(lastTrainDate))/86400000);
+      if(daysSinceTrain<=DECAY_GRACE) return; // still in grace period
+      // Apply decay for each day we missed (capped at daysSinceOpen)
+      // This means: if you were away 10 days, you get 10 days of decay now
+      const decayDaysToApply=Math.min(daysSinceOpen, daysSinceTrain-DECAY_GRACE);
+      if(decayDaysToApply<1) return;
+      // Compound decay: XP * (1 - rate)^days
+      const factor=Math.pow(1-DECAY_RATE, decayDaysToApply);
+      const newXP=Math.max(MIN_XP, Math.round(zd.xp*factor));
+      if(newXP<zd.xp){
+        mxp[zk]={...zd,xp:newXP,level:xpToLevel(newXP)};
+        changed=true;
+      }
+    });
+    if(changed){
+      try{localStorage.setItem('fv8_mxp',JSON.stringify(mxp));}catch(_){}
+    }
+    return mxp;
+  });
   const[acwr,setAcwr]=useState({acute:0,chronic:0,ratio:0,loads:{}});
   const refreshAcwr=useCallback(()=>{const l=FStore.loadACWRLocal();setAcwr(computeACWR(l));},[setAcwr]);
   const[xpLevelUps,setXpLevelUps]=useState([]); // zones that leveled up since last visit
@@ -3933,6 +3979,21 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
            tES:"Balance Score",               tEN:"Balance Score",
            xES:"Sube entrenando todos los grupos. Úsalo para no olvidar ninguna zona.",
            xEN:"Raise it by training all muscle groups. Use it so you never skip a zone."},
+          // 12
+          {id:"mannequin", pad:4, tabNeeded:"body",
+           tES:"Sube de nivel",               tEN:"Level up",
+           xES:"Cada set que registras da XP a esos músculos. Al subir de nivel el maniquí brilla — de gris en nivel 1 hasta dorado en nivel 10. ¡Entrena consistente y míralo evolucionar!",
+           xEN:"Every set you log gives XP to those muscles. Level up and the mannequin glows — from gray at level 1 to gold at level 10. Train consistently and watch it evolve!"},
+          // 13
+          {id:"balance-score", pad:10, tabNeeded:"body",
+           tES:"Fix My Balance",              tEN:"Fix My Balance",
+           xES:"Esta sección te dice qué músculos no has trabajado en 14 días y cuántos puntos de Balance Score recuperarías entrenándolos. Es tu guía para no descuidar nada.",
+           xEN:"This section tells you which muscles you haven't worked in 14 days and how many Balance Score points you'd recover training them. Your guide to never skip a zone."},
+          // 14
+          {id:"vol-weekly", pad:10, tabNeeded:"train",
+           tES:"PRs y tonelaje",              tEN:"PRs & tonnage",
+           xES:"FORJA registra tu 1RM estimado en cada ejercicio automáticamente. En la pestaña CUERPO ves tus PRs y la curva de progresión. El tonelaje semanal (series × reps × kg) te dice si estás progresando semana a semana.",
+           xEN:"FORJA automatically tracks your estimated 1RM for every exercise. In the BODY tab you'll see your PRs and progression curve. Weekly tonnage (sets × reps × kg) tells you if you're progressing week over week."},
         ];
 
         // Map tourStep → STEPS index (steps 4-7 are WS, so Main uses 0-3 and 8-11→mapped to 4-7)
