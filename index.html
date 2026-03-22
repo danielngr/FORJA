@@ -2759,9 +2759,21 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
         if(!step) return null;
 
         const el=document.querySelector(`[data-tour="${step.id}"]`);
-        const bounds=el?el.getBoundingClientRect():null;
+        // Scroll element into view before computing bounds
+        if(el){
+          const r=el.getBoundingClientRect();
+          if(r.bottom>window.innerHeight||r.top<0){
+            el.scrollIntoView({block:"center",behavior:"instant"});
+          }
+        }
+        let rawBounds=el?el.getBoundingClientRect():null;
         const pad=step.pad||8;
         const vh=window.innerHeight;
+        // For tall elements (mannequin), clip to top portion so tooltip fits
+        const MAX_H=Math.round(vh*0.55);
+        const bounds=rawBounds&&rawBounds.height>MAX_H
+          ?{...rawBounds,height:MAX_H,bottom:rawBounds.top+MAX_H}
+          :rawBounds;
         const tooltipBelow=bounds&&(bounds.bottom+pad+180)<vh;
 
         const endTour=()=>{ try{localStorage.setItem('fv8_toured','1');}catch{} setTourStep(-1); };
@@ -3968,12 +3980,13 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
            tES:"Pestaña Cuerpo",              tEN:"Body tab",
            xES:"Aquí vive tu maniquí 3D. Toca CONTINUAR para ir ahí.",
            xEN:"Your 3D mannequin lives here. Tap CONTINUE to go there.",
-           onEnter:()=>{setTabR("body");}},
+           onEnter:()=>{setTabR("body");setTimeout(()=>{window.scrollTo({top:0,behavior:"instant"});},80);}},
           // 10
           {id:"mannequin",   pad:4,  tabNeeded:"body",
            tES:"Tu maniquí 3D",               tEN:"Your 3D mannequin",
            xES:"Los músculos se colorean por estado: rojo=activo, naranja=recuperando, verde=listo. Gíralo.",
-           xEN:"Muscles colored by state: red=active, orange=recovering, green=ready. Drag to rotate."},
+           xEN:"Muscles colored by state: red=active, orange=recovering, green=ready. Drag to rotate.",
+           onEnter:()=>{window.scrollTo({top:0,behavior:"instant"});}},
           // 11
           {id:"balance-score", pad:10, tabNeeded:"body",
            tES:"Balance Score",               tEN:"Balance Score",
@@ -3981,16 +3994,19 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
            xEN:"Raise it by training all muscle groups. Use it so you never skip a zone."},
           // 12
           {id:"mannequin", pad:4, tabNeeded:"body",
+           onEnter:()=>{window.scrollTo({top:0,behavior:"instant"});},
            tES:"Sube de nivel",               tEN:"Level up",
            xES:"Cada set que registras da XP a esos músculos. Sube de nivel y el maniquí brilla — de gris en nivel 1 hasta corona dorada en nivel 10. Si dejas de entrenar más de 7 días, el nivel empieza a bajar. ¡La consistencia es todo!",
            xEN:"Every set you log gives XP to those muscles. Level up and the mannequin glows — from gray at level 1 to gold crown at level 10. Stop training for 7+ days and your level starts dropping. Consistency is everything!"},
           // 13
           {id:"fix-my-balance", pad:10, tabNeeded:"body",
+           onEnter:()=>{setTimeout(()=>{const el=document.querySelector('[data-tour="fix-my-balance"]');if(el)el.scrollIntoView({block:"center",behavior:"instant"});},120);},
            tES:"Fix My Balance",              tEN:"Fix My Balance",
            xES:"Esta sección te dice qué músculos llevan más de 14 días sin trabajar y cuántos puntos de Balance Score recuperarías si los entrenas. Es tu guía para no descuidar ninguna zona.",
            xEN:"This section tells you which muscles haven't been worked in 14+ days and how many Balance Score points you'd recover training them. Your guide to never neglect a zone."},
           // 14
           {id:"prs-section", pad:10, tabNeeded:"body",
+           onEnter:()=>{setTimeout(()=>{const el=document.querySelector('[data-tour="prs-section"]');if(el)el.scrollIntoView({block:"center",behavior:"instant"});},120);},
            tES:"PRs y tonelaje",              tEN:"PRs & tonnage",
            xES:"FORJA registra tu 1RM estimado en cada ejercicio automáticamente. Aquí ves tus récords personales y la curva de progresión por ejercicio. El tonelaje semanal (series × reps × kg) te muestra si estás progresando semana a semana.",
            xEN:"FORJA automatically tracks your estimated 1RM for every exercise. Here you see your personal records and progression curve. Weekly tonnage (sets × reps × kg) shows if you're improving week over week."},
@@ -4077,6 +4093,9 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
           // Exit workout → train tab → scroll to vol-weekly → then show step
           if(ns===8){ setInWorkout(false); setTabR("train"); }
           if(ns===10){setTabR('body');}
+          // Fire onEnter if step defines it
+          const nextStepDef=STEPS[STEP_MAP[ns]];
+          if(nextStepDef?.onEnter) nextStepDef.onEnter();
           // Just advance
           setTourStep(ns);
         };
