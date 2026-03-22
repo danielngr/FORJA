@@ -70,7 +70,7 @@ function getSB(){
   if(!window.supabase||FORJA_SUPABASE_URL.includes('YOUR_PROJECT')){syncDot('offline');return null;}
   try{
     _sb=window.supabase.createClient(FORJA_SUPABASE_URL,FORJA_SUPABASE_KEY,{
-      auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:'implicit'}
+      auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:'implicit',storage:window.localStorage}
     });
     _sb.auth.onAuthStateChange((ev,sess)=>{
       _user=sess?.user??null;_authReady=true;
@@ -145,7 +145,10 @@ function doGoogleSignIn(){
     console.log('FORJA: Starting Google OAuth...');
     sb.auth.signInWithOAuth({
       provider:'google',
-      options:{ redirectTo:'https://danielngr.github.io/FORJA/' }
+      options:{
+        redirectTo:'https://danielngr.github.io/FORJA/',
+        queryParams:{access_type:'online'}
+      }
     }).then(function(result){
       if(result.error) console.error('FORJA: OAuth error:', result.error.message);
       else console.log('FORJA: OAuth redirecting to Google...');
@@ -6050,15 +6053,13 @@ function App(){
       FStore.loadProfile().then(data=>{
         if(data&&data.profile){
           setProfile(data.profile);
-          // Preserve lang from localStorage, fallback to profile lang
           setLangS(l=>l||data.profile.lang||'es');
           if(data.routine)setRoutine(data.routine);
           setStep(99);
         } else if(skipOnboard){
-          // Google user logged in but no profile yet → go to onboarding
-          // Keep lang from localStorage or default
+          // Google user, no profile yet → send to step 1 (skip login, start onboarding)
           setLangS(l=>l||'es');
-          setStep(0);
+          setStep(1); // Skip login screen, go straight to onboarding
         }
         setReady(true);
         setAuthChecked(true);
