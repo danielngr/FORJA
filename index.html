@@ -3024,10 +3024,19 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
       window.scrollTo({top:0,behavior:'instant'});
       setScrollVersion(v=>v+1);
     }
-    if(tourStep===11||tourStep===12||tourStep===13){
-      // Center mannequin/balance-score — exact same pattern as ts8/ts9
-      const ID_MAP={11:'mannequin',12:'balance-score',13:'mannequin'};
-      const el=document.querySelector('[data-tour="'+ID_MAP[tourStep]+'"]');
+    if(tourStep===11||tourStep===13){
+      // Mannequin: scroll so top of canvas is just below sticky header (~110px)
+      // Use offsetTop (absolute doc position) to avoid scroll dependency
+      const el=document.querySelector('[data-tour="mannequin"]');
+      if(el){
+        const stickyH=110;
+        window.scrollTo({top:Math.max(0,el.offsetTop-stickyH),behavior:'instant'});
+        setScrollVersion(v=>v+1);
+      }
+    }
+    if(tourStep===12){
+      // Balance score: center it — same as ts8/ts9
+      const el=document.querySelector('[data-tour="balance-score"]');
       if(el){
         const r=el.getBoundingClientRect();
         const target=window.scrollY+r.top+r.height/2-window.innerHeight/2;
@@ -3036,12 +3045,11 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
       }
     }
     if(tourStep===14||tourStep===15){
-      const ID_MAP={14:'fix-my-balance',15:'prs-section'};
-      const el=document.querySelector('[data-tour="'+ID_MAP[tourStep]+'"]');
+      const id=tourStep===14?'fix-my-balance':'prs-section';
+      const el=document.querySelector('[data-tour="'+id+'"]');
       if(el){
-        const r=el.getBoundingClientRect();
-        const target=window.scrollY+r.top+r.height/2-window.innerHeight/2;
-        window.scrollTo({top:Math.max(0,Math.round(target)),behavior:'instant'});
+        const stickyH=110;
+        window.scrollTo({top:Math.max(0,el.offsetTop-stickyH),behavior:'instant'});
         setScrollVersion(v=>v+1);
       }
     }
@@ -6059,7 +6067,7 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
     })(),
 
     // -- PRs section ----------------------------------------------------
-    prs.length>0&&e("div",{"data-tour":"prs-section",style:{marginTop:16}},
+    e("div",{"data-tour":"prs-section",style:{marginTop:16}},
       e("div",{style:{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:3,marginBottom:12,textTransform:"uppercase"}},
         "🏆 "+(es?"MIS PRs":"MY PRs")
       ),
