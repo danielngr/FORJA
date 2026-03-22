@@ -3025,21 +3025,19 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
       setScrollVersion(v=>v+1);
     }
     if(tourStep===11||tourStep===13){
-      // Use the canvas element directly — has exact 3D area bounds
       const cvs=document.getElementById('forja-canvas-3d');
       const el=cvs||document.querySelector('[data-tour="mannequin"]');
       if(el){
-        window.scrollTo({top:Math.max(0,el.offsetTop-115),behavior:'instant'});
+        const absTop=el.getBoundingClientRect().top+window.scrollY;
+        window.scrollTo({top:Math.max(0,Math.round(absTop-115)),behavior:'instant'});
         setScrollVersion(v=>v+1);
       }
     }
     if(tourStep===12){
-      // Balance score: center it — same as ts8/ts9
       const el=document.querySelector('[data-tour="balance-score"]');
       if(el){
-        const r=el.getBoundingClientRect();
-        const target=window.scrollY+r.top+r.height/2-window.innerHeight/2;
-        window.scrollTo({top:Math.max(0,Math.round(target)),behavior:'instant'});
+        const absTop=el.getBoundingClientRect().top+window.scrollY;
+        window.scrollTo({top:Math.max(0,Math.round(absTop-115)),behavior:'instant'});
         setScrollVersion(v=>v+1);
       }
     }
@@ -3047,7 +3045,8 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
       const id=tourStep===14?'fix-my-balance':'prs-section';
       const el=document.querySelector('[data-tour="'+id+'"]');
       if(el){
-        window.scrollTo({top:Math.max(0,el.offsetTop-115),behavior:'instant'});
+        const absTop=el.getBoundingClientRect().top+window.scrollY;
+        window.scrollTo({top:Math.max(0,Math.round(absTop-115)),behavior:'instant'});
         setScrollVersion(v=>v+1);
       }
     }
