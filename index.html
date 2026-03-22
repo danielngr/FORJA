@@ -3024,15 +3024,26 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
       window.scrollTo({top:0,behavior:'instant'});
       setScrollVersion(v=>v+1);
     }
-    if(tourStep===11||tourStep===12||tourStep===13||tourStep===14||tourStep===15){
-      const ID_MAP={11:'mannequin',12:'balance-score',13:'mannequin',14:'fix-my-balance',15:'prs-section'};
+    if(tourStep===11||tourStep===12||tourStep===13){
+      // Center mannequin/balance-score — exact same pattern as ts8/ts9
+      const ID_MAP={11:'mannequin',12:'balance-score',13:'mannequin'};
       const el=document.querySelector('[data-tour="'+ID_MAP[tourStep]+'"]');
       if(el){
         const r=el.getBoundingClientRect();
         const target=window.scrollY+r.top+r.height/2-window.innerHeight/2;
         window.scrollTo({top:Math.max(0,Math.round(target)),behavior:'instant'});
+        setScrollVersion(v=>v+1);
       }
-      setScrollVersion(v=>v+1);
+    }
+    if(tourStep===14||tourStep===15){
+      const ID_MAP={14:'fix-my-balance',15:'prs-section'};
+      const el=document.querySelector('[data-tour="'+ID_MAP[tourStep]+'"]');
+      if(el){
+        const r=el.getBoundingClientRect();
+        const target=window.scrollY+r.top+r.height/2-window.innerHeight/2;
+        window.scrollTo({top:Math.max(0,Math.round(target)),behavior:'instant'});
+        setScrollVersion(v=>v+1);
+      }
     }
   },[tourStep]);
 
@@ -4073,8 +4084,6 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
         const step=STEPS[si];
         if(!step) return null;
 
-        // If step needs a specific tab, ensure it's active before querying DOM
-        if(step.tabNeeded&&step.tabNeeded!==tab) return null;
         const el=document.querySelector(`[data-tour="${step.id}"]`);
         const bounds=el?el.getBoundingClientRect():null;
         const pad=step.pad||8;
