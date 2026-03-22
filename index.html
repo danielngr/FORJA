@@ -3025,21 +3025,22 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
       setScrollVersion(v=>v+1);
     }
     if(tourStep===11||tourStep===13){
-      // Scroll mannequin to ~60px from top so tooltip fits BELOW the clipped canvas
+      // Mannequin: scroll so canvas top is just below the sticky cal-nav (~110px)
       const el=document.querySelector('[data-tour="mannequin"]');
       if(el){
         const r=el.getBoundingClientRect();
-        const target=Math.max(0,Math.round(window.scrollY+r.top-60));
+        // We want canvas.top to be ~8px from screen top (overlay will clip it)
+        // The sticky cal-nav is ~110px tall, so scroll past it
+        const target=Math.max(0,Math.round(window.scrollY+r.top-8));
         window.scrollTo({top:target,behavior:'instant'});
       }
       setScrollVersion(v=>v+1);
     }
     if(tourStep===12){
-      // Balance score card — scroll to 60px from top
       const el=document.querySelector('[data-tour="balance-score"]');
       if(el){
         const r=el.getBoundingClientRect();
-        const target=Math.max(0,Math.round(window.scrollY+r.top-60));
+        const target=Math.max(0,Math.round(window.scrollY+r.top-8));
         window.scrollTo({top:target,behavior:'instant'});
       }
       setScrollVersion(v=>v+1);
@@ -4120,7 +4121,13 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
           if(ns===4){ if(day&&day.ex&&day.ex.length){ setInWorkout(true); setTourStep(ns); } else { setTabR('train'); setTourStep(8); } return; }
           // Exit workout → train tab → scroll to vol-weekly → then show step
           if(ns===8){ setInWorkout(false); setTabR("train"); }
-          if(ns===10){setTabR('body');}
+          if(ns===10){setTabR('body'); setTourStep(ns); return;}
+          if(ns>=11&&ns<=15){
+            // Body tab steps: switch tab first, wait for render, then advance
+            setTabR('body');
+            setTimeout(()=>{ setTourStep(ns); }, 120);
+            return;
+          }
           // Fire onEnter if step defines it
           const nextStepDef=STEPS[STEP_MAP[ns]];
           if(nextStepDef?.onEnter) nextStepDef.onEnter();
