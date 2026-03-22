@@ -3052,7 +3052,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
         const target=Math.max(0,Math.round(window.scrollY+r.top-desiredTop));
         window.scrollTo({top:target,behavior:'instant'});
       } else {
-        window.scrollTo({top:900,behavior:'instant'});
+        window.scrollTo({top:1400,behavior:'instant'});
       }
       setScrollVersion(v=>v+1);
     }
@@ -6073,6 +6073,10 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
         "🏆 "+(es?"MIS PRs":"MY PRs")
       ),
 
+      // Empty state when no PRs yet
+      prs.length===0&&e("div",{style:{padding:"12px 0",fontSize:11,color:C.tx3,fontFamily:mono,letterSpacing:1}},
+        es?"Registra sets para ver tus récords aquí":"Log sets to see your records here"
+      ),
       // PR selector pills
       prs.length>1&&e("div",{style:{display:"flex",gap:6,overflowX:"auto",paddingBottom:8,marginBottom:10}},
         prs.slice(0,8).map((pr,i)=>
