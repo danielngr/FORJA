@@ -4073,6 +4073,8 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
         const step=STEPS[si];
         if(!step) return null;
 
+        // If step needs a specific tab, ensure it's active before querying DOM
+        if(step.tabNeeded&&step.tabNeeded!==tab) return null;
         const el=document.querySelector(`[data-tour="${step.id}"]`);
         const bounds=el?el.getBoundingClientRect():null;
         const pad=step.pad||8;
