@@ -2764,7 +2764,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
         const pad=step.pad||8;
         const vh=window.innerHeight;
         // For tall elements (mannequin), clip to top portion so tooltip fits below
-        const MAX_H=Math.round(vh*0.42);
+        const MAX_H=Math.round(vh*0.35);
         const bounds=rawBounds&&rawBounds.height>MAX_H
           ?{...rawBounds,height:MAX_H,bottom:rawBounds.top+MAX_H}
           :rawBounds;
@@ -3025,12 +3025,9 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
       setScrollVersion(v=>v+1);
     }
     if(tourStep===11||tourStep===13){
-      // Mannequin: scroll so top of canvas is just below sticky header (~110px)
-      // Use offsetTop (absolute doc position) to avoid scroll dependency
       const el=document.querySelector('[data-tour="mannequin"]');
       if(el){
-        const stickyH=110;
-        window.scrollTo({top:Math.max(0,el.offsetTop-stickyH),behavior:'instant'});
+        window.scrollTo({top:Math.max(0,el.offsetTop-115),behavior:'instant'});
         setScrollVersion(v=>v+1);
       }
     }
@@ -3048,8 +3045,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
       const id=tourStep===14?'fix-my-balance':'prs-section';
       const el=document.querySelector('[data-tour="'+id+'"]');
       if(el){
-        const stickyH=110;
-        window.scrollTo({top:Math.max(0,el.offsetTop-stickyH),behavior:'instant'});
+        window.scrollTo({top:Math.max(0,el.offsetTop-115),behavior:'instant'});
         setScrollVersion(v=>v+1);
       }
     }
