@@ -3980,7 +3980,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
            xES:"Sube entrenando todos los grupos. Úsalo para no olvidar ninguna zona.",
            xEN:"Raise it by training all muscle groups. Use it so you never skip a zone."},
           // 12
-          {id:"level-badge", pad:8, tabNeeded:"body",
+          {id:"mannequin", pad:4, tabNeeded:"body",
            tES:"Sube de nivel",               tEN:"Level up",
            xES:"Cada set que registras da XP a esos músculos. Sube de nivel y el maniquí brilla — de gris en nivel 1 hasta corona dorada en nivel 10. Si dejas de entrenar más de 7 días, el nivel empieza a bajar. ¡La consistencia es todo!",
            xEN:"Every set you log gives XP to those muscles. Level up and the mannequin glows — from gray at level 1 to gold crown at level 10. Stop training for 7+ days and your level starts dropping. Consistency is everything!"},
@@ -5854,8 +5854,7 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
 
 
     // -- 3D Canvas ------------------------------------------------------
-    e("div",{"data-tour":"level-badge",style:{position:"absolute",top:0,left:0,right:0,height:0,pointerEvents:"none",zIndex:-1}}),
-      e("div",{ref:wrapRef,"data-tour":"mannequin",style:{position:"relative",height:480,touchAction:"none",marginBottom:0},onClick:handleClick},
+    e("div",{ref:wrapRef,"data-tour":"mannequin",style:{position:"relative",height:480,touchAction:"none",marginBottom:0},onClick:handleClick},
       e("canvas",{ref:cvsRef,style:{display:"block",width:"100%",height:"100%"}}),
       e("div",{style:{position:"absolute",inset:0,background:"radial-gradient(ellipse 80% 90% at 50% 50%, transparent 40%, rgba(10,10,13,0.65) 100%)",pointerEvents:"none"}}),
       !loaded&&e("div",{style:{position:"absolute",inset:0,background:C.bg,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}},
@@ -5966,7 +5965,7 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
         ),
 
         // ── "Fix my balance" section ──
-        toTrain.length>0&&e("div",{"data-tour":"fix-my-balance",style:{
+        e("div",{"data-tour":"fix-my-balance",style:{
           marginTop:12,padding:"12px 14px",borderRadius:12,
           background:"rgba(255,255,255,0.03)",
           border:"1px solid rgba(255,255,255,0.07)"
@@ -5981,8 +5980,9 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
               fontSize:7,fontFamily:mono_,color:scoreColor,letterSpacing:1,
               padding:"2px 8px",borderRadius:10,
               background:`rgba(${balanceScore>=75?"95,170,136":balanceScore>=55?"192,168,112":"217,96,96"},0.12)`,
-            }},`+${Math.round(toTrain.length*(100/ZONES_MAIN.length)*1.2)} pts`)
+            }},toTrain.length>0?`+${Math.round(toTrain.length*(100/ZONES_MAIN.length)*1.2)} pts`:(es?"✓ Todo OK":"✓ All good"))
           ),
+          ...(toTrain.length>0 ? [
           e("div",{style:{fontSize:9,color:"rgba(255,255,255,.75)",fontFamily:mono_,marginBottom:10,lineHeight:1.5}},
             neverSorted.length>=PRIORITY.length
               ?(es?"Empieza por los músculos con más impacto en tu físico:":"Start with the highest-impact muscles:")
@@ -6015,6 +6015,11 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
               )
             })
           )
+        ] : [
+          e("div",{style:{fontSize:11,color:"rgba(95,210,136,.7)",fontFamily:mono_,textAlign:"center",padding:"8px 0"}},
+            es?"✓ Todos tus músculos están al día":"✓ All muscles are on track"
+          )
+        ])
         )
 
       );
