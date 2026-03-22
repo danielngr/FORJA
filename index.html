@@ -3024,43 +3024,15 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
       window.scrollTo({top:0,behavior:'instant'});
       setScrollVersion(v=>v+1);
     }
-    if(tourStep===11||tourStep===13){
-      // Mannequin: scroll so canvas top is just below the sticky cal-nav (~110px)
-      const el=document.querySelector('[data-tour="mannequin"]');
+    if(tourStep===11||tourStep===12||tourStep===13||tourStep===14||tourStep===15){
+      const ID_MAP={11:'mannequin',12:'balance-score',13:'mannequin',14:'fix-my-balance',15:'prs-section'};
+      const el=document.querySelector('[data-tour="'+ID_MAP[tourStep]+'"]');
       if(el){
         const r=el.getBoundingClientRect();
-        // We want canvas.top to be ~8px from screen top (overlay will clip it)
-        // The sticky cal-nav is ~110px tall, so scroll past it
-        const target=Math.max(0,Math.round(window.scrollY+r.top-8));
-        window.scrollTo({top:target,behavior:'instant'});
+        const target=window.scrollY+r.top+r.height/2-window.innerHeight/2;
+        window.scrollTo({top:Math.max(0,Math.round(target)),behavior:'instant'});
       }
       setScrollVersion(v=>v+1);
-    }
-    if(tourStep===12){
-      const el=document.querySelector('[data-tour="balance-score"]');
-      if(el){
-        const r=el.getBoundingClientRect();
-        const target=Math.max(0,Math.round(window.scrollY+r.top-8));
-        window.scrollTo({top:target,behavior:'instant'});
-      }
-      setScrollVersion(v=>v+1);
-    }
-    if(tourStep===14||tourStep===15){
-      // Defer so React finishes rendering BodyHeatmapTab before we query DOM
-      const _ts=tourStep;
-      setTimeout(()=>{
-        const id=_ts===14?'fix-my-balance':'prs-section';
-        const el=document.querySelector('[data-tour="'+id+'"]');
-        if(el){
-          const r=el.getBoundingClientRect();
-          const target=Math.max(0,Math.round(window.scrollY+r.top-80));
-          window.scrollTo({top:target,behavior:'instant'});
-        } else {
-          // fallback: prs is below fix-my-balance (~350px lower)
-          window.scrollTo({top:_ts===14?700:1100,behavior:'instant'});
-        }
-        setScrollVersion(v=>v+1);
-      },250);
     }
   },[tourStep]);
 
@@ -4121,12 +4093,8 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
           if(ns===4){ if(day&&day.ex&&day.ex.length){ setInWorkout(true); setTourStep(ns); } else { setTabR('train'); setTourStep(8); } return; }
           // Exit workout → train tab → scroll to vol-weekly → then show step
           if(ns===8){ setInWorkout(false); setTabR("train"); }
-          if(ns===10){setTabR('body'); setTourStep(ns); return;}
-          if(ns>=11&&ns<=15){
-            // Body tab steps: switch tab first, wait for render, then advance
-            setTabR('body');
-            setTimeout(()=>{ setTourStep(ns); }, 120);
-            return;
+          if(ns>=10&&ns<=15){
+            setTabR('body');  // switch tab (same tick as setTourStep, like ts8)
           }
           // Fire onEnter if step defines it
           const nextStepDef=STEPS[STEP_MAP[ns]];
