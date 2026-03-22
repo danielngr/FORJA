@@ -69,19 +69,36 @@ function getSB(){
   if(_sb)return _sb;
   if(!window.supabase||FORJA_SUPABASE_URL.includes('YOUR_PROJECT')){syncDot('offline');return null;}
   try{
-    // Custom storage that syncs to BOTH localStorage AND sessionStorage
-    // This fixes Safari ITP blocking localStorage on cross-site redirects
+    // Storage adapter that uses cookies for PKCE code_verifier
+    // (survives Safari ITP cross-site navigation) and localStorage for sessions
+    const _cookieGet=function(key){
+      const m=document.cookie.match('(^|;)\\s*'+encodeURIComponent(key)+'\\s*=\\s*([^;]+)');
+      return m?decodeURIComponent(m.pop()):null;
+    };
+    const _cookieSet=function(key,val,days){
+      const exp=new Date(Date.now()+(days||1)*864e5).toUTCString();
+      document.cookie=encodeURIComponent(key)+'='+encodeURIComponent(val)+';expires='+exp+';path=/;SameSite=Lax';
+    };
+    const _cookieDel=function(key){
+      document.cookie=encodeURIComponent(key)+'=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;SameSite=Lax';
+    };
     const _storage={
       getItem:function(key){
-        return sessionStorage.getItem(key)||localStorage.getItem(key);
+        // PKCE verifier must survive cross-site nav — use cookie
+        if(key.includes('code_verifier')||key.includes('pkce')){
+          return _cookieGet(key)||localStorage.getItem(key);
+        }
+        return localStorage.getItem(key)||_cookieGet(key);
       },
       setItem:function(key,value){
+        if(key.includes('code_verifier')||key.includes('pkce')){
+          _cookieSet(key,value,1); // cookie for PKCE
+        }
         try{localStorage.setItem(key,value);}catch(e){}
-        try{sessionStorage.setItem(key,value);}catch(e){}
       },
       removeItem:function(key){
+        _cookieDel(key);
         try{localStorage.removeItem(key);}catch(e){}
-        try{sessionStorage.removeItem(key);}catch(e){}
       }
     };
     _sb=window.supabase.createClient(FORJA_SUPABASE_URL,FORJA_SUPABASE_KEY,{
