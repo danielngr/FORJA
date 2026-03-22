@@ -69,8 +69,23 @@ function getSB(){
   if(_sb)return _sb;
   if(!window.supabase||FORJA_SUPABASE_URL.includes('YOUR_PROJECT')){syncDot('offline');return null;}
   try{
+    // Custom storage that syncs to BOTH localStorage AND sessionStorage
+    // This fixes Safari ITP blocking localStorage on cross-site redirects
+    const _storage={
+      getItem:function(key){
+        return sessionStorage.getItem(key)||localStorage.getItem(key);
+      },
+      setItem:function(key,value){
+        try{localStorage.setItem(key,value);}catch(e){}
+        try{sessionStorage.setItem(key,value);}catch(e){}
+      },
+      removeItem:function(key){
+        try{localStorage.removeItem(key);}catch(e){}
+        try{sessionStorage.removeItem(key);}catch(e){}
+      }
+    };
     _sb=window.supabase.createClient(FORJA_SUPABASE_URL,FORJA_SUPABASE_KEY,{
-      auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:'implicit',storage:window.localStorage}
+      auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storage:_storage}
     });
     _sb.auth.onAuthStateChange((ev,sess)=>{
       _user=sess?.user??null;_authReady=true;
