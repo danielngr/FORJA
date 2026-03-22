@@ -6066,23 +6066,40 @@ function App(){
     };
 
     // Check for OAuth hash in URL (returning from Google)
-    const hasOAuthHash=window.location.hash.includes('access_token')||
-      window.location.hash.includes('refresh_token')||
-      window.location.search.includes('code=');
+    // PKCE flow: Supabase redirects back with ?code= in search params
+    // Implicit flow: token comes in #access_token= hash
+    const search=window.location.search;
+    const hash=window.location.hash;
+    const hasOAuthHash=hash.includes('access_token')||
+      hash.includes('refresh_token')||
+      search.includes('code=');
 
     if(hasOAuthHash&&sb){
-      // Clean URL immediately so refreshing doesn't re-trigger
-      window.history.replaceState(null,'',window.location.pathname);
-      // Wait for Supabase to process the hash and fire SIGNED_IN
+      // Supabase PKCE: calling getSession() triggers the code exchange automatically
+      // Then onAuthStateChange fires SIGNED_IN with the Google session
       const{data:{subscription}}=sb.auth.onAuthStateChange((event,session)=>{
         if(event==='SIGNED_IN'&&session?.user){
           _user=session.user;
           subscription.unsubscribe();
+          // Clean URL AFTER processing
+          window.history.replaceState(null,'',window.location.pathname);
           loadAndRoute(true);
         }
       });
-      // Fallback: if no SIGNED_IN fires in 4s, show app anyway
-      setTimeout(()=>{if(!authChecked)loadAndRoute(true);},4000);
+      // Trigger code exchange by calling getSession
+      sb.auth.getSession().then(({data:{session},error})=>{
+        if(error) console.error('FORJA: getSession error:', error.message);
+        if(session?.user){
+          _user=session.user;
+          window.history.replaceState(null,'',window.location.pathname);
+          loadAndRoute(true);
+        } else {
+          // Exchange not done yet — wait for onAuthStateChange
+          console.log('FORJA: Waiting for auth state change...');
+        }
+      });
+      // Fallback after 5s
+      setTimeout(()=>{if(!authChecked){window.history.replaceState(null,'',window.location.pathname);loadAndRoute(true);}},5000);
     } else {
       // Normal startup — check existing session first, then localStorage
       if(sb){
