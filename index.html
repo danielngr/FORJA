@@ -70,7 +70,7 @@ function getSB(){
   if(!window.supabase||FORJA_SUPABASE_URL.includes('YOUR_PROJECT')){syncDot('offline');return null;}
   try{
     _sb=window.supabase.createClient(FORJA_SUPABASE_URL,FORJA_SUPABASE_KEY,{
-      auth:{persistSession:true,autoRefreshToken:true}
+      auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:'implicit'}
     });
     _sb.auth.onAuthStateChange((ev,sess)=>{
       _user=sess?.user??null;_authReady=true;
@@ -138,15 +138,19 @@ function getUserEmail(){
 // Google OAuth — defined inside Babel scope so JSX can call directly
 function doGoogleSignIn(){
   const sb=getSB();
-  if(!sb){ console.error('FORJA: Supabase client not available'); return; }
-  console.log('FORJA: Starting Google OAuth...');
-  sb.auth.signInWithOAuth({
-    provider:'google',
-    options:{ redirectTo:'https://danielngr.github.io/FORJA/' }
-  }).then(function(result){
-    if(result.error) console.error('FORJA: OAuth error:', result.error.message);
-    else console.log('FORJA: OAuth initiated, redirecting...');
-  }).catch(function(e){ console.error('FORJA: OAuth catch:', e.message); });
+  if(!sb){ console.error('FORJA: Supabase not available'); return; }
+  console.log('FORJA: Signing out anonymous session before Google OAuth...');
+  // Must sign out anonymous session first — otherwise Supabase ignores the OAuth response
+  sb.auth.signOut().finally(function(){
+    console.log('FORJA: Starting Google OAuth...');
+    sb.auth.signInWithOAuth({
+      provider:'google',
+      options:{ redirectTo:'https://danielngr.github.io/FORJA/' }
+    }).then(function(result){
+      if(result.error) console.error('FORJA: OAuth error:', result.error.message);
+      else console.log('FORJA: OAuth redirecting to Google...');
+    }).catch(function(e){ console.error('FORJA: OAuth catch:', e.message); });
+  });
 }
 
 function doSignOut(){
@@ -6083,7 +6087,15 @@ function App(){
       // Normal startup — check existing session first, then localStorage
       if(sb){
         sb.auth.getSession().then(({data:{session}})=>{
-          if(session?.user) _user=session.user;
+          if(session?.user){
+            _user=session.user;
+            // If Google user (has email) → load their profile
+            const isGoogle=session.user.email && 
+              session.user.app_metadata?.provider==='google';
+            if(isGoogle){
+              console.log('FORJA: Returning Google user detected:', session.user.email);
+            }
+          }
           loadAndRoute(false);
         }).catch(()=>loadAndRoute(false));
       } else {
