@@ -3026,8 +3026,18 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
         setScrollVersion(v=>v+1);
       }
     }
-    if(tourStep===10||tourStep===11||tourStep===12){
+    if(tourStep===10||tourStep===11){
       window.scrollTo({top:0,behavior:'instant'});
+      setScrollVersion(v=>v+1);
+    }
+    if(tourStep===12){
+      // balance-score card is just below the mannequin canvas
+      const el=document.querySelector('[data-tour="balance-score"]');
+      if(el){
+        const r=el.getBoundingClientRect();
+        const target=window.scrollY+r.top-window.innerHeight*0.25;
+        window.scrollTo({top:Math.max(0,Math.round(target)),behavior:'instant'});
+      }
       setScrollVersion(v=>v+1);
     }
     if(tourStep===13){
@@ -4004,7 +4014,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
            tES:"Pestaña Cuerpo",              tEN:"Body tab",
            xES:"Aquí vive tu maniquí 3D. Toca CONTINUAR para ir ahí.",
            xEN:"Your 3D mannequin lives here. Tap CONTINUE to go there.",
-           onEnter:()=>{setTabR("body");setTimeout(()=>{window.scrollTo({top:0,behavior:"instant"});},80);}},
+           onEnter:()=>{setTabR("body");}},
           // 10
           {id:"mannequin",   pad:4,  tabNeeded:"body",
            tES:"Tu maniquí 3D",               tEN:"Your 3D mannequin",
@@ -4017,8 +4027,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
            xES:"Sube entrenando todos los grupos. Úsalo para no olvidar ninguna zona.",
            xEN:"Raise it by training all muscle groups. Use it so you never skip a zone."},
           // 12
-          {id:"mannequin", pad:4, tabNeeded:"body",
-           onEnter:()=>{window.scrollTo({top:0,behavior:"instant"});},
+          {id:"balance-score", pad:10, tabNeeded:"body",
            tES:"Sube de nivel",               tEN:"Level up",
            xES:"Cada set que registras da XP a esos músculos. Sube de nivel y el maniquí brilla — de gris en nivel 1 hasta corona dorada en nivel 10. Si dejas de entrenar más de 7 días, el nivel empieza a bajar. ¡La consistencia es todo!",
            xEN:"Every set you log gives XP to those muscles. Level up and the mannequin glows — from gray at level 1 to gold crown at level 10. Stop training for 7+ days and your level starts dropping. Consistency is everything!"},
