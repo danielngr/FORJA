@@ -590,71 +590,6 @@ const FStore={
       return data.map(r=>({d:r.logged_date,rm:parseFloat(r.estimated_1rm),kg:parseFloat(r.best_set_kg),r:r.best_set_reps}));
     }catch(_){return local;}
   },
-
-  // ── SESSION HISTORY ──────────────────────────────────────────
-  async loadSessionHistory(limit){
-    const lim=limit||60;
-    // Try local cache first
-    try{
-      const raw=localStorage.getItem('fv8_sessions');
-      if(raw){
-        const cached=JSON.parse(raw);
-        if(cached&&cached.length)return cached;
-      }
-    }catch(_){}
-    const sb=getSB();const user=await ensureAuth();
-    if(!sb||!user)return[];
-    syncDot('syncing');
-    try{
-      const{data}=await sb.from('sessions')
-        .select('id,session_date,day_label,exercises,duration_seconds,created_at')
-        .eq('user_id',user.id)
-        .order('session_date',{ascending:false})
-        .limit(lim);
-      if(!data)return[];
-      try{localStorage.setItem('fv8_sessions',JSON.stringify(data));}catch(_){}
-      syncDot('ok');
-      return data;
-    }catch(e){syncDot('error');return[];}
-  },
-
-  async loadSessionSets(sessionDate){
-    // Load all sets logged on a given date
-    const sb=getSB();const user=await ensureAuth();
-    if(!sb||!user){
-      // Fallback: use local exercise logs
-      try{
-        const raw=localStorage.getItem('fv8l');
-        if(!raw)return{};
-        const all=JSON.parse(raw);
-        const result={};
-        Object.entries(all).forEach(([exId,entries])=>{
-          const dayEntries=entries.filter(e=>e.d===sessionDate);
-          if(dayEntries.length)result[exId]=dayEntries;
-        });
-        return result;
-      }catch(_){return{};}
-    }
-    try{
-      const{data}=await sb.from('exercise_logs')
-        .select('exercise_id,exercise_name,weight_kg,reps,estimated_1rm,logged_at')
-        .eq('user_id',user.id)
-        .eq('logged_at',sessionDate)
-        .order('exercise_name',{ascending:true});
-      if(!data)return{};
-      const grouped={};
-      data.forEach(r=>{
-        const key=r.exercise_id||r.exercise_name;
-        if(!grouped[key])grouped[key]={name:r.exercise_name,sets:[]};
-        grouped[key].sets.push({kg:parseFloat(r.weight_kg)||0,reps:r.reps,rm:parseFloat(r.estimated_1rm)||0});
-      });
-      return grouped;
-    }catch(_){return{};}
-  },
-
-  invalidateSessionCache(){
-    try{localStorage.removeItem('fv8_sessions');}catch(_){}
-  },
 };
 
 // Backwards-compat: keep old store{} pointing to FStore sync ops
@@ -1065,7 +1000,6 @@ const CELEB_EQ_NEEDS={
 };
 // Substitution map: if exercise can't be done, replace with this list (try in order)
 const CELEB_SUBS={
-  // Can't do barbell → dumbbell / bodyweight
   "Press banca":["Press banca mancuerna","Flexiones lastradas","Flexiones"],
   "Press banca pesado":["Press banca mancuerna","Flexiones lastradas","Flexiones"],
   "Press inclinado":["Press inclinado mancuerna","Flexiones inclinadas"],
@@ -1085,7 +1019,6 @@ const CELEB_SUBS={
   "Skull crusher":["Tríceps mancuerna","Fondos entre bancos","Flexiones tríceps"],
   "Press francés":["Tríceps mancuerna","Fondos entre bancos","Flexiones tríceps"],
   "Zancadas con barra":["Zancada con mancuerna","Zancadas peso corporal"],
-  // Can't do cable → dumbbell / bodyweight
   "Tríceps polea":["Tríceps mancuerna","Fondos entre bancos","Flexiones tríceps"],
   "Tríceps cuerda":["Tríceps mancuerna","Fondos entre bancos","Flexiones tríceps"],
   "Tríceps por encima":["Tríceps mancuerna","Flexiones tríceps"],
@@ -1100,7 +1033,6 @@ const CELEB_SUBS={
   "Press inclinado cable":["Press inclinado mancuerna","Flexiones inclinadas"],
   "Cable pullover":["Pullover","Dominadas"],
   "Pájaros cable":["Pájaros","Laterales posteriores mancuerna"],
-  // Can't do machines → free weights / bodyweight
   "Prensa de piernas":["Sentadilla goblet","Sentadilla mancuerna","Sentadilla peso corporal"],
   "Prensa pierna":["Sentadilla goblet","Sentadilla mancuerna","Sentadilla peso corporal"],
   "Prensa":["Sentadilla goblet","Sentadilla peso corporal"],
@@ -1111,7 +1043,6 @@ const CELEB_SUBS={
   "Curl femoral tumbado":["Peso muerto rumano mancuerna","Glute bridge"],
   "Leg press":["Sentadilla goblet","Sentadilla mancuerna","Sentadilla peso corporal"],
   "Press militar máquina":["Press Arnold","Press hombro mancuerna","Flexiones pike"],
-  // Can't do pull up bar → cable / dumbbell / bodyweight
   "Dominadas":["Jalón polea","Remo con mancuerna","Remo australiano"],
   "Dominadas agarre amplio":["Jalón polea","Remo con mancuerna"],
   "Dominadas agarre pronado":["Jalón polea","Remo con mancuerna"],
@@ -1119,14 +1050,12 @@ const CELEB_SUBS={
   "Dominadas neutro":["Jalón polea","Remo con mancuerna"],
   "Dominadas lastradas":["Jalón polea","Dominadas"],
   "Remo australiano":["Remo con mancuerna","Remo sentado"],
-  // Can't do dip bar → bodyweight
   "Fondos":["Flexiones tríceps","Tríceps mancuerna","Fondos entre bancos"],
   "Fondos paralelas":["Flexiones tríceps","Tríceps mancuerna","Fondos entre bancos"],
   "Fondos pecho":["Flexiones","Tríceps mancuerna"],
   "Fondos con peso":["Flexiones lastradas","Tríceps mancuerna"],
   "Fondos con cadenas":["Flexiones lastradas","Tríceps mancuerna"],
   "Fondos cerrados":["Flexiones tríceps","Tríceps mancuerna"],
-  // Cardio
   "Sprint 200m":["Burpees","Saltos al cajón","Skipping 60 segundos"],
   "Sprint en caminadora":["Burpees","Saltos al cajón","Skipping 60 segundos"],
   "Skipping 60 segundos":["Burpees","Saltos al cajón"],
@@ -1181,395 +1110,478 @@ function adaptExercise(exName, userEquipment){
 }
 
 const CELEB_EXERCISES = {
-    arnold: {
-      "Pecho+Espalda": [
-        {e:"Press banca",         s:4, r:"8-10"},
-        {e:"Press inclinado mancuerna", s:4, r:"8-10"},
-        {e:"Aperturas mancuerna",       s:3, r:"10-12"},
-        {e:"Dominadas",   s:4, r:"fallo"},
-        {e:"Remo con barra",            s:4, r:"8-10"},
-        {e:"Remo en T",                 s:4, r:"8-10"},
-        {e:"Peso muerto piernas rectas",s:3, r:"12-15"}
-      ],
-      "Hombros+Brazos": [
-        {e:"Press militar",  s:4, r:"8-10"},
-        {e:"Laterales mancuerna",  s:3, r:"10-12"},
-        {e:"Pájaros",              s:3, r:"12-15"},
-        {e:"Curl barra",           s:4, r:"8-12"},
-        {e:"Curl predicador",      s:3, r:"8-10"},
-        {e:"Tríceps polea",        s:4, r:"10-12"},
-        {e:"Press francés",        s:3, r:"10-12"}
-      ],
-      "Piernas": [
-        {e:"Sentadilla",           s:4, r:"8-12"},
-        {e:"Prensa de piernas",    s:4, r:"10-12"},
-        {e:"Extensión cuádriceps", s:3, r:"12-15"},
-        {e:"Curl femoral",         s:3, r:"10-12"},
-        {e:"Pantorrilla de pie",   s:4, r:"12-15"},
-        {e:"Pantorrilla sentado",  s:3, r:"15-20"}
-      ]
-    },
-    hemsworth: {
-      "Push": [
-        {e:"Press banca",              s:5, r:"10-6"},
-        {e:"Press inclinado mancuerna",s:4, r:"10-12"},
-        {e:"Press militar",            s:4, r:"8-10"},
-        {e:"Laterales mancuerna",      s:4, r:"12-15"},
-        {e:"Tríceps polea",            s:3, r:"12-15"},
-        {e:"Fondos",                   s:3, r:"10-12"}
-      ],
-      "Pull+Back": [
-        {e:"Peso muerto",     s:4, r:"6-8"},
-        {e:"Dominadas",       s:4, r:"8-10"},
-        {e:"Remo con barra",  s:4, r:"8-10"},
-        {e:"Jalón polea",     s:3, r:"10-12"},
-        {e:"Curl barra",      s:3, r:"10-12"},
-        {e:"Curl martillo",   s:3, r:"12"}
-      ],
-      "Legs": [
-        {e:"Sentadilla",           s:4, r:"8-10"},
-        {e:"Prensa de piernas",    s:4, r:"12-15"},
-        {e:"Peso muerto rumano",   s:4, r:"10-12"},
-        {e:"Extensión cuádriceps", s:3, r:"12-15"},
-        {e:"Curl femoral",         s:3, r:"12-15"},
-        {e:"Pantorrilla de pie",   s:4, r:"15-20"}
-      ],
-      "Full Body": [
-        {e:"Press banca",    s:4, r:"8-10"},
-        {e:"Dominadas",      s:4, r:"8-10"},
-        {e:"Sentadilla",     s:4, r:"8-10"},
-        {e:"Remo con barra", s:4, r:"8-10"},
-        {e:"Press militar",  s:3, r:"10-12"},
-        {e:"Peso muerto",    s:3, r:"8"}
-      ],
-      "HIIT+Funcional": [
-        {e:"Salto al cajón",        s:4, r:"10"},
-        {e:"Flexiones explosivas",  s:4, r:"12-15"},
-        {e:"Sentadilla con salto",  s:4, r:"15"},
-        {e:"Bear crawl",            s:4, r:"20m"},
-        {e:"Burpee",                s:4, r:"10"}
-      ]
-    },
-    rock: {
-      "Hombros": [
-        {e:"Press militar mancuerna",     s:4, r:"12"},
-        {e:"Laterales mancuerna",       s:4, r:"12"},
-        {e:"Elevaciones frontales",     s:3, r:"12"},
-        {e:"Encogimientos",   s:4, r:"fallo"},
-        {e:"Pájaros cable",             s:3, r:"15"}
-      ],
-      "Espalda": [
-        {e:"Jalón polea",s:5, r:"12"},
-        {e:"Remo con mancuerna",    s:3, r:"12"},{e:"Encogimientos mancuerna",s:3,r:"15-20",rs:"12-15",rc:"20-25",rr:"15-20",rg:"15-20"},
-        {e:"Remo con barra",       s:4, r:"8-12"},
-        {e:"Pullover cable",            s:4, r:"12"},
-        {e:"Hiperextensión",    s:3, r:"15"}
-      ],
-      "Piernas": [
-        {e:"Prensa de piernas",        s:4, r:"12-15"},
-        {e:"Zancadas",       s:4, r:"12"},
-        {e:"Extensión cuádriceps",     s:4, r:"12-15"},
-        {e:"Curl femoral",     s:4, r:"12-15"},
-        {e:"Pantorrilla de pie",       s:4, r:"15-20"}
-      ],
-      "Brazos": [
-        {e:"Curl martillo",            s:4, r:"12"},
-        {e:"Curl barra",               s:4, r:"12"},
-        {e:"Curl inclinado mancuerna", s:3, r:"12"},
-        {e:"Tríceps polea",            s:4, r:"10-12"},
-        {e:"Skull crusher",            s:4, r:"10-12"}
-      ],
-      "Pecho": [
-        {e:"Press inclinado cable",     s:4, r:"12-15"},
-        {e:"Press inclinado mancuerna", s:4, r:"12"},
-        {e:"Press banca mancuerna",     s:3, r:"10-12"},
-        {e:"Fondos",        s:3, r:"fallo"},
-        {e:"Aperturas mancuerna",       s:4, r:"12"}
-      ]
-    },
-    goggins: {
-      "Pull Day": [
-        {e:"Dominadas",  s:5, r:"max"},
-        {e:"Dominadas agarre supino",   s:5, r:"max"},
-        {e:"Dominadas",          s:5, r:"max"},
-        {e:"Remo australiano",          s:5, r:"max"},
-        {e:"Curl barra",                s:4, r:"12"}
-      ],
-      "Push Day": [
-        {e:"Flexiones",        s:5, r:"max"},
-        {e:"Flexiones diamante",        s:5, r:"max"},
-        {e:"Fondos",          s:5, r:"max"},
-        {e:"Press banca",               s:4, r:"10-12"},
-        {e:"Press militar",             s:4, r:"10-12"}
-      ],
-      "Leg Day": [
-        {e:"Sentadilla peso corporal", s:5, r:"max"},
-        {e:"Zancadas",    s:5, r:"20"},
-        {e:"Sentadilla búlgara",        s:4, r:"15"},
-        {e:"Curl femoral",              s:4, r:"12"},
-        {e:"Pantorrilla de pie",        s:5, r:"max"}
-      ]
-    },
-    cavill: {
-      "Push": [
-        {e:"Press banca",        s:4, r:"5-6"},
-        {e:"Press inclinado mancuerna", s:4, r:"8-10"},
-        {e:"Press militar",             s:4, r:"6-8"},
-        {e:"Laterales mancuerna",       s:4, r:"12-15"},
-        {e:"Tríceps polea",             s:3, r:"10-12"}
-      ],
-      "Pull": [
-        {e:"Peso muerto",               s:4, r:"5"},
-        {e:"Dominadas lastradas",       s:4, r:"6-8"},
-        {e:"Remo con barra",            s:4, r:"6-8"},
-        {e:"Jalón polea",               s:3, r:"10-12"},
-        {e:"Curl barra",                s:4, r:"8-10"}
-      ],
-      "Piernas": [
-        {e:"Sentadilla",                s:4, r:"6-8"},
-        {e:"Prensa de piernas",         s:4, r:"10-12"},
-        {e:"Peso muerto rumano",        s:4, r:"8-10"},
-        {e:"Extensión cuádriceps",      s:3, r:"12-15"},
-        {e:"Curl femoral",              s:3, r:"12-15"},
-        {e:"Pantorrilla",               s:4, r:"15-20"}
-      ],
-      "Upper Fuerza": [
-        {e:"Press banca",        s:5, r:"3-5"},
-        {e:"Remo con barra",     s:5, r:"4-6"},
-        {e:"Press militar",             s:4, r:"5-6"},
-        {e:"Dominadas lastradas",       s:4, r:"5-6"},
-        {e:"Curl barra",                s:3, r:"8"}
-      ],
-      "Funcional": [
-        {e:"Sentadilla",  s:3, r:"8-10"},
-        {e:"Press banca", s:3, r:"8-10"},
-        {e:"Dominadas",   s:3, r:"8-10"},
-        {e:"Peso muerto", s:3, r:"6-8"},
-        {e:"Plancha",     s:3, r:"60s"}
-      ]
-    },
-    ronaldo: {
-      "Piernas": [
-        {e:"Sentadilla",        s:3, r:"8"},
-        {e:"Salto al cajón",    s:3, r:"10"},
-        {e:"Zancada con salto", s:3, r:"8"},
-        {e:"Sentadilla búlgara",s:2, r:"10"},
-        {e:"Glute bridge",      s:2, r:"12"}
-      ],
-      "Upper Body": [
-        {e:"Dominadas",          s:3, r:"10-15"},
-        {e:"Fondos en banco",    s:3, r:"20"},{e:"Flexiones declinadas",s:3,r:"10-15"},
-        {e:"Flexiones",          s:3, r:"20-30"},
-        {e:"Remo con mancuerna", s:3, r:"12"},
-        {e:"Push press",         s:3, r:"10"}
-      ],
-      "Potencia+Cardio": [
-        {e:"Sentadilla con salto",   s:3, r:"12"},
-        {e:"Zancada con salto",      s:3, r:"10"},
-        {e:"Step up al cajón",       s:3, r:"10"},
-        {e:"Press militar",   s:3, r:"15"},
-        {e:"Plancha con rotación",   s:3, r:"30s"}
-      ],
-      "Core+Estabilidad": [
-        {e:"Peso muerto 1 pierna",         s:2, r:"10"},
-        {e:"Zancada con mancuerna",        s:3, r:"12"},
-        {e:"Plancha",                      s:3, r:"60s"},
-        {e:"Rotación con cable",           s:3, r:"15"},
-        {e:"Elevación de piernas colgado", s:3, r:"15"}
-      ],
-      "Full Body": [
-        {e:"Sentadilla",  s:3, r:"10"},
-        {e:"Press banca", s:3, r:"12"},
-        {e:"Dominadas",   s:3, r:"10"},
-        {e:"Hip thrust",  s:3, r:"12"},
-        {e:"Press militar",s:3,r:"12"},
-        {e:"Curl barra",  s:3, r:"15"}
-      ]
-    },
-    stallone: {
-      "Upper A": [
-        {e:"Press banca",    s:5, r:"10-12"},
-        {e:"Press inclinado",s:5, r:"10-12"},
-        {e:"Dominadas",      s:5, r:"max"},
-        {e:"Remo con barra", s:5, r:"10"},
-        {e:"Curl barra",     s:5, r:"12"},
-        {e:"Tríceps polea",  s:5, r:"12"}
-      ],
-      "Lower": [
-        {e:"Sentadilla",           s:4, r:"12"},
-        {e:"Extensión cuádriceps", s:4, r:"15"},
-        {e:"Curl femoral",         s:4, r:"12"},
-        {e:"Pantorrilla de pie",   s:5, r:"20"},
-        {e:"Peso muerto rumano",   s:4, r:"12"}
-      ],
-      "Upper B": [
-        {e:"Press militar",          s:5, r:"10-12"},
-        {e:"Remo con mancuerna", s:5, r:"12"},
-        {e:"Press inclinado mancuerna",s:4,r:"10-12"},
-        {e:"Curl martillo",          s:5, r:"12"},
-        {e:"Fondos",                 s:5, r:"max"},
-        {e:"Press francés",          s:4, r:"12"}
-      ],
-      "Full Body": [
-        {e:"Press banca",    s:4, r:"10"},
-        {e:"Dominadas",      s:4, r:"max"},
-        {e:"Sentadilla",     s:4, r:"12"},
-        {e:"Remo con barra", s:4, r:"10"},
-        {e:"Curl barra",     s:4, r:"12"},
-        {e:"Pantorrilla",    s:4, r:"20"}
-      ],
-      "Cardio+Core": [
-        {e:"Saltar la cuerda",      s:5, r:"2min"},
-        {e:"Plancha",               s:3, r:"60s"},
-        {e:"Crunch",                s:3, r:"25"},
-        {e:"Elevación de piernas",  s:3, r:"20"},
-        {e:"Mountain climbers",     s:3, r:"30"}
-      ]
-    },
-    lebron: {
-      "Lower Power": [
-        {e:"Sentadilla",           s:4, r:"8-10"},
-        {e:"Hip thrust",           s:4, r:"10-12"},
-        {e:"Extensión cuádriceps", s:3, r:"12-15"},
-        {e:"Curl femoral",         s:3, r:"12-15"},
-        {e:"Pantorrilla de pie",   s:4, r:"15-20"},
-        {e:"Salto al cajón",       s:3, r:"8"}
-      ],
-      "Upper Push": [
-        {e:"Press banca",              s:4, r:"10-12"},
-        {e:"Press inclinado mancuerna",s:4, r:"10-12"},
-        {e:"Press militar",            s:3, r:"10-12"},
-        {e:"Laterales mancuerna",      s:3, r:"12-15"},
-        {e:"Tríceps polea",            s:3, r:"12-15"},
-        {e:"Fondos",                   s:3, r:"10-12"}
-      ],
-      "Upper Pull": [
-        {e:"Peso muerto rumano",  s:4, r:"8-10"},
-        {e:"Dominadas",           s:4, r:"8-10"},
-        {e:"Remo con barra",      s:4, r:"10-12"},
-        {e:"Jalón polea",         s:3, r:"12"},
-        {e:"Curl barra",          s:3, r:"12"},
-        {e:"Face pull",           s:3, r:"15"}
-      ],
-      "Athletic+Core": [
-        {e:"Sentadilla",         s:3, r:"10"},
-        {e:"Prensa de piernas",  s:3, r:"15"},
-        {e:"Plancha",            s:3, r:"60s"},
-        {e:"Rotación con cable", s:3, r:"15"},
-        {e:"Salto lateral",      s:3, r:"10"},
-        {e:"Bear crawl",         s:3, r:"20m"}
-      ]
-    },
-    zyzz: {
-      "Pecho": [
-        {e:"Press banca",              s:4, r:"8-10"},
-        {e:"Press inclinado mancuerna",s:4, r:"10-12"},
-        {e:"Aperturas mancuerna",      s:3, r:"12-15"},
-        {e:"Fondos",             s:3, r:"max"},
-        {e:"Aperturas cable",          s:3, r:"15"}
-      ],
-      "Espalda": [
-        {e:"Peso muerto",   s:4, r:"6-8"},
-        {e:"Dominadas",     s:4, r:"8-10"},
-        {e:"Remo con barra",s:4, r:"8-10"},
-        {e:"Jalón polea",   s:3, r:"10-12"},
-        {e:"Remo con mancuerna",  s:3, r:"10-12"}
-      ],
-      "Hombros": [
-        {e:"Press militar",         s:4, r:"8-10"},
-        {e:"Laterales mancuerna",   s:4, r:"12-15"},
-        {e:"Elevaciones frontales", s:3, r:"12"},
-        {e:"Pájaros",               s:3, r:"12-15"},
-        {e:"Encogimientos",         s:4, r:"15-20"}
-      ],
-      "Piernas": [
-        {e:"Sentadilla",           s:4, r:"8-10"},
-        {e:"Prensa de piernas",    s:4, r:"12-15"},
-        {e:"Extensión cuádriceps", s:3, r:"12-15"},
-        {e:"Curl femoral",         s:3, r:"12-15"},
-        {e:"Pantorrilla de pie",   s:4, r:"15-20"}
-      ],
-      "Brazos": [
-        {e:"Curl barra",      s:4, r:"8-10"},
-        {e:"Curl martillo",   s:4, r:"10-12"},
-        {e:"Curl predicador", s:3, r:"10-12"},
-        {e:"Tríceps polea",   s:4, r:"10-12"},
-        {e:"Skull crusher",   s:3, r:"10-12"}
-      ]
-    },
-    // ── FEMALE CELEBRITIES ────────────────────────────────────────────
-    serena: {
-      "Brazos+Core":     [{e:"Press banca mancuerna",s:3,r:"10-12"},{e:"Curl bíceps",s:3,r:"10-12"},{e:"Fondos en banco",s:3,r:"12-15"},{e:"Flexiones declinadas",s:3,r:"10-15"},{e:"Plancha",s:3,r:"30s"},{e:"Crunch en fitball",s:3,r:"15"}],
-      "Glúteos":         [{e:"Sentadilla con barra pausa",s:4,r:"8-10"},{e:"Sentadilla frontal",s:4,r:"8-10"},{e:"Sentadilla en caja",s:4,r:"8-10"},{e:"Hip thrust",s:3,r:"12"}],
-      "Core+Piernas":    [{e:"Crunch bicicleta",s:3,r:"20"},{e:"Elevación de piernas",s:3,r:"15"},{e:"Plancha",s:3,r:"40s"},{e:"Zancada con mancuerna",s:3,r:"12"},{e:"Step-up con mancuerna",s:3,r:"10"}],
-      "Cardio":          [{e:"Cardio suave",s:1,r:"30min"},{e:"Estiramiento dinámico",s:1,r:"15min"}],
-      "Full Body":       [{e:"Sentadilla",s:3,r:"12"},{e:"Flexión",s:3,r:"12"},{e:"Remo con mancuerna",s:3,r:"12"},{e:"Plancha",s:3,r:"30s"}],
-    },
-    galgadot: {
-      "Metabólico":      [{e:"Remo en máquina",s:3,r:"5min"},{e:"Mountain climber",s:3,r:"1min"},{e:"Burpee",s:3,r:"1min"},{e:"Bird dog",s:3,r:"1min"}],
-      "Barbell Complex": [{e:"Peso muerto rumano",s:4,r:"5"},{e:"Remo con barra",s:4,r:"5"},{e:"Curl inverso barra",s:4,r:"5"},{e:"Press de empuje",s:4,r:"5"},{e:"Sentadilla trasera",s:4,r:"5"}],
-      "Push+Pull":       [{e:"Dominada",s:3,r:"10"},{e:"Flexión",s:3,r:"12"},{e:"Zancada con mancuerna",s:3,r:"10"},{e:"Sentadilla frontal",s:3,r:"10"},{e:"Press limpio",s:3,r:"10"}],
-      "Cardio":          [{e:"Cardio moderado",s:1,r:"30min"},{e:"Yoga/estiramientos",s:1,r:"15min"}],
-      "Complex+Core":    [{e:"Peso muerto rumano",s:4,r:"5"},{e:"Remo con barra",s:4,r:"5"},{e:"Press de empuje",s:4,r:"5"},{e:"V-ups",s:3,r:"15"}],
-    },
-    jlo: {
-      "Tren inferior":   [{e:"Sentadilla con mancuerna",s:4,r:"12"},{e:"Sentadilla sumo",s:4,r:"12"},{e:"Zancada con mancuerna",s:4,r:"12"},{e:"Hip thrust",s:4,r:"15"},{e:"Plancha lateral",s:3,r:"25s"}],
-      "Tren superior":   [{e:"Elevación lateral mancuerna",s:4,r:"12"},{e:"Curl bíceps",s:4,r:"12"},{e:"Remo con mancuerna",s:4,r:"12"},{e:"Flexión",s:4,r:"15"},{e:"Fondos en banco",s:3,r:"12"},{e:"Flexiones declinadas",s:3,r:"10-15"}],
-      "Funcional":       [{e:"Sentadilla sumo",s:4,r:"15"},{e:"Plancha lateral",s:4,r:"30s"},{e:"Patada trasera banda elástica",s:4,r:"15"},{e:"Hip thrust",s:3,r:"15"}],
-      "Cardio+Core":     [{e:"Cardio caminata",s:1,r:"35min"},{e:"Crunch",s:3,r:"20"},{e:"Elevación de piernas",s:3,r:"15"}],
-      "Full Body":       [{e:"Sentadilla con mancuerna",s:3,r:"12"},{e:"Elevación lateral mancuerna",s:3,r:"12"},{e:"Curl bíceps",s:3,r:"12"},{e:"Plancha lateral",s:3,r:"30s"}],
-    },
-    margot: {
-      "Crazy 8":         [{e:"Sentadilla",s:4,r:"20"},{e:"Arabesco con peso",s:4,r:"20"},{e:"Extensión tríceps",s:4,r:"25"},{e:"Elevación lateral",s:4,r:"30"},{e:"Plancha",s:3,r:"30s"},{e:"Crunch bicicleta",s:3,r:"20"},{e:"Elevación de piernas",s:3,r:"15"}],
-      "Cardio+Core":     [{e:"HIIT cardio",s:1,r:"30min"},{e:"Plancha",s:3,r:"40s"},{e:"Crunch bicicleta",s:3,r:"20"}],
-      "Crazy 8 Light":   [{e:"Sentadilla",s:3,r:"20"},{e:"Arabesco con peso",s:3,r:"20"},{e:"Extensión tríceps",s:3,r:"20"},{e:"Elevación lateral",s:3,r:"25"},{e:"Plancha",s:2,r:"30s"},{e:"Crunch",s:2,r:"15"}],
-      "Fuerza":          [{e:"Sentadilla goblet",s:3,r:"12"},{e:"Remo con mancuerna",s:3,r:"12"},{e:"Press banca mancuerna",s:3,r:"12"},{e:"Zancada",s:3,r:"12"}],
-      "Cardio":          [{e:"Cardio suave",s:1,r:"25min"},{e:"Estiramientos",s:1,r:"12min"}],
-    },
-    zendaya: {
-      "Circuito":        [{e:"Flexión de rodillas",s:3,r:"10"},{e:"Sentadilla",s:3,r:"15"},{e:"Salto con sentadilla",s:3,r:"30"},{e:"Burpee",s:3,r:"20"},{e:"Abdominal",s:3,r:"10"},{e:"Zancada",s:3,r:"30"}],
-      "Cardio":          [{e:"Caminata/carrera suave",s:1,r:"30min"},{e:"Estiramiento",s:1,r:"15min"}],
-      "Circuito Light":  [{e:"Flexión de rodillas",s:3,r:"10"},{e:"Sentadilla",s:3,r:"15"},{e:"Salto con sentadilla",s:3,r:"20"},{e:"Burpee",s:3,r:"10"},{e:"Abdominal",s:3,r:"15"}],
-      "Yoga+Core":       [{e:"Yoga",s:1,r:"35min"},{e:"Plancha",s:3,r:"35s"},{e:"Elevación de piernas",s:3,r:"15"}],
-      "Boxing":          [{e:"Boxeo en sombra",s:4,r:"1min"},{e:"Trote",s:1,r:"12min"}],
-    },
-    halle: {
-      "Circuito Halle":  [{e:"Press Arnold + sentadilla con salto",s:4,r:"6-8"},{e:"V-ups + press sobre cabeza",s:4,r:"6-8"},{e:"Jumping jack + burpee",s:4,r:"6-8"},{e:"Sentadilla con salto + press sobre cabeza",s:4,r:"6-8"},{e:"V-tucks + press frontal",s:4,r:"6-8"}],
-      "Cardio":          [{e:"Cardio moderado",s:1,r:"25min"},{e:"Estiramientos",s:1,r:"12min"}],
-      "Circuito x2":     [{e:"Press Arnold + sentadilla con salto",s:3,r:"6-8"},{e:"V-ups + press sobre cabeza",s:3,r:"6-8"},{e:"Jumping jack + burpee",s:3,r:"6-8"},{e:"Sentadilla con salto",s:3,r:"8"}],
-      "Core+Estabilidad":[{e:"Plancha",s:3,r:"40s"},{e:"Plancha lateral",s:3,r:"30s"},{e:"Russian twist",s:3,r:"20"}],
-    },
-    brie: {
-      "Pull Day":        [{e:"Flexión",s:3,r:"20"},{e:"Peso muerto",s:5,r:"12-3"},{e:"Remo en cable",s:3,r:"10"},{e:"Jalón al pecho",s:3,r:"10"},{e:"Dominada",s:3,r:"10"},{e:"Curl martillo",s:3,r:"10"}],
-      "Push Day":        [{e:"Press banca",s:5,r:"12-3"},{e:"Press inclinado mancuerna",s:3,r:"10"},{e:"Press sobre cabeza",s:3,r:"10"},{e:"Elevación lateral",s:3,r:"10"},{e:"Fondos",s:3,r:"10"}],
-      "Piernas":         [{e:"Sentadilla en aire",s:3,r:"20"},{e:"Sentadilla",s:5,r:"12-3"},{e:"Hip thrust",s:3,r:"10"},{e:"Zancada overhead",s:3,r:"10"},{e:"Curl femoral",s:3,r:"10"},{e:"Elevación de talones",s:3,r:"15"}],
-      "Full Body":       [{e:"Sentadilla frontal",s:3,r:"10"},{e:"Press Arnold",s:3,r:"10"},{e:"Dominada",s:3,r:"10"},{e:"Flexión",s:3,r:"15"},{e:"Burpee",s:3,r:"10"}],
-      "Full Body B":     [{e:"Sentadilla frontal",s:3,r:"10"},{e:"Press Arnold",s:3,r:"10"},{e:"Remo con mancuerna",s:3,r:"10"},{e:"Flexión",s:3,r:"12"},{e:"Peso muerto rumano",s:3,r:"10"}],
-      "Descanso":        [{e:"Cardio suave",s:1,r:"20min"},{e:"Estiramientos",s:1,r:"15min"}],
-    },
-    scarlett: {
-      "Fuerza A":        [{e:"Sentadilla trasera con barra",s:5,r:"8-3"},{e:"Press sobre cabeza con barra",s:5,r:"8-3"},{e:"Zancada rápida con barra",s:3,r:"12"},{e:"Dominada agarre supino",s:3,r:"12-8"},{e:"Remo unilateral mancuerna",s:3,r:"12-8"}],
-      "Funcional":       [{e:"Flexión",s:5,r:"5"},{e:"Sentadilla pistola",s:5,r:"8"},{e:"Zancada caminando",s:5,r:"10"},{e:"Dominada",s:5,r:"3"},{e:"Press tríceps",s:5,r:"5"},{e:"Slam con balón medicinal",s:5,r:"5"}],
-      "Recuperación":    [{e:"Caminata/Yoga",s:1,r:"35min"},{e:"Movilidad",s:1,r:"15min"}],
-      "Fuerza B":        [{e:"Sentadilla frontal con barra",s:5,r:"8-3"},{e:"Press inclinado mancuerna",s:3,r:"10"},{e:"Remo con barra",s:3,r:"10"},{e:"Zancada con mancuerna",s:3,r:"12"},{e:"Curl bíceps",s:3,r:"10"}],
-      "Funcional B":     [{e:"Flexión",s:4,r:"6"},{e:"Sentadilla pistola",s:4,r:"6"},{e:"Dominada",s:4,r:"4"},{e:"Curl inverso",s:4,r:"5"},{e:"Saltar cuerda",s:1,r:"10min"}],
-    },
-    jessica: {
-      "Unilateral A":    [{e:"Sentadilla búlgara",s:2,r:"10"},{e:"Peso muerto rumano unilateral",s:2,r:"10"},{e:"Hip bridge unilateral + press pecho",s:2,r:"15"},{e:"Elevación lateral plancha",s:2,r:"10"},{e:"Bear plank taps",s:2,r:"10"}],
-      "Unilateral+Core": [{e:"Sentadilla búlgara",s:2,r:"10"},{e:"Peso muerto rumano unilateral",s:2,r:"10"},{e:"Hip bridge unilateral + press pecho",s:2,r:"15"},{e:"Plancha",s:3,r:"30s"},{e:"Dead bug",s:3,r:"10"}],
-      "Full Body":       [{e:"Sentadilla dividida",s:3,r:"10"},{e:"Peso muerto rumano",s:3,r:"10"},{e:"Remo con mancuerna",s:3,r:"10"},{e:"Flexión",s:3,r:"12"},{e:"Hip thrust",s:3,r:"12"}],
-    },
-    rihanna: {
-      "Cardio+Fuerza A": [{e:"Cardio (carrera)",s:1,r:"5km"},{e:"Sentadilla",s:3,r:"25"},{e:"Zancada con mancuerna",s:3,r:"25"},{e:"Crunch inverso",s:3,r:"25"}],
-      "Cardio+Fuerza B": [{e:"Cardio (carrera)",s:1,r:"5km"},{e:"Sentadilla",s:3,r:"25"},{e:"Zancada",s:3,r:"25"},{e:"Crunch inverso",s:3,r:"25"}],
-      "Pilates+Core":    [{e:"Pilates",s:1,r:"30min"},{e:"Plancha",s:3,r:"35s"},{e:"Crunch bicicleta",s:3,r:"20"}],
-      "Full Día":        [{e:"Cardio (carrera)",s:1,r:"5km"},{e:"Sentadilla",s:3,r:"25"},{e:"Zancada con mancuerna",s:3,r:"25"},{e:"Crunch inverso",s:3,r:"25"}],
-    },
-  };
+  arnold: {
+    "Pecho+Espalda": [
+      {e:"Press banca",s:5,r:"8-10"},{e:"Aperturas mancuerna",s:5,r:"8"},
+      {e:"Press inclinado",s:6,r:"8-10"},{e:"Fondos",s:5,r:"fallo"},
+      {e:"Tríceps polea",s:6,r:"12"},{e:"Pullover",s:5,r:"10"},
+      {e:"Dominadas agarre amplio",s:6,r:"fallo"},{e:"Remo en T",s:5,r:"8"},
+      {e:"Remo sentado",s:6,r:"8"},{e:"Remo con mancuerna",s:5,r:"8"}
+    ],
+    "Piernas+Gemelos": [
+      {e:"Sentadilla",s:6,r:"10-12"},{e:"Extensión cuádriceps",s:6,r:"15"},
+      {e:"Prensa de piernas",s:6,r:"8-10"},{e:"Curl femoral tumbado",s:6,r:"12"},
+      {e:"Zancadas",s:5,r:"15"},{e:"Pantorrilla de pie",s:10,r:"10"},
+      {e:"Pantorrilla sentado",s:8,r:"15"},{e:"Curl inverso barra",s:4,r:"8"}
+    ],
+    "Brazos+Hombros": [
+      {e:"Curl barra",s:6,r:"8"},{e:"Curl mancuerna",s:6,r:"6"},
+      {e:"Curl concentración",s:6,r:"10"},{e:"Press banca agarre cerrado",s:6,r:"8"},
+      {e:"Tríceps polea",s:6,r:"10"},{e:"Tríceps por encima",s:6,r:"10"},
+      {e:"Press militar",s:6,r:"8-10"},{e:"Laterales mancuerna",s:6,r:"10"},
+      {e:"Press hombro mancuerna",s:6,r:"8"},{e:"Pájaros",s:5,r:"10"}
+    ]
+  },
+  hemsworth: {
+    "Espalda": [
+      {e:"Remo con barra",s:8,r:"12-4"},{e:"Dominadas",s:5,r:"20-10"},
+      {e:"Flexiones",s:5,r:"20"},{e:"Remo sentado",s:4,r:"12"},
+      {e:"Remo con mancuerna",s:4,r:"12"},{e:"Hiperextensión",s:4,r:"25-15"}
+    ],
+    "Pecho": [
+      {e:"Press banca",s:8,r:"12-4"},{e:"Press inclinado mancuerna",s:4,r:"10-12"},
+      {e:"Aperturas mancuerna",s:4,r:"10-12"},{e:"Fondos",s:4,r:"12-15"},
+      {e:"Flexiones",s:4,r:"20"}
+    ],
+    "Piernas": [
+      {e:"Sentadilla",s:5,r:"10-12"},{e:"Prensa de piernas",s:4,r:"12-15"},
+      {e:"Zancadas",s:4,r:"12"},{e:"Curl femoral",s:4,r:"12-15"},
+      {e:"Pantorrilla de pie",s:4,r:"15-20"}
+    ],
+    "Hombros": [
+      {e:"Press militar",s:5,r:"8-10"},{e:"Laterales mancuerna",s:4,r:"12-15"},
+      {e:"Elevaciones frontales",s:4,r:"12-15"},{e:"Pájaros",s:4,r:"12-15"}
+    ],
+    "Brazos": [
+      {e:"Curl barra",s:4,r:"10-12"},{e:"Curl mancuerna",s:4,r:"10-12"},
+      {e:"Curl martillo",s:3,r:"12"},{e:"Press banca agarre cerrado",s:4,r:"8-10"},
+      {e:"Tríceps polea",s:4,r:"10-12"},{e:"Tríceps por encima",s:3,r:"12"}
+    ],
+    "HIIT+Full Body": [
+      {e:"Burpee",s:4,r:"15"},{e:"Sentadilla goblet",s:4,r:"15"},
+      {e:"Flexiones",s:4,r:"15"},{e:"Mountain climbers",s:4,r:"30s"}
+    ]
+  },
+  rock: {
+    "Piernas": [
+      {e:"Zancadas con barra",s:4,r:"25"},{e:"Prensa de piernas",s:4,r:"25"},
+      {e:"Extensión cuádriceps",s:3,r:"20"},{e:"Sentadilla",s:4,r:"12"},
+      {e:"Sentadilla hack",s:4,r:"12"},{e:"Peso muerto rumano",s:4,r:"10"},
+      {e:"Curl femoral",s:3,r:"20"}
+    ],
+    "Espalda": [
+      {e:"Jalón polea",s:4,r:"12"},{e:"Remo en T",s:4,r:"12"},
+      {e:"Remo sentado",s:4,r:"12"},{e:"Remo con mancuerna",s:4,r:"12"},
+      {e:"Peso muerto",s:4,r:"10"}
+    ],
+    "Hombros": [
+      {e:"Press militar",s:4,r:"12"},{e:"Laterales mancuerna",s:4,r:"12"},
+      {e:"Elevaciones frontales",s:4,r:"12"},{e:"Pájaros",s:4,r:"12"},
+      {e:"Encogimientos",s:4,r:"12"}
+    ],
+    "Brazos": [
+      {e:"Curl barra",s:4,r:"12"},{e:"Curl mancuerna",s:4,r:"12"},
+      {e:"Curl concentración",s:4,r:"12"},{e:"Press banca agarre cerrado",s:4,r:"12"},
+      {e:"Tríceps polea",s:4,r:"12"},{e:"Tríceps mancuerna",s:4,r:"12"}
+    ],
+    "Piernas B": [
+      {e:"Zancadas con barra",s:4,r:"25"},{e:"Prensa de piernas",s:4,r:"25"},
+      {e:"Extensión cuádriceps",s:3,r:"20"},{e:"Sentadilla",s:4,r:"12"},
+      {e:"Sentadilla hack",s:4,r:"12"},{e:"Peso muerto rumano",s:4,r:"10"},
+      {e:"Curl femoral",s:3,r:"20"}
+    ],
+    "Pecho": [
+      {e:"Press banca",s:4,r:"12"},{e:"Press inclinado mancuerna",s:4,r:"12"},
+      {e:"Aperturas mancuerna",s:4,r:"12"},{e:"Press declinado",s:4,r:"12"},
+      {e:"Fondos",s:4,r:"fallo"}
+    ]
+  },
+  goggins: {
+    "Circuito Volumen": [
+      {e:"Zancadas peso corporal",s:3,r:"140"},{e:"Sentadillas peso corporal",s:2,r:"100-140"},
+      {e:"Jumping jacks",s:1,r:"250"},{e:"Crunch",s:1,r:"230"},
+      {e:"Flexiones",s:1,r:"180"},{e:"Arm haulers",s:4,r:"25"}
+    ],
+    "Calistenia 10min": [
+      {e:"Jumping jacks",s:10,r:"10"},{e:"Flexiones",s:10,r:"10"}
+    ],
+    "Core+Piernas": [
+      {e:"Zancadas peso corporal",s:1,r:"115"},{e:"Crunch",s:1,r:"110"},
+      {e:"Flexiones",s:3,r:"10"},{e:"Plancha",s:2,r:"25"}
+    ],
+    "Fuerza Gimnasio": [
+      {e:"Sentadilla",s:4,r:"8-12"},{e:"Peso muerto",s:4,r:"6-10"},
+      {e:"Press banca",s:4,r:"8-12"},{e:"Dominadas",s:4,r:"fallo"},
+      {e:"Plancha",s:3,r:"60s"}
+    ],
+    "Circuito Volumen B": [
+      {e:"Zancadas peso corporal",s:3,r:"140"},{e:"Sentadillas peso corporal",s:2,r:"100-140"},
+      {e:"Jumping jacks",s:1,r:"250"},{e:"Crunch",s:1,r:"230"},
+      {e:"Flexiones",s:1,r:"180"},{e:"Arm haulers",s:4,r:"25"}
+    ],
+    "Calistenia B": [
+      {e:"Jumping jacks",s:10,r:"10"},{e:"Flexiones",s:10,r:"10"}
+    ],
+    "Core+Piernas B": [
+      {e:"Zancadas peso corporal",s:1,r:"115"},{e:"Crunch",s:1,r:"110"},
+      {e:"Flexiones",s:3,r:"10"},{e:"Plancha",s:2,r:"25"}
+    ]
+  },
+  cavill: {
+    "Tren inferior+Core": [
+      {e:"Sentadilla frontal",s:4,r:"6-8"},{e:"Peso muerto rumano",s:4,r:"8-10"},
+      {e:"Zancadas",s:3,r:"10"},{e:"Pantorrilla de pie",s:4,r:"15-20"},
+      {e:"Plancha",s:3,r:"60s"}
+    ],
+    "Espalda+Bíceps": [
+      {e:"Dominadas",s:4,r:"6-10"},{e:"Remo con barra",s:4,r:"8-10"},
+      {e:"Jalón polea",s:3,r:"10-12"},{e:"Remo con mancuerna",s:3,r:"10-12"},
+      {e:"Curl barra",s:3,r:"10-12"},{e:"Curl martillo",s:3,r:"10-12"}
+    ],
+    "Hombros+Core": [
+      {e:"Press militar",s:4,r:"8-10"},{e:"Laterales mancuerna",s:4,r:"10-12"},
+      {e:"Elevaciones frontales",s:4,r:"10-12"},{e:"Pájaros",s:3,r:"12-15"},
+      {e:"Plancha",s:3,r:"60s"}
+    ],
+    "Pecho+Tríceps": [
+      {e:"Press banca",s:4,r:"6-8"},{e:"Press inclinado mancuerna",s:3,r:"8-10"},
+      {e:"Fondos",s:3,r:"fallo"},{e:"Aperturas mancuerna",s:3,r:"10-12"},
+      {e:"Press banca agarre cerrado",s:3,r:"8-10"},{e:"Tríceps polea",s:3,r:"10-12"}
+    ],
+    "Full Body Metabólico": [
+      {e:"Sentadilla goblet",s:4,r:"12"},{e:"Flexiones",s:4,r:"12-15"},
+      {e:"Remo con mancuerna",s:4,r:"10"},{e:"Farmer walk",s:4,r:"40m"}
+    ]
+  },
+  ronaldo: {
+    "Fuerza Full Body": [
+      {e:"Press banca",s:3,r:"12"},{e:"Sentadilla",s:3,r:"12"},
+      {e:"Press inclinado",s:3,r:"12"},{e:"Zancadas",s:3,r:"12"},
+      {e:"Peso muerto rumano",s:3,r:"10-12"},{e:"Dominadas",s:3,r:"8-10"}
+    ],
+    "Explosivo": [
+      {e:"Power clean",s:5,r:"5"},{e:"Sprint 200m",s:8,r:"1"}
+    ],
+    "Funcional Circuito": [
+      {e:"Burpee",s:3,r:"10-15"},{e:"Fondos en banco",s:3,r:"20"},
+      {e:"Flexiones",s:3,r:"20-30"},{e:"Push press",s:3,r:"10"}
+    ],
+    "Descanso activo": [
+      {e:"Cardio suave",s:1,r:"30min"},{e:"Estiramientos",s:1,r:"20min"}
+    ],
+    "Pliometría": [
+      {e:"Saltar la cuerda",s:10,r:"1min"},{e:"Sprint 200m",s:10,r:"50m"}
+    ]
+  },
+  stallone: {
+    "Pecho+Espalda+Abs": [
+      {e:"Press banca",s:4,r:"10-12"},{e:"Dominadas",s:4,r:"fallo"},
+      {e:"Remo en T",s:4,r:"10"},{e:"Aperturas mancuerna",s:4,r:"12"},
+      {e:"Elevación de piernas",s:1,r:"200"},{e:"Crunch",s:1,r:"200"}
+    ],
+    "Piernas+Cardio+Abs": [
+      {e:"Sentadilla",s:4,r:"10-12"},{e:"Prensa de piernas",s:4,r:"12-15"},
+      {e:"Zancadas",s:3,r:"15"},{e:"Curl femoral",s:4,r:"12"},
+      {e:"Pantorrilla de pie",s:4,r:"20"},{e:"Crunch",s:1,r:"200"},
+      {e:"Elevación de piernas",s:1,r:"200"}
+    ],
+    "Hombros+Brazos+Abs": [
+      {e:"Press militar",s:4,r:"10"},{e:"Laterales mancuerna",s:4,r:"12"},
+      {e:"Curl barra",s:4,r:"10-12"},{e:"Curl mancuerna",s:3,r:"12"},
+      {e:"Press banca agarre cerrado",s:4,r:"10"},{e:"Tríceps polea",s:3,r:"12"},
+      {e:"Crunch",s:1,r:"200"},{e:"Elevación de piernas",s:1,r:"200"}
+    ],
+    "Pecho+Espalda+Abs B": [
+      {e:"Press banca",s:4,r:"10-12"},{e:"Dominadas",s:4,r:"fallo"},
+      {e:"Remo en T",s:4,r:"10"},{e:"Aperturas mancuerna",s:4,r:"12"},
+      {e:"Elevación de piernas",s:1,r:"200"},{e:"Crunch",s:1,r:"200"}
+    ],
+    "Piernas+Cardio+Abs B": [
+      {e:"Sentadilla",s:4,r:"10-12"},{e:"Prensa de piernas",s:4,r:"12-15"},
+      {e:"Zancadas",s:3,r:"15"},{e:"Curl femoral",s:4,r:"12"},
+      {e:"Pantorrilla de pie",s:4,r:"20"},{e:"Crunch",s:1,r:"200"},
+      {e:"Elevación de piernas",s:1,r:"200"}
+    ],
+    "Hombros+Brazos+Abs B": [
+      {e:"Press militar",s:4,r:"10"},{e:"Laterales mancuerna",s:4,r:"12"},
+      {e:"Curl barra",s:4,r:"10-12"},{e:"Curl mancuerna",s:3,r:"12"},
+      {e:"Press banca agarre cerrado",s:4,r:"10"},{e:"Tríceps polea",s:3,r:"12"},
+      {e:"Crunch",s:1,r:"200"},{e:"Elevación de piernas",s:1,r:"200"}
+    ]
+  },
+  lebron: {
+    "Full Body+Cardio": [
+      {e:"Remo australiano",s:3,r:"8-10"},{e:"Press militar",s:3,r:"8-12"},
+      {e:"Zancadas",s:3,r:"10"},{e:"Plancha",s:3,r:"60s"}
+    ],
+    "Piernas+Core": [
+      {e:"Sentadilla frontal",s:4,r:"8-10"},{e:"Peso muerto rumano",s:4,r:"8-10"},
+      {e:"Zancadas laterales",s:3,r:"10"},{e:"Pantorrilla de pie",s:4,r:"15-20"},
+      {e:"Plancha",s:3,r:"60s"}
+    ],
+    "Upper Body": [
+      {e:"Dominadas",s:4,r:"6-10"},{e:"Press banca",s:4,r:"8-10"},
+      {e:"Remo con mancuerna",s:4,r:"10"},{e:"Press militar",s:3,r:"10-12"}
+    ],
+    "Conditioning": [
+      {e:"Sprint 200m",s:10,r:"30s"},{e:"Saltar la cuerda",s:5,r:"1min"}
+    ],
+    "Core+Recuperación": [
+      {e:"Crunch",s:3,r:"20"},{e:"Plancha lateral",s:3,r:"30s"},
+      {e:"Estiramientos",s:1,r:"15min"}
+    ]
+  },
+  zyzz: {
+    "Pecho+Tríceps": [
+      {e:"Press banca",s:4,r:"8-12"},{e:"Press inclinado mancuerna",s:3,r:"8-12"},
+      {e:"Aperturas mancuerna",s:3,r:"10-12"},{e:"Fondos",s:3,r:"fallo"},
+      {e:"Tríceps polea",s:3,r:"10-12"},{e:"Tríceps mancuerna",s:3,r:"10-12"}
+    ],
+    "Espalda+Bíceps": [
+      {e:"Dominadas",s:4,r:"fallo"},{e:"Remo con barra",s:3,r:"8-12"},
+      {e:"Jalón polea",s:3,r:"10-12"},{e:"Remo sentado",s:3,r:"10-12"},
+      {e:"Curl barra",s:3,r:"8"},{e:"Curl mancuerna",s:3,r:"8"}
+    ],
+    "Piernas": [
+      {e:"Sentadilla",s:3,r:"8"},{e:"Zancadas",s:3,r:"8"},
+      {e:"Pantorrilla de pie",s:3,r:"8"},{e:"Extensión cuádriceps",s:3,r:"10-12"},
+      {e:"Curl femoral",s:3,r:"10-12"}
+    ],
+    "Hombros+Abs": [
+      {e:"Press militar",s:4,r:"8-10"},{e:"Laterales mancuerna",s:3,r:"10-12"},
+      {e:"Elevaciones frontales",s:3,r:"10-12"},{e:"Pájaros",s:3,r:"12-15"},
+      {e:"Crunch",s:3,r:"20"},{e:"Elevación de piernas",s:3,r:"15"}
+    ],
+    "Full Body Pump": [
+      {e:"Press banca mancuerna",s:3,r:"8"},{e:"Curl barra",s:3,r:"8"},
+      {e:"Sentadilla",s:3,r:"8"},{e:"Pantorrilla de pie",s:3,r:"8"},
+      {e:"Remo con barra",s:3,r:"8"}
+    ]
+  },
+  serena: {
+    "Brazos+Core": [
+      {e:"Plancha",s:3,r:"30s"},{e:"Remo con mancuerna",s:3,r:"10"},
+      {e:"Curl mancuerna",s:3,r:"10"},{e:"Fondos en banco",s:3,r:"12"},
+      {e:"Flexiones",s:3,r:"10"}
+    ],
+    "Booty Burnout": [
+      {e:"Sentadilla con pausa",s:4,r:"8-12"},{e:"Sentadilla frontal",s:4,r:"8-12"},
+      {e:"Sentadilla en caja",s:4,r:"8-12"}
+    ],
+    "Core+Piernas": [
+      {e:"Crunch bicicleta",s:3,r:"20"},{e:"Crunch",s:3,r:"15"},
+      {e:"Plancha",s:3,r:"30s"},{e:"Zancada con mancuerna",s:3,r:"12"},
+      {e:"Step up con mancuerna",s:3,r:"10"}
+    ],
+    "Cardio+Movilidad": [
+      {e:"Cardio suave",s:1,r:"30min"},{e:"Estiramientos",s:1,r:"15min"}
+    ],
+    "Full Body": [
+      {e:"Sentadillas peso corporal",s:3,r:"12"},{e:"Flexiones",s:3,r:"12"},
+      {e:"Remo con mancuerna",s:3,r:"12"},{e:"Plancha",s:3,r:"30s"}
+    ]
+  },
+  galgadot: {
+    "Circuito Metabólico": [
+      {e:"Mountain climbers",s:3,r:"1min"},{e:"Burpee",s:3,r:"1min"},
+      {e:"Plancha",s:3,r:"1min"}
+    ],
+    "Barbell Complex": [
+      {e:"Peso muerto rumano",s:4,r:"5"},{e:"Remo con barra",s:4,r:"5"},
+      {e:"Curl inverso barra",s:4,r:"5"},{e:"Push press",s:4,r:"5"},
+      {e:"Sentadilla",s:4,r:"5"}
+    ],
+    "Push+Pull": [
+      {e:"Dominadas",s:3,r:"10"},{e:"Flexiones",s:3,r:"10-15"},
+      {e:"Zancada con mancuerna",s:3,r:"10"},{e:"Sentadilla frontal",s:3,r:"10"},
+      {e:"Push press",s:3,r:"10"},{e:"Crunch",s:3,r:"15"}
+    ],
+    "Cardio+Movilidad": [
+      {e:"Cardio moderado",s:1,r:"30min"},{e:"Estiramientos",s:1,r:"15min"}
+    ],
+    "Complex+Core": [
+      {e:"Peso muerto rumano",s:4,r:"5"},{e:"Remo con barra",s:4,r:"5"},
+      {e:"Push press",s:4,r:"5"},{e:"Crunch",s:3,r:"15"}
+    ]
+  },
+  jlo: {
+    "Tren inferior": [
+      {e:"Sentadilla goblet",s:4,r:"12"},{e:"Sentadilla sumo",s:4,r:"12"},
+      {e:"Zancada con mancuerna",s:4,r:"12"},{e:"Hip thrust",s:4,r:"15"},
+      {e:"Plancha lateral",s:3,r:"25s"}
+    ],
+    "Tren superior": [
+      {e:"Laterales mancuerna",s:4,r:"12"},{e:"Curl mancuerna",s:4,r:"12"},
+      {e:"Remo con mancuerna",s:4,r:"12"},{e:"Flexiones",s:4,r:"15"},
+      {e:"Fondos en banco",s:3,r:"12"}
+    ],
+    "Funcional": [
+      {e:"Sentadilla sumo",s:4,r:"15"},{e:"Plancha lateral",s:4,r:"30s"},
+      {e:"Hip thrust",s:3,r:"15"}
+    ],
+    "Cardio+Core": [
+      {e:"Cardio suave",s:1,r:"35min"},{e:"Crunch",s:3,r:"20"},
+      {e:"Elevación de piernas",s:3,r:"15"}
+    ],
+    "Full Body": [
+      {e:"Sentadilla goblet",s:3,r:"12"},{e:"Laterales mancuerna",s:3,r:"12"},
+      {e:"Curl mancuerna",s:3,r:"12"},{e:"Plancha lateral",s:3,r:"30s"}
+    ]
+  },
+  margot: {
+    "Crazy 8": [
+      {e:"Sentadillas peso corporal",s:4,r:"20"},{e:"Laterales mancuerna",s:4,r:"30"},
+      {e:"Tríceps mancuerna",s:4,r:"25"},{e:"Crunch",s:4,r:"20"},
+      {e:"Elevación de piernas",s:4,r:"15"},{e:"Plancha",s:3,r:"30s"}
+    ],
+    "Cardio+Core": [
+      {e:"Cardio suave",s:1,r:"30min"},{e:"Plancha",s:3,r:"40s"},
+      {e:"Crunch bicicleta",s:3,r:"20"}
+    ],
+    "Crazy 8 Light": [
+      {e:"Sentadillas peso corporal",s:3,r:"20"},{e:"Laterales mancuerna",s:3,r:"25"},
+      {e:"Tríceps mancuerna",s:3,r:"20"},{e:"Plancha",s:2,r:"30s"},
+      {e:"Crunch",s:2,r:"15"}
+    ],
+    "Fuerza": [
+      {e:"Sentadilla goblet",s:3,r:"12"},{e:"Remo con mancuerna",s:3,r:"12"},
+      {e:"Press banca mancuerna",s:3,r:"12"},{e:"Zancada con mancuerna",s:3,r:"12"}
+    ],
+    "Cardio": [
+      {e:"Cardio suave",s:1,r:"25min"},{e:"Estiramientos",s:1,r:"12min"}
+    ]
+  },
+  zendaya: {
+    "Circuito Zendaya": [
+      {e:"Flexiones",s:3,r:"10"},{e:"Sentadillas peso corporal",s:3,r:"15"},
+      {e:"Sentadilla con salto",s:3,r:"30"},{e:"Burpee",s:3,r:"20"},
+      {e:"Crunch",s:3,r:"10"},{e:"Zancadas peso corporal",s:3,r:"30"}
+    ],
+    "Cardio+Movilidad": [
+      {e:"Cardio suave",s:1,r:"30min"},{e:"Estiramientos",s:1,r:"15min"}
+    ],
+    "Circuito Light": [
+      {e:"Flexiones",s:3,r:"10"},{e:"Sentadillas peso corporal",s:3,r:"15"},
+      {e:"Sentadilla con salto",s:3,r:"20"},{e:"Burpee",s:3,r:"10"},
+      {e:"Crunch",s:3,r:"15"}
+    ],
+    "Yoga+Core": [
+      {e:"Plancha",s:3,r:"35s"},{e:"Elevación de piernas",s:3,r:"15"},
+      {e:"Estiramientos",s:1,r:"35min"}
+    ],
+    "Boxing+Cardio": [
+      {e:"Mountain climbers",s:4,r:"1min"},{e:"Cardio suave",s:1,r:"15min"}
+    ]
+  },
+  halle: {
+    "Circuito Halle": [
+      {e:"Press Arnold",s:4,r:"6-8"},{e:"Sentadilla con salto",s:4,r:"6-8"},
+      {e:"Crunch",s:4,r:"6-8"},{e:"Burpee",s:4,r:"6-8"},{e:"Plancha",s:3,r:"40s"}
+    ],
+    "Cardio+Movilidad": [
+      {e:"Cardio moderado",s:1,r:"25min"},{e:"Estiramientos",s:1,r:"12min"}
+    ],
+    "Circuito Halle B": [
+      {e:"Press Arnold",s:3,r:"6-8"},{e:"Sentadilla con salto",s:3,r:"6-8"},
+      {e:"Burpee",s:3,r:"6-8"},{e:"Plancha",s:3,r:"40s"}
+    ],
+    "Core+Estabilidad": [
+      {e:"Plancha",s:3,r:"40s"},{e:"Plancha lateral",s:3,r:"30s"},{e:"Crunch",s:3,r:"20"}
+    ]
+  },
+  brie: {
+    "Pull Day": [
+      {e:"Flexiones",s:3,r:"20"},{e:"Peso muerto",s:5,r:"12-3"},
+      {e:"Remo sentado",s:3,r:"10"},{e:"Jalón polea",s:3,r:"10"},
+      {e:"Dominadas",s:3,r:"10"},{e:"Curl martillo",s:3,r:"10"}
+    ],
+    "Push Day": [
+      {e:"Press banca",s:5,r:"12-3"},{e:"Press inclinado mancuerna",s:3,r:"10"},
+      {e:"Press militar",s:3,r:"10"},{e:"Laterales mancuerna",s:3,r:"10"},
+      {e:"Fondos",s:3,r:"10"}
+    ],
+    "Piernas": [
+      {e:"Sentadillas peso corporal",s:3,r:"20"},{e:"Sentadilla",s:5,r:"12-3"},
+      {e:"Hip thrust",s:3,r:"10"},{e:"Zancadas",s:3,r:"10"},
+      {e:"Curl femoral",s:3,r:"10"},{e:"Pantorrilla de pie",s:3,r:"15"}
+    ],
+    "Full Body": [
+      {e:"Sentadilla frontal",s:3,r:"10"},{e:"Press Arnold",s:3,r:"10"},
+      {e:"Dominadas",s:3,r:"10"},{e:"Flexiones",s:3,r:"15"},{e:"Burpee",s:3,r:"10"}
+    ],
+    "Full Body B": [
+      {e:"Sentadilla frontal",s:3,r:"10"},{e:"Press Arnold",s:3,r:"10"},
+      {e:"Remo con mancuerna",s:3,r:"10"},{e:"Flexiones",s:3,r:"12"},
+      {e:"Peso muerto rumano",s:3,r:"10"}
+    ],
+    "Descanso": [
+      {e:"Cardio suave",s:1,r:"20min"},{e:"Estiramientos",s:1,r:"15min"}
+    ]
+  },
+  scarlett: {
+    "Fuerza A": [
+      {e:"Sentadilla",s:5,r:"8-3"},{e:"Press militar",s:5,r:"8-3"},
+      {e:"Zancadas",s:3,r:"12"},{e:"Dominadas agarre supino",s:3,r:"12-8"},
+      {e:"Remo con mancuerna",s:3,r:"12-8"}
+    ],
+    "Circuito Funcional": [
+      {e:"Flexiones",s:5,r:"5"},{e:"Sentadillas peso corporal",s:5,r:"8"},
+      {e:"Zancadas peso corporal",s:5,r:"10"},{e:"Dominadas",s:5,r:"3"},
+      {e:"Tríceps polea",s:5,r:"5"},{e:"Saltar la cuerda",s:1,r:"10min"}
+    ],
+    "Recuperación": [
+      {e:"Cardio suave",s:1,r:"35min"},{e:"Estiramientos",s:1,r:"15min"}
+    ],
+    "Fuerza B": [
+      {e:"Sentadilla frontal",s:5,r:"8-3"},{e:"Press inclinado mancuerna",s:3,r:"10"},
+      {e:"Remo con barra",s:3,r:"10"},{e:"Zancada con mancuerna",s:3,r:"12"},
+      {e:"Curl mancuerna",s:3,r:"10"}
+    ],
+    "Circuito Funcional B": [
+      {e:"Flexiones",s:4,r:"6"},{e:"Sentadillas peso corporal",s:4,r:"6"},
+      {e:"Dominadas",s:4,r:"4"},{e:"Curl inverso barra",s:4,r:"5"},
+      {e:"Saltar la cuerda",s:1,r:"10min"}
+    ]
+  },
+  jessica: {
+    "Unilateral A": [
+      {e:"Sentadilla búlgara",s:2,r:"10"},{e:"Peso muerto rumano",s:2,r:"10"},
+      {e:"Hip thrust",s:2,r:"15"},{e:"Plancha lateral",s:2,r:"30s"},{e:"Plancha",s:2,r:"20s"}
+    ],
+    "Unilateral+Core": [
+      {e:"Sentadilla búlgara",s:2,r:"10"},{e:"Peso muerto rumano",s:2,r:"10"},
+      {e:"Hip thrust",s:2,r:"15"},{e:"Plancha",s:3,r:"30s"},{e:"Crunch",s:3,r:"10"}
+    ],
+    "Full Body": [
+      {e:"Sentadilla búlgara",s:3,r:"10"},{e:"Peso muerto rumano",s:3,r:"10"},
+      {e:"Remo con mancuerna",s:3,r:"10"},{e:"Flexiones",s:3,r:"12"},{e:"Hip thrust",s:3,r:"12"}
+    ]
+  },
+  rihanna: {
+    "Cardio+Fuerza A": [
+      {e:"Cardio suave",s:1,r:"5km"},{e:"Sentadillas peso corporal",s:3,r:"25"},
+      {e:"Zancada con mancuerna",s:3,r:"25"},{e:"Crunch",s:3,r:"25"}
+    ],
+    "Cardio+Fuerza B": [
+      {e:"Cardio suave",s:1,r:"5km"},{e:"Sentadillas peso corporal",s:3,r:"25"},
+      {e:"Zancadas peso corporal",s:3,r:"25"},{e:"Crunch",s:3,r:"25"}
+    ],
+    "Pilates+Core": [
+      {e:"Estiramientos",s:1,r:"30min"},{e:"Plancha",s:3,r:"35s"},
+      {e:"Crunch bicicleta",s:3,r:"20"}
+    ],
+    "Cardio+Fuerza C": [
+      {e:"Cardio suave",s:1,r:"5km"},{e:"Sentadillas peso corporal",s:3,r:"25"},
+      {e:"Zancada con mancuerna",s:3,r:"25"},{e:"Crunch",s:3,r:"25"}
+    ]
+  }
+}
 
 function buildCelebRoutine(celeb, userEquipment, selDays){
   const r = Array(7).fill(null);
 
+  // Exercise library per celebrity — self-contained, verified sources
+  // Each exercise: {e: name, s: sets, r: reps}
 
 
     const exercises = CELEB_EXERCISES[celeb.id] || {};
@@ -1589,7 +1601,7 @@ function buildCelebRoutine(celeb, userEquipment, selDays){
       const exS    = typeof ex === "string" ? 4   : ex.s;
       const exR    = typeof ex === "string" ? "8-12" : ex.r;
       return {
-        e: adaptExercise(exName, userEquipment),
+        e: exName,
         s: exS,
         r: exR,
         id: `c${dayIdx}${j}`
@@ -2183,7 +2195,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
     }
     // Check all done
     const allDone=ns.every(e=>e.every(s=>s.done));
-    if(allDone) setTimeout(()=>{setFinalSecs(sessSecs);setAllDone(true);FStore.saveSession(day&&day.l,exs,sessSecs);FStore.invalidateSessionCache();},700);
+    if(allDone) setTimeout(()=>{setFinalSecs(sessSecs);setAllDone(true);FStore.saveSession(day&&day.l,exs,sessSecs);},700);
   }
 
   function addSet(ei){
@@ -3443,7 +3455,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
         borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
         <div style={{display:"flex",background:"rgba(255,255,255,0.05)",
           borderRadius:12,padding:3,gap:0}}>
-          {[{id:"train",l:lang==="es"?"ENTRENO":"TRAIN",icon:"⚡"},{id:"hist",l:lang==="es"?"HISTORIAL":"HISTORY",icon:"📋"},{id:"body",l:lang==="es"?"CUERPO":"BODY",icon:"🫀"}].map(tb=>{
+          {[{id:"train",l:lang==="es"?"ENTRENO":"TRAIN",icon:"⚡"},{id:"body",l:lang==="es"?"CUERPO":"BODY",icon:"🫀"}].map(tb=>{
             const active=tab===tb.id;
             return(
             <button key={tb.id} data-tour={tb.id==="body"?"tab-body":undefined} onClick={()=>{setTab(tb.id);setAddEx(false);setAddF(false);}}
@@ -3946,12 +3958,6 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                 </div>
               </div>
             )}
-          </div>
-        )}
-
-        {tab==="hist"&&(
-          <div style={{animation:"fu .2s ease"}}>
-            <HistorialTab lang={lang}/>
           </div>
         )}
 
@@ -5359,28 +5365,28 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
         <div style={{minHeight:"100vh",padding:"64px 26px 40px",boxSizing:"border-box"}}>
           {(()=>{
               const CELEB_CARDS=[
-                {id:"arnold",    img:IMGS_C.arnold,    ac:"#f0a830", label:"IRON ARNOLD",    name:{es:"SCHWARZENEGGER",en:"SCHWARZENEGGER"}, badge:"CHEST+BACK",days:6, split:"Pecho+Espalda / Hombros+Brazos / Piernas (×2)", lvl:{es:"EXTREMO",en:"EXTREME"},  source:"The New Encyclopedia of Modern Bodybuilding — Schwarzenegger & Dobbins (1998)", desc:{es:"Split documentado en su libro: Pecho+Espalda, Hombros+Brazos, Piernas — repetido 2x/semana. 5-6 series × 6-10 reps, pirámide invertida hasta fallo. Sesiones de 90-120 min.",en:"Documented in his book: Chest+Back, Shoulders+Arms, Legs — twice weekly. 5-6 sets x 6-10 reps, inverted pyramid to failure. 90-120 min sessions."}},
-                {id:"hemsworth", img:IMGS_C.hemsworth, ac:"#4898e8", label:"THOR WEEK",      name:{es:"HEMSWORTH",en:"HEMSWORTH"},           badge:"PPL+HIIT",  days:5, split:"Push / Pull / Legs / Full / Athletic",          lvl:{es:"ALTO",en:"HIGH"},        source:"Luke Zocchi (trainer) . Centr App . Men's Health 2022", desc:{es:"Documentado por Luke Zocchi en Centr: press banca 8 series pirámide 12→4 reps. Fuerza heavy + HIIT funcional. Máx 60 min/sesión. Énfasis hombros y espalda para el look Thor.",en:"Documented by Luke Zocchi on Centr: bench press 8 sets pyramid 12→4 reps. Heavy strength + functional HIIT. Max 60 min/session. Shoulder and back emphasis for the Thor look."}},
-                {id:"rock",      img:IMGS_C.rock,      ac:"#30c870", label:"IRON PARADISE",  name:{es:"THE ROCK",en:"THE ROCK"},             badge:"4AM IRON",  days:6, split:"Hombros / Espalda / Piernas / Brazos / Pecho",  lvl:{es:"BRUTAL",en:"BRUTAL"},    source:"Instagram @therock . Men's Journal . ESPN Body Issue 2019", desc:{es:"Documentado en Instagram: 4×12 base, pirámide semanal 12→10→8→6. Cardio 30-50 min en ayunas a las 4AM + 90 min pesas. Usa SSB squat (no barra clásica) y prensa. Sin peso muerto tradicional.",en:"Documented on Instagram: 4x12 base, weekly pyramid 12→10→8→6. 30-50 min fasted cardio at 4AM + 90 min weights. Uses SSB squat (not barbell) and leg press. No conventional deadlift."}},
-                {id:"goggins",   img:IMGS_C.goggins,   ac:"#e09020", label:"NO EXCUSES",     name:{es:"GOGGINS",en:"GOGGINS"},               badge:"CALISTENIA",days:6, split:"Pull / Push / Piernas (rotación)",               lvl:{es:"INFERNAL",en:"INFERNAL"},source:"Can't Hurt Me — David Goggins (2018) . podcasts verificados", desc:{es:"Documentado en su libro: calistenia pura, series al fallo absoluto sin número fijo. Regla del 40%: cuando crees que terminaste, vas al 40% de tu capacidad real. Cardio diario obligatorio. Entrena incluso lesionado.",en:"Documented in his book: pure calisthenics, sets to absolute failure with no fixed number. 40% rule: when you think you're done, you're at 40% of real capacity. Daily mandatory cardio. Trains through injury."}},
-                {id:"cavill",    img:IMGS_C.cavill,    ac:"#c83030", label:"SUPERMAN GRIND", name:{es:"CAVILL",en:"CAVILL"},                 badge:"POWERBUILD",days:5, split:"Push / Pull / Piernas / Upper / Athletic",      lvl:{es:"ALTO",en:"HIGH"},        source:"Dave Rienzi (trainer) . Men's Health / GQ 2013-2023", desc:{es:"Reportado por Dave Rienzi: powerbuilding — fuerza base heavy (press banca >140kg) seguido de volumen estético. 4 series × 6-10 reps. Prep Man of Steel duró 10 meses. Énfasis en pecho y espalda.",en:"Reported by Dave Rienzi: powerbuilding — heavy base strength (140kg+ bench) then aesthetic volume. 4 sets x 6-10 reps. Man of Steel prep lasted 10 months. Chest and back emphasis."}},
-                {id:"ronaldo",   img:IMGS_C.ronaldo,   ac:"#d4a820", label:"CR7 CIRCUIT",    name:{es:"RONALDO",en:"RONALDO"},               badge:"ATLÉTICO",  days:5, split:"Piernas / Upper / Potencia / Core / Full",         lvl:{es:"ALTO",en:"HIGH"},        source:"Múltiples fuentes verificadas 2022-2024 . Set For Set . Man of Many", desc:{es:"5 días, 3-4h/día. Lunes: circuito piernas ×3. Martes: upper body ×3. Miércoles: 5×5 power cleans (fuerza explosiva). Jueves: core y estabilidad. Viernes: full body. Reps altas (8-15) — sin levantamientos máximos.",en:"5 days, 3-4h/day. Monday: leg circuit x3. Tuesday: upper body x3. Wednesday: 5x5 power cleans (explosive strength). Thursday: core and stability. Friday: full body. High reps (8-15) — no max lifting."}},
-                {id:"stallone",  img:IMGS_C.stallone,  ac:"#e88020", label:"ROCKY PREP",     name:{es:"STALLONE",en:"STALLONE"},             badge:"GOLDEN ERA",days:6, split:"Upper / Lower / Upper / Lower / Full / Cardio",  lvl:{es:"ALTO",en:"HIGH"},        source:"DVD extras Rocky III (1982) + Rocky IV (1985) . entrevistas verificadas", desc:{es:"Documentado en extras Rocky III/IV: dos sesiones diarias (mañana y tarde). En Rocky IV bajó a <1,000 kcal/día. Alta frecuencia de torso. Cardio matutino obligatorio. Énfasis en brazos, pecho y espalda para la silueta de boxeador.",en:"Documented in Rocky III/IV DVD extras: two daily sessions (morning and afternoon). Rocky IV prep: under 1,000 kcal/day. High upper body frequency. Mandatory morning cardio. Arms, chest and back emphasis for the boxer silhouette."}},
-                {id:"lebron",    img:IMGS_C.lebron,    ac:"#f0a818", label:"KING PROTOCOL",  name:{es:"LEBRON",en:"LEBRON"},                 badge:"ATLÉTICO",  days:5, split:"Lower Power / Upper Push / Upper Pull / Athletic", lvl:{es:"ALTO",en:"HIGH"},        source:"Mike Mancias (trainer) . Sports Illustrated . The Shop HBO", desc:{es:"Confirmado por trainer Mike Mancias: 5 días, enfoque en explosividad y movilidad funcional. +$1.5M/año en recuperación. Crioterapia, yoga y trabajo de movilidad integrados. Movimientos funcionales sobre aislamiento.",en:"Confirmed by trainer Mike Mancias: 5 days, focus on explosiveness and functional mobility. $1.5M+/year in recovery. Cryotherapy, yoga and mobility work integrated. Functional over isolation."}},
-                {id:"zyzz",      img:IMGS_C.zyzz,      ac:"#e050a8", label:"AESTHETICS GOD", name:{es:"ZYZZ",en:"ZYZZ"},                     badge:"BRO SPLIT", days:5, split:"Pecho / Espalda / Hombros / Piernas / Brazos",  lvl:{es:"MODERADO",en:"MODERATE"},source:"Videos YouTube originales 2009-2011 . bodybuilding.com foros", desc:{es:"Documentado en sus videos: bro split 5 días, 4 series × 10-12 reps. Estética sobre fuerza — definición y proporción como objetivo. Cardio ligero 2-3×/semana. Dieta de definición. WGMM.",en:"Documented in his videos: 5-day bro split, 4 sets x 10-12 reps. Aesthetics over strength — definition and proportion as goal. Light cardio 2-3x/week. Cutting diet. WGMM."}},
+                {id:"arnold",    img:IMGS_C.arnold,    ac:"#f0a830", label:"IRON ARNOLD",    name:{es:"SCHWARZENEGGER",en:"SCHWARZENEGGER"}, badge:"CHEST+BACK",days:6, split:"Pecho+Espalda / Piernas+Gemelos / Brazos+Hombros (×2)", lvl:{es:"EXTREMO",en:"EXTREME"},  source:"The New Encyclopedia of Modern Bodybuilding — Schwarzenegger & Dobbins (1998)", desc:{es:"Split documentado en su libro: Pecho+Espalda, Hombros+Brazos, Piernas — repetido 2x/semana. 5-6 series × 6-10 reps, pirámide invertida hasta fallo. Sesiones de 90-120 min.",en:"Documented in his book: Chest+Back, Shoulders+Arms, Legs — twice weekly. 5-6 sets x 6-10 reps, inverted pyramid to failure. 90-120 min sessions."}},
+                {id:"hemsworth", img:IMGS_C.hemsworth, ac:"#4898e8", label:"THOR WEEK",      name:{es:"HEMSWORTH",en:"HEMSWORTH"},           badge:"6 DÍAS",  days:6, split:"Espalda / Pecho / Piernas / Hombros / Brazos / HIIT",          lvl:{es:"ALTO",en:"HIGH"},        source:"Luke Zocchi (trainer) . Centr App . Men's Health 2022", desc:{es:"Documentado por Luke Zocchi en Centr: press banca 8 series pirámide 12→4 reps. Fuerza heavy + HIIT funcional. Máx 60 min/sesión. Énfasis hombros y espalda para el look Thor.",en:"Documented by Luke Zocchi on Centr: bench press 8 sets pyramid 12→4 reps. Heavy strength + functional HIIT. Max 60 min/session. Shoulder and back emphasis for the Thor look."}},
+                {id:"rock",      img:IMGS_C.rock,      ac:"#30c870", label:"IRON PARADISE",  name:{es:"THE ROCK",en:"THE ROCK"},             badge:"4AM IRON",  days:6, split:"Piernas / Espalda / Hombros / Brazos / Piernas / Pecho",  lvl:{es:"BRUTAL",en:"BRUTAL"},    source:"Instagram @therock . Men's Journal . ESPN Body Issue 2019", desc:{es:"Documentado en Instagram: 4×12 base, pirámide semanal 12→10→8→6. Cardio 30-50 min en ayunas a las 4AM + 90 min pesas. Usa SSB squat (no barra clásica) y prensa. Sin peso muerto tradicional.",en:"Documented on Instagram: 4x12 base, weekly pyramid 12→10→8→6. 30-50 min fasted cardio at 4AM + 90 min weights. Uses SSB squat (not barbell) and leg press. No conventional deadlift."}},
+                {id:"goggins",   img:IMGS_C.goggins,   ac:"#e09020", label:"NO EXCUSES",     name:{es:"GOGGINS",en:"GOGGINS"},               badge:"CALISTENIA",days:7, split:"Circuito / Calistenia / Core / Gimnasio / Circuito / Calistenia / Core",               lvl:{es:"INFERNAL",en:"INFERNAL"},source:"Can't Hurt Me — David Goggins (2018) . podcasts verificados", desc:{es:"Documentado en su libro: calistenia pura, series al fallo absoluto sin número fijo. Regla del 40%: cuando crees que terminaste, vas al 40% de tu capacidad real. Cardio diario obligatorio. Entrena incluso lesionado.",en:"Documented in his book: pure calisthenics, sets to absolute failure with no fixed number. 40% rule: when you think you're done, you're at 40% of real capacity. Daily mandatory cardio. Trains through injury."}},
+                {id:"cavill",    img:IMGS_C.cavill,    ac:"#c83030", label:"SUPERMAN GRIND", name:{es:"CAVILL",en:"CAVILL"},                 badge:"POWERBUILD",days:5, split:"Tren inferior / Espalda / Hombros / Pecho / Full Body",      lvl:{es:"ALTO",en:"HIGH"},        source:"Dave Rienzi (trainer) . Men's Health / GQ 2013-2023", desc:{es:"Reportado por Dave Rienzi: powerbuilding — fuerza base heavy (press banca >140kg) seguido de volumen estético. 4 series × 6-10 reps. Prep Man of Steel duró 10 meses. Énfasis en pecho y espalda.",en:"Reported by Dave Rienzi: powerbuilding — heavy base strength (140kg+ bench) then aesthetic volume. 4 sets x 6-10 reps. Man of Steel prep lasted 10 months. Chest and back emphasis."}},
+                {id:"ronaldo",   img:IMGS_C.ronaldo,   ac:"#d4a820", label:"CR7 CIRCUIT",    name:{es:"RONALDO",en:"RONALDO"},               badge:"ATLÉTICO",  days:5, split:"Fuerza / Explosivo / Funcional / Descanso / Pliometría",         lvl:{es:"ALTO",en:"HIGH"},        source:"Múltiples fuentes verificadas 2022-2024 . Set For Set . Man of Many", desc:{es:"5 días, 3-4h/día. Lunes: circuito piernas ×3. Martes: upper body ×3. Miércoles: 5×5 power cleans (fuerza explosiva). Jueves: core y estabilidad. Viernes: full body. Reps altas (8-15) — sin levantamientos máximos.",en:"5 days, 3-4h/day. Monday: leg circuit x3. Tuesday: upper body x3. Wednesday: 5x5 power cleans (explosive strength). Thursday: core and stability. Friday: full body. High reps (8-15) — no max lifting."}},
+                {id:"stallone",  img:IMGS_C.stallone,  ac:"#e88020", label:"ROCKY PREP",     name:{es:"STALLONE",en:"STALLONE"},             badge:"GOLDEN ERA",days:6, split:"Pecho+Espalda+Abs / Piernas+Cardio / Hombros+Brazos (×2)",  lvl:{es:"ALTO",en:"HIGH"},        source:"DVD extras Rocky III (1982) + Rocky IV (1985) . entrevistas verificadas", desc:{es:"Documentado en extras Rocky III/IV: dos sesiones diarias (mañana y tarde). En Rocky IV bajó a <1,000 kcal/día. Alta frecuencia de torso. Cardio matutino obligatorio. Énfasis en brazos, pecho y espalda para la silueta de boxeador.",en:"Documented in Rocky III/IV DVD extras: two daily sessions (morning and afternoon). Rocky IV prep: under 1,000 kcal/day. High upper body frequency. Mandatory morning cardio. Arms, chest and back emphasis for the boxer silhouette."}},
+                {id:"lebron",    img:IMGS_C.lebron,    ac:"#f0a818", label:"KING PROTOCOL",  name:{es:"LEBRON",en:"LEBRON"},                 badge:"KING",  days:5, split:"Full Body / Piernas / Upper Body / Conditioning / Core", lvl:{es:"ALTO",en:"HIGH"},        source:"Mike Mancias (trainer) . Sports Illustrated . The Shop HBO", desc:{es:"Confirmado por trainer Mike Mancias: 5 días, enfoque en explosividad y movilidad funcional. +$1.5M/año en recuperación. Crioterapia, yoga y trabajo de movilidad integrados. Movimientos funcionales sobre aislamiento.",en:"Confirmed by trainer Mike Mancias: 5 days, focus on explosiveness and functional mobility. $1.5M+/year in recovery. Cryotherapy, yoga and mobility work integrated. Functional over isolation."}},
+                {id:"zyzz",      img:IMGS_C.zyzz,      ac:"#e050a8", label:"AESTHETICS GOD", name:{es:"ZYZZ",en:"ZYZZ"},                     badge:"BRO SPLIT", days:5, split:"Pecho+Tríceps / Espalda+Bíceps / Piernas / Hombros / Full Body",  lvl:{es:"MODERADO",en:"MODERATE"},source:"Videos YouTube originales 2009-2011 . bodybuilding.com foros", desc:{es:"Documentado en sus videos: bro split 5 días, 4 series × 10-12 reps. Estética sobre fuerza — definición y proporción como objetivo. Cardio ligero 2-3×/semana. Dieta de definición. WGMM.",en:"Documented in his videos: 5-day bro split, 4 sets x 10-12 reps. Aesthetics over strength — definition and proportion as goal. Light cardio 2-3x/week. Cutting diet. WGMM."}},
               ]
 
               const CELEB_CARDS_F=[
-                {id:"serena",   img:IMGS_C.serena,   ac:"#e84393", label:"SERENA WEEK",     name:{es:"SERENA WILLIAMS",en:"SERENA WILLIAMS"}, badge:"GLUTES+CORE", days:5, split:"Brazos+Core / Glúteos / Core+Piernas / Cardio / Full Body", lvl:{es:"ALTO",en:"HIGH"},    source:"Serena Williams official training breakdown — booty burnout + core circuits", desc:{es:"Circuitos de 3-5 series con 8-12 reps. 'Booty burnout' con sentadillas con barra, core intenso con fitball. Cardio suave día 4. Full body circuito día 5.",en:"Circuits of 3-5 sets x 8-12 reps. Booty burnout with barbell squats, intense core with fitball. Light cardio day 4. Full body circuit day 5."}},
-                {id:"galgadot", img:IMGS_C.galgadot, ac:"#c0a870", label:"WONDER WOMAN",    name:{es:"GAL GADOT",en:"GAL GADOT"},             badge:"BARBELL+HIIT", days:5, split:"Metabólico / Barbell Complex / Push+Pull / Cardio / Complex", lvl:{es:"EXTREMO",en:"EXTREME"}, source:"Gal Gadot Wonder Woman training — trainer Mark Twight / Gym Jones protocol", desc:{es:"Barbell complex sin soltar la barra: Romanian DL + Row + Reverse curl + Push press + Squat. 4 rondas. Shadow boxing + V-ups como superset. Muy exigente.",en:"Barbell complex without dropping the bar: Romanian DL + Row + Reverse curl + Push press + Squat. 4 rounds. Shadow boxing + V-ups superset. Very demanding."}},
-                {id:"jlo",      img:IMGS_C.jlo,      ac:"#f0b429", label:"J-LO WEEK",        name:{es:"JENNIFER LOPEZ",en:"JENNIFER LOPEZ"},    badge:"FULL BODY",   days:5, split:"Tren inferior / Tren superior / Funcional / Cardio+Core / Full Body", lvl:{es:"MEDIO",en:"MEDIUM"}, source:"Jennifer Lopez training program — trainer David Kirsch", desc:{es:"3-4 series de 10-15 reps. Énfasis en glúteos y tren inferior. Hip thrusts, sumo squat con balón medicinal, resistance bands. Cardio 30-40 min día 4.",en:"3-4 sets of 10-15 reps. Emphasis on glutes and lower body. Hip thrusts, sumo squat with medicine ball, resistance bands. 30-40 min cardio day 4."}},
-                {id:"margot",   img:IMGS_C.margot,   ac:"#4898e8", label:"CRAZY 8",           name:{es:"MARGOT ROBBIE",en:"MARGOT ROBBIE"},      badge:"CIRCUITO",    days:5, split:"Crazy 8 / Cardio+Core / Crazy 8 Light / Fuerza / Cardio", lvl:{es:"ALTO",en:"HIGH"}, source:"Margot Robbie Harley Quinn training — Crazy 8 circuit, trainer David Higgins", desc:{es:"Circuito 'Crazy 8': 8 ejercicios × 20-30 reps, 3-4 rondas. Lateral raises, tricep extensions, arabesques con peso, bodyweight squats. Explosivo.",en:"'Crazy 8' circuit: 8 exercises × 20-30 reps, 3-4 rounds. Lateral raises, tricep extensions, weighted arabesques, bodyweight squats. Explosive style."}},
-                {id:"zendaya",  img:IMGS_C.zendaya,  ac:"#9b59b6", label:"ZENDAYA CIRCUIT",  name:{es:"ZENDAYA",en:"ZENDAYA"},                  badge:"BODYWEIGHT",  days:5, split:"Circuito / Cardio / Circuito Light / Yoga+Core / Boxing", lvl:{es:"MEDIO",en:"MEDIUM"}, source:"Zendaya workout breakdown — bodyweight + boxing + yoga protocol", desc:{es:"Circuito bodyweight: knee push-ups, air squats, jump squats, burpees, sit-ups, lunges. Boxing en sombra. Yoga 30 min. Jogging 800m+ de base. Sin pesas.",en:"Bodyweight circuit: knee push-ups, air squats, jump squats, burpees, sit-ups, lunges. Shadow boxing. 30-min yoga. 800m+ jog base. No weights needed."}},
-                {id:"halle",    img:IMGS_C.halle,    ac:"#3fcf8e", label:"HALLE CIRCUIT",    name:{es:"HALLE BERRY",en:"HALLE BERRY"},           badge:"FUERZA+SALTO",days:4, split:"Circuito Halle / Cardio / Circuito / Core+Estabilidad", lvl:{es:"ALTO",en:"HIGH"}, source:"Halle Berry strength circuit — low rep heavy training protocol", desc:{es:"Circuito intenso 6-8 reps, 3-5 vueltas: Arnold press + jump squat, V-ups + overhead press, jumping jacks + burpees. 45 s descanso entre rondas. Heavy.",en:"Intense circuit 6-8 reps, 3-5 rounds: Arnold press + jump squat, V-ups + overhead press, jumping jacks + burpees. 45s rest between rounds. Heavy."}},
-                {id:"brie",     img:IMGS_C.brie,     ac:"#e05555", label:"CAPTAIN MARVEL",   name:{es:"BRIE LARSON",en:"BRIE LARSON"},           badge:"PPL+FULL",    days:6, split:"Pull / Push / Piernas / Full Body / Full Body / Descanso", lvl:{es:"EXTREMO",en:"EXTREME"}, source:"Brie Larson Captain Marvel — trainer Jason Walsh, documented workout week", desc:{es:"Pull: deadlift 5 series pirámide 12→3 reps + lat pulldown + chin-ups. Push: bench press pirámide + overhead press. Piernas: squats pirámide + hip thrusts. Full body día 4-5.",en:"Pull: deadlift 5 sets pyramid 12→3 reps + lat pulldown + chin-ups. Push: bench press pyramid + overhead press. Legs: squats pyramid + hip thrusts. Full body day 4-5."}},
-                {id:"scarlett", img:IMGS_C.scarlett, ac:"#48c9b0", label:"BLACK WIDOW",      name:{es:"SCARLETT JOHANSSON",en:"SCARLETT JOHANSSON"}, badge:"FUERZA+FUNC",days:5, split:"Fuerza / Funcional / Recuperación / Fuerza / Funcional", lvl:{es:"ALTO",en:"HIGH"}, source:"Scarlett Johansson Black Widow training — trainer Bobby Strom protocol", desc:{es:"Barbell squats + overhead press pirámide 8,8,8,5,3. Circuito funcional: pistol squats, pull-ups, medicine ball slams, jump rope. Recuperación activa día 3.",en:"Barbell squats + overhead press pyramid 8,8,8,5,3. Functional circuit: pistol squats, pull-ups, medicine ball slams, jump rope. Active recovery day 3."}},
-                {id:"jessica",  img:IMGS_C.jessica,  ac:"#f39c12", label:"JESSICA STRONG",   name:{es:"JESSICA ALBA",en:"JESSICA ALBA"},           badge:"UNILATERAL",  days:3, split:"Full Body Unilateral / Unilateral+Core / Variación Full Body", lvl:{es:"MEDIO",en:"MEDIUM"}, source:"Jessica Alba full body strength day — documented training breakdown", desc:{es:"Énfasis unilateral: split squat trasero elevado, RDL unilateral, hip bridge + press pecho. Warm-up con F.A.S.T. hip rocks y bear planks. 2 rondas.",en:"Unilateral emphasis: rear-foot elevated split squat, single-leg RDL, hip bridge + chest press. Warm-up with F.A.S.T. hip rocks and bear planks. 2 rounds."}},
-                {id:"rihanna",  img:IMGS_C.rihanna,  ac:"#e91e63", label:"RIHANNA RUN",      name:{es:"RIHANNA",en:"RIHANNA"},                    badge:"CARDIO+FUERZA",days:4, split:"Cardio+Pilates+Fuerza / Cardio+Fuerza / Pilates+Core / Repetir D1", lvl:{es:"MEDIO",en:"MEDIUM"}, source:"Rihanna training declaration — 5K run + Pilates + light strength 3-5x/week", desc:{es:"Carrera 5K + Pilates 30 min + 25 reps: squats, lunges, reverse crunches. Simple pero consistente. Pilates enfocado en core día 3. Sin excesos.",en:"5K run + 30 min Pilates + 25 reps: squats, lunges, reverse crunches. Simple but consistent. Core-focused Pilates day 3. No overcomplication."}},
+                {id:"serena",   img:IMGS_C.serena,   ac:"#e84393", label:"SERENA WEEK",     name:{es:"SERENA WILLIAMS",en:"SERENA WILLIAMS"}, badge:"GLUTES+CORE", days:5, split:"Brazos+Core / Booty Burnout / Core+Piernas / Cardio / Full Body", lvl:{es:"ALTO",en:"HIGH"},    source:"Serena Williams official training breakdown — booty burnout + core circuits", desc:{es:"Circuitos de 3-5 series con 8-12 reps. 'Booty burnout' con sentadillas con barra, core intenso con fitball. Cardio suave día 4. Full body circuito día 5.",en:"Circuits of 3-5 sets x 8-12 reps. Booty burnout with barbell squats, intense core with fitball. Light cardio day 4. Full body circuit day 5."}},
+                {id:"galgadot", img:IMGS_C.galgadot, ac:"#c0a870", label:"WONDER WOMAN",    name:{es:"GAL GADOT",en:"GAL GADOT"},             badge:"BARBELL+HIIT", days:5, split:"Circuito / Barbell Complex / Push+Pull / Cardio / Complex+Core", lvl:{es:"EXTREMO",en:"EXTREME"}, source:"Gal Gadot Wonder Woman training — trainer Mark Twight / Gym Jones protocol", desc:{es:"Barbell complex sin soltar la barra: Romanian DL + Row + Reverse curl + Push press + Squat. 4 rondas. Shadow boxing + V-ups como superset. Muy exigente.",en:"Barbell complex without dropping the bar: Romanian DL + Row + Reverse curl + Push press + Squat. 4 rounds. Shadow boxing + V-ups superset. Very demanding."}},
+                {id:"jlo",      img:IMGS_C.jlo,      ac:"#f0b429", label:"J-LO WEEK",        name:{es:"JENNIFER LOPEZ",en:"JENNIFER LOPEZ"},    badge:"FULL BODY",   days:5, split:"Tren inferior / Tren superior / Funcional / Cardio / Full Body", lvl:{es:"MEDIO",en:"MEDIUM"}, source:"Jennifer Lopez training program — trainer David Kirsch", desc:{es:"3-4 series de 10-15 reps. Énfasis en glúteos y tren inferior. Hip thrusts, sumo squat con balón medicinal, resistance bands. Cardio 30-40 min día 4.",en:"3-4 sets of 10-15 reps. Emphasis on glutes and lower body. Hip thrusts, sumo squat with medicine ball, resistance bands. 30-40 min cardio day 4."}},
+                {id:"margot",   img:IMGS_C.margot,   ac:"#4898e8", label:"CRAZY 8",           name:{es:"MARGOT ROBBIE",en:"MARGOT ROBBIE"},      badge:"CRAZY 8",    days:5, split:"Crazy 8 / Cardio / Crazy 8 Light / Fuerza / Cardio", lvl:{es:"ALTO",en:"HIGH"}, source:"Margot Robbie Harley Quinn training — Crazy 8 circuit, trainer David Higgins", desc:{es:"Circuito 'Crazy 8': 8 ejercicios × 20-30 reps, 3-4 rondas. Lateral raises, tricep extensions, arabesques con peso, bodyweight squats. Explosivo.",en:"'Crazy 8' circuit: 8 exercises × 20-30 reps, 3-4 rounds. Lateral raises, tricep extensions, weighted arabesques, bodyweight squats. Explosive style."}},
+                {id:"zendaya",  img:IMGS_C.zendaya,  ac:"#9b59b6", label:"ZENDAYA CIRCUIT",  name:{es:"ZENDAYA",en:"ZENDAYA"},                  badge:"BODYWEIGHT",  days:5, split:"Circuito / Cardio / Circuito Light / Yoga+Core / Boxing+Cardio", lvl:{es:"MEDIO",en:"MEDIUM"}, source:"Zendaya workout breakdown — bodyweight + boxing + yoga protocol", desc:{es:"Circuito bodyweight: knee push-ups, air squats, jump squats, burpees, sit-ups, lunges. Boxing en sombra. Yoga 30 min. Jogging 800m+ de base. Sin pesas.",en:"Bodyweight circuit: knee push-ups, air squats, jump squats, burpees, sit-ups, lunges. Shadow boxing. 30-min yoga. 800m+ jog base. No weights needed."}},
+                {id:"halle",    img:IMGS_C.halle,    ac:"#3fcf8e", label:"HALLE CIRCUIT",    name:{es:"HALLE BERRY",en:"HALLE BERRY"},           badge:"FUERZA+SALTO",days:4, split:"Circuito Halle / Cardio / Circuito Halle B / Core+Estabilidad", lvl:{es:"ALTO",en:"HIGH"}, source:"Halle Berry strength circuit — low rep heavy training protocol", desc:{es:"Circuito intenso 6-8 reps, 3-5 vueltas: Arnold press + jump squat, V-ups + overhead press, jumping jacks + burpees. 45 s descanso entre rondas. Heavy.",en:"Intense circuit 6-8 reps, 3-5 rounds: Arnold press + jump squat, V-ups + overhead press, jumping jacks + burpees. 45s rest between rounds. Heavy."}},
+                {id:"brie",     img:IMGS_C.brie,     ac:"#e05555", label:"CAPTAIN MARVEL",   name:{es:"BRIE LARSON",en:"BRIE LARSON"},           badge:"PPL+FULL",    days:6, split:"Pull Day / Push Day / Piernas / Full Body / Full Body B / Descanso", lvl:{es:"EXTREMO",en:"EXTREME"}, source:"Brie Larson Captain Marvel — trainer Jason Walsh, documented workout week", desc:{es:"Pull: deadlift 5 series pirámide 12→3 reps + lat pulldown + chin-ups. Push: bench press pirámide + overhead press. Piernas: squats pirámide + hip thrusts. Full body día 4-5.",en:"Pull: deadlift 5 sets pyramid 12→3 reps + lat pulldown + chin-ups. Push: bench press pyramid + overhead press. Legs: squats pyramid + hip thrusts. Full body day 4-5."}},
+                {id:"scarlett", img:IMGS_C.scarlett, ac:"#48c9b0", label:"BLACK WIDOW",      name:{es:"SCARLETT JOHANSSON",en:"SCARLETT JOHANSSON"}, badge:"FUERZA+FUNC",days:5, split:"Fuerza A / Circuito / Recuperación / Fuerza B / Circuito B", lvl:{es:"ALTO",en:"HIGH"}, source:"Scarlett Johansson Black Widow training — trainer Bobby Strom protocol", desc:{es:"Barbell squats + overhead press pirámide 8,8,8,5,3. Circuito funcional: pistol squats, pull-ups, medicine ball slams, jump rope. Recuperación activa día 3.",en:"Barbell squats + overhead press pyramid 8,8,8,5,3. Functional circuit: pistol squats, pull-ups, medicine ball slams, jump rope. Active recovery day 3."}},
+                {id:"jessica",  img:IMGS_C.jessica,  ac:"#f39c12", label:"JESSICA STRONG",   name:{es:"JESSICA ALBA",en:"JESSICA ALBA"},           badge:"UNILATERAL",  days:3, split:"Unilateral A / Unilateral+Core / Full Body", lvl:{es:"MEDIO",en:"MEDIUM"}, source:"Jessica Alba full body strength day — documented training breakdown", desc:{es:"Énfasis unilateral: split squat trasero elevado, RDL unilateral, hip bridge + press pecho. Warm-up con F.A.S.T. hip rocks y bear planks. 2 rondas.",en:"Unilateral emphasis: rear-foot elevated split squat, single-leg RDL, hip bridge + chest press. Warm-up with F.A.S.T. hip rocks and bear planks. 2 rounds."}},
+                {id:"rihanna",  img:IMGS_C.rihanna,  ac:"#e91e63", label:"RIHANNA RUN",      name:{es:"RIHANNA",en:"RIHANNA"},                    badge:"CARDIO+FUERZA",days:4, split:"Cardio+Fuerza / Cardio+Fuerza B / Pilates+Core / Cardio+Fuerza C", lvl:{es:"MEDIO",en:"MEDIUM"}, source:"Rihanna training declaration — 5K run + Pilates + light strength 3-5x/week", desc:{es:"Carrera 5K + Pilates 30 min + 25 reps: squats, lunges, reverse crunches. Simple pero consistente. Pilates enfocado en core día 3. Sin excesos.",en:"5K run + 30 min Pilates + 25 reps: squats, lunges, reverse crunches. Simple but consistent. Core-focused Pilates day 3. No overcomplication."}},
               ];
 
               return(<>
@@ -5468,40 +5474,18 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                         <div style={{fontSize:11,color:"rgba(255,255,255,.5)",lineHeight:1.65,borderLeft:`2px solid ${card.ac}`,paddingLeft:12,marginBottom:12}}>{lang==="es"?card.desc.es:card.desc.en}</div>
                         <div style={{fontFamily:mono,fontSize:8,color:"rgba(255,255,255,.18)",fontStyle:"italic",marginBottom:6}}>📖 {card.source}</div>
                       {(()=>{
-                        // Calculate required equipment for this celebrity's routine
-                        const CELEB_EQ_LABELS = {
-                          rack:"Rack + Barra", bench:"Banco", dumbbells:"Mancuernas",
-                          pull_up_bar:"Barra dominadas", dip_bar:"Paralelas/fondos",
-                          cable_machine:"Polea/cable", leg_extension:"Leg extension",
-                          ez_bar:"Barra Z/EZ", weight_vest:"Chaleco lastrado",
-                          kettlebell:"Kettlebell", bands:"Bandas elásticas"
-                        };
-                        const allExs = Object.values(CELEB_EXERCISES[card.id]||{}).flat();
-                        const needed = new Set();
-                        allExs.forEach(ex=>{
-                          const exName = typeof ex==="string"?ex:ex.e;
-                          (CELEB_EQ_NEEDS[exName]||[]).forEach(e=>needed.add(e));
-                        });
-                        const items = [...needed].filter(e=>CELEB_EQ_LABELS[e]);
-                        if(!items.length) return null;
-                        return (
-                          <div style={{marginBottom:10,padding:"10px 12px",background:"rgba(255,255,255,0.04)",borderRadius:10,border:"1px solid rgba(255,255,255,0.07)"}}>
-                            <div style={{fontSize:8,fontFamily:mono,color:"rgba(255,255,255,.3)",letterSpacing:2,marginBottom:8}}>
-                              {lang==="es"?"// EQUIPO NECESARIO":"// REQUIRED EQUIPMENT"}
-                            </div>
-                            <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-                              {items.map(e=>(
-                                <span key={e} style={{fontSize:8,fontFamily:mono,
-                                  padding:"3px 8px",borderRadius:20,
-                                  background:"rgba(255,255,255,0.06)",
-                                  color:"rgba(255,255,255,0.6)",
-                                  border:"1px solid rgba(255,255,255,0.1)"}}>
-                                  {CELEB_EQ_LABELS[e]}
-                                </span>
-                              ))}
-                            </div>
+                        const EQL={"rack":"Rack+Barra","bench":"Banco","dumbbells":"Mancuernas","pull_up_bar":"Barra dominadas","dip_bar":"Paralelas","cable_machine":"Polea","leg_extension":"Leg extension","ez_bar":"Barra Z/EZ","weight_vest":"Chaleco"};
+                        const allExs=Object.values(CELEB_EXERCISES[card.id]||{}).flat();
+                        const needed=new Set();
+                        allExs.forEach(ex=>{(CELEB_EQ_NEEDS[typeof ex==="string"?ex:ex.e]||[]).forEach(e=>needed.add(e));});
+                        const items=[...needed].filter(e=>EQL[e]);
+                        if(!items.length)return null;
+                        return(<div style={{marginBottom:10,padding:"10px 12px",background:"rgba(255,255,255,0.04)",borderRadius:10,border:"1px solid rgba(255,255,255,0.07)"}}>
+                          <div style={{fontSize:8,fontFamily:mono,color:"rgba(255,255,255,.3)",letterSpacing:2,marginBottom:8}}>{lang==="es"?"// EQUIPO NECESARIO":"// REQUIRED EQUIPMENT"}</div>
+                          <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                            {items.map(e=>(<span key={e} style={{fontSize:8,fontFamily:mono,padding:"3px 8px",borderRadius:20,background:"rgba(255,255,255,0.06)",color:"rgba(255,255,255,0.6)",border:"1px solid rgba(255,255,255,0.1)"}}>{EQL[e]}</span>))}
                           </div>
-                        );
+                        </div>);
                       })()}
                       <div style={{fontFamily:mono,fontSize:7,color:"rgba(255,255,255,.1)",letterSpacing:.3,lineHeight:1.5,borderTop:"1px solid rgba(255,255,255,.04)",paddingTop:8}}>{lang==="es"?"⚠ Rutina basada en fuentes públicas verificadas. Series/reps adaptadas al equipamiento disponible.":"⚠ Routine based on verified public sources. Sets/reps adapted to available equipment."}</div>
                       </div>
@@ -5612,345 +5596,6 @@ function logsToZoneTimestamps(logs, routine) {
 function MuscleHeatmap({muscleVol,lang}){
   return React.createElement("div",{style:{color:"rgba(255,255,255,0.55)",fontSize:9,fontFamily:"'SF Mono','Courier New',monospace",textAlign:"center",padding:"10px 0"}},
     lang==="es"?"→ Pestaña CUERPO":"→ BODY tab");
-}
-
-// ══════════════════════════════════════════════════════════════
-// HISTORIAL TAB — JSX clean rewrite
-// ══════════════════════════════════════════════════════════════
-function HistorialTab({lang}) {
-  const [sessions, setSessions] = React.useState([]);
-  const [loading, setLoading] = React.useState(true);
-  const [selected, setSelected] = React.useState(null);
-  const [sets, setSets] = React.useState({});
-  const [loadingSets, setLoadingSets] = React.useState(false);
-  const mono = "'SF Mono','Fira Code','Courier New',monospace";
-
-  React.useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      setLoading(true);
-      try {
-        const data = await FStore.loadSessionHistory(60);
-        if (!cancelled) { setSessions(data || []); setLoading(false); }
-      } catch(err) {
-        if (!cancelled) { setSessions([]); setLoading(false); }
-      }
-    })();
-    return () => { cancelled = true; };
-  }, []);
-
-  function fmtDuration(secs) {
-    if (!secs) return "–";
-    const m = Math.floor(secs / 60);
-    const h = Math.floor(m / 60);
-    if (h > 0) return h + "h " + (m % 60) + "m";
-    return m + "m";
-  }
-
-  function fmtDay(d) {
-    if (!d) return "";
-    const dt = new Date(d + "T12:00:00");
-    return dt.getDate();
-  }
-
-  function fmtMonthShort(d) {
-    if (!d) return "";
-    const dt = new Date(d + "T12:00:00");
-    const m = lang === "es"
-      ? ["ENE","FEB","MAR","ABR","MAY","JUN","JUL","AGO","SEP","OCT","NOV","DIC"]
-      : ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
-    return m[dt.getMonth()];
-  }
-
-  function fmtMonthFull(d) {
-    if (!d) return "";
-    const dt = new Date(d + "T12:00:00");
-    const m = lang === "es"
-      ? ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"]
-      : ["January","February","March","April","May","June","July","August","September","October","November","December"];
-    return m[dt.getMonth()] + " " + dt.getFullYear();
-  }
-
-  function fmtWeekday(d) {
-    if (!d) return "";
-    const dt = new Date(d + "T12:00:00");
-    const w = lang === "es"
-      ? ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"]
-      : ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-    return w[dt.getDay()];
-  }
-
-  function getMuscleColor(muscles) {
-    if (!muscles || !muscles.length) return C.tx3;
-    const m = (muscles[0] || "").toLowerCase();
-    if (m.includes("pech") || m.includes("chest")) return "#e07050";
-    if (m.includes("espal") || m.includes("back") || m.includes("lat")) return "#6a8fc0";
-    if (m.includes("pier") || m.includes("leg") || m.includes("quad") || m.includes("glut")) return "#8878c0";
-    if (m.includes("hombr") || m.includes("shoulder") || m.includes("delt")) return "#c0a870";
-    if (m.includes("bicep") || m.includes("bícep")) return "#3fcf8e";
-    if (m.includes("tric") || m.includes("tríc")) return "#f0b429";
-    return C.tx3;
-  }
-
-  function getAccent(s) {
-    const exs = s.exercises || [];
-    if (!exs.length) return C.tx3;
-    return getMuscleColor(exs[0].muscles_primary || []);
-  }
-
-  async function openSession(s) {
-    setSelected(s);
-    setSets({});
-    setLoadingSets(true);
-    try {
-      const data = await FStore.loadSessionSets(s.session_date);
-      setSets(data || {});
-    } catch(err) {
-      setSets({});
-    }
-    setLoadingSets(false);
-  }
-
-  // ── DETAIL VIEW ──────────────────────────────────────────────
-  if (selected) {
-    const accent = getAccent(selected);
-    const exList = Object.values(sets);
-    return (
-      <div style={{animation:"fu .2s ease"}}>
-        <button
-          onClick={() => { setSelected(null); setSets({}); }}
-          style={{display:"flex",alignItems:"center",gap:6,background:"none",border:"none",
-            color:C.tx3,fontSize:10,fontFamily:mono,letterSpacing:2,cursor:"pointer",
-            padding:"0 0 18px 0",textTransform:"uppercase"}}>
-          <span style={{fontSize:15}}>←</span>
-          {lang === "es" ? "VOLVER" : "BACK"}
-        </button>
-
-        {/* Header card */}
-        <div style={{background:C.card,borderRadius:14,padding:"16px",marginBottom:16,
-          border:"1px solid "+C.borderL,position:"relative",overflow:"hidden"}}>
-          <div style={{position:"absolute",top:0,left:0,width:3,bottom:0,
-            background:accent,borderRadius:"3px 0 0 3px"}} />
-          <div style={{paddingLeft:12}}>
-            <div style={{fontSize:9,fontFamily:mono,color:accent,letterSpacing:2,
-              fontWeight:700,marginBottom:4}}>
-              {"// " + fmtWeekday(selected.session_date).toUpperCase() + " " + fmtDay(selected.session_date) + " " + fmtMonthShort(selected.session_date)}
-            </div>
-            <div style={{fontSize:22,fontWeight:900,color:C.tx,lineHeight:1,marginBottom:10,
-              fontFamily:"'Bebas Neue',cursive",letterSpacing:1}}>
-              {selected.day_label || (lang === "es" ? "ENTRENO" : "WORKOUT")}
-            </div>
-            <div style={{display:"flex",gap:20}}>
-              <div>
-                <div style={{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:1,marginBottom:2}}>
-                  {lang === "es" ? "DURACIÓN" : "DURATION"}
-                </div>
-                <div style={{fontSize:16,fontWeight:700,color:C.tx}}>
-                  {fmtDuration(selected.duration_seconds)}
-                </div>
-              </div>
-              <div>
-                <div style={{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:1,marginBottom:2}}>
-                  {lang === "es" ? "EJERCICIOS" : "EXERCISES"}
-                </div>
-                <div style={{fontSize:16,fontWeight:700,color:C.tx}}>
-                  {(selected.exercises || []).length}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Sets detail */}
-        {loadingSets ? (
-          <div style={{textAlign:"center",padding:"40px 0",fontSize:9,fontFamily:mono,
-            color:C.tx3,letterSpacing:2}}>
-            {"// " + (lang === "es" ? "CARGANDO..." : "LOADING...")}
-          </div>
-        ) : exList.length === 0 ? (
-          <div style={{textAlign:"center",padding:"40px 0",fontSize:9,fontFamily:mono,
-            color:C.tx3,letterSpacing:2}}>
-            {"// " + (lang === "es" ? "SIN DETALLE DE SERIES" : "NO SET DATA")}
-          </div>
-        ) : (
-          exList.map((ex, i) => {
-            const bestKg = Math.max(...(ex.sets || []).map(s => s.kg || 0));
-            const totalVol = (ex.sets || []).reduce((acc, s) => acc + ((s.kg || 0) * (s.reps || 0)), 0);
-            return (
-              <div key={i} style={{background:C.card,borderRadius:12,padding:"14px",
-                marginBottom:10,border:"1px solid "+C.borderL}}>
-                <div style={{display:"flex",justifyContent:"space-between",
-                  alignItems:"flex-start",marginBottom:10}}>
-                  <div style={{fontSize:13,fontWeight:700,color:C.tx,flex:1,lineHeight:1.3}}>
-                    {ex.name}
-                  </div>
-                  <div style={{textAlign:"right",flexShrink:0,marginLeft:8}}>
-                    <div style={{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:1}}>VOL</div>
-                    <div style={{fontSize:12,fontWeight:700,color:C.tx2}}>
-                      {totalVol > 0 ? Math.round(totalVol) + "kg" : "–"}
-                    </div>
-                  </div>
-                </div>
-                <div style={{display:"flex",flexDirection:"column",gap:4}}>
-                  {(ex.sets || []).map((s, j) => {
-                    const isBest = (s.kg || 0) === bestKg && bestKg > 0;
-                    return (
-                      <div key={j} style={{display:"flex",alignItems:"center",gap:8,
-                        padding:"6px 8px",borderRadius:7,
-                        background:isBest ? "rgba(63,207,142,0.08)" : "rgba(255,255,255,0.03)"}}>
-                        <div style={{fontSize:8,fontFamily:mono,color:C.tx3,width:16,textAlign:"center"}}>
-                          {j + 1}
-                        </div>
-                        <div style={{flex:1,fontSize:13,fontWeight:600,color:C.tx}}>
-                          {(s.kg || 0) > 0 ? s.kg + " kg" : "BW"}
-                        </div>
-                        <div style={{fontSize:12,fontFamily:mono,color:C.tx2}}>
-                          {"× " + s.reps}
-                        </div>
-                        {isBest && (
-                          <div style={{fontSize:7,fontFamily:mono,color:C.green,
-                            letterSpacing:1,fontWeight:700}}>BEST</div>
-                        )}
-                        {(s.rm || 0) > 0 && (
-                          <div style={{fontSize:8,fontFamily:mono,color:C.tx3}}>
-                            {"~" + Math.round(s.rm)}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })
-        )}
-      </div>
-    );
-  }
-
-  // ── LIST VIEW ─────────────────────────────────────────────────
-  if (loading) {
-    return (
-      <div style={{textAlign:"center",padding:"60px 0",fontSize:9,
-        fontFamily:mono,color:C.tx3,letterSpacing:2}}>
-        {"// " + (lang === "es" ? "CARGANDO HISTORIAL..." : "LOADING HISTORY...")}
-      </div>
-    );
-  }
-
-  if (!sessions.length) {
-    return (
-      <div style={{textAlign:"center",padding:"60px 20px"}}>
-        <div style={{fontSize:36,marginBottom:12}}>📋</div>
-        <div style={{fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:3,marginBottom:8}}>
-          {"// " + (lang === "es" ? "AÚN NO HAY SESIONES" : "NO SESSIONS YET")}
-        </div>
-        <div style={{fontSize:12,color:C.tx3,marginTop:8}}>
-          {lang === "es"
-            ? "Completa tu primer entreno para ver el historial aquí."
-            : "Complete your first workout to see history here."}
-        </div>
-      </div>
-    );
-  }
-
-  // Group by month
-  const grouped = {};
-  sessions.forEach(s => {
-    const key = fmtMonthFull(s.session_date);
-    if (!grouped[key]) grouped[key] = [];
-    grouped[key].push(s);
-  });
-
-  const totalSecs = sessions.reduce((acc, s) => acc + (s.duration_seconds || 0), 0);
-  const totalH = Math.floor(totalSecs / 3600);
-  const totalMin = Math.floor(totalSecs / 60);
-  const totalLabel = totalH > 0 ? totalH + "h" : totalMin + "m";
-
-  return (
-    <div style={{animation:"fu .2s ease"}}>
-      {/* Stats row */}
-      <div style={{display:"flex",gap:10,marginBottom:20}}>
-        <div style={{flex:1,background:C.card,borderRadius:12,padding:"14px",
-          border:"1px solid "+C.borderL,textAlign:"center"}}>
-          <div style={{fontSize:26,fontWeight:900,color:C.tx,fontFamily:"'Bebas Neue',cursive",
-            letterSpacing:1}}>{sessions.length}</div>
-          <div style={{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:2,marginTop:2}}>
-            {lang === "es" ? "SESIONES" : "SESSIONS"}
-          </div>
-        </div>
-        <div style={{flex:1,background:C.card,borderRadius:12,padding:"14px",
-          border:"1px solid "+C.borderL,textAlign:"center"}}>
-          <div style={{fontSize:26,fontWeight:900,color:C.tx,fontFamily:"'Bebas Neue',cursive",
-            letterSpacing:1}}>{totalLabel}</div>
-          <div style={{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:2,marginTop:2}}>
-            {lang === "es" ? "TIEMPO TOTAL" : "TOTAL TIME"}
-          </div>
-        </div>
-      </div>
-
-      {/* Sessions by month */}
-      {Object.entries(grouped).map(([month, list]) => (
-        <div key={month} style={{marginBottom:20}}>
-          <div style={{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:3,
-            marginBottom:10,textTransform:"uppercase"}}>
-            {"// " + month}
-          </div>
-          {list.map((s, i) => {
-            const accent = getAccent(s);
-            const exs = s.exercises || [];
-            return (
-              <button key={s.id || i}
-                onClick={() => openSession(s)}
-                style={{width:"100%",display:"flex",alignItems:"center",gap:12,
-                  padding:"13px 14px",background:C.card,borderRadius:12,
-                  border:"1px solid "+C.borderL,cursor:"pointer",marginBottom:8,
-                  textAlign:"left",position:"relative",overflow:"hidden"}}>
-                {/* Accent bar */}
-                <div style={{position:"absolute",left:0,top:0,bottom:0,width:3,
-                  background:accent,borderRadius:"3px 0 0 3px"}} />
-                {/* Date */}
-                <div style={{paddingLeft:6,minWidth:32,flexShrink:0,textAlign:"center"}}>
-                  <div style={{fontSize:20,fontWeight:900,color:C.tx,lineHeight:1,
-                    fontFamily:"'Bebas Neue',cursive"}}>
-                    {fmtDay(s.session_date)}
-                  </div>
-                  <div style={{fontSize:7,fontFamily:mono,color:C.tx3,letterSpacing:1}}>
-                    {fmtMonthShort(s.session_date)}
-                  </div>
-                </div>
-                {/* Divider */}
-                <div style={{width:1,alignSelf:"stretch",background:C.borderL,flexShrink:0}} />
-                {/* Info */}
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontSize:13,fontWeight:700,color:C.tx,lineHeight:1,marginBottom:5,
-                    overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-                    {s.day_label || (lang === "es" ? "ENTRENO" : "WORKOUT")}
-                  </div>
-                  <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                    {exs.length > 0 && (
-                      <span style={{fontSize:8,fontFamily:mono,color:C.tx3}}>
-                        {exs.length + (lang === "es" ? " ejerc." : " ex.")}
-                      </span>
-                    )}
-                    {s.duration_seconds > 0 && (
-                      <span style={{fontSize:8,fontFamily:mono,color:C.tx3}}>
-                        {fmtDuration(s.duration_seconds)}
-                      </span>
-                    )}
-                    <div style={{width:4,height:4,borderRadius:"50%",
-                      background:accent,flexShrink:0}} />
-                  </div>
-                </div>
-                {/* Arrow */}
-                <div style={{color:C.tx3,fontSize:16,flexShrink:0}}>›</div>
-              </button>
-            );
-          })}
-        </div>
-      ))}
-    </div>
-  );
 }
 
 function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[], setXpLevelUps=()=>{}, showXPTooltip, setShowXPTooltip=()=>{}, xpAnimZone, setXpAnimZone=()=>{}}){
