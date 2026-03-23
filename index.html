@@ -1180,12 +1180,7 @@ function adaptExercise(exName, userEquipment){
   return "Flexiones";
 }
 
-function buildCelebRoutine(celeb, userEquipment, selDays){
-  const r = Array(7).fill(null);
-
-  // Exercise library per celebrity — self-contained, verified sources
-  // Each exercise: {e: name, s: sets, r: reps}
-  const CELEB_EXERCISES = {
+const CELEB_EXERCISES = {
     arnold: {
       "Pecho+Espalda": [
         {e:"Press banca",         s:4, r:"8-10"},
@@ -1571,6 +1566,11 @@ function buildCelebRoutine(celeb, userEquipment, selDays){
       "Full Día":        [{e:"Cardio (carrera)",s:1,r:"5km"},{e:"Sentadilla",s:3,r:"25"},{e:"Zancada con mancuerna",s:3,r:"25"},{e:"Crunch inverso",s:3,r:"25"}],
     },
   };
+
+function buildCelebRoutine(celeb, userEquipment, selDays){
+  const r = Array(7).fill(null);
+
+
 
     const exercises = CELEB_EXERCISES[celeb.id] || {};
   const splitKeys = Object.keys(exercises);
@@ -4847,7 +4847,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             {m:"celebrity",ns:25,label:{es:"Rutina de élite",en:"Elite routine"},sub:{es:"Arnold . Hemsworth . LeBron . Goggins...",en:"Arnold . Hemsworth . LeBron . Goggins..."},tag:{es:"ÉLITE",en:"ELITE"},col:"#BFA98A"},
             {m:"manual",ns:20,label:{es:"Personalizada",en:"Custom"},sub:{es:"Diseña tu rutina desde cero",en:"Build your own from scratch"},tag:null,col:"rgba(238,234,227,.4)"},
           ].map(({m,ns,label,sub,tag,col})=>(
-            <div key={m} onClick={()=>{setMode(m);setStep(ns);}} style={{padding:"22px 28px",cursor:"pointer",borderTop:"1px solid rgba(238,234,227,.06)",display:"flex",alignItems:"center",gap:16,transition:"background .2s"}}>
+            <div key={m} onClick={()=>{setMode(m);if(m==="celebrity"){setGymType("gym");setEquipment([]);}setStep(ns);}} style={{padding:"22px 28px",cursor:"pointer",borderTop:"1px solid rgba(238,234,227,.06)",display:"flex",alignItems:"center",gap:16,transition:"background .2s"}}>
               <div style={{flex:1}}>
                 <div style={{display:"flex",alignItems:"baseline",gap:10,marginBottom:5}}>
                   <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:30,letterSpacing:2,color:col,lineHeight:1}}>{lang==="es"?label.es:label.en}</div>
@@ -5518,7 +5518,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                     setCelebData(cel);
                     // Celebrity: pick which days
                     setStep(26);
-                  }}>{lang==="es"?(gymType==="gym"?"ELEGIR ESTA RUTINA →":"ELEGIR EQUIPO →"):(gymType==="gym"?"SELECT THIS ROUTINE →":"SELECT EQUIPMENT →")}</Btn></div>
+                  }}>{lang==="es"?"ELEGIR ESTA RUTINA →":"SELECT THIS ROUTINE →"}</Btn></div>
                 </div>
               </>);
             })()}
