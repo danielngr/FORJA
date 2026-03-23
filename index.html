@@ -590,6 +590,71 @@ const FStore={
       return data.map(r=>({d:r.logged_date,rm:parseFloat(r.estimated_1rm),kg:parseFloat(r.best_set_kg),r:r.best_set_reps}));
     }catch(_){return local;}
   },
+
+  // ── SESSION HISTORY ──────────────────────────────────────────
+  async loadSessionHistory(limit){
+    const lim=limit||60;
+    // Try local cache first
+    try{
+      const raw=localStorage.getItem('fv8_sessions');
+      if(raw){
+        const cached=JSON.parse(raw);
+        if(cached&&cached.length)return cached;
+      }
+    }catch(_){}
+    const sb=getSB();const user=await ensureAuth();
+    if(!sb||!user)return[];
+    syncDot('syncing');
+    try{
+      const{data}=await sb.from('sessions')
+        .select('id,session_date,day_label,exercises,duration_seconds,created_at')
+        .eq('user_id',user.id)
+        .order('session_date',{ascending:false})
+        .limit(lim);
+      if(!data)return[];
+      try{localStorage.setItem('fv8_sessions',JSON.stringify(data));}catch(_){}
+      syncDot('ok');
+      return data;
+    }catch(e){syncDot('error');return[];}
+  },
+
+  async loadSessionSets(sessionDate){
+    // Load all sets logged on a given date
+    const sb=getSB();const user=await ensureAuth();
+    if(!sb||!user){
+      // Fallback: use local exercise logs
+      try{
+        const raw=localStorage.getItem('fv8l');
+        if(!raw)return{};
+        const all=JSON.parse(raw);
+        const result={};
+        Object.entries(all).forEach(([exId,entries])=>{
+          const dayEntries=entries.filter(e=>e.d===sessionDate);
+          if(dayEntries.length)result[exId]=dayEntries;
+        });
+        return result;
+      }catch(_){return{};}
+    }
+    try{
+      const{data}=await sb.from('exercise_logs')
+        .select('exercise_id,exercise_name,weight_kg,reps,estimated_1rm,logged_at')
+        .eq('user_id',user.id)
+        .eq('logged_at',sessionDate)
+        .order('exercise_name',{ascending:true});
+      if(!data)return{};
+      const grouped={};
+      data.forEach(r=>{
+        const key=r.exercise_id||r.exercise_name;
+        if(!grouped[key])grouped[key]={name:r.exercise_name,sets:[]};
+        grouped[key].sets.push({kg:parseFloat(r.weight_kg)||0,reps:r.reps,rm:parseFloat(r.estimated_1rm)||0});
+      });
+      return grouped;
+    }catch(_){return{};}
+  },
+
+  invalidateSessionCache(){
+    try{localStorage.removeItem('fv8_sessions');}catch(_){}
+  },
 };
 
 // Backwards-compat: keep old store{} pointing to FStore sync ops
@@ -2093,7 +2158,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
     }
     // Check all done
     const allDone=ns.every(e=>e.every(s=>s.done));
-    if(allDone) setTimeout(()=>{setFinalSecs(sessSecs);setAllDone(true);FStore.saveSession(day&&day.l,exs,sessSecs);},700);
+    if(allDone) setTimeout(()=>{setFinalSecs(sessSecs);setAllDone(true);FStore.saveSession(day&&day.l,exs,sessSecs);FStore.invalidateSessionCache();},700);
   }
 
   function addSet(ei){
@@ -3353,7 +3418,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
         borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
         <div style={{display:"flex",background:"rgba(255,255,255,0.05)",
           borderRadius:12,padding:3,gap:0}}>
-          {[{id:"train",l:lang==="es"?"ENTRENO":"TRAIN",icon:"⚡"},{id:"body",l:lang==="es"?"CUERPO":"BODY",icon:"🫀"}].map(tb=>{
+          {[{id:"train",l:lang==="es"?"ENTRENO":"TRAIN",icon:"⚡"},{id:"hist",l:lang==="es"?"HISTORIAL":"HISTORY",icon:"📋"},{id:"body",l:lang==="es"?"CUERPO":"BODY",icon:"🫀"}].map(tb=>{
             const active=tab===tb.id;
             return(
             <button key={tb.id} data-tour={tb.id==="body"?"tab-body":undefined} onClick={()=>{setTab(tb.id);setAddEx(false);setAddF(false);}}
@@ -3856,6 +3921,12 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {tab==="hist"&&(
+          <div style={{animation:"fu .2s ease"}}>
+            <HistorialTab lang={lang}/>
           </div>
         )}
 
@@ -5480,6 +5551,345 @@ function logsToZoneTimestamps(logs, routine) {
 function MuscleHeatmap({muscleVol,lang}){
   return React.createElement("div",{style:{color:"rgba(255,255,255,0.55)",fontSize:9,fontFamily:"'SF Mono','Courier New',monospace",textAlign:"center",padding:"10px 0"}},
     lang==="es"?"→ Pestaña CUERPO":"→ BODY tab");
+}
+
+// ══════════════════════════════════════════════════════════════
+// HISTORIAL TAB — JSX clean rewrite
+// ══════════════════════════════════════════════════════════════
+function HistorialTab({lang}) {
+  const [sessions, setSessions] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const [selected, setSelected] = React.useState(null);
+  const [sets, setSets] = React.useState({});
+  const [loadingSets, setLoadingSets] = React.useState(false);
+  const mono = "'SF Mono','Fira Code','Courier New',monospace";
+
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      try {
+        const data = await FStore.loadSessionHistory(60);
+        if (!cancelled) { setSessions(data || []); setLoading(false); }
+      } catch(err) {
+        if (!cancelled) { setSessions([]); setLoading(false); }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  function fmtDuration(secs) {
+    if (!secs) return "–";
+    const m = Math.floor(secs / 60);
+    const h = Math.floor(m / 60);
+    if (h > 0) return h + "h " + (m % 60) + "m";
+    return m + "m";
+  }
+
+  function fmtDay(d) {
+    if (!d) return "";
+    const dt = new Date(d + "T12:00:00");
+    return dt.getDate();
+  }
+
+  function fmtMonthShort(d) {
+    if (!d) return "";
+    const dt = new Date(d + "T12:00:00");
+    const m = lang === "es"
+      ? ["ENE","FEB","MAR","ABR","MAY","JUN","JUL","AGO","SEP","OCT","NOV","DIC"]
+      : ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+    return m[dt.getMonth()];
+  }
+
+  function fmtMonthFull(d) {
+    if (!d) return "";
+    const dt = new Date(d + "T12:00:00");
+    const m = lang === "es"
+      ? ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"]
+      : ["January","February","March","April","May","June","July","August","September","October","November","December"];
+    return m[dt.getMonth()] + " " + dt.getFullYear();
+  }
+
+  function fmtWeekday(d) {
+    if (!d) return "";
+    const dt = new Date(d + "T12:00:00");
+    const w = lang === "es"
+      ? ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"]
+      : ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+    return w[dt.getDay()];
+  }
+
+  function getMuscleColor(muscles) {
+    if (!muscles || !muscles.length) return C.tx3;
+    const m = (muscles[0] || "").toLowerCase();
+    if (m.includes("pech") || m.includes("chest")) return "#e07050";
+    if (m.includes("espal") || m.includes("back") || m.includes("lat")) return "#6a8fc0";
+    if (m.includes("pier") || m.includes("leg") || m.includes("quad") || m.includes("glut")) return "#8878c0";
+    if (m.includes("hombr") || m.includes("shoulder") || m.includes("delt")) return "#c0a870";
+    if (m.includes("bicep") || m.includes("bícep")) return "#3fcf8e";
+    if (m.includes("tric") || m.includes("tríc")) return "#f0b429";
+    return C.tx3;
+  }
+
+  function getAccent(s) {
+    const exs = s.exercises || [];
+    if (!exs.length) return C.tx3;
+    return getMuscleColor(exs[0].muscles_primary || []);
+  }
+
+  async function openSession(s) {
+    setSelected(s);
+    setSets({});
+    setLoadingSets(true);
+    try {
+      const data = await FStore.loadSessionSets(s.session_date);
+      setSets(data || {});
+    } catch(err) {
+      setSets({});
+    }
+    setLoadingSets(false);
+  }
+
+  // ── DETAIL VIEW ──────────────────────────────────────────────
+  if (selected) {
+    const accent = getAccent(selected);
+    const exList = Object.values(sets);
+    return (
+      <div style={{animation:"fu .2s ease"}}>
+        <button
+          onClick={() => { setSelected(null); setSets({}); }}
+          style={{display:"flex",alignItems:"center",gap:6,background:"none",border:"none",
+            color:C.tx3,fontSize:10,fontFamily:mono,letterSpacing:2,cursor:"pointer",
+            padding:"0 0 18px 0",textTransform:"uppercase"}}>
+          <span style={{fontSize:15}}>←</span>
+          {lang === "es" ? "VOLVER" : "BACK"}
+        </button>
+
+        {/* Header card */}
+        <div style={{background:C.card,borderRadius:14,padding:"16px",marginBottom:16,
+          border:"1px solid "+C.borderL,position:"relative",overflow:"hidden"}}>
+          <div style={{position:"absolute",top:0,left:0,width:3,bottom:0,
+            background:accent,borderRadius:"3px 0 0 3px"}} />
+          <div style={{paddingLeft:12}}>
+            <div style={{fontSize:9,fontFamily:mono,color:accent,letterSpacing:2,
+              fontWeight:700,marginBottom:4}}>
+              {"// " + fmtWeekday(selected.session_date).toUpperCase() + " " + fmtDay(selected.session_date) + " " + fmtMonthShort(selected.session_date)}
+            </div>
+            <div style={{fontSize:22,fontWeight:900,color:C.tx,lineHeight:1,marginBottom:10,
+              fontFamily:"'Bebas Neue',cursive",letterSpacing:1}}>
+              {selected.day_label || (lang === "es" ? "ENTRENO" : "WORKOUT")}
+            </div>
+            <div style={{display:"flex",gap:20}}>
+              <div>
+                <div style={{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:1,marginBottom:2}}>
+                  {lang === "es" ? "DURACIÓN" : "DURATION"}
+                </div>
+                <div style={{fontSize:16,fontWeight:700,color:C.tx}}>
+                  {fmtDuration(selected.duration_seconds)}
+                </div>
+              </div>
+              <div>
+                <div style={{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:1,marginBottom:2}}>
+                  {lang === "es" ? "EJERCICIOS" : "EXERCISES"}
+                </div>
+                <div style={{fontSize:16,fontWeight:700,color:C.tx}}>
+                  {(selected.exercises || []).length}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Sets detail */}
+        {loadingSets ? (
+          <div style={{textAlign:"center",padding:"40px 0",fontSize:9,fontFamily:mono,
+            color:C.tx3,letterSpacing:2}}>
+            {"// " + (lang === "es" ? "CARGANDO..." : "LOADING...")}
+          </div>
+        ) : exList.length === 0 ? (
+          <div style={{textAlign:"center",padding:"40px 0",fontSize:9,fontFamily:mono,
+            color:C.tx3,letterSpacing:2}}>
+            {"// " + (lang === "es" ? "SIN DETALLE DE SERIES" : "NO SET DATA")}
+          </div>
+        ) : (
+          exList.map((ex, i) => {
+            const bestKg = Math.max(...(ex.sets || []).map(s => s.kg || 0));
+            const totalVol = (ex.sets || []).reduce((acc, s) => acc + ((s.kg || 0) * (s.reps || 0)), 0);
+            return (
+              <div key={i} style={{background:C.card,borderRadius:12,padding:"14px",
+                marginBottom:10,border:"1px solid "+C.borderL}}>
+                <div style={{display:"flex",justifyContent:"space-between",
+                  alignItems:"flex-start",marginBottom:10}}>
+                  <div style={{fontSize:13,fontWeight:700,color:C.tx,flex:1,lineHeight:1.3}}>
+                    {ex.name}
+                  </div>
+                  <div style={{textAlign:"right",flexShrink:0,marginLeft:8}}>
+                    <div style={{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:1}}>VOL</div>
+                    <div style={{fontSize:12,fontWeight:700,color:C.tx2}}>
+                      {totalVol > 0 ? Math.round(totalVol) + "kg" : "–"}
+                    </div>
+                  </div>
+                </div>
+                <div style={{display:"flex",flexDirection:"column",gap:4}}>
+                  {(ex.sets || []).map((s, j) => {
+                    const isBest = (s.kg || 0) === bestKg && bestKg > 0;
+                    return (
+                      <div key={j} style={{display:"flex",alignItems:"center",gap:8,
+                        padding:"6px 8px",borderRadius:7,
+                        background:isBest ? "rgba(63,207,142,0.08)" : "rgba(255,255,255,0.03)"}}>
+                        <div style={{fontSize:8,fontFamily:mono,color:C.tx3,width:16,textAlign:"center"}}>
+                          {j + 1}
+                        </div>
+                        <div style={{flex:1,fontSize:13,fontWeight:600,color:C.tx}}>
+                          {(s.kg || 0) > 0 ? s.kg + " kg" : "BW"}
+                        </div>
+                        <div style={{fontSize:12,fontFamily:mono,color:C.tx2}}>
+                          {"× " + s.reps}
+                        </div>
+                        {isBest && (
+                          <div style={{fontSize:7,fontFamily:mono,color:C.green,
+                            letterSpacing:1,fontWeight:700}}>BEST</div>
+                        )}
+                        {(s.rm || 0) > 0 && (
+                          <div style={{fontSize:8,fontFamily:mono,color:C.tx3}}>
+                            {"~" + Math.round(s.rm)}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+    );
+  }
+
+  // ── LIST VIEW ─────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <div style={{textAlign:"center",padding:"60px 0",fontSize:9,
+        fontFamily:mono,color:C.tx3,letterSpacing:2}}>
+        {"// " + (lang === "es" ? "CARGANDO HISTORIAL..." : "LOADING HISTORY...")}
+      </div>
+    );
+  }
+
+  if (!sessions.length) {
+    return (
+      <div style={{textAlign:"center",padding:"60px 20px"}}>
+        <div style={{fontSize:36,marginBottom:12}}>📋</div>
+        <div style={{fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:3,marginBottom:8}}>
+          {"// " + (lang === "es" ? "AÚN NO HAY SESIONES" : "NO SESSIONS YET")}
+        </div>
+        <div style={{fontSize:12,color:C.tx3,marginTop:8}}>
+          {lang === "es"
+            ? "Completa tu primer entreno para ver el historial aquí."
+            : "Complete your first workout to see history here."}
+        </div>
+      </div>
+    );
+  }
+
+  // Group by month
+  const grouped = {};
+  sessions.forEach(s => {
+    const key = fmtMonthFull(s.session_date);
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(s);
+  });
+
+  const totalSecs = sessions.reduce((acc, s) => acc + (s.duration_seconds || 0), 0);
+  const totalH = Math.floor(totalSecs / 3600);
+  const totalMin = Math.floor(totalSecs / 60);
+  const totalLabel = totalH > 0 ? totalH + "h" : totalMin + "m";
+
+  return (
+    <div style={{animation:"fu .2s ease"}}>
+      {/* Stats row */}
+      <div style={{display:"flex",gap:10,marginBottom:20}}>
+        <div style={{flex:1,background:C.card,borderRadius:12,padding:"14px",
+          border:"1px solid "+C.borderL,textAlign:"center"}}>
+          <div style={{fontSize:26,fontWeight:900,color:C.tx,fontFamily:"'Bebas Neue',cursive",
+            letterSpacing:1}}>{sessions.length}</div>
+          <div style={{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:2,marginTop:2}}>
+            {lang === "es" ? "SESIONES" : "SESSIONS"}
+          </div>
+        </div>
+        <div style={{flex:1,background:C.card,borderRadius:12,padding:"14px",
+          border:"1px solid "+C.borderL,textAlign:"center"}}>
+          <div style={{fontSize:26,fontWeight:900,color:C.tx,fontFamily:"'Bebas Neue',cursive",
+            letterSpacing:1}}>{totalLabel}</div>
+          <div style={{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:2,marginTop:2}}>
+            {lang === "es" ? "TIEMPO TOTAL" : "TOTAL TIME"}
+          </div>
+        </div>
+      </div>
+
+      {/* Sessions by month */}
+      {Object.entries(grouped).map(([month, list]) => (
+        <div key={month} style={{marginBottom:20}}>
+          <div style={{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:3,
+            marginBottom:10,textTransform:"uppercase"}}>
+            {"// " + month}
+          </div>
+          {list.map((s, i) => {
+            const accent = getAccent(s);
+            const exs = s.exercises || [];
+            return (
+              <button key={s.id || i}
+                onClick={() => openSession(s)}
+                style={{width:"100%",display:"flex",alignItems:"center",gap:12,
+                  padding:"13px 14px",background:C.card,borderRadius:12,
+                  border:"1px solid "+C.borderL,cursor:"pointer",marginBottom:8,
+                  textAlign:"left",position:"relative",overflow:"hidden"}}>
+                {/* Accent bar */}
+                <div style={{position:"absolute",left:0,top:0,bottom:0,width:3,
+                  background:accent,borderRadius:"3px 0 0 3px"}} />
+                {/* Date */}
+                <div style={{paddingLeft:6,minWidth:32,flexShrink:0,textAlign:"center"}}>
+                  <div style={{fontSize:20,fontWeight:900,color:C.tx,lineHeight:1,
+                    fontFamily:"'Bebas Neue',cursive"}}>
+                    {fmtDay(s.session_date)}
+                  </div>
+                  <div style={{fontSize:7,fontFamily:mono,color:C.tx3,letterSpacing:1}}>
+                    {fmtMonthShort(s.session_date)}
+                  </div>
+                </div>
+                {/* Divider */}
+                <div style={{width:1,alignSelf:"stretch",background:C.borderL,flexShrink:0}} />
+                {/* Info */}
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:13,fontWeight:700,color:C.tx,lineHeight:1,marginBottom:5,
+                    overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                    {s.day_label || (lang === "es" ? "ENTRENO" : "WORKOUT")}
+                  </div>
+                  <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                    {exs.length > 0 && (
+                      <span style={{fontSize:8,fontFamily:mono,color:C.tx3}}>
+                        {exs.length + (lang === "es" ? " ejerc." : " ex.")}
+                      </span>
+                    )}
+                    {s.duration_seconds > 0 && (
+                      <span style={{fontSize:8,fontFamily:mono,color:C.tx3}}>
+                        {fmtDuration(s.duration_seconds)}
+                      </span>
+                    )}
+                    <div style={{width:4,height:4,borderRadius:"50%",
+                      background:accent,flexShrink:0}} />
+                  </div>
+                </div>
+                {/* Arrow */}
+                <div style={{color:C.tx3,fontSize:16,flexShrink:0}}>›</div>
+              </button>
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[], setXpLevelUps=()=>{}, showXPTooltip, setShowXPTooltip=()=>{}, xpAnimZone, setXpAnimZone=()=>{}}){
