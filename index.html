@@ -390,15 +390,18 @@ const FStore={
     syncDot('syncing');
     try{
       const{data}=await sb.from('exercise_logs')
-        .select('exercise_id,logged_at,weight_kg,reps,estimated_1rm')
+        .select('exercise_id,exercise_name,logged_at,weight_kg,reps,estimated_1rm')
         .eq('user_id',user.id).order('logged_at',{ascending:false}).limit(1000);
       if(!data)return{};
       const logs={};
+      const nm={};
       data.forEach(row=>{
         if(!logs[row.exercise_id])logs[row.exercise_id]=[];
         logs[row.exercise_id].push({d:row.logged_at,w:row.weight_kg,r:row.reps,rm:row.estimated_1rm});
+        if(row.exercise_name&&row.exercise_name!==row.exercise_id)nm[row.exercise_id]=row.exercise_name;
       });
       try{localStorage.setItem('fv8l',JSON.stringify(logs));}catch(_){}
+      try{const existing=JSON.parse(localStorage.getItem('fv8_nm')||'{}');localStorage.setItem('fv8_nm',JSON.stringify({...nm,...existing}));}catch(_){}
       syncDot('ok');return logs;
     }catch(e){syncDot('error');return{};}
   },
@@ -3405,6 +3408,8 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
     const rm1=isTimeEx?0:epley(effKg,rp);
     nl[id]=[{d:today,w:effKg,r:rp,rm:rm1},...nl[id]].slice(0,60);
     slg(nl);
+    // Save exercise name map for PR display
+    try{const nm=JSON.parse(localStorage.getItem('fv8_nm')||'{}');nm[id]=exName||id;localStorage.setItem('fv8_nm',JSON.stringify(nm));}catch(_){}
     FStore.saveLogEntry(id,exName||id,effKg,rp,rm1);
     const setLoadKg=effKg*parseInt(rp||0);
     if(setLoadKg>0) FStore.saveDailyLoad(Math.round(setLoadKg/10));
@@ -6035,6 +6040,8 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
     if(!best.rm||best.rm<=0) return null;
     let name=id;
     if(routine) routine.forEach(d=>{if(!d)return;d.ex&&d.ex.forEach(e=>{if(e.id===id)name=e.e;});});
+    // Fallback: use saved name map from localStorage
+    if(name===id){try{const nm=JSON.parse(localStorage.getItem('fv8_nm')||'{}');if(nm[id])name=nm[id];}catch(_){}}
     const nl=(name||'').toLowerCase().trim();
     const noRm=["cardio suave","cardio moderado","estiramientos","estiramiento","yoga","pilates","sprint 200m","jumping jacks","arm haulers","mountain climbers","mountain climber","bear crawl","burpee","plancha","plancha lateral","crunch","crunch bicicleta","elevacion de piernas","farmer walk","saltar la cuerda"].includes(nl);
     if(noRm) return null;
