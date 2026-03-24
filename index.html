@@ -2664,6 +2664,10 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
           const h=logs[ex.id];
           const prevKg=h&&h[0]?h[0].w:null;
           const prevRp=h&&h[0]?h[0].r:null;
+          // Don't show previous weight for bodyweight exercises unless user actually logged a weight
+          const exNameLow=(ex.e||'').toLowerCase().trim();
+          const isBWex=["pull up","chin up","push up","decline push up","dips","bench dips","diamond push ups","plank","mountain climber","hanging knee raises","box jump","dominadas","dominadas agarre supino","dominadas agarre amplio","dominadas neutro","fondos","fondos en banco","fondos paralelas","flexiones","flexiones diamante","flexiones explosivas","sentadilla peso corporal","sentadillas peso corporal","sentadilla con salto","burpee","plancha","plancha lateral","crunch","crunch bicicleta","elevación de piernas","zancada con salto","zancadas peso corporal","zancada peso corporal","salto al cajón","saltar la cuerda","mountain climbers","jumping jacks","arm haulers","cardio suave","estiramientos","sprint 200m"].includes(exNameLow);
+          const showPrev=prevKg&&!isBWex;
 
           return(
             <React.Fragment key={ei}>
@@ -2849,7 +2853,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                 )}
                 <div style={{display:"flex",alignItems:"center",gap:12,marginTop:5}}>
                   <span style={{fontFamily:mono,fontSize:9,color:C2.tx3,letterSpacing:1.5}}>{ex.r}</span>
-                  {prevKg&&<span style={{fontFamily:mono,fontSize:9,color:C2.tx3}}>ant: <span style={{color:C2.tx2}}>{prevKg}kg × {prevRp}</span></span>}
+                  {showPrev&&<span style={{fontFamily:mono,fontSize:9,color:C2.tx3}}>ant: <span style={{color:C2.tx2}}>{prevKg}kg × {prevRp}</span></span>}
                   {exStarted&&<span style={{fontFamily:mono,fontSize:8,color:exDone?C2.green:C2.tx3,background:exDone?"rgba(95,170,136,.12)":"rgba(255,255,255,.05)",border:`1px solid ${exDone?"rgba(95,170,136,.25)":"rgba(82,90,110,.3)"}`,borderRadius:20,padding:"2px 8px",letterSpacing:1}}>
                     {sets[ei].filter(s=>s.done).length}/{sets[ei].length}
                   </span>}
@@ -2925,9 +2929,9 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                   ))}
                 </div>
                 {sets[ei].map((s,si)=>{
-                  // Suggestion arrow
+                  // Suggestion arrow — only for weighted exercises
                   const curKg=parseFloat(s.kg)||0;
-                  const pKg=prevKg?+prevKg:null;
+                  const pKg=showPrev&&prevKg?+prevKg:null;
                   const suggest=pKg&&si===0?(curKg>pKg?"↑":curKg===pKg?"=":"↓"):null;
                   const suggestColor=suggest==="↑"?"#3fcf8e":suggest==="↓"?"#f0b429":"rgba(255,255,255,.2)";
 
