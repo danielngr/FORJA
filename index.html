@@ -2580,7 +2580,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
           ← {(L[lang]||L.en).back}
         </button>
         <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:1}}>
-          <div style={{fontFamily:mono,fontSize:10,color:C2.tx2,letterSpacing:3,fontWeight:600}}>{day.l}</div>
+          <div style={{fontFamily:mono,fontSize:10,color:C2.tx2,letterSpacing:3,fontWeight:600}}>{translateDayLabel(day.l,lang)}</div>
           <div style={{fontFamily:mono,fontSize:9,color:C2.tx3,letterSpacing:1}}>
             {doneSets}/{totalSets} {(L[lang]||L.en).sets.toLowerCase()}
           </div>
@@ -2595,7 +2595,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
           </svg>
           <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:0}}>
             <div style={{fontFamily:mono,fontSize:restActive?11:9,fontWeight:700,color:arcNumColor,letterSpacing:-.5,lineHeight:1,transition:"color .5s"}}>{arcNumStr}</div>
-            {restActive&&<div style={{fontFamily:mono,fontSize:6,color:C2.tx3,letterSpacing:1}}>REST</div>}
+            {restActive&&<div style={{fontFamily:mono,fontSize:6,color:C2.tx3,letterSpacing:1}}>{(L[lang]||L.en).rest}</div>}
           </div>
         </div>
       </div>
@@ -3065,21 +3065,21 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
 
         const WS_DEFS=[
           {id:"ws-exercise", pad:8,
-           tES:"Tu ejercicio",              tEN:"Your exercise",
+           tES:"Tu ejercicio",              tEN:"Your exercise",              tFR:"Ton exercice",            tIT:"Il tuo esercizio",        tDE:"Deine Übung",
            xES:"Nombre del ejercicio, músculos que trabaja y nivel. Cada día tiene su selección específica.",
-           xEN:"Exercise name, muscles worked and level. Each day has its own selection."},
+           xEN:"Exercise name, muscles worked and level. Each day has its own selection.", xFR:"Nom de l'exercice, muscles travaillés et niveau. Chaque jour a sa sélection.", xIT:"Nome dell'esercizio, muscoli lavorati e livello.", xDE:"Übungsname, trainierte Muskeln und Niveau."},
           {id:"ws-video",    pad:4,
-           tES:"Video de técnica",          tEN:"Technique video",
+           tES:"Video de técnica",          tEN:"Technique video",            tFR:"Vidéo de technique",      tIT:"Video tecnica",            tDE:"Technik-Video",
            xES:"El video muestra la técnica correcta. Estúdialo antes de empezar.",
-           xEN:"The video shows correct technique. Study it before starting."},
+           xEN:"The video shows correct technique. Study it before starting.", xFR:"La vidéo montre la technique correcte. Étudie-la avant de commencer.", xIT:"Il video mostra la tecnica corretta. Studiala prima di iniziare.", xDE:"Das Video zeigt die korrekte Technik. Studiere es vor dem Start."},
           {id:"ws-sets",     pad:8,
-           tES:"Registra peso y reps",      tEN:"Log weight and reps",
+           tES:"Registra peso y reps",      tEN:"Log weight and reps",        tFR:"Note le poids et les reps", tIT:"Registra peso e reps",   tDE:"Gewicht und Wdhl. eingeben",
            xES:"Ingresa el peso en KG y las reps que hiciste. FORJA recuerda y muestra si mejoraste.",
-           xEN:"Enter weight in KG and reps. FORJA remembers and shows if you improved."},
+           xEN:"Enter weight in KG and reps. FORJA remembers and shows if you improved.", xFR:"Entre le poids en KG et les reps. FORJA mémorise et montre si tu as progressé.", xIT:"Inserisci il peso in KG e le reps. FORJA ricorda e mostra se sei migliorato.", xDE:"Gewicht in KG und Wdhl. eingeben. FORJA merkt sich alles und zeigt Verbesserungen."},
           {id:"ws-check",    pad:8,
-           tES:"Marca la serie como hecha", tEN:"Mark the set as done",
+           tES:"Marca la serie como hecha", tEN:"Mark the set as done",       tFR:"Marque la série comme faite", tIT:"Segna la serie come fatta", tDE:"Satz als erledigt markieren",
            xES:"Toca ✓ al terminar la serie. Se pone verde y arranca el timer de descanso.",
-           xEN:"Tap ✓ when done. It turns green and the rest timer starts."},
+           xEN:"Tap ✓ when done. It turns green and the rest timer starts.", xFR:"Touche ✓ quand tu as fini. Il devient vert et le minuteur de repos démarre.", xIT:"Tocca ✓ quando hai finito. Diventa verde e il timer di riposo parte.", xDE:"✓ antippen wenn fertig. Es wird grün und der Pausentimer startet."},
         ];
         const step=WS_DEFS[wsIdx];
         if(!step) return null;
@@ -3164,11 +3164,11 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
               </div>
               <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:24,letterSpacing:1.5,
                 color:"#EEEAE3",marginBottom:8,lineHeight:1}}>
-                {es?step.tES:step.tEN}
+                {lang==="fr"?(step.tFR||step.tEN):lang==="it"?(step.tIT||step.tEN):lang==="de"?(step.tDE||step.tEN):lang==="pt"?(step.tES||step.tEN):es?step.tES:step.tEN}
               </div>
               <div style={{fontSize:13,color:"rgba(238,234,227,0.85)",lineHeight:1.65,
                 marginBottom:16,fontFamily:S_}}>
-                {es?step.xES:step.xEN}
+                {lang==="fr"?(step.xFR||step.xEN):lang==="it"?(step.xIT||step.xEN):lang==="de"?(step.xDE||step.xEN):lang==="pt"?(step.xES||step.xEN):es?step.xES:step.xEN}
               </div>
               <div style={{display:"flex",alignItems:"center",
                 justifyContent:"space-between",gap:12}}>
@@ -3231,6 +3231,62 @@ function computeACWR(loads){
   const daysWithData=Object.keys(loads).filter(k=>{const d=new Date(k);return(new Date()-d)/86400000<=28;}).length;
   const ratio=weeklyAvg>0&&daysWithData>=7?Math.round((acute/weeklyAvg)*100)/100:0;
   return{acute:Math.round(acute),chronic:Math.round(chronic),ratio,loads};
+}
+
+
+// Translation map for celebrity routine day labels
+const DAY_LABEL_TRANS={
+  "Pecho":             {fr:"Pectoraux",    it:"Petto",          de:"Brust",          pt:"Peitoral"},
+  "Espalda":           {fr:"Dos",          it:"Schiena",        de:"Rücken",         pt:"Costas"},
+  "Piernas":           {fr:"Jambes",       it:"Gambe",          de:"Beine",          pt:"Pernas"},
+  "Hombros":           {fr:"Épaules",      it:"Spalle",         de:"Schultern",      pt:"Ombros"},
+  "Brazos":            {fr:"Bras",         it:"Braccia",        de:"Arme",           pt:"Braços"},
+  "Bíceps":            {fr:"Biceps",       it:"Bicipiti",       de:"Bizeps",         pt:"Bíceps"},
+  "Tríceps":           {fr:"Triceps",      it:"Tricipiti",      de:"Trizeps",        pt:"Tríceps"},
+  "Core":              {fr:"Core",         it:"Core",           de:"Core",           pt:"Core"},
+  "Abs":               {fr:"Abdos",        it:"Addome",         de:"Bauch",          pt:"Abdômen"},
+  "Cardio":            {fr:"Cardio",       it:"Cardio",         de:"Cardio",         pt:"Cardio"},
+  "Full Body":         {fr:"Full Body",    it:"Full Body",      de:"Ganzkörper",     pt:"Corpo Inteiro"},
+  "Fuerza":            {fr:"Force",        it:"Forza",          de:"Kraft",          pt:"Força"},
+  "Piernas B":         {fr:"Jambes B",     it:"Gambe B",        de:"Beine B",        pt:"Pernas B"},
+  "Gemelos":           {fr:"Mollets",      it:"Polpacci",       de:"Waden",          pt:"Gêmeos"},
+  "Tren inferior":     {fr:"Bas du corps", it:"Parte bassa",    de:"Unterkörper",    pt:"Parte inferior"},
+  "Tren superior":     {fr:"Haut du corps",it:"Parte alta",     de:"Oberkörper",     pt:"Parte superior"},
+  "Unilateral A":      {fr:"Unilatéral A", it:"Unilaterale A",  de:"Unilateral A",   pt:"Unilateral A"},
+  "Unilateral+Core":   {fr:"Unilatéral+Core",it:"Unilaterale+Core",de:"Unilateral+Core",pt:"Unilateral+Core"},
+  "Recuperación":      {fr:"Récupération", it:"Recupero",       de:"Erholung",       pt:"Recuperação"},
+  "Estabilidad":       {fr:"Stabilité",    it:"Stabilità",      de:"Stabilität",     pt:"Estabilidade"},
+  "Movilidad":         {fr:"Mobilité",     it:"Mobilità",       de:"Mobilität",      pt:"Mobilität"},
+  "Pilates":           {fr:"Pilates",      it:"Pilates",        de:"Pilates",        pt:"Pilates"},
+  "Yoga":              {fr:"Yoga",         it:"Yoga",           de:"Yoga",           pt:"Yoga"},
+  "Boxing":            {fr:"Boxe",         it:"Boxe",           de:"Boxen",          pt:"Boxe"},
+  "Gimnasio":          {fr:"Salle",        it:"Palestra",       de:"Studio",         pt:"Academia"},
+  "Calistenia":        {fr:"Callisthénie", it:"Calistenics",    de:"Kalisthenics",   pt:"Calistenia"},
+  "Pump":              {fr:"Pump",         it:"Pump",           de:"Pump",           pt:"Pump"},
+};
+
+// Translate a day label word by word
+function translateDayLabel(label, lang){
+  if(!label||lang==="es"||lang==="pt"&&label) {
+    // PT uses Spanish labels (similar enough)
+    if(lang==="pt") {
+      let t=label;
+      Object.entries(DAY_LABEL_TRANS).forEach(([es,trans])=>{
+        if(trans.pt) t=t.replace(new RegExp(es.replace(/[+]/g,'\\$&'),'g'),trans.pt);
+      });
+      return t;
+    }
+    return label;
+  }
+  if(lang==="en") return label; // keep Spanish for EN as well (it's a proper label)
+  let translated=label;
+  // Sort by length descending to replace longer phrases first
+  const entries=Object.entries(DAY_LABEL_TRANS).sort((a,b)=>b[0].length-a[0].length);
+  entries.forEach(([es,trans])=>{
+    const target=trans[lang];
+    if(target) translated=translated.replace(new RegExp(es.replace(/[+()]/g,'\\$&'),'g'),target);
+  });
+  return translated;
 }
 
 function Main({lang,setLang,profile,routine,sp,sr,setStep}){
@@ -3537,7 +3593,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
           <div>
             <div style={{fontSize:10,fontFamily:mono,color:"rgba(255,255,255,.6)",letterSpacing:5,marginBottom:4,fontWeight:700}}>FORJA</div>
-            <div style={{fontSize:26,fontWeight:900,letterSpacing:-1.2,lineHeight:.9}}>{day?day.l:t.rest}</div>
+            <div style={{fontSize:26,fontWeight:900,letterSpacing:-1.2,lineHeight:.9}}>{day?translateDayLabel(day.l,lang):t.rest}</div>
             <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:1.5,marginTop:2}}>{DF[lang][sel].toUpperCase()} {day?`. ${day.ex.length} ${lang==="es"||lang==="pt"?"ejercicios":lang==="fr"?"exercices":lang==="it"?"esercizi":lang==="de"?"Übungen":"exercises"}`:""}
             </div>
           </div>
@@ -3667,7 +3723,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                     opacity:isSel?0.6:0.4,letterSpacing:0.5,padding:"0 2px",
                     overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{d.l}</div>}
                   {!d&&<div style={{fontSize:7,fontFamily:mono,marginTop:3,
-                    opacity:0.6,letterSpacing:0.5}}>REST</div>}
+                    opacity:0.6,letterSpacing:0.5}}>{(L[lang]||L.en).rest}</div>}
                   {cp&&!isSel&&<div style={{position:"absolute",top:4,right:4,
                     width:4,height:4,borderRadius:"50%",background:C.green}}/>}
                   {hasDone&&!cp&&!isSel&&isPastWeek&&<div style={{position:"absolute",top:4,right:4,
@@ -3684,7 +3740,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
         borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
         <div style={{display:"flex",background:"rgba(255,255,255,0.05)",
           borderRadius:12,padding:3,gap:0}}>
-          {[{id:"train",l:(L[lang]||L.en).train,icon:"⚡"},{id:"body",l:lang==="es"?"CUERPO":"BODY",icon:"🫀"}].map(tb=>{
+          {[{id:"train",l:(L[lang]||L.en).train,icon:"⚡"},{id:"body",l:lang==="es"||lang==="pt"?"CUERPO":lang==="fr"?"CORPS":lang==="it"?"CORPO":lang==="de"?"KÖRPER":"BODY",icon:"🫀"}].map(tb=>{
             const active=tab===tb.id;
             return(
             <button key={tb.id} data-tour={tb.id==="body"?"tab-body":undefined} onClick={()=>{setTab(tb.id);setAddEx(false);setAddF(false);}}
@@ -3739,7 +3795,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                         {DF[lang][sel]}
                       </div>
                       <div style={{fontSize:32,fontWeight:900,color:C.white,letterSpacing:-1.5,lineHeight:1,textTransform:"uppercase"}}>
-                        {day.l}
+                        {translateDayLabel(day.l,lang)}
                       </div>
                       <div style={{fontSize:10,fontFamily:mono,color:"rgba(255,255,255,0.7)",marginTop:6,letterSpacing:1}}>
                         {exs.length} {lang==="es"||lang==="pt"?"ejercicios":lang==="fr"?"exercices":lang==="it"?"esercizi":lang==="de"?"Übungen":"exercises"}
@@ -3826,7 +3882,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                             :"Acute:Chronic Workload Ratio. Measures if you're training harder than usual. Optimal: 0.8–1.3. Above 1.5 increases injury risk."}
                         </div>
                         <div style={{display:"flex",gap:12,marginTop:8,flexWrap:"wrap"}}>
-                          {[["0–0.8",lang==="es"?"Subentreno":"Undertrained","#4898e8"],["0.8–1.3",lang==="es"||lang==="pt"?"Óptimo":lang==="fr"?"Optimal":lang==="it"?"Ottimale":lang==="de"?"Optimal":"Optimal","#2da84a"],["1.3–1.5",lang==="es"||lang==="pt"?"Precaución":lang==="fr"?"Prudence":lang==="it"?"Attenzione":lang==="de"?"Achtung":"Caution","#e8a020"],[">1.5",lang==="es"||lang==="pt"?"Riesgo":lang==="fr"?"Risque":lang==="it"?"Rischio":lang==="de"?"Risiko":"Risk","#e83020"]].map(([range,label,color])=>(
+                          {[["0–0.8",lang==="es"||lang==="pt"?"Subentreno":lang==="fr"?"Sous-entraîné":lang==="it"?"Sotto-allenato":lang==="de"?"Unterforderung":"Undertrained","#4898e8"],["0.8–1.3",lang==="es"||lang==="pt"?"Óptimo":lang==="fr"?"Optimal":lang==="it"?"Ottimale":lang==="de"?"Optimal":"Optimal","#2da84a"],["1.3–1.5",lang==="es"||lang==="pt"?"Precaución":lang==="fr"?"Prudence":lang==="it"?"Attenzione":lang==="de"?"Achtung":"Caution","#e8a020"],[">1.5",lang==="es"||lang==="pt"?"Riesgo":lang==="fr"?"Risque":lang==="it"?"Rischio":lang==="de"?"Risiko":"Risk","#e83020"]].map(([range,label,color])=>(
                             <div key={range} style={{display:"flex",alignItems:"center",gap:4}}>
                               <div style={{width:6,height:6,borderRadius:"50%",background:color}}/>
                               <span style={{fontFamily:mono,fontSize:8,color:"rgba(255,255,255,0.5)"}}>{range} {label}</span>
@@ -3981,7 +4037,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                           }}>?</button>
                         </div>
                         <div style={{fontSize:8,fontFamily:mono,color:C.tx3,opacity:.5}}>
-                          {lang==="es"?"primario · ½ sec":"primary · ½ sec"}
+                          {lang==="es"||lang==="pt"?"primario · ½ sec":lang==="fr"?"primaire · ½ sec":lang==="it"?"primario · ½ sec":lang==="de"?"primär · ½ sek":"primary · ½ sec"}
                         </div>
                       </div>
                       <div id="vol-help" style={{display:"none",marginBottom:12,padding:"10px 12px",
@@ -3995,8 +4051,8 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                                            s:lang==="es"||lang==="pt"?"Suficientes series para crecer. ✓":lang==="fr"?"Suffisamment de séries pour progresser. ✓":lang==="it"?"Serie sufficienti per crescere. ✓":lang==="de"?"Genug Sätze zum Wachsen. ✓":"Enough sets to grow. ✓"},
                             {c:"rgba(255,255,255,.2)", t:lang==="es"||lang==="pt"?"Barra gris = falta volumen":lang==="fr"?"Gris = volume insuffisant":lang==="it"?"Grigio = volume insufficiente":lang==="de"?"Grau = zu wenig Volumen":"Grey = below minimum",
                                            s:lang==="es"||lang==="pt"?"Agrega 1-2 series más esta semana.":lang==="fr"?"Ajoutez 1-2 séries de plus cette semaine.":lang==="it"?"Aggiungi 1-2 serie in più questa settimana.":lang==="de"?"1-2 Sätze mehr diese Woche.":"Add 1-2 more sets this week."},
-                            {c:"#e05555",  t:lang==="es"?"Barra roja = exceso":"Red = too much",
-                                           s:lang==="es"?"Riesgo de fatiga acumulada. Baja un poco.":"Fatigue risk. Back off a bit."},
+                            {c:"#e05555",  t:lang==="es"||lang==="pt"?"Barra roja = exceso":lang==="fr"?"Rouge = trop de volume":lang==="it"?"Rosso = troppo volume":lang==="de"?"Rot = zu viel Volumen":"Red = too much",
+                                           s:lang==="es"||lang==="pt"?"Riesgo de fatiga acumulada. Baja un poco.":lang==="fr"?"Risque de fatigue. Réduis l'intensité.":lang==="it"?"Rischio affaticamento. Riduci un po'.":lang==="de"?"Überlastungsrisiko. Reduziere etwas.":"Fatigue risk. Back off a bit."},
                           ].map((row,ri)=>(
                             <div key={ri} style={{display:"flex",gap:8,alignItems:"flex-start"}}>
                               <div style={{width:3,height:3,borderRadius:"50%",background:row.c,marginTop:4,flexShrink:0}}/>
@@ -4182,7 +4238,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                   ))}
                 </div>
                 <div style={{display:"flex",gap:8,marginTop:12}}>
-                  <button onClick={()=>setAddF(false)} style={{flex:1,padding:11,borderRadius:9,border:`1.5px solid ${C.borderL}`,background:"transparent",color:C.tx3,fontSize:10,fontFamily:mono,cursor:"pointer"}}>CANCEL</button>
+                  <button onClick={()=>setAddF(false)} style={{flex:1,padding:11,borderRadius:9,border:`1.5px solid ${C.borderL}`,background:"transparent",color:C.tx3,fontSize:10,fontFamily:mono,cursor:"pointer"}}>{(L[lang]||L.en).cancel.toUpperCase()}</button>
                   <button onClick={addFood} style={{flex:2,padding:11,borderRadius:9,border:"none",background:C.tx,color:C.white,fontSize:10,fontFamily:mono,fontWeight:700,cursor:"pointer",letterSpacing:1}}>{t.save}</button>
                 </div>
               </div>
@@ -4298,67 +4354,67 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
         const STEPS=[
           // 0
           {id:"cal-day",    pad:8,
-           tES:"Tu día de entrenamiento",     tEN:"Your training day",
+           tES:"Tu día de entrenamiento",     tEN:"Your training day",          tFR:"Ton jour d'entraînement", tIT:"Il tuo giorno di allenamento", tDE:"Dein Trainingstag",
            xES:"El día marcado es hoy. Tu rutina vive aquí — toca cualquier día para verla.",
-           xEN:"The highlighted day is today. Your routine lives here — tap any day to see it."},
+           xEN:"The highlighted day is today. Your routine lives here — tap any day to see it.", xFR:"Le jour en surbrillance c'est aujourd'hui. Ta routine est ici — touche n'importe quel jour.", xIT:"Il giorno evidenziato è oggi. La tua routine è qui — tocca qualsiasi giorno per vederla.", xDE:"Der markierte Tag ist heute. Dein Programm lebt hier — tippe auf einen Tag."},
           // 1
           {id:"cal-nav",    pad:8,
-           tES:"Historial semanal",           tEN:"Weekly history",
+           tES:"Historial semanal",           tEN:"Weekly history",             tFR:"Historique hebdomadaire",  tIT:"Storico settimanale",      tDE:"Wochenverlauf",
            xES:"Navega semanas anteriores con estas flechas para revisar qué entrenaste.",
-           xEN:"Use these arrows to browse past weeks and review what you trained."},
+           xEN:"Use these arrows to browse past weeks and review what you trained.", xFR:"Utilise ces flèches pour naviguer entre les semaines passées.", xIT:"Usa queste frecce per scorrere le settimane passate.", xDE:"Mit diesen Pfeilen durch vergangene Wochen navigieren."},
           // 2
           {id:"day-progress", pad:10,
-           tES:"Tu progreso de hoy",          tEN:"Today's progress",
+           tES:"Tu progreso de hoy",          tEN:"Today's progress",           tFR:"Ton progrès du jour",      tIT:"Il tuo progresso oggi",    tDE:"Dein heutiger Fortschritt",
            xES:"Este contador muestra cuántos ejercicios completaste hoy.",
-           xEN:"This counter shows how many exercises you've completed today."},
+           xEN:"This counter shows how many exercises you've completed today.", xFR:"Ce compteur montre combien d'exercices tu as complétés aujourd'hui.", xIT:"Questo contatore mostra quanti esercizi hai completato oggi.", xDE:"Dieser Zähler zeigt wie viele Übungen du heute abgeschlossen hast."},
           // 3 — start-workout: user clicks CONTINUAR → step 4 triggers setInWorkout
           {id:"start-workout", pad:8,
-           tES:"Inicia tu entreno",           tEN:"Start your workout",
+           tES:"Inicia tu entreno",           tEN:"Start your workout",         tFR:"Commence ton entraînement", tIT:"Inizia il tuo allenamento", tDE:"Training starten",
            xES:"Toca CONTINUAR y te mostraremos cómo registrar tu entreno paso a paso.",
-           xEN:"Tap CONTINUE and we'll show you how to log your workout step by step."},
+           xEN:"Tap CONTINUE and we'll show you how to log your workout step by step.", xFR:"Touche CONTINUER et on te montrera comment enregistrer ton entraînement.", xIT:"Tocca CONTINUA e ti mostreremo come registrare il tuo allenamento.", xDE:"WEITER antippen und wir zeigen dir Schritt für Schritt wie du trainierst."},
           // 4-7 handled by WorkoutScreen tour
           // 8
           {id:"vol-weekly",  pad:10, tabNeeded:"train",
-           tES:"Volumen semanal",             tEN:"Weekly volume",
+           tES:"Volumen semanal",             tEN:"Weekly volume",              tFR:"Volume hebdomadaire",      tIT:"Volume settimanale",       tDE:"Wochenvolumen",
            xES:"Las barras muestran cuánto has trabajado cada músculo vs. lo recomendado.",
-           xEN:"Bars show how much you've worked each muscle vs. science recommendations."},
+           xEN:"Bars show how much you've worked each muscle vs. science recommendations.", xFR:"Les barres montrent combien tu as travaillé chaque muscle vs. les recommandations.", xIT:"Le barre mostrano quanto hai lavorato ogni muscolo vs. le raccomandazioni.", xDE:"Balken zeigen wie viel du jeden Muskel trainiert hast vs. Empfehlungen."},
           // 8b: CARGA SEMANAL
           {id:"carga-semanal", pad:10, tabNeeded:"train",
-           tES:"Carga semanal (ACWR)",        tEN:"Weekly load (ACWR)",
+           tES:"Carga semanal (ACWR)",        tEN:"Weekly load (ACWR)",         tFR:"Charge hebdomadaire (ACWR)", tIT:"Carico settimanale (ACWR)", tDE:"Wochenlast (ACWR)",
            xES:"Mide si estás entrenando más de lo habitual. Rango óptimo: 0.8–1.3. Se registra automáticamente al guardar sets.",
-           xEN:"Measures if you're training more than usual. Optimal: 0.8–1.3. Recorded automatically when you log sets."},
+           xEN:"Measures if you're training more than usual. Optimal: 0.8–1.3. Recorded automatically when you log sets.", xFR:"Mesure si tu t'entraînes plus que d'habitude. Optimal: 0.8–1.3. Enregistré automatiquement.", xIT:"Misura se ti alleni più del solito. Ottimale: 0.8–1.3. Registrato automaticamente.", xDE:"Misst ob du mehr als sonst trainierst. Optimal: 0.8–1.3. Automatisch erfasst."},
           // 9
           {id:"tab-body",    pad:8,  tabNeeded:"train",
-           tES:"Pestaña Cuerpo",              tEN:"Body tab",
+           tES:"Pestaña Cuerpo",              tEN:"Body tab",                   tFR:"Onglet Corps",             tIT:"Tab Corpo",                tDE:"Tab Körper",
            xES:"Aquí vive tu maniquí 3D. Toca CONTINUAR para ir ahí.",
-           xEN:"Your 3D mannequin lives here. Tap CONTINUE to go there.",
+           xEN:"Your 3D mannequin lives here. Tap CONTINUE to go there.", xFR:"Ton mannequin 3D est ici. Touche CONTINUER pour y aller.", xIT:"Il tuo manichino 3D è qui. Tocca CONTINUA per andare.", xDE:"Dein 3D-Mannequin ist hier. WEITER antippen um hinzugehen.",
            onEnter:()=>{setTabR("body");}},
           // 10
           {id:"mannequin",   pad:4,  tabNeeded:"body",
-           tES:"Tu maniquí 3D",               tEN:"Your 3D mannequin",
+           tES:"Tu maniquí 3D",               tEN:"Your 3D mannequin",          tFR:"Ton mannequin 3D",         tIT:"Il tuo manichino 3D",      tDE:"Dein 3D-Mannequin",
            xES:"Los músculos se colorean por estado: rojo=activo, naranja=recuperando, verde=listo. Gíralo.",
-           xEN:"Muscles colored by state: red=active, orange=recovering, green=ready. Drag to rotate.",
+           xEN:"Muscles colored by state: red=active, orange=recovering, green=ready. Drag to rotate.", xFR:"Muscles colorés par état: rouge=actif, orange=récupération, vert=prêt. Fais glisser.", xIT:"Muscoli colorati per stato: rosso=attivo, arancione=recupero, verde=pronto. Trascina.", xDE:"Muskeln nach Zustand gefärbt: rot=aktiv, orange=Erholung, grün=bereit. Drehen.",
            onEnter:()=>{window.scrollTo({top:0,behavior:"instant"});}},
           // 11
           {id:"balance-score", pad:10, tabNeeded:"body",
-           tES:"Balance Score",               tEN:"Balance Score",
+           tES:"Balance Score",               tEN:"Balance Score",              tFR:"Score d'équilibre",        tIT:"Score equilibrio",         tDE:"Balance Score",
            xES:"Sube entrenando todos los grupos. Úsalo para no olvidar ninguna zona.",
-           xEN:"Raise it by training all muscle groups. Use it so you never skip a zone."},
+           xEN:"Raise it by training all muscle groups. Use it so you never skip a zone.", xFR:"Augmente-le en entraînant tous les groupes musculaires. Ne saute aucune zone.", xIT:"Aumentalo allenando tutti i gruppi muscolari. Non saltare nessuna zona.", xDE:"Erhöhe ihn durch Training aller Muskelgruppen. Keine Zone auslassen."},
           // 12
           {id:"mannequin", pad:4, tabNeeded:"body",
-           tES:"Sube de nivel",               tEN:"Level up",
+           tES:"Sube de nivel",               tEN:"Level up",                   tFR:"Monte de niveau",          tIT:"Sali di livello",          tDE:"Level aufsteigen",
            xES:"Cada set que registras da XP a esos músculos. Sube de nivel y el maniquí brilla — de gris en nivel 1 hasta corona dorada en nivel 10. Si dejas de entrenar más de 7 días, el nivel empieza a bajar. ¡La consistencia es todo!",
-           xEN:"Every set you log gives XP to those muscles. Level up and the mannequin glows — from gray at level 1 to gold crown at level 10. Stop training for 7+ days and your level starts dropping. Consistency is everything!"},
+           xEN:"Every set you log gives XP to those muscles. Level up and the mannequin glows — from gray at level 1 to gold crown at level 10. Stop training for 7+ days and your level starts dropping. Consistency is everything!", xFR:"Chaque série donne de l'XP à ces muscles. Monte de niveau et le mannequin brille. L'arrêt prolongé fait baisser le niveau.", xIT:"Ogni serie dà XP a quei muscoli. Sali di livello e il manichino brilla. Smettere di allenarti abbassa il livello.", xDE:"Jeder Satz gibt XP für diese Muskeln. Level auf und der Mannequin leuchtet. Aufhören lässt den Level sinken."},
           // 13
           {id:"fix-my-balance", pad:10, tabNeeded:"body",
-           tES:"Fix My Balance",              tEN:"Fix My Balance",
+           tES:"Fix My Balance",              tEN:"Fix My Balance",             tFR:"Corriger l'équilibre",     tIT:"Correggi l'equilibrio",    tDE:"Balance verbessern",
            xES:"Esta sección te dice qué músculos llevan más de 14 días sin trabajar y cuántos puntos de Balance Score recuperarías si los entrenas. Es tu guía para no descuidar ninguna zona.",
-           xEN:"This section tells you which muscles haven't been worked in 14+ days and how many Balance Score points you'd recover training them. Your guide to never neglect a zone."},
+           xEN:"This section tells you which muscles haven't been worked in 14+ days and how many Balance Score points you'd recover training them.", xFR:"Cette section montre les muscles non entraînés depuis 14+ jours et comment améliorer ton score.", xIT:"Questa sezione mostra i muscoli non allenati da 14+ giorni e come migliorare il punteggio.", xDE:"Dieser Abschnitt zeigt Muskeln die 14+ Tage nicht trainiert wurden."},
           // 14
           {id:"prs-section", pad:10, tabNeeded:"body",
-           tES:"PRs y tonelaje",              tEN:"PRs & tonnage",
+           tES:"PRs y tonelaje",              tEN:"PRs & tonnage",             tFR:"Records & tonnage",        tIT:"Record & tonnellaggio",    tDE:"Bestleistungen & Tonnage",
            xES:"FORJA registra tu 1RM estimado en cada ejercicio automáticamente. Aquí ves tus récords personales y la curva de progresión por ejercicio. El tonelaje semanal (series × reps × kg) te muestra si estás progresando semana a semana.",
-           xEN:"FORJA automatically tracks your estimated 1RM for every exercise. Here you see your personal records and progression curve. Weekly tonnage (sets × reps × kg) shows if you're improving week over week."},
+           xEN:"FORJA automatically tracks your estimated 1RM for every exercise. Here you see your personal records and progression curve. Weekly tonnage (sets × reps × kg) shows if you're improving week over week.", xFR:"FORJA suit automatiquement ton 1RM estimé pour chaque exercice. Ici tu vois tes records et la progression.", xIT:"FORJA traccia automaticamente il tuo 1RM stimato per ogni esercizio. Qui vedi i tuoi record e la progressione.", xDE:"FORJA erfasst automatisch dein geschätztes 1WM für jede Übung. Hier siehst du deine Bestleistungen."},
         ];
 
         // Map tourStep → STEPS index (steps 4-7 are WS, so Main uses 0-3 and 8-11→mapped to 4-7)
@@ -4521,12 +4577,12 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
               {/* Title */}
               <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:24,letterSpacing:1.5,
                 color:"#EEEAE3",marginBottom:8,lineHeight:1}}>
-                {es?step.tES:step.tEN}
+                {lang==="fr"?(step.tFR||step.tEN):lang==="it"?(step.tIT||step.tEN):lang==="de"?(step.tDE||step.tEN):lang==="pt"?(step.tES||step.tEN):es?step.tES:step.tEN}
               </div>
               {/* Body */}
               <div style={{fontSize:13,color:"rgba(238,234,227,0.85)",lineHeight:1.65,
                 marginBottom:16,fontFamily:S_}}>
-                {es?step.xES:step.xEN}
+                {lang==="fr"?(step.xFR||step.xEN):lang==="it"?(step.xIT||step.xEN):lang==="de"?(step.xDE||step.xEN):lang==="pt"?(step.xES||step.xEN):es?step.xES:step.xEN}
               </div>
               {/* Buttons */}
               <div style={{display:"flex",alignItems:"center",
@@ -4756,7 +4812,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
     // Construir rutina 7 días desde selección manual
     const r=Array(7).fill(null).map((_,i)=>{
       const idx=sd.indexOf(i);
-      if(idx===-1) return {l:"REST",ex:[]};
+      if(idx===-1) return {l:(L[lang]||L.en).rest,ex:[]};
       const exs=manualRoutine[idx]||[];
       return {l:`DÍA ${idx+1}`,ex:exs.map(e=>({e,s:3,r:"8-12",id:`m${idx}${e}`}))};
     });
@@ -5374,7 +5430,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                   const pf={lang,goal,level,days,age,weight,height,units,selDays,gender,equipment};
                   FStore.saveProfile(pf,r);sp(pf);sr(r);setStep(99);
                 }
-              }}>{mode==="celebrity"?(lang==="es"?"EMPEZAR →":"START →"):t.next}</Btn></div>
+              }}>{mode==="celebrity"?(lang==="es"||lang==="pt"?"EMPEZAR →":lang==="fr"?"COMMENCER →":lang==="it"?"INIZIA →":lang==="de"?"STARTEN →":"START →"):t.next}</Btn></div>
             </div>
           </>)}
 
@@ -6406,8 +6462,8 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
           ...(toTrain.length>0 ? [
           e("div",{style:{fontSize:9,color:"rgba(255,255,255,.75)",fontFamily:mono_,marginBottom:10,lineHeight:1.5}},
             neverSorted.length>=PRIORITY.length
-              ?(es?"Empieza por los músculos con más impacto en tu físico:":"Start with the highest-impact muscles:")
-              :(es?"Sin entrenar en los últimos 14 días — trabájalos para subir el score:":"Not trained in 14 days — work them to raise your score:")
+              ?(es?"Empieza por los músculos con más impacto en tu físico:":lang==="es"||lang==="pt"?"Empieza por los músculos de mayor impacto:":lang==="fr"?"Commence par les muscles à fort impact:":lang==="it"?"Inizia dai muscoli ad alto impatto:":lang==="de"?"Beginne mit den wirkungsvollsten Muskeln:":"Start with the highest-impact muscles:")
+              :(es?"Sin entrenar en los últimos 14 días — trabájalos para subir el score:":lang==="es"||lang==="pt"?"Sin entrenar 14 días — trabájalos para subir tu score:":lang==="fr"?"Pas entraînés depuis 14 jours — travaille-les pour augmenter ton score:":lang==="it"?"Non allenati da 14 giorni — lavorali per aumentare il punteggio:":lang==="de"?"14 Tage nicht trainiert — trainiere sie für besseren Score:":"Not trained in 14 days — work them to raise your score:")
           ),
           e("div",{style:{display:"flex",flexDirection:"column",gap:6}},
             ...toTrain.map(z=>{
