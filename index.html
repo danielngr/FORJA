@@ -752,7 +752,13 @@ function exMetaKey(name){
   return ES_TO_META[low] || low;
 }
 </script>
-<script type="text/babel">const MESH_ZONE_3D={
+<script type="text/babel">
+// ?reset=1 clears all data for testing as a new user
+if(new URLSearchParams(window.location.search).get('reset')==='1'){
+  ['fv8p','fv8r','fv8l','fv8_mxp','fv8_dl','fv8_sh','fv8_toured','fv8_lang','fv8_nm'].forEach(k=>localStorage.removeItem(k));
+  window.history.replaceState({},'',window.location.pathname);
+}
+const MESH_ZONE_3D={
   "pectorales":"pecho","hombros":"hombro_izq","hombros.001":"hombro_der",
   "deltoides":"hombro_izq","acromio":"hombro_izq","deltoides 2":"hombro_der",
   "biceps 1":"bicep_izq","antebrazo":"antebrazo_izq","felxor":"antebrazo_izq",
