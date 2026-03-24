@@ -348,7 +348,7 @@ const FStore={
     const sb=getSB();const user=await ensureAuth();
     if(!sb||!user)return null;
     syncDot('syncing');
-    const{data}=await sb.from('user_profiles').select('profile_data,routine_data').eq('user_id',user.id).single();
+    const{data}=await sb.from('user_profiles').select('profile_data,routine_data').eq('user_id',user.id).maybeSingle();
     if(data){
       try{localStorage.setItem('fv8p',JSON.stringify(data.profile_data));}catch(_){}
       try{localStorage.setItem('fv8r',JSON.stringify(data.routine_data));}catch(_){}
@@ -421,7 +421,7 @@ const FStore={
       const{data,error}=await sb.from('sessions').insert({
         user_id:user.id,session_date:today,day_label:dayLabel,
         exercises:exData,duration_seconds:durationSecs
-      }).select('id').single();
+      }).select('id').maybeSingle();
       syncDot('ok');return data?.id||null;
     }catch(e){syncDot('error');return null;}
   },
@@ -512,7 +512,7 @@ const FStore={
         user_id:user.id,load_date:today,load_kg:loadKg
       },{onConflict:'user_id,load_date',ignoreDuplicates:false});
       // Actually increment — upsert replaces, so we need to load first
-      const{data}=await sb.from('daily_load').select('load_kg').eq('user_id',user.id).eq('load_date',today).single();
+      const{data}=await sb.from('daily_load').select('load_kg').eq('user_id',user.id).eq('load_date',today).maybeSingle();
       const existing=(data?.load_kg||0);
       await sb.from('daily_load').upsert({user_id:user.id,load_date:today,load_kg:existing+loadKg},{onConflict:'user_id,load_date'});
     }catch(_){}
