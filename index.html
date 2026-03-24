@@ -2685,83 +2685,125 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
 
               {/* Strength Curve — expands when tapping exercise name */}
               {expandedEx===ei&&(()=>{
-                const hist=(strengthData[ex.id]||[]).slice(0,10).reverse();
-                const hasHist=hist.length>0;
-                const maxRM=hasHist?Math.max(...hist.map(h=>h.rm)):100;
-                const minRM=hasHist?Math.min(...hist.map(h=>h.rm)):0;
-                const range=Math.max(maxRM-minRM,10);
-                const W=260,H=70,pad=8;
-                // % change vs 30 days ago
-                const oldest=hist[0];const newest=hist[hist.length-1];
+                const hist=(strengthData[ex.id]||[]).slice(0,12).reverse();
+                const hasHist=hist.length>0&&hist.some(h=>h.rm>0);
+                const validHist=hist.filter(h=>h.rm>0);
+                const maxRM=validHist.length?Math.max(...validHist.map(h=>h.rm)):0;
+                const minRM=validHist.length?Math.min(...validHist.map(h=>h.rm)):0;
+                const range=Math.max(maxRM-minRM,5);
+                const W=300,H=90,pad=12;
+                const oldest=validHist[0];
+                const newest=validHist[validHist.length-1];
                 const pct=oldest&&newest&&oldest.rm>0?Math.round(((newest.rm-oldest.rm)/oldest.rm)*100):null;
                 return(
                   <div style={{margin:"8px 0 4px",padding:"14px 16px",background:"rgba(255,255,255,0.03)",borderRadius:12,border:"1px solid rgba(255,255,255,0.07)"}}>
                     {/* Header */}
-                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:hasHist?10:6}}>
-                      <div style={{display:"flex",alignItems:"center",gap:6}}>
-                        <span style={{fontFamily:mono,fontSize:9,color:C2.tx3,letterSpacing:2}}>// {lang==="es"?"PROGRESIÓN DE FUERZA":"STRENGTH CURVE"}</span>
-                        <button onClick={()=>{const el=document.getElementById("sc-help-"+ex.id);if(el)el.style.display=el.style.display==="none"?"":"none";}} style={{width:16,height:16,borderRadius:"50%",border:"1px solid rgba(255,255,255,.2)",background:"rgba(255,255,255,.06)",color:"rgba(255,255,255,.75)",fontSize:9,cursor:"pointer",display:"inline-flex",alignItems:"center",justifyContent:"center",padding:0,flexShrink:0}}>?</button>
-                      </div>
-                      {pct!==null&&<span style={{fontFamily:mono,fontSize:11,fontWeight:700,color:pct>=0?"#2da84a":"#e83020",letterSpacing:1}}>
-                        {pct>=0?"+":""}{pct}% <span style={{fontSize:9,color:C2.tx3,fontWeight:400}}>{lang==="es"?"(últ.sesiones)":"(recent)"}</span>
-                      </span>}
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+                      <span style={{fontFamily:mono,fontSize:9,color:C2.tx3,letterSpacing:2}}>
+                        {lang==="es"?"// PROGRESIÓN DE FUERZA":"// STRENGTH CURVE"}
+                      </span>
+                      {pct!==null&&(
+                        <span style={{fontFamily:mono,fontSize:12,fontWeight:700,
+                          color:pct>=0?"#3fcf8e":"#e05555",letterSpacing:1}}>
+                          {pct>=0?"+":""}{pct}%
+                          <span style={{fontSize:8,color:C2.tx3,fontWeight:400,marginLeft:4}}>
+                            {lang==="es"?"vs inicio":"vs start"}
+                          </span>
+                        </span>
+                      )}
                     </div>
-                    {/* Info */}
-                    <div id={"sc-help-"+ex.id} style={{display:"none",marginBottom:10,padding:"8px 10px",background:"rgba(255,255,255,0.04)",borderRadius:8,borderLeft:"2px solid #e8a020",fontFamily:mono,fontSize:9,color:C2.tx2,letterSpacing:1,lineHeight:1.7}}>
-                      {lang==="es"
-                        ?"1RM estimado con la fórmula de Epley basado en tus mejores sets. Muestra tu evolución de fuerza en este ejercicio."
-                        :"Estimated 1RM using Epley formula from your best sets. Shows your strength progression for this exercise."}
-                    </div>}
+
                     {hasHist?(
                       <>
-                        {/* SVG line chart */}
-                        <svg width="100%" viewBox={`0 0 ${W} ${H+pad*2}`} style={{overflow:"visible",marginBottom:4}}>
-                          {/* Grid line at max */}
-                          <line x1={pad} y1={pad} x2={W-pad} y2={pad} stroke="rgba(255,255,255,0.05)" strokeWidth="1"/>
-                          <line x1={pad} y1={H/2+pad} x2={W-pad} y2={H/2+pad} stroke="rgba(255,255,255,0.05)" strokeWidth="1"/>
-                          {/* Area fill */}
-                          {hist.length>1&&(()=>{
-                            const pts=hist.map((h,i)=>{
-                              const x=pad+(i/(hist.length-1))*(W-pad*2);
-                              const y=pad+H-((h.rm-minRM)/range)*H;
-                              return`${x},${y}`;
-                            });
-                            const first=pts[0].split(",");const last=pts[pts.length-1].split(",");
-                            return<path d={`M${pts[0]} L${pts.join(" L")} L${last[0]},${H+pad} L${first[0]},${H+pad} Z`}
-                              fill="rgba(191,169,138,0.08)" stroke="none"/>;
-                          })()}
-                          {/* Line */}
-                          {hist.length>1&&<polyline
-                            points={hist.map((h,i)=>{
-                              const x=pad+(i/(hist.length-1))*(W-pad*2);
-                              const y=pad+H-((h.rm-minRM)/range)*H;
-                              return`${x},${y}`;
-                            }).join(" ")}
-                            fill="none" stroke="#BFA98A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>}
-                          {/* Dots */}
-                          {hist.map((h,i)=>{
-                            const x=pad+(hist.length>1?(i/(hist.length-1))*(W-pad*2):W/2);
-                            const y=pad+H-((h.rm-minRM)/range)*H;
-                            return<g key={i}>
-                              <circle cx={x} cy={y} r="4" fill="#BFA98A" stroke="#0d0f14" strokeWidth="2"/>
-                              {i===hist.length-1&&<text x={x} y={y-8} textAnchor="middle" fill="#BFA98A" fontSize="9" fontFamily="monospace">{Math.round(h.rm)}kg</text>}
-                            </g>;
-                          })}
-                        </svg>
-                        {/* Best + current */}
-                        <div style={{display:"flex",justifyContent:"space-between"}}>
-                          <div>
-                            <div style={{fontFamily:mono,fontSize:8,color:C2.tx3,letterSpacing:1}}>{lang==="es"?"MÁX HISTÓRICO":"ALL-TIME BEST"}</div>
-                            <div style={{fontFamily:mono,fontSize:13,fontWeight:700,color:C2.tx}}>{Math.round(maxRM)} kg</div>
+                        {/* Stats row */}
+                        <div style={{display:"flex",gap:0,marginBottom:12,borderRadius:8,overflow:"hidden",border:"1px solid rgba(255,255,255,0.06)"}}>
+                          <div style={{flex:1,padding:"10px 12px",background:"rgba(255,255,255,0.02)"}}>
+                            <div style={{fontFamily:mono,fontSize:7,color:C2.tx3,letterSpacing:1.5,marginBottom:4}}>
+                              {lang==="es"?"MÁX HISTÓRICO":"ALL-TIME BEST"}
+                            </div>
+                            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:24,color:C2.tx,letterSpacing:1,lineHeight:1}}>
+                              {Math.round(maxRM)}<span style={{fontSize:12,color:C2.tx3,marginLeft:2}}>kg</span>
+                            </div>
                           </div>
-                          <div style={{textAlign:"right"}}>
-                            <div style={{fontFamily:mono,fontSize:8,color:C2.tx3,letterSpacing:1}}>{lang==="es"?"ÚLTIMA SESIÓN":"LAST SESSION"}</div>
-                            <div style={{fontFamily:mono,fontSize:13,fontWeight:700,color:"#BFA98A"}}>{Math.round(newest?.rm||0)} kg</div>
+                          <div style={{width:1,background:"rgba(255,255,255,0.06)"}}/>
+                          <div style={{flex:1,padding:"10px 12px",background:"rgba(191,169,138,0.04)"}}>
+                            <div style={{fontFamily:mono,fontSize:7,color:C2.tx3,letterSpacing:1.5,marginBottom:4}}>
+                              {lang==="es"?"ÚLTIMA SESIÓN":"LAST SESSION"}
+                            </div>
+                            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:24,color:"#BFA98A",letterSpacing:1,lineHeight:1}}>
+                              {Math.round(newest?.rm||0)}<span style={{fontSize:12,color:"rgba(191,169,138,0.5)",marginLeft:2}}>kg</span>
+                            </div>
                           </div>
+                          {validHist.length>1&&(
+                            <>
+                              <div style={{width:1,background:"rgba(255,255,255,0.06)"}}/>
+                              <div style={{flex:1,padding:"10px 12px",background:"rgba(255,255,255,0.02)"}}>
+                                <div style={{fontFamily:mono,fontSize:7,color:C2.tx3,letterSpacing:1.5,marginBottom:4}}>
+                                  {lang==="es"?"SESIONES":"SESSIONS"}
+                                </div>
+                                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:24,color:C2.tx2,letterSpacing:1,lineHeight:1}}>
+                                  {validHist.length}
+                                </div>
+                              </div>
+                            </>
+                          )}
                         </div>
+
+                        {/* Chart */}
+                        {validHist.length>1&&(
+                          <svg width="100%" viewBox={`0 0 ${W} ${H+pad*2}`} style={{overflow:"visible",display:"block"}}>
+                            {/* Grid lines */}
+                            {[0,0.5,1].map((t,i)=>(
+                              <line key={i} x1={pad} y1={pad+H*(1-t)} x2={W-pad} y2={pad+H*(1-t)}
+                                stroke="rgba(255,255,255,0.05)" strokeWidth="1" strokeDasharray="4,4"/>
+                            ))}
+                            {/* Y labels */}
+                            <text x={pad-4} y={pad+4} textAnchor="end" fill="rgba(255,255,255,0.2)" fontSize="7" fontFamily="monospace">{Math.round(maxRM)}</text>
+                            <text x={pad-4} y={pad+H+4} textAnchor="end" fill="rgba(255,255,255,0.2)" fontSize="7" fontFamily="monospace">{Math.round(minRM)}</text>
+                            {/* Area */}
+                            {(()=>{
+                              const pts=validHist.map((h,i)=>{
+                                const x=pad+(i/(validHist.length-1))*(W-pad*2);
+                                const y=pad+H-((h.rm-minRM)/range)*H;
+                                return[x,y];
+                              });
+                              const d=`M${pts[0][0]},${pts[0][1]} `+pts.slice(1).map(p=>`L${p[0]},${p[1]}`).join(" ")+` L${pts[pts.length-1][0]},${pad+H} L${pts[0][0]},${pad+H} Z`;
+                              return<path d={d} fill="rgba(191,169,138,0.07)" stroke="none"/>;
+                            })()}
+                            {/* Line */}
+                            <polyline
+                              points={validHist.map((h,i)=>{
+                                const x=pad+(i/(validHist.length-1))*(W-pad*2);
+                                const y=pad+H-((h.rm-minRM)/range)*H;
+                                return`${x},${y}`;
+                              }).join(" ")}
+                              fill="none" stroke="#BFA98A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                            {/* Dots + labels */}
+                            {validHist.map((h,i)=>{
+                              const x=pad+(i/(validHist.length-1))*(W-pad*2);
+                              const y=pad+H-((h.rm-minRM)/range)*H;
+                              const isLast=i===validHist.length-1;
+                              const isFirst=i===0;
+                              return(
+                                <g key={i}>
+                                  <circle cx={x} cy={y} r={isLast?5:3}
+                                    fill={isLast?"#BFA98A":"rgba(191,169,138,0.5)"}
+                                    stroke="#0d0f14" strokeWidth="2"/>
+                                  {(isLast||isFirst)&&(
+                                    <text x={x} y={y-10} textAnchor="middle"
+                                      fill={isLast?"#BFA98A":"rgba(191,169,138,0.5)"}
+                                      fontSize="9" fontFamily="monospace" fontWeight="700">
+                                      {Math.round(h.rm)}kg
+                                    </text>
+                                  )}
+                                </g>
+                              );
+                            })}
+                          </svg>
+                        )}
                       </>
                     ):(
-                      <div style={{textAlign:"center",padding:"12px 0",fontFamily:mono,fontSize:9,color:C2.tx3,letterSpacing:1}}>
+                      <div style={{textAlign:"center",padding:"16px 0",fontFamily:mono,fontSize:9,color:C2.tx3,letterSpacing:1.5}}>
                         {lang==="es"?"COMPLETA SETS PARA VER TU PROGRESIÓN":"COMPLETE SETS TO SEE PROGRESSION"}
                       </div>
                     )}
