@@ -2673,8 +2673,8 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                   <div style={{flex:1,height:1,background:"rgba(82,90,110,.3)"}}/>
                   <div style={{fontFamily:mono,fontSize:7,color:day?.circuit?"rgba(240,168,24,.5)":"rgba(122,130,148,.4)",letterSpacing:3}}>
                     {day?.circuit
-                      ? ((L[lang]||L.en).train==="ENTRENO"?"SIGUIENTE EN CIRCUITO":"NEXT IN CIRCUIT")
-                      : ((L[lang]||L.en).train==="ENTRENO"?"SIGUIENTE EJERCICIO":"NEXT EXERCISE")}
+                      ? (lang==="es"||lang==="pt"?"SIGUIENTE EN CIRCUITO":lang==="fr"?"SUIVANT EN CIRCUIT":lang==="it"?"PROSSIMO NEL CIRCUITO":lang==="de"?"NÄCHSTE IM CIRCUIT":"NEXT IN CIRCUIT")
+                      : (lang==="es"||lang==="pt"?"SIGUIENTE EJERCICIO":lang==="fr"?"EXERCICE SUIVANT":lang==="it"?"PROSSIMO ESERCIZIO":lang==="de"?"NÄCHSTE ÜBUNG":"NEXT EXERCISE")}
                   </div>
                   <div style={{flex:1,height:1,background:"rgba(82,90,110,.3)"}}/>
                 </div>
@@ -2823,7 +2823,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                     {EX_META[exMetaKey(ex.e)]&&(
                       <button onClick={()=>setTechOpen(techOpen===ei?null:ei)}
                         style={{padding:"4px 8px",borderRadius:7,border:"1px solid rgba(106,143,192,.3)",background:"rgba(106,143,192,.08)",color:C2.blue,fontSize:8,fontFamily:mono,letterSpacing:.5,cursor:"pointer",whiteSpace:"nowrap"}}>
-                        TÉCNICA
+                        {lang==="es"||lang==="pt"?"TÉCNICA":lang==="fr"?"TECHNIQUE":lang==="it"?"TECNICA":lang==="de"?"TECHNIK":"TECHNIQUE"}
                       </button>
                     )}
                     {/* Note button */}
@@ -2850,7 +2850,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                 )}
                 <div style={{display:"flex",alignItems:"center",gap:12,marginTop:5}}>
                   {!ex.circuit&&<span style={{fontFamily:mono,fontSize:9,color:C2.tx3,letterSpacing:1.5}}>{ex.r}</span>}
-                  {showPrev&&<span style={{fontFamily:mono,fontSize:9,color:C2.tx3}}>ant: <span style={{color:C2.tx2}}>{prevKg}kg × {prevRp}</span></span>}
+                  {showPrev&&<span style={{fontFamily:mono,fontSize:9,color:C2.tx3}}>{lang==="es"||lang==="pt"?"ant: ":lang==="fr"?"préc: ":lang==="it"?"prec: ":lang==="de"?"vor: ":"prev: "}<span style={{color:C2.tx2}}>{prevKg}kg × {prevRp}</span></span>}
                   {exStarted&&<span style={{fontFamily:mono,fontSize:8,color:exDone?C2.green:C2.tx3,background:exDone?"rgba(95,170,136,.12)":"rgba(255,255,255,.05)",border:`1px solid ${exDone?"rgba(95,170,136,.25)":"rgba(82,90,110,.3)"}`,borderRadius:20,padding:"2px 8px",letterSpacing:1}}>
                     {sets[ei].filter(s=>s.done).length}/{sets[ei].length}
                   </span>}
@@ -2898,7 +2898,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                 ) : (<>
                 {/* Header */}
                 <div style={{display:"grid",gridTemplateColumns:"28px 1fr 1fr 44px",padding:"0 0 5px",borderBottom:"1px solid rgba(82,90,110,.4)"}}>
-                  {["SET","KG","REPS","✓"].map((h,i)=>(
+                  {[(L[lang]||L.en).sets.slice(0,3),lang==="de"?"GW":"KG",(L[lang]||L.en).reps,"✓"].map((h,i)=>(
                     <span key={i} style={{fontFamily:mono,fontSize:7,color:"rgba(255,255,255,.55)",letterSpacing:3,textAlign:i===0?"left":"center",textTransform:"uppercase"}}>{h}</span>
                   ))}
                 </div>
@@ -2929,12 +2929,12 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                       {profile?.mode==="celebrity"?(
                         <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:1,borderLeft:"1px solid rgba(82,90,110,.2)",padding:"4px 0",cursor:"default"}}>
                           <div style={{fontSize:14,fontWeight:900,color:s.done?C2.green:"rgba(240,242,245,.4)",letterSpacing:-.5,lineHeight:1,letterSpacing:0}}>{exs[ei].r||"—"}</div>
-                          <div style={{fontFamily:mono,fontSize:7,color:"rgba(240,168,24,.5)",letterSpacing:1.5}}>REPS 🔒</div>
+                          <div style={{fontFamily:mono,fontSize:7,color:"rgba(240,168,24,.5)",letterSpacing:1.5}}>{(L[lang]||L.en).reps} 🔒</div>
                         </div>
                       ):(
                         <div onClick={()=>openNp(ei,si,'rp')} style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:1,cursor:"pointer",borderLeft:"1px solid rgba(82,90,110,.2)",padding:"4px 0"}}>
                           <div style={{fontSize:20,fontWeight:800,color:s.done?"#3fcf8e":C2.tx,letterSpacing:-.5,lineHeight:1}}>{s.rp||"—"}</div>
-                          <div style={{fontFamily:mono,fontSize:7,color:C2.tx3,letterSpacing:1.5}}>REPS</div>
+                          <div style={{fontFamily:mono,fontSize:7,color:C2.tx3,letterSpacing:1.5}}>{(L[lang]||L.en).reps}</div>
                         </div>
                       )}
                       {/* CHECK */}
@@ -2949,7 +2949,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                 {profile?.mode!=="celebrity"&&(
                   <button onClick={()=>addSet(ei)}
                     style={{display:"flex",alignItems:"center",justifyContent:"center",width:"100%",padding:"11px 0",border:"none",background:"transparent",cursor:"pointer",fontFamily:mono,fontSize:9,color:C2.tx3,letterSpacing:2}}>
-                    + {lang==="es"?"AGREGAR SERIE":"ADD SET"}
+                    + {lang==="es"||lang==="pt"?"AGREGAR SERIE":lang==="fr"?"AJOUTER SÉRIE":lang==="it"?"AGGIUNGI SERIE":lang==="de"?"SATZ HINZUFÜGEN":"ADD SET"}
                   </button>
                 )}
                 {profile?.mode==="celebrity"&&(
@@ -4304,10 +4304,10 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                 <span style={{fontFamily:"'SF Mono','Fira Code',monospace",fontSize:10,color:'rgba(255,255,255,0.5)',letterSpacing:1}}>{xpCur.toLocaleString()} XP</span>
                 {lvl<10
                   ?<span style={{fontFamily:"'SF Mono','Fira Code',monospace",fontSize:9,color:'rgba(255,255,255,0.3)',letterSpacing:1}}>{(xpNext-xpCur).toLocaleString()} para NV.{lvl+1}</span>
-                  :<span style={{fontFamily:"'SF Mono','Fira Code',monospace",fontSize:9,color:lvlC,letterSpacing:1,fontWeight:700}}>✦ NIVEL MÁXIMO</span>
+                  :<span style={{fontFamily:"'SF Mono','Fira Code',monospace",fontSize:9,color:lvlC,letterSpacing:1,fontWeight:700}}>{lang==="es"||lang==="pt"?"✦ NIVEL MÁXIMO":lang==="fr"?"✦ NIVEAU MAX":lang==="it"?"✦ LIVELLO MAX":lang==="de"?"✦ MAX LEVEL":"✦ MAX LEVEL"}</span>
                 }
               </div>
-              <div style={{marginTop:8,textAlign:'center',fontFamily:"'SF Mono','Fira Code',monospace",fontSize:8,color:'rgba(255,255,255,0.15)',letterSpacing:1}}>TAP PARA CERRAR</div>
+              <div style={{marginTop:8,textAlign:'center',fontFamily:"'SF Mono','Fira Code',monospace",fontSize:8,color:'rgba(255,255,255,0.15)',letterSpacing:1}}>{lang==="es"||lang==="pt"?"TAP PARA CERRAR":lang==="fr"?"TOUCHER POUR FERMER":lang==="it"?"TOCCA PER CHIUDERE":lang==="de"?"TIPPEN ZUM SCHLIESSEN":"TAP TO CLOSE"}</div>
             </div>
           );
         })()}
@@ -4333,7 +4333,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                   background:`${lvlC}22`,border:`1.5px solid ${lvlC}88`,
                   display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>⬆</div>
                 <div>
-                  <div style={{fontFamily:"'SF Mono','Fira Code',monospace",fontSize:9,color:'rgba(255,255,255,0.4)',letterSpacing:2,marginBottom:3}}>LEVEL UP</div>
+                  <div style={{fontFamily:"'SF Mono','Fira Code',monospace",fontSize:9,color:'rgba(255,255,255,0.4)',letterSpacing:2,marginBottom:3}}>{lang==="es"||lang==="pt"?"SUBIDA DE NIVEL":lang==="fr"?"MONTÉE DE NIVEAU":lang==="it"?"SALITA DI LIVELLO":lang==="de"?"LEVEL AUFSTIEG":"LEVEL UP"}</div>
                   <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:22,letterSpacing:2,color:lvlC,lineHeight:1}}>{label} → NV.{latest.level}</div>
                 </div>
                 {xpLevelUps.length>1&&<div style={{marginLeft:'auto',background:`${lvlC}22`,borderRadius:8,padding:'2px 8px',fontFamily:"'SF Mono','Fira Code',monospace",fontSize:9,color:lvlC}}>+{xpLevelUps.length}</div>}
@@ -5702,8 +5702,8 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                 <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:36,letterSpacing:3,lineHeight:.9,marginBottom:4,
                   background:"linear-gradient(135deg,rgba(255,255,255,.95) 0%,rgba(255,255,255,.4) 100%)",
                   WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"
-                }}>TRAIN LIKE<br/>A LEGEND</div>
-                <div style={{fontFamily:mono,fontSize:9,color:"rgba(255,255,255,.18)",letterSpacing:2,marginBottom:18}}>{lang==="es"?"RETO SEMANAL . RUTINA VERIFICADA":"WEEKLY CHALLENGE . VERIFIED ROUTINE"}</div>
+                }}>{lang==="es"||lang==="pt"?"ENTRENA COMO":lang==="fr"?"ENTRAÎNE-TOI COMME":lang==="it"?"ALLENATI COME":lang==="de"?"TRAINIERE WIE":"TRAIN LIKE"}<br/>{lang==="es"||lang==="pt"?"UNA LEYENDA":lang==="fr"?"UNE LÉGENDE":lang==="it"?"UNA LEGGENDA":lang==="de"?"EINE LEGENDE":"A LEGEND"}</div>
+                <div style={{fontFamily:mono,fontSize:9,color:"rgba(255,255,255,.18)",letterSpacing:2,marginBottom:18}}>{lang==="es"||lang==="pt"?"RETO SEMANAL . RUTINA VERIFICADA":lang==="fr"?"DÉFI HEBDO . ROUTINE VÉRIFIÉE":lang==="it"?"SFIDA SETTIMANALE . ROUTINE VERIFICATA":lang==="de"?"WOCHENROUTINE . VERIFIZIERTES PROGRAMM":"WEEKLY CHALLENGE . VERIFIED ROUTINE"}</div>
 
                 {/* GENDER TOGGLE + CARD ROWS */}
                 {/* Gender Toggle */}
