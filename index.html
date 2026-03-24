@@ -555,9 +555,9 @@ const FStore={
       if(!sh[exerciseId])sh[exerciseId]=[];
       const existing=sh[exerciseId].find(e=>e.d===today);
       if(existing){
-        if(estimated1rm>existing.rm){existing.rm=estimated1rm;existing.kg=bestKg;existing.r=bestReps;}
+        if(estimated1rm>existing.rm){existing.rm=estimated1rm;existing.kg=bestKg;existing.r=bestReps;existing.n=exerciseName;}
       }else{
-        sh[exerciseId]=[{d:today,rm:estimated1rm,kg:bestKg,r:bestReps},...sh[exerciseId]].slice(0,90);
+        sh[exerciseId]=[{d:today,rm:estimated1rm,kg:bestKg,r:bestReps,n:exerciseName},...sh[exerciseId]].slice(0,90);
       }
       localStorage.setItem('fv8_sh',JSON.stringify(sh));
     }catch(_){}
@@ -3286,6 +3286,8 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
     setDone(FStore.loadDone(w));
     if(weekOff===0) setMacros(FStore.loadMacros(today));
     FStore.loadLogs().then(l=>setLogs(l));
+    // Populate exercise name map from Supabase strength_history (fixes old c## codes in PRs)
+    (async()=>{try{const sb=getSB();const user=await ensureAuth();if(!sb||!user)return;const{data}=await sb.from('strength_history').select('exercise_id,exercise_name').eq('user_id',user.id).limit(500);if(!data)return;const nm=JSON.parse(localStorage.getItem('fv8_nm')||'{}');data.forEach(r=>{if(r.exercise_name&&r.exercise_name!==r.exercise_id)nm[r.exercise_id]=r.exercise_name;});localStorage.setItem('fv8_nm',JSON.stringify(nm));}catch(_){}})();
     // Load ACWR from localStorage immediately, then update from Supabase
     const localLoads=FStore.loadACWRLocal();
     setAcwr(computeACWR(localLoads));
@@ -6040,8 +6042,12 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
     if(!best.rm||best.rm<=0) return null;
     let name=id;
     if(routine) routine.forEach(d=>{if(!d)return;d.ex&&d.ex.forEach(e=>{if(e.id===id)name=e.e;});});
-    // Fallback: use saved name map from localStorage
+    // Fallback: use saved name map from localStorage (populated from Supabase exercise_name)
     if(name===id){try{const nm=JSON.parse(localStorage.getItem('fv8_nm')||'{}');if(nm[id])name=nm[id];}catch(_){}}
+    // Fallback: use strength_history local cache which also stores names
+    if(name===id){try{const sh=JSON.parse(localStorage.getItem('fv8_sh')||'{}');if(sh[id]&&sh[id][0]&&sh[id][0].n)name=sh[id][0].n;}catch(_){}}
+    // If still a code like c05, skip — not useful to show
+    if(/^c\d+$/.test(name)) return null;
     const nl=(name||'').toLowerCase().trim();
     const noRm=["cardio suave","cardio moderado","estiramientos","estiramiento","yoga","pilates","sprint 200m","jumping jacks","arm haulers","mountain climbers","mountain climber","bear crawl","burpee","plancha","plancha lateral","crunch","crunch bicicleta","elevacion de piernas","farmer walk","saltar la cuerda"].includes(nl);
     if(noRm) return null;
