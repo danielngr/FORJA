@@ -2645,15 +2645,13 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                 </div>
               </div>
             </div>
-            {day.circuitNote&&(
+            {day.circuitNote&&day.circuitNote.length>0&&(
               <div style={{fontFamily:mono,fontSize:9,color:"rgba(240,168,24,0.7)",lineHeight:1.6,letterSpacing:0.3,marginBottom:6}}>
                 {day.circuitNote}
               </div>
             )}
-            <div style={{fontFamily:mono,fontSize:8,color:"rgba(240,168,24,0.45)",letterSpacing:0.5}}>
-              {lang==="es"
-                ?"Marca cada ejercicio → 1 ronda completada → se reinicia automáticamente"
-                :"Check each exercise → 1 round done → resets automatically"}
+            <div style={{fontFamily:mono,fontSize:8,color:"rgba(240,168,24,0.35)",letterSpacing:0.5}}>
+              {lang==="es"?"Marca cada ejercicio · completa la ronda · se reinicia solo":"Check each exercise · complete the round · auto-resets"}
             </div>
           </div>
         )}
