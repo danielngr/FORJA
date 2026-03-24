@@ -5467,7 +5467,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
 
             {/* Exercise cards */}
             {CATALOG.filter(g=>!catalogMuscle||g.muscle===catalogMuscle).map(group=>{
-              const filtered=group.exs.filter(ex=>hasEquip(ex));
+              const filtered=mode==="manual" ? group.exs : group.exs.filter(ex=>hasEquip(ex));
               if(filtered.length===0) return null;
               return(
                 <React.Fragment key={group.muscle}>
