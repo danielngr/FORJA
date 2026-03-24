@@ -2852,7 +2852,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                   </div>
                 )}
                 <div style={{display:"flex",alignItems:"center",gap:12,marginTop:5}}>
-                  <span style={{fontFamily:mono,fontSize:9,color:C2.tx3,letterSpacing:1.5}}>{ex.r}</span>
+                  {!ex.circuit&&<span style={{fontFamily:mono,fontSize:9,color:C2.tx3,letterSpacing:1.5}}>{ex.r}</span>}
                   {showPrev&&<span style={{fontFamily:mono,fontSize:9,color:C2.tx3}}>ant: <span style={{color:C2.tx2}}>{prevKg}kg × {prevRp}</span></span>}
                   {exStarted&&<span style={{fontFamily:mono,fontSize:8,color:exDone?C2.green:C2.tx3,background:exDone?"rgba(95,170,136,.12)":"rgba(255,255,255,.05)",border:`1px solid ${exDone?"rgba(95,170,136,.25)":"rgba(82,90,110,.3)"}`,borderRadius:20,padding:"2px 8px",letterSpacing:1}}>
                     {sets[ei].filter(s=>s.done).length}/{sets[ei].length}
