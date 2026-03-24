@@ -3446,7 +3446,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
     try{const nm=JSON.parse(localStorage.getItem('fv8_nm')||'{}');nm[id]=exName||id;localStorage.setItem('fv8_nm',JSON.stringify(nm));}catch(_){}
     FStore.saveLogEntry(id,exName||id,effKg,rp,rm1);
     const setLoadKg=effKg*parseInt(rp||0);
-    if(setLoadKg>0) FStore.saveDailyLoad(Math.round(setLoadKg/10));
+    if(setLoadKg>0) FStore.saveDailyLoad(Math.round(setLoadKg));
     if(!isTimeEx&&rm1>0) FStore.saveStrengthHistory(id,exName||id,rm1,effKg,parseInt(rp||0));
     // ── Muscle XP ──────────────────────────────────────────────────
     const md=EXERCISE_MUSCLE_MAP[nameLow]||EXERCISE_MUSCLE_MAP[ES_TO_META[nameLow]];
