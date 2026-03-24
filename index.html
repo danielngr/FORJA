@@ -1157,10 +1157,14 @@ const CELEB_EXERCISES = {
       {e:"Curl martillo",s:3,r:"12"},{e:"Press banca agarre cerrado",s:4,r:"8-10"},
       {e:"Tríceps polea",s:4,r:"10-12"},{e:"Tríceps por encima",s:3,r:"12"}
     ],
-    "HIIT+Full Body": [
-      {e:"Burpee",s:4,r:"15"},{e:"Sentadilla goblet",s:4,r:"15"},
-      {e:"Flexiones",s:4,r:"15"},{e:"Mountain climbers",s:4,r:"30s"}
-    ]
+    "HIIT+Full Body": {
+      circuit: true, rounds: 4,
+      note: "Sin descanso entre ejercicios. 60s entre rondas.",
+      exercises: [
+        {e:"Burpee",r:"15"},{e:"Sentadilla goblet",r:"15"},
+        {e:"Flexiones",r:"15"},{e:"Mountain climbers",r:"30s"}
+      ]
+    }
   },
   rock: {
     "Piernas": [
@@ -1197,35 +1201,73 @@ const CELEB_EXERCISES = {
     ]
   },
   goggins: {
-    "Circuito Volumen": [
-      {e:"Zancadas peso corporal",s:3,r:"140"},{e:"Sentadillas peso corporal",s:2,r:"100-140"},
-      {e:"Jumping jacks",s:1,r:"250"},{e:"Crunch",s:1,r:"230"},
-      {e:"Flexiones",s:1,r:"180"},{e:"Arm haulers",s:4,r:"25"}
-    ],
-    "Calistenia 10min": [
-      {e:"Jumping jacks",s:10,r:"10"},{e:"Flexiones",s:10,r:"10"}
-    ],
-    "Core+Piernas": [
-      {e:"Zancadas peso corporal",s:1,r:"115"},{e:"Crunch",s:1,r:"110"},
-      {e:"Flexiones",s:3,r:"10"},{e:"Plancha",s:2,r:"25"}
-    ],
+    "Circuito Volumen": {
+      circuit: true, rounds: 1,
+      note: "Bloque 1: 140 zancadas + 140 sentadillas + 140 zancadas + 100 sentadillas. Bloque 2: 250 jumping jacks. Bloque 3: 230 sit-ups. Bloque 4: 180 flexiones (10 cada 30s). Bloque 5: 25 arm haulers + 25 flexiones × 4.",
+      exercises: [
+        {e:"Zancadas peso corporal",r:"140+140"},
+        {e:"Sentadillas peso corporal",r:"100-140"},
+        {e:"Jumping jacks",r:"250"},
+        {e:"Crunch",r:"230"},
+        {e:"Flexiones",r:"180 (10 c/30s)"},
+        {e:"Arm haulers",r:"25 × 4"}
+      ]
+    },
+    "Calistenia 10min": {
+      circuit: true, rounds: "AMRAP 10min",
+      note: "Sin parar durante 10 minutos continuos. Cada bloque: 10 jumping jacks + 10 flexiones, repetir sin descanso.",
+      exercises: [
+        {e:"Jumping jacks",r:"10"},
+        {e:"Flexiones",r:"10"}
+      ]
+    },
+    "Core+Piernas": {
+      circuit: true, rounds: 1,
+      note: "Bloque 1: 115 zancadas alternas. Bloque 2: 110 sit-ups. Bloque 3: 10 jumping jacks + 10 flexiones × 3. Bloque 4: 2×25 push-up to plank.",
+      exercises: [
+        {e:"Zancadas peso corporal",r:"115"},
+        {e:"Crunch",r:"110"},
+        {e:"Jumping jacks",r:"10"},
+        {e:"Flexiones",r:"10"},
+        {e:"Plancha",r:"25"}
+      ]
+    },
     "Fuerza Gimnasio": [
       {e:"Sentadilla",s:4,r:"8-12"},{e:"Peso muerto",s:4,r:"6-10"},
       {e:"Press banca",s:4,r:"8-12"},{e:"Dominadas",s:4,r:"fallo"},
       {e:"Plancha",s:3,r:"60s"}
     ],
-    "Circuito Volumen B": [
-      {e:"Zancadas peso corporal",s:3,r:"140"},{e:"Sentadillas peso corporal",s:2,r:"100-140"},
-      {e:"Jumping jacks",s:1,r:"250"},{e:"Crunch",s:1,r:"230"},
-      {e:"Flexiones",s:1,r:"180"},{e:"Arm haulers",s:4,r:"25"}
-    ],
-    "Calistenia B": [
-      {e:"Jumping jacks",s:10,r:"10"},{e:"Flexiones",s:10,r:"10"}
-    ],
-    "Core+Piernas B": [
-      {e:"Zancadas peso corporal",s:1,r:"115"},{e:"Crunch",s:1,r:"110"},
-      {e:"Flexiones",s:3,r:"10"},{e:"Plancha",s:2,r:"25"}
-    ]
+    "Circuito Volumen B": {
+      circuit: true, rounds: 1,
+      note: "Mismo protocolo que Día 1. Bloque 1: 140 zancadas + 140 sentadillas + 140 zancadas + 100 sentadillas. Continuar con bloques 2-5.",
+      exercises: [
+        {e:"Zancadas peso corporal",r:"140+140"},
+        {e:"Sentadillas peso corporal",r:"100-140"},
+        {e:"Jumping jacks",r:"250"},
+        {e:"Crunch",r:"230"},
+        {e:"Flexiones",r:"180 (10 c/30s)"},
+        {e:"Arm haulers",r:"25 × 4"}
+      ]
+    },
+    "Calistenia B": {
+      circuit: true, rounds: "AMRAP 10min",
+      note: "Mismo protocolo: 10 jumping jacks + 10 flexiones sin parar 10 minutos.",
+      exercises: [
+        {e:"Jumping jacks",r:"10"},
+        {e:"Flexiones",r:"10"}
+      ]
+    },
+    "Core+Piernas B": {
+      circuit: true, rounds: 1,
+      note: "Repetir el protocolo del Día 3 o descanso activo.",
+      exercises: [
+        {e:"Zancadas peso corporal",r:"115"},
+        {e:"Crunch",r:"110"},
+        {e:"Jumping jacks",r:"10"},
+        {e:"Flexiones",r:"10"},
+        {e:"Plancha",r:"25"}
+      ]
+    }
   },
   cavill: {
     "Tren inferior+Core": [
@@ -1248,10 +1290,14 @@ const CELEB_EXERCISES = {
       {e:"Fondos",s:3,r:"fallo"},{e:"Aperturas mancuerna",s:3,r:"10-12"},
       {e:"Press banca agarre cerrado",s:3,r:"8-10"},{e:"Tríceps polea",s:3,r:"10-12"}
     ],
-    "Full Body Metabólico": [
-      {e:"Sentadilla goblet",s:4,r:"12"},{e:"Flexiones",s:4,r:"12-15"},
-      {e:"Remo con mancuerna",s:4,r:"10"},{e:"Farmer walk",s:4,r:"40m"}
-    ]
+    "Full Body Metabólico": {
+      circuit: true, rounds: "3-4",
+      note: "Circuito sin descanso entre ejercicios. 60-90s entre rondas.",
+      exercises: [
+        {e:"Sentadilla goblet",r:"12"},{e:"Flexiones",r:"12-15"},
+        {e:"Remo con mancuerna",r:"10"},{e:"Farmer walk",r:"40m"}
+      ]
+    }
   },
   ronaldo: {
     "Fuerza Full Body": [
@@ -1260,60 +1306,76 @@ const CELEB_EXERCISES = {
       {e:"Peso muerto rumano",s:3,r:"10-12"},{e:"Dominadas",s:3,r:"8-10"}
     ],
     "Explosivo": [
-      {e:"Power clean",s:5,r:"5"},{e:"Sprint 200m",s:8,r:"1"}
+      {e:"Power clean",s:5,r:"5"},
+      {e:"Sprint 200m",s:8,r:"200m"}
     ],
-    "Funcional Circuito": [
-      {e:"Burpee",s:3,r:"10-15"},{e:"Fondos en banco",s:3,r:"20"},
-      {e:"Flexiones",s:3,r:"20-30"},{e:"Push press",s:3,r:"10"}
-    ],
+    "Funcional Circuito": {
+      circuit: true, rounds: 3,
+      note: "3 rondas completas. 60s descanso entre rondas.",
+      exercises: [
+        {e:"Burpee",r:"10-15"},{e:"Fondos en banco",r:"20"},
+        {e:"Flexiones",r:"20-30"},{e:"Push press",r:"10"}
+      ]
+    },
     "Descanso activo": [
       {e:"Cardio suave",s:1,r:"30min"},{e:"Estiramientos",s:1,r:"20min"}
     ],
     "Pliometría": [
-      {e:"Saltar la cuerda",s:10,r:"1min"},{e:"Sprint 200m",s:10,r:"50m"}
+      {e:"Saltar la cuerda",s:10,r:"1min"},
+      {e:"Sprint 200m",s:10,r:"50m resistido"}
     ]
   },
   stallone: {
     "Pecho+Espalda+Abs": [
       {e:"Press banca",s:4,r:"10-12"},{e:"Dominadas",s:4,r:"fallo"},
       {e:"Remo en T",s:4,r:"10"},{e:"Aperturas mancuerna",s:4,r:"12"},
-      {e:"Elevación de piernas",s:1,r:"200"},{e:"Crunch",s:1,r:"200"}
+      {e:"Elevación de piernas",s:4,r:"50 (total 200)"},
+      {e:"Crunch",s:4,r:"50 (total 200)"}
     ],
     "Piernas+Cardio+Abs": [
       {e:"Sentadilla",s:4,r:"10-12"},{e:"Prensa de piernas",s:4,r:"12-15"},
       {e:"Zancadas",s:3,r:"15"},{e:"Curl femoral",s:4,r:"12"},
-      {e:"Pantorrilla de pie",s:4,r:"20"},{e:"Crunch",s:1,r:"200"},
-      {e:"Elevación de piernas",s:1,r:"200"}
+      {e:"Pantorrilla de pie",s:4,r:"20"},
+      {e:"Crunch",s:4,r:"50 (total 200)"},
+      {e:"Elevación de piernas",s:4,r:"50 (total 200)"}
     ],
     "Hombros+Brazos+Abs": [
       {e:"Press militar",s:4,r:"10"},{e:"Laterales mancuerna",s:4,r:"12"},
       {e:"Curl barra",s:4,r:"10-12"},{e:"Curl mancuerna",s:3,r:"12"},
       {e:"Press banca agarre cerrado",s:4,r:"10"},{e:"Tríceps polea",s:3,r:"12"},
-      {e:"Crunch",s:1,r:"200"},{e:"Elevación de piernas",s:1,r:"200"}
+      {e:"Crunch",s:4,r:"50 (total 200)"},
+      {e:"Elevación de piernas",s:4,r:"50 (total 200)"}
     ],
     "Pecho+Espalda+Abs B": [
       {e:"Press banca",s:4,r:"10-12"},{e:"Dominadas",s:4,r:"fallo"},
       {e:"Remo en T",s:4,r:"10"},{e:"Aperturas mancuerna",s:4,r:"12"},
-      {e:"Elevación de piernas",s:1,r:"200"},{e:"Crunch",s:1,r:"200"}
+      {e:"Elevación de piernas",s:4,r:"50 (total 200)"},
+      {e:"Crunch",s:4,r:"50 (total 200)"}
     ],
     "Piernas+Cardio+Abs B": [
       {e:"Sentadilla",s:4,r:"10-12"},{e:"Prensa de piernas",s:4,r:"12-15"},
       {e:"Zancadas",s:3,r:"15"},{e:"Curl femoral",s:4,r:"12"},
-      {e:"Pantorrilla de pie",s:4,r:"20"},{e:"Crunch",s:1,r:"200"},
-      {e:"Elevación de piernas",s:1,r:"200"}
+      {e:"Pantorrilla de pie",s:4,r:"20"},
+      {e:"Crunch",s:4,r:"50 (total 200)"},
+      {e:"Elevación de piernas",s:4,r:"50 (total 200)"}
     ],
     "Hombros+Brazos+Abs B": [
       {e:"Press militar",s:4,r:"10"},{e:"Laterales mancuerna",s:4,r:"12"},
       {e:"Curl barra",s:4,r:"10-12"},{e:"Curl mancuerna",s:3,r:"12"},
       {e:"Press banca agarre cerrado",s:4,r:"10"},{e:"Tríceps polea",s:3,r:"12"},
-      {e:"Crunch",s:1,r:"200"},{e:"Elevación de piernas",s:1,r:"200"}
+      {e:"Crunch",s:4,r:"50 (total 200)"},
+      {e:"Elevación de piernas",s:4,r:"50 (total 200)"}
     ]
   },
   lebron: {
-    "Full Body+Cardio": [
-      {e:"Remo australiano",s:3,r:"8-10"},{e:"Press militar",s:3,r:"8-12"},
-      {e:"Zancadas",s:3,r:"10"},{e:"Plancha",s:3,r:"60s"}
-    ],
+    "Full Body+Cardio": {
+      circuit: true, rounds: 3,
+      note: "Circuito funcional. 15-20s descanso entre ejercicios.",
+      exercises: [
+        {e:"Remo australiano",r:"8-10"},{e:"Press militar",r:"8-12"},
+        {e:"Zancadas",r:"10"},{e:"Plancha",r:"60s"}
+      ]
+    },
     "Piernas+Core": [
       {e:"Sentadilla frontal",s:4,r:"8-10"},{e:"Peso muerto rumano",s:4,r:"8-10"},
       {e:"Zancadas laterales",s:3,r:"10"},{e:"Pantorrilla de pie",s:4,r:"15-20"},
@@ -1324,7 +1386,8 @@ const CELEB_EXERCISES = {
       {e:"Remo con mancuerna",s:4,r:"10"},{e:"Press militar",s:3,r:"10-12"}
     ],
     "Conditioning": [
-      {e:"Sprint 200m",s:10,r:"30s"},{e:"Saltar la cuerda",s:5,r:"1min"}
+      {e:"Sprint 200m",s:10,r:"30s sprint"},
+      {e:"Saltar la cuerda",s:5,r:"1min"}
     ],
     "Core+Recuperación": [
       {e:"Crunch",s:3,r:"20"},{e:"Plancha lateral",s:3,r:"30s"},
@@ -1359,11 +1422,15 @@ const CELEB_EXERCISES = {
     ]
   },
   serena: {
-    "Brazos+Core": [
-      {e:"Plancha",s:3,r:"30s"},{e:"Remo con mancuerna",s:3,r:"10"},
-      {e:"Curl mancuerna",s:3,r:"10"},{e:"Fondos en banco",s:3,r:"12"},
-      {e:"Flexiones",s:3,r:"10"}
-    ],
+    "Brazos+Core": {
+      circuit: true, rounds: "2-3",
+      note: "3.5-4 min por ejercicio, 2-3 rondas. Descanso mínimo.",
+      exercises: [
+        {e:"Plancha",r:"30s"},{e:"Remo con mancuerna",r:"10"},
+        {e:"Curl mancuerna",r:"10"},{e:"Fondos en banco",r:"12"},
+        {e:"Flexiones",r:"10"}
+      ]
+    },
     "Booty Burnout": [
       {e:"Sentadilla con pausa",s:4,r:"8-12"},{e:"Sentadilla frontal",s:4,r:"8-12"},
       {e:"Sentadilla en caja",s:4,r:"8-12"}
@@ -1376,33 +1443,54 @@ const CELEB_EXERCISES = {
     "Cardio+Movilidad": [
       {e:"Cardio suave",s:1,r:"30min"},{e:"Estiramientos",s:1,r:"15min"}
     ],
-    "Full Body": [
-      {e:"Sentadillas peso corporal",s:3,r:"12"},{e:"Flexiones",s:3,r:"12"},
-      {e:"Remo con mancuerna",s:3,r:"12"},{e:"Plancha",s:3,r:"30s"}
-    ]
+    "Full Body": {
+      circuit: true, rounds: 3,
+      note: "3 rondas de 8-12 reps. Descanso 60s entre rondas.",
+      exercises: [
+        {e:"Sentadillas peso corporal",r:"12"},{e:"Flexiones",r:"12"},
+        {e:"Remo con mancuerna",r:"12"},{e:"Plancha",r:"30s"}
+      ]
+    }
   },
   galgadot: {
-    "Circuito Metabólico": [
-      {e:"Mountain climbers",s:3,r:"1min"},{e:"Burpee",s:3,r:"1min"},
-      {e:"Plancha",s:3,r:"1min"}
-    ],
-    "Barbell Complex": [
-      {e:"Peso muerto rumano",s:4,r:"5"},{e:"Remo con barra",s:4,r:"5"},
-      {e:"Curl inverso barra",s:4,r:"5"},{e:"Push press",s:4,r:"5"},
-      {e:"Sentadilla",s:4,r:"5"}
-    ],
-    "Push+Pull": [
-      {e:"Dominadas",s:3,r:"10"},{e:"Flexiones",s:3,r:"10-15"},
-      {e:"Zancada con mancuerna",s:3,r:"10"},{e:"Sentadilla frontal",s:3,r:"10"},
-      {e:"Push press",s:3,r:"10"},{e:"Crunch",s:3,r:"15"}
-    ],
+    "Circuito Metabólico": {
+      circuit: true, rounds: 3,
+      note: "Remo en máquina 5 min (10s sprint/50s suave). Luego 3 rondas de 1 min cada ejercicio sin parar.",
+      exercises: [
+        {e:"Mountain climbers",r:"1min"},
+        {e:"Burpee",r:"1min"},
+        {e:"Plancha",r:"1min"}
+      ]
+    },
+    "Barbell Complex": {
+      circuit: true, rounds: 4,
+      note: "NO soltar la barra entre ejercicios. 4 rondas completas. 90s descanso entre rondas.",
+      exercises: [
+        {e:"Peso muerto rumano",r:"5"},{e:"Remo con barra",r:"5"},
+        {e:"Curl inverso barra",r:"5"},{e:"Push press",r:"5"},
+        {e:"Sentadilla",r:"5"}
+      ]
+    },
+    "Push+Pull": {
+      circuit: true, rounds: 3,
+      note: "3 rondas. Superset final: boxing en sombra 60s + V-ups 60s.",
+      exercises: [
+        {e:"Dominadas",r:"10"},{e:"Flexiones",r:"10-15"},
+        {e:"Zancada con mancuerna",r:"10"},{e:"Sentadilla frontal",r:"10"},
+        {e:"Push press",r:"10"},{e:"Crunch",r:"15"}
+      ]
+    },
     "Cardio+Movilidad": [
       {e:"Cardio moderado",s:1,r:"30min"},{e:"Estiramientos",s:1,r:"15min"}
     ],
-    "Complex+Core": [
-      {e:"Peso muerto rumano",s:4,r:"5"},{e:"Remo con barra",s:4,r:"5"},
-      {e:"Push press",s:4,r:"5"},{e:"Crunch",s:3,r:"15"}
-    ]
+    "Complex+Core": {
+      circuit: true, rounds: 4,
+      note: "Mismo barbell complex sin soltar la barra. Añadir V-ups al final de cada ronda.",
+      exercises: [
+        {e:"Peso muerto rumano",r:"5"},{e:"Remo con barra",r:"5"},
+        {e:"Push press",r:"5"},{e:"Crunch",r:"15"}
+      ]
+    }
   },
   jlo: {
     "Tren inferior": [
@@ -1415,34 +1503,50 @@ const CELEB_EXERCISES = {
       {e:"Remo con mancuerna",s:4,r:"12"},{e:"Flexiones",s:4,r:"15"},
       {e:"Fondos en banco",s:3,r:"12"}
     ],
-    "Funcional": [
-      {e:"Sentadilla sumo",s:4,r:"15"},{e:"Plancha lateral",s:4,r:"30s"},
-      {e:"Hip thrust",s:3,r:"15"}
-    ],
+    "Funcional": {
+      circuit: true, rounds: "3-4",
+      note: "Circuito funcional. Bandas elásticas opcionales para kickbacks.",
+      exercises: [
+        {e:"Sentadilla sumo",r:"15"},{e:"Plancha lateral",r:"30s"},
+        {e:"Hip thrust",r:"15"}
+      ]
+    },
     "Cardio+Core": [
       {e:"Cardio suave",s:1,r:"35min"},{e:"Crunch",s:3,r:"20"},
       {e:"Elevación de piernas",s:3,r:"15"}
     ],
-    "Full Body": [
-      {e:"Sentadilla goblet",s:3,r:"12"},{e:"Laterales mancuerna",s:3,r:"12"},
-      {e:"Curl mancuerna",s:3,r:"12"},{e:"Plancha lateral",s:3,r:"30s"}
-    ]
+    "Full Body": {
+      circuit: true, rounds: 3,
+      note: "3 rondas continuas.",
+      exercises: [
+        {e:"Sentadilla goblet",r:"12"},{e:"Laterales mancuerna",r:"12"},
+        {e:"Curl mancuerna",r:"12"},{e:"Plancha lateral",r:"30s"}
+      ]
+    }
   },
   margot: {
-    "Crazy 8": [
-      {e:"Sentadillas peso corporal",s:4,r:"20"},{e:"Laterales mancuerna",s:4,r:"30"},
-      {e:"Tríceps mancuerna",s:4,r:"25"},{e:"Crunch",s:4,r:"20"},
-      {e:"Elevación de piernas",s:4,r:"15"},{e:"Plancha",s:3,r:"30s"}
-    ],
+    "Crazy 8": {
+      circuit: true, rounds: "3-4",
+      note: "8 ejercicios × 20-30 reps. Sin descanso entre ejercicios. 60s entre rondas.",
+      exercises: [
+        {e:"Sentadillas peso corporal",r:"20"},{e:"Laterales mancuerna",r:"30"},
+        {e:"Tríceps mancuerna",r:"25"},{e:"Crunch",r:"20"},
+        {e:"Elevación de piernas",r:"15"},{e:"Plancha",r:"30s"}
+      ]
+    },
     "Cardio+Core": [
       {e:"Cardio suave",s:1,r:"30min"},{e:"Plancha",s:3,r:"40s"},
       {e:"Crunch bicicleta",s:3,r:"20"}
     ],
-    "Crazy 8 Light": [
-      {e:"Sentadillas peso corporal",s:3,r:"20"},{e:"Laterales mancuerna",s:3,r:"25"},
-      {e:"Tríceps mancuerna",s:3,r:"20"},{e:"Plancha",s:2,r:"30s"},
-      {e:"Crunch",s:2,r:"15"}
-    ],
+    "Crazy 8 Light": {
+      circuit: true, rounds: "2-3",
+      note: "Versión reducida. 2-3 rondas en lugar de 3-4.",
+      exercises: [
+        {e:"Sentadillas peso corporal",r:"20"},{e:"Laterales mancuerna",r:"25"},
+        {e:"Tríceps mancuerna",r:"20"},{e:"Plancha",r:"30s"},
+        {e:"Crunch",r:"15"}
+      ]
+    },
     "Fuerza": [
       {e:"Sentadilla goblet",s:3,r:"12"},{e:"Remo con mancuerna",s:3,r:"12"},
       {e:"Press banca mancuerna",s:3,r:"12"},{e:"Zancada con mancuerna",s:3,r:"12"}
@@ -1452,19 +1556,27 @@ const CELEB_EXERCISES = {
     ]
   },
   zendaya: {
-    "Circuito Zendaya": [
-      {e:"Flexiones",s:3,r:"10"},{e:"Sentadillas peso corporal",s:3,r:"15"},
-      {e:"Sentadilla con salto",s:3,r:"30"},{e:"Burpee",s:3,r:"20"},
-      {e:"Crunch",s:3,r:"10"},{e:"Zancadas peso corporal",s:3,r:"30"}
-    ],
+    "Circuito Zendaya": {
+      circuit: true, rounds: 3,
+      note: "Calentar con yoga 15-30min + trote 800m. Luego 3 series del circuito.",
+      exercises: [
+        {e:"Flexiones",r:"10"},{e:"Sentadillas peso corporal",r:"15"},
+        {e:"Sentadilla con salto",r:"30"},{e:"Burpee",r:"20"},
+        {e:"Crunch",r:"10"},{e:"Zancadas peso corporal",r:"30"}
+      ]
+    },
     "Cardio+Movilidad": [
       {e:"Cardio suave",s:1,r:"30min"},{e:"Estiramientos",s:1,r:"15min"}
     ],
-    "Circuito Light": [
-      {e:"Flexiones",s:3,r:"10"},{e:"Sentadillas peso corporal",s:3,r:"15"},
-      {e:"Sentadilla con salto",s:3,r:"20"},{e:"Burpee",s:3,r:"10"},
-      {e:"Crunch",s:3,r:"15"}
-    ],
+    "Circuito Light": {
+      circuit: true, rounds: 3,
+      note: "Versión reducida del circuito principal.",
+      exercises: [
+        {e:"Flexiones",r:"10"},{e:"Sentadillas peso corporal",r:"15"},
+        {e:"Sentadilla con salto",r:"20"},{e:"Burpee",r:"10"},
+        {e:"Crunch",r:"15"}
+      ]
+    },
     "Yoga+Core": [
       {e:"Plancha",s:3,r:"35s"},{e:"Elevación de piernas",s:3,r:"15"},
       {e:"Estiramientos",s:1,r:"35min"}
@@ -1474,17 +1586,25 @@ const CELEB_EXERCISES = {
     ]
   },
   halle: {
-    "Circuito Halle": [
-      {e:"Press Arnold",s:4,r:"6-8"},{e:"Sentadilla con salto",s:4,r:"6-8"},
-      {e:"Crunch",s:4,r:"6-8"},{e:"Burpee",s:4,r:"6-8"},{e:"Plancha",s:3,r:"40s"}
-    ],
+    "Circuito Halle": {
+      circuit: true, rounds: "3-5",
+      note: "6-8 reps por ejercicio. Descanso 45s entre rondas. Pesado.",
+      exercises: [
+        {e:"Press Arnold",r:"6-8"},{e:"Sentadilla con salto",r:"6-8"},
+        {e:"Crunch",r:"6-8"},{e:"Burpee",r:"6-8"},{e:"Plancha",r:"40s"}
+      ]
+    },
     "Cardio+Movilidad": [
       {e:"Cardio moderado",s:1,r:"25min"},{e:"Estiramientos",s:1,r:"12min"}
     ],
-    "Circuito Halle B": [
-      {e:"Press Arnold",s:3,r:"6-8"},{e:"Sentadilla con salto",s:3,r:"6-8"},
-      {e:"Burpee",s:3,r:"6-8"},{e:"Plancha",s:3,r:"40s"}
-    ],
+    "Circuito Halle B": {
+      circuit: true, rounds: "3-4",
+      note: "Misma estructura, ligéramente reducida.",
+      exercises: [
+        {e:"Press Arnold",r:"6-8"},{e:"Sentadilla con salto",r:"6-8"},
+        {e:"Burpee",r:"6-8"},{e:"Plancha",r:"40s"}
+      ]
+    },
     "Core+Estabilidad": [
       {e:"Plancha",s:3,r:"40s"},{e:"Plancha lateral",s:3,r:"30s"},{e:"Crunch",s:3,r:"20"}
     ]
@@ -1505,15 +1625,23 @@ const CELEB_EXERCISES = {
       {e:"Hip thrust",s:3,r:"10"},{e:"Zancadas",s:3,r:"10"},
       {e:"Curl femoral",s:3,r:"10"},{e:"Pantorrilla de pie",s:3,r:"15"}
     ],
-    "Full Body": [
-      {e:"Sentadilla frontal",s:3,r:"10"},{e:"Press Arnold",s:3,r:"10"},
-      {e:"Dominadas",s:3,r:"10"},{e:"Flexiones",s:3,r:"15"},{e:"Burpee",s:3,r:"10"}
-    ],
-    "Full Body B": [
-      {e:"Sentadilla frontal",s:3,r:"10"},{e:"Press Arnold",s:3,r:"10"},
-      {e:"Remo con mancuerna",s:3,r:"10"},{e:"Flexiones",s:3,r:"12"},
-      {e:"Peso muerto rumano",s:3,r:"10"}
-    ],
+    "Full Body": {
+      circuit: true, rounds: 3,
+      note: "3 rondas de 10 reps. 45s descanso entre rondas.",
+      exercises: [
+        {e:"Sentadilla frontal",r:"10"},{e:"Press Arnold",r:"10"},
+        {e:"Dominadas",r:"10"},{e:"Flexiones",r:"15"},{e:"Burpee",r:"10"}
+      ]
+    },
+    "Full Body B": {
+      circuit: true, rounds: 3,
+      note: "3 rondas. Variación del Full Body.",
+      exercises: [
+        {e:"Sentadilla frontal",r:"10"},{e:"Press Arnold",r:"10"},
+        {e:"Remo con mancuerna",r:"10"},{e:"Flexiones",r:"12"},
+        {e:"Peso muerto rumano",r:"10"}
+      ]
+    },
     "Descanso": [
       {e:"Cardio suave",s:1,r:"20min"},{e:"Estiramientos",s:1,r:"15min"}
     ]
@@ -1524,11 +1652,15 @@ const CELEB_EXERCISES = {
       {e:"Zancadas",s:3,r:"12"},{e:"Dominadas agarre supino",s:3,r:"12-8"},
       {e:"Remo con mancuerna",s:3,r:"12-8"}
     ],
-    "Circuito Funcional": [
-      {e:"Flexiones",s:5,r:"5"},{e:"Sentadillas peso corporal",s:5,r:"8"},
-      {e:"Zancadas peso corporal",s:5,r:"10"},{e:"Dominadas",s:5,r:"3"},
-      {e:"Tríceps polea",s:5,r:"5"},{e:"Saltar la cuerda",s:1,r:"10min"}
-    ],
+    "Circuito Funcional": {
+      circuit: true, rounds: 5,
+      note: "Calentamiento 15min caminadora. 5 series del circuito. Finalizar con 10min saltar cuerda.",
+      exercises: [
+        {e:"Flexiones",r:"5"},{e:"Sentadillas peso corporal",r:"8"},
+        {e:"Zancadas peso corporal",r:"10"},{e:"Dominadas",r:"3"},
+        {e:"Tríceps polea",r:"5"}
+      ]
+    },
     "Recuperación": [
       {e:"Cardio suave",s:1,r:"35min"},{e:"Estiramientos",s:1,r:"15min"}
     ],
@@ -1537,11 +1669,14 @@ const CELEB_EXERCISES = {
       {e:"Remo con barra",s:3,r:"10"},{e:"Zancada con mancuerna",s:3,r:"12"},
       {e:"Curl mancuerna",s:3,r:"10"}
     ],
-    "Circuito Funcional B": [
-      {e:"Flexiones",s:4,r:"6"},{e:"Sentadillas peso corporal",s:4,r:"6"},
-      {e:"Dominadas",s:4,r:"4"},{e:"Curl inverso barra",s:4,r:"5"},
-      {e:"Saltar la cuerda",s:1,r:"10min"}
-    ]
+    "Circuito Funcional B": {
+      circuit: true, rounds: 4,
+      note: "4 series. Finalizar con 10min saltar cuerda.",
+      exercises: [
+        {e:"Flexiones",r:"6"},{e:"Sentadillas peso corporal",r:"6"},
+        {e:"Dominadas",r:"4"},{e:"Curl inverso barra",r:"5"}
+      ]
+    }
   },
   jessica: {
     "Unilateral A": [
@@ -1579,35 +1714,34 @@ const CELEB_EXERCISES = {
 
 function buildCelebRoutine(celeb, userEquipment, selDays){
   const r = Array(7).fill(null);
-
-  // Exercise library per celebrity — self-contained, verified sources
-  // Each exercise: {e: name, s: sets, r: reps}
-
-
-    const exercises = CELEB_EXERCISES[celeb.id] || {};
+  const exercises = CELEB_EXERCISES[celeb.id] || {};
   const splitKeys = Object.keys(exercises);
   if(splitKeys.length === 0) return r;
 
-  // Celebrity-specific series and reps per split
-  // CELEB_PARAMS removed — each exercise now has its own s/r
-
-
   selDays.forEach((dayIdx, i)=>{
     const splitName = splitKeys[i % splitKeys.length];
-    const rawExs = exercises[splitName] || [];
-    const adapted = rawExs.map((ex, j)=>{
-      // ex can be {e,s,r} object or plain string (fallback)
-      const exName = typeof ex === "string" ? ex : ex.e;
-      const exS    = typeof ex === "string" ? 4   : ex.s;
-      const exR    = typeof ex === "string" ? "8-12" : ex.r;
-      return {
-        e: exName,
-        s: exS,
-        r: exR,
-        id: `c${dayIdx}${j}`
+    const raw = exercises[splitName];
+
+    // Circuit format: {circuit:true, rounds, note, exercises:[{e,r}]}
+    if(raw && !Array.isArray(raw) && raw.circuit){
+      const adapted = raw.exercises.map((ex, j)=>({
+        e: ex.e, s: 1, r: ex.r,
+        id: `c${dayIdx}${j}`, circuit: true
+      }));
+      r[dayIdx] = {
+        l: splitName, ex: adapted,
+        circuit: true, rounds: raw.rounds, circuitNote: raw.note
       };
-    });
-    r[dayIdx] = {l: splitName, ex: adapted};
+    } else {
+      const rawExs = Array.isArray(raw) ? raw : [];
+      const adapted = rawExs.map((ex, j)=>({
+        e: typeof ex === "string" ? ex : ex.e,
+        s: typeof ex === "string" ? 4 : (ex.s||1),
+        r: typeof ex === "string" ? "8-12" : ex.r,
+        id: `c${dayIdx}${j}`
+      }));
+      r[dayIdx] = {l: splitName, ex: adapted};
+    }
   });
   return r;
 }
@@ -2461,6 +2595,30 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
 
       {/* -- SCROLL -- */}
       <div style={{flex:1,overflowY:"auto",overflowX:"hidden",paddingBottom:100}} id="workout-scroll">
+
+        {/* Circuit banner — shown when day is a circuit */}
+        {day?.circuit&&(
+          <div style={{margin:"12px 16px 0",padding:"12px 14px",background:"rgba(240,168,24,0.08)",
+            border:"1px solid rgba(240,168,24,0.25)",borderRadius:12}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
+              <div style={{fontSize:14}}>🔄</div>
+              <div style={{fontFamily:mono,fontSize:9,color:"#f0a818",letterSpacing:2,fontWeight:700}}>
+                {lang==="es"?"CIRCUITO":"CIRCUIT"} · {day.rounds} {lang==="es"?"RONDAS":"ROUNDS"}
+              </div>
+            </div>
+            {day.circuitNote&&(
+              <div style={{fontFamily:mono,fontSize:9,color:"rgba(240,168,24,0.7)",lineHeight:1.6,letterSpacing:0.3}}>
+                {day.circuitNote}
+              </div>
+            )}
+            <div style={{fontFamily:mono,fontSize:8,color:"rgba(240,168,24,0.5)",marginTop:6,letterSpacing:1}}>
+              {lang==="es"
+                ?"Completa todos los ejercicios seguidos = 1 ronda. Marca cada ejercicio al completarlo."
+                :"Complete all exercises in sequence = 1 round. Check each exercise as you complete it."}
+            </div>
+          </div>
+        )}
+
         {exs.map((ex,ei)=>{
           const vidUrl=getVid(ex.e);
           const vol=calcVol(ei);
@@ -2475,8 +2633,10 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
               {ei>0&&(
                 <div style={{display:"flex",alignItems:"center",gap:12,padding:"20px 20px 0"}}>
                   <div style={{flex:1,height:1,background:"rgba(82,90,110,.3)"}}/>
-                  <div style={{fontFamily:mono,fontSize:7,color:"rgba(122,130,148,.4)",letterSpacing:3}}>
-                    {lang==="es"?"SIGUIENTE EJERCICIO":"NEXT EXERCISE"}
+                  <div style={{fontFamily:mono,fontSize:7,color:day?.circuit?"rgba(240,168,24,.5)":"rgba(122,130,148,.4)",letterSpacing:3}}>
+                    {day?.circuit
+                      ? (lang==="es"?"SIGUIENTE EN CIRCUITO":"NEXT IN CIRCUIT")
+                      : (lang==="es"?"SIGUIENTE EJERCICIO":"NEXT EXERCISE")}
                   </div>
                   <div style={{flex:1,height:1,background:"rgba(82,90,110,.3)"}}/>
                 </div>
@@ -2673,6 +2833,31 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
 
               {/* Sets table */}
               <div style={{padding:"10px 20px 0"}}>
+                {/* Circuit mode — single check row */}
+                {ex.circuit ? (
+                  <div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 0",
+                    borderBottom:"1px solid rgba(82,90,110,.2)"}}>
+                    <div style={{flex:1}}>
+                      <div style={{fontFamily:mono,fontSize:11,color:"rgba(240,168,24,0.8)",letterSpacing:1}}>
+                        {ex.r}
+                      </div>
+                      <div style={{fontFamily:mono,fontSize:8,color:"rgba(240,168,24,0.4)",letterSpacing:1,marginTop:2}}>
+                        {lang==="es"?"OBJETIVO":"TARGET"}
+                      </div>
+                    </div>
+                    <div onClick={()=>toggleDone(ei,0)}
+                      style={{width:44,height:44,borderRadius:"50%",cursor:"pointer",display:"flex",
+                        alignItems:"center",justifyContent:"center",flexShrink:0,
+                        border:`1.5px solid ${sets[ei][0]?.done?"rgba(63,207,142,.8)":"rgba(240,168,24,.4)"}`,
+                        background:sets[ei][0]?.done?"rgba(63,207,142,.15)":"rgba(240,168,24,.05)",
+                        transition:"all .18s"}}>
+                      {sets[ei][0]?.done
+                        ? <svg width="16" height="16" viewBox="0 0 12 12" fill="none"><path d="M2 6.5L5 9.5L10 3" stroke="#3fcf8e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        : <span style={{fontFamily:mono,fontSize:9,color:"rgba(240,168,24,.6)"}}>✓</span>
+                      }
+                    </div>
+                  </div>
+                ) : (<>
                 {/* Header */}
                 <div style={{display:"grid",gridTemplateColumns:"28px 1fr 1fr 44px",padding:"0 0 5px",borderBottom:"1px solid rgba(82,90,110,.4)"}}>
                   {["SET","KG","REPS","✓"].map((h,i)=>(
@@ -2734,6 +2919,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                     🏆 {lang==="es"?"SIGUE EL PROGRAMA":"FOLLOW THE PROGRAM"}
                   </div>
                 )}
+                </>)}
               </div>
             </React.Fragment>
           );
