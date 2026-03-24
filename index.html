@@ -4696,13 +4696,14 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
   };
 
   const CATALOG=[
-    {muscle:lang==="es"?"Pecho":"Chest",      color:"#6a8fc0", exs:["bench press","incline bench press","dumbbell bench press","incline dumbbell press","dumbbell chest fly","cable fly","machine chest press","machine pec fly","push up","decline push up","dips"]},
-    {muscle:lang==="es"?"Espalda":"Back",     color:"#3fcf8e", exs:["pull up","chin up","barbell row","pendlay row","dumbbell row","cable row","machine neutral row","lat pulldown","machine pulldown","barbell pullover","barbell rack pull","supermans"]},
-    {muscle:lang==="es"?"Hombros":"Shoulders",color:"#f0b429", exs:["overhead press","dumbbell shoulder press","seated overhead press","lateral raise","dumbbell front raise","face pull","cable face pull","machine face pulls","barbell upright row","barbell shrug","dumbbell shrug","reverse fly","dumbbell rear delt fly","dumbbell laying reverse fly"]},
-    {muscle:lang==="es"?"Piernas":"Legs",     color:"#e05555", exs:["squat","front squat","goblet squat","leg press","deadlift","romanian deadlift","bulgarian split squat","dumbbell bulgarian split squat","leg curl","leg extension","calf raise","seated calf raise","hip thrust","box jump","barbell thruster"]},
-    {muscle:lang==="es"?"Bíceps":"Biceps",    color:"#8878c0", exs:["barbell curl","dumbbell curl","hammer curl","concentration curl","preacher curl","reverse curl"]},
-    {muscle:lang==="es"?"Tríceps":"Triceps",  color:"#c07060", exs:["tricep pushdown","overhead tricep extension","skull crusher","bench dips","close grip bench press","diamond push ups"]},
-    {muscle:lang==="es"?"Core":"Core",        color:"#70a0c0", exs:["plank","hanging knee raises","machine crunch","mountain climber"]},
+    {muscle:lang==="es"?"Pecho":"Chest",      color:"#6a8fc0", exs:["bench press","incline bench press","dumbbell bench press","incline dumbbell press","dumbbell chest fly","cable fly","machine chest press","machine pec fly","push up","decline push up","dips","barbell thruster"]},
+    {muscle:lang==="es"?"Espalda":"Back",      color:"#3fcf8e", exs:["pull up","chin up","barbell row","pendlay row","dumbbell row","cable row","machine neutral row","lat pulldown","machine pulldown","barbell pullover","barbell rack pull","supermans","deadlift","romanian deadlift"]},
+    {muscle:lang==="es"?"Hombros":"Shoulders", color:"#f0b429", exs:["overhead press","dumbbell shoulder press","seated overhead press","lateral raise","dumbbell front raise","face pull","cable face pull","machine face pulls","barbell upright row","barbell shrug","dumbbell shrug","reverse fly","dumbbell rear delt fly","dumbbell laying reverse fly"]},
+    {muscle:lang==="es"?"Piernas":"Legs",      color:"#e05555", exs:["squat","front squat","goblet squat","leg press","romanian deadlift","bulgarian split squat","dumbbell bulgarian split squat","leg curl","leg extension","calf raise","seated calf raise","hip thrust","box jump","deadlift"]},
+    {muscle:lang==="es"?"Glúteos":"Glutes",    color:"#e07880", exs:["hip thrust","bulgarian split squat","dumbbell bulgarian split squat","romanian deadlift","squat","goblet squat","box jump","deadlift","leg press"]},
+    {muscle:lang==="es"?"Bíceps":"Biceps",     color:"#8878c0", exs:["barbell curl","dumbbell curl","hammer curl","concentration curl","preacher curl","reverse curl","chin up"]},
+    {muscle:lang==="es"?"Tríceps":"Triceps",   color:"#c07060", exs:["tricep pushdown","overhead tricep extension","skull crusher","bench dips","close grip bench press","diamond push ups","dips","push up"]},
+    {muscle:lang==="es"?"Core":"Core",         color:"#70a0c0", exs:["plank","hanging knee raises","machine crunch","mountain climber","barbell thruster","supermans","deadlift","squat","front squat"]},
   ];
   const t=lang?L[lang]:L.en;
   const TOTAL_STEPS=mode==="manual"?4:7; // manual: género+modo+días+catálogo
