@@ -3465,35 +3465,38 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
         'plank':0,'crunch':0,'hanging knee raises':0,'mountain climber':0,
         'default':30
       };
-      const baseW=BASE_W_MAP[nameLow]||BASE_W_MAP['default'];
+      const engKey=ES_TO_META[nameLow]||nameLow;
+      const baseW=BASE_W_MAP[engKey]||BASE_W_MAP[nameLow]||BASE_W_MAP['default'];
       const wFactor=baseW>0?Math.min(2.0,Math.max(0.3,effKg>0?effKg/baseW:0.3)):1.0;
       const reps=parseInt(rp)||0;
       const rawXP=Math.max(1,Math.round(reps*wFactor));
-      const newXP={...muscleXP};
-      const levelUps=[];
       const allMuscles=[...(md.p||[]).map(m=>({m,f:1.0})),...(md.s||[]).map(m=>({m,f:0.4}))];
-      allMuscles.forEach(({m,f})=>{
-        const zk=FORJA_TO_ZONE[m.toLowerCase()];
-        if(!zk)return;
-        const zones=[zk];
-        // bilateral: if left zone, also update right
-        if(zk.endsWith('_izq'))zones.push(zk.replace('_izq','_der'));
-        if(zk.endsWith('_der'))zones.push(zk.replace('_der','_izq'));
-        zones.forEach(z=>{
-          if(!newXP[z])newXP[z]={xp:0,level:1};
-          const prevLevel=newXP[z].level;
-          newXP[z]={...newXP[z],xp:newXP[z].xp+Math.max(1,Math.round(rawXP*f))};
-          const newLevel=xpToLevel(newXP[z].xp);
-          if(newLevel>prevLevel){
-            newXP[z].level=newLevel;
-            newXP[z].lastLevelUp=today;
-            levelUps.push({zone:z,level:newLevel});
-          }
+      // Use functional update to avoid stale closure
+      setMuscleXP(prev=>{
+        const newXP={...prev};
+        const levelUps=[];
+        allMuscles.forEach(({m,f})=>{
+          const zk=FORJA_TO_ZONE[m.toLowerCase()];
+          if(!zk)return;
+          const zones=[zk];
+          if(zk.endsWith('_izq'))zones.push(zk.replace('_izq','_der'));
+          if(zk.endsWith('_der'))zones.push(zk.replace('_der','_izq'));
+          zones.forEach(z=>{
+            if(!newXP[z])newXP[z]={xp:0,level:1};
+            const prevLevel=newXP[z].level;
+            newXP[z]={...newXP[z],xp:newXP[z].xp+Math.max(1,Math.round(rawXP*f))};
+            const newLevel=xpToLevel(newXP[z].xp);
+            if(newLevel>prevLevel){
+              newXP[z].level=newLevel;
+              newXP[z].lastLevelUp=today;
+              levelUps.push({zone:z,level:newLevel});
+            }
+          });
         });
+        FStore.saveMuscleXP(newXP);
+        if(levelUps.length>0) setXpLevelUps(prev2=>[...prev2,...levelUps]);
+        return newXP;
       });
-      setMuscleXP(newXP);
-      FStore.saveMuscleXP(newXP);
-      if(levelUps.length>0) setXpLevelUps(prev=>[...prev,...levelUps]);
     }
   };
 
