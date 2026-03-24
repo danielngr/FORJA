@@ -3057,7 +3057,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
       {wsTourStep!==null&&wsTourStep!==-1&&wsReady&&(wsScrollV>=0)&&(()=>{
         const M_="'SF Mono','Fira Code',monospace";
         const S_="'DM Sans',sans-serif";
-        const es=lang==="es";
+        const es=lang==="es"||lang==="pt";
         const TOTAL=12;
         const WS_START=4;
         const wsIdx=wsTourStep-WS_START;
@@ -3175,7 +3175,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                 <button onClick={endTour} style={{background:"none",border:"none",
                   padding:"6px 0",fontFamily:M_,fontSize:9,letterSpacing:1,
                   color:"rgba(255,255,255,0.25)",cursor:"pointer"}}>
-                  {es?"Saltar tour":"Skip tour"}
+                  {es?"Saltar tour":lang==="fr"?"Passer le tour":lang==="it"?"Salta il tour":lang==="de"?"Tour überspringen":"Skip tour"}
                 </button>
                 <button onClick={nextStep} style={{padding:"11px 22px",borderRadius:10,
                   border:"none",background:"#EEEAE3",color:"#07080a",
@@ -4400,7 +4400,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
       {(tourAskVisible||(tourStep!==null&&tourStep!==-1&&(tourStep<4||tourStep>7)))&&(()=>{
         const M_="'SF Mono','Fira Code',monospace";
         const S_="'DM Sans',sans-serif";
-        const es=lang==="es";
+        const es=lang==="es"||lang==="pt";
         const TOTAL=16;
 
         const STEPS=[
@@ -4484,12 +4484,11 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
               <div style={{fontSize:22,marginBottom:6}}>👋</div>
               <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,letterSpacing:2,
                 color:"#EEEAE3",marginBottom:8}}>
-                {es?"Descubre cómo funciona FORJA":"Discover how FORJA works"}
+                {lang==="es"||lang==="pt"?"Descubre cómo funciona FORJA":lang==="fr"?"Découvre comment fonctionne FORJA":lang==="it"?"Scopri come funziona FORJA":lang==="de"?"Entdecke wie FORJA funktioniert":"Discover how FORJA works"}
               </div>
               <div style={{fontSize:13,color:"rgba(238,234,227,0.65)",lineHeight:1.6,
                 marginBottom:24,fontFamily:S_}}>
-                {es?"Un tour rápido de 12 pasos te muestra todo."
-                   :"A quick 12-step tour shows you everything."}
+                {lang==="es"||lang==="pt"?"Un tour rápido de 12 pasos te muestra todo.":lang==="fr"?"Un tour rapide de 12 étapes te montre tout.":lang==="it"?"Un tour rapido di 12 passi ti mostra tutto.":lang==="de"?"Eine schnelle 12-Schritte-Tour zeigt dir alles.":"A quick 12-step tour shows you everything."}
               </div>
               <div style={{display:"flex",flexDirection:"column",gap:10}}>
                 <button onClick={()=>{setTourAskVisible(false);
@@ -4507,7 +4506,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                   setTourStep(0);}} style={{
                   padding:"14px",borderRadius:12,border:"none",background:"#EEEAE3",color:"#07080a",
                   fontFamily:M_,fontSize:11,fontWeight:700,letterSpacing:2,cursor:"pointer"}}>
-                  {es?"EMPEZAR TOUR →":"START TOUR →"}
+                  {lang==="es"||lang==="pt"?"EMPEZAR TOUR →":lang==="fr"?"COMMENCER TOUR →":lang==="it"?"INIZIA IL TOUR →":lang==="de"?"TOUR STARTEN →":"START TOUR →"}
                 </button>
                 <button onClick={()=>{
                   try{localStorage.setItem('fv8_toured','1');}catch{}
@@ -4516,7 +4515,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                 }} style={{padding:"12px",borderRadius:12,
                   border:"1px solid rgba(255,255,255,0.1)",background:"transparent",
                   color:"rgba(238,234,227,0.4)",fontFamily:M_,fontSize:10,letterSpacing:1,cursor:"pointer"}}>
-                  {es?"Saltar":"Skip"}
+                  {lang==="es"||lang==="pt"?"Saltar":lang==="fr"?"Passer":lang==="it"?"Salta":lang==="de"?"Überspringen":"Skip"}
                 </button>
               </div>
             </div>
@@ -4642,7 +4641,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                 <button onClick={endTour} style={{background:"none",border:"none",
                   padding:"6px 0",fontFamily:M_,fontSize:9,letterSpacing:1,
                   color:"rgba(255,255,255,0.25)",cursor:"pointer"}}>
-                  {es?"Saltar tour":"Skip tour"}
+                  {es?"Saltar tour":lang==="fr"?"Passer le tour":lang==="it"?"Salta il tour":lang==="de"?"Tour überspringen":"Skip tour"}
                 </button>
                 <button onClick={nextStep} style={{padding:"11px 22px",borderRadius:10,
                   border:"none",background:"#EEEAE3",color:"#07080a",
@@ -6195,8 +6194,8 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
     const ts=zoneState[zk];
     if(!ts) return es?"descansado — listo ✓":"rested — ready ✓";
     const h=(Date.now()-ts)/3600000,rec=ZONE_REC_HOURS[zk]||72,left=Math.max(0,rec-h);
-    if(h<1) return `${es?"activo":"active"} — ${Math.round(h*60)}m`;
-    if(h<rec) return `${es?"recuperando":"recovering"} — ${Math.round(left)}h ${es?"restantes":"left"}`;
+    if(h<1) return `${es?"activo":lang==="fr"?"actif":lang==="it"?"attivo":lang==="de"?"aktiv":"active"} — ${Math.round(h*60)}m`;
+    if(h<rec) return `${es?"recuperando":lang==="fr"?"récupération":lang==="it"?"recupero":lang==="de"?"Erholung":"recovering"} — ${Math.round(left)}h ${es?"restantes":lang==="fr"?"restants":lang==="it"?"rimasti":lang==="de"?"übrig":"left"}`;
     return es?"descansado — listo ✓":"rested — ready ✓";
   }
 
@@ -6470,7 +6469,7 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
             e("span",{style:{fontSize:12}},"🔥"),
             e("div",{},
               e("div",{style:{fontSize:9,color:"#d96060",fontFamily:mono_,letterSpacing:.5,lineHeight:1}},
-                `${ZONE_LABELS_3D[mostFatigued.zk]}: ${mostFatigued.pct}% ${es?"recuperado":"recovered"}`
+                `${ZONE_LABELS_3D[mostFatigued.zk]}: ${mostFatigued.pct}% ${es?"recuperado":lang==="fr"?"récupéré":lang==="it"?"recuperato":lang==="de"?"erholt":"recovered"}`
               ),
               e("div",{style:{fontSize:7,color:"rgba(255,255,255,.6)",fontFamily:mono_,marginTop:2}},
                 (()=>{
@@ -6488,7 +6487,7 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
           }},
             e("span",{style:{fontSize:12}},"✅"),
             e("div",{style:{fontSize:9,color:"#5faa88",fontFamily:mono_,letterSpacing:.5,lineHeight:1.5}},
-              `${ZONE_LABELS_3D[mostReady.zk]} ${es?"listo para entrenar":"ready to train"}`
+              `${ZONE_LABELS_3D[mostReady.zk]} ${es?"listo para entrenar":lang==="fr"?"prêt à entraîner":lang==="it"?"pronto ad allenarsi":lang==="de"?"bereit zum Trainieren":"ready to train"}`
             )
           )
         ),
@@ -6534,7 +6533,7 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
                 e("div",{style:{flex:1,fontSize:10,color:C.tx2}},(ZONE_LABELS_3D[z.zk]||z.zk)),
                 e("div",{style:{fontSize:8,fontFamily:mono_,color:C.tx3}},
                   isNever?(es?"sin entrenar":"not trained"):
-                  `${z.pct}% ${es?"recuperado":"recovered"}`
+                  `${z.pct}% ${es?"recuperado":lang==="fr"?"récupéré":lang==="it"?"recuperato":lang==="de"?"erholt":"recovered"}`
                 ),
                 e("div",{style:{
                   fontSize:7,fontFamily:mono_,color:c,letterSpacing:.5,
