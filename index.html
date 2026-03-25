@@ -6340,13 +6340,9 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
   const prs=Object.entries(logs).map(([id,entries])=>{
     if(!entries||entries.length<2) return null;
     const best=entries.reduce((b,e)=>((e.rm||0)>(b.rm||0)?e:b),entries[0]);
-    // BW exercises (dominadas, fondos, etc.) track reps progression, not kg
-    const nlChk=(name||id||'').toLowerCase();
-    const isBWEx=["dominadas","pull up","weighted pull up","chin up","fondos","dips","bench dips","diamond push ups","flexiones","push up","decline push up","pistol squat","remo australiano","muscle up"].some(bw=>nlChk.includes(bw));
-    if(!best.rm||best.rm<=0){if(!isBWEx||!best.r) return null;}
+    // Resolve name first, then detect BW
     let name=id;
     if(routine) routine.forEach(d=>{if(!d)return;d.ex&&d.ex.forEach(e=>{if(e.id===id)name=e.e;});});
-    // Fallback: use saved name map from localStorage (populated from Supabase exercise_name)
     if(name===id){try{const nm=JSON.parse(localStorage.getItem('fv8_nm')||'{}');if(nm[id])name=nm[id];}catch(_){}}
     // Fallback: use strength_history local cache which also stores names
     if(name===id){try{const sh=JSON.parse(localStorage.getItem('fv8_sh')||'{}');if(sh[id]&&sh[id][0]&&sh[id][0].n)name=sh[id][0].n;}catch(_){}}
@@ -6355,7 +6351,9 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
     const nl=(name||'').toLowerCase().trim();
     const noRm=["cardio suave","cardio moderado","estiramientos","estiramiento","yoga","pilates","sprint 200m","jumping jacks","arm haulers","mountain climbers","mountain climber","bear crawl","burpee","plancha","plancha lateral","crunch","crunch bicicleta","elevacion de piernas","farmer walk","saltar la cuerda"].includes(nl);
     if(noRm) return null;
-    // For BW exercises: group by day and use max reps as the progression metric
+    // BW detection — now name is fully resolved
+    const isBWEx=["dominadas","pull up","weighted pull up","chin up","fondos","dips","bench dips","diamond push ups","flexiones","push up","decline push up","pistol squat","remo australiano","muscle up"].some(bw=>nl.includes(bw));
+    if(!best.rm||best.rm<=0){if(!isBWEx||!best.r) return null;}
     const histEntries=[...entries].sort((a,b)=>a.d.localeCompare(b.d));
     const hist=histEntries.map(e=>({d:e.d,rm:e.rm||0,w:e.w,r:parseInt(e.r)||0,isBW:isBWEx}));
     const bestReps=Math.max(...entries.map(e=>parseInt(e.r)||0));
