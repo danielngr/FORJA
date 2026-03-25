@@ -5839,6 +5839,9 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                             <div style={{display:"flex",alignItems:"center",gap:5}}>
                               <span style={{fontFamily:mono,fontSize:8,color:"rgba(255,255,255,.65)",letterSpacing:1.5}}>{days} {(L[lang]||L.en).days.split(" /")[0]}</span>
                               <span style={{fontFamily:mono,fontSize:7,padding:"2px 6px",borderRadius:4,border:`1px solid ${ac}`,color:ac,letterSpacing:1.5,opacity:.9}}>{lvl[lang]||lvl.en}</span>
+                              {['EXTREMO','INFERNAL','BRUTAL','EXTREME','INFERNAL','BRUTAL','EXTRÊME','ESTREMO'].includes(lvl.es||lvl.en)&&(
+                                <span style={{fontSize:9,opacity:.7}} title="Alto riesgo de sobreentrenamiento">⚠️</span>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -5874,7 +5877,38 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                           </div>
                         </div>);
                       })()}
-                      <div style={{fontFamily:mono,fontSize:7,color:"rgba(255,255,255,.1)",letterSpacing:.3,lineHeight:1.5,borderTop:"1px solid rgba(255,255,255,.04)",paddingTop:8}}>{lang==="es"?"⚠ Rutina basada en fuentes públicas verificadas. Series/reps adaptadas al equipamiento disponible.":"⚠ Routine based on verified public sources. Sets/reps adapted to available equipment."}</div>
+                      <div style={{fontFamily:mono,fontSize:7,color:"rgba(255,255,255,.1)",letterSpacing:.3,lineHeight:1.5,borderTop:"1px solid rgba(255,255,255,.04)",paddingTop:8}}>{/* ── Elite Routine Warning ── */}
+                      <div style={{marginTop:12,padding:"10px 14px",borderRadius:10,
+                        background:"rgba(240,168,24,0.08)",border:"1px solid rgba(240,168,24,0.25)"}}>
+                        <div style={{display:"flex",alignItems:"flex-start",gap:8,marginBottom:6}}>
+                          <span style={{fontSize:14,flexShrink:0}}>⚠️</span>
+                          <div style={{fontFamily:mono,fontSize:8,color:"#f0a818",letterSpacing:1,fontWeight:700,lineHeight:1.5}}>
+                            {lang==="es"||lang==="pt"?"BAJO TU PROPIO RIESGO":
+                             lang==="fr"?"À TES RISQUES ET PÉRILS":
+                             lang==="it"?"A TUO RISCHIO E PERICOLO":
+                             lang==="de"?"AUF EIGENE GEFAHR":
+                             "USE AT YOUR OWN RISK"}
+                          </div>
+                        </div>
+                        <div style={{fontFamily:mono,fontSize:8,color:"rgba(255,255,255,0.45)",lineHeight:1.7,paddingLeft:22}}>
+                          {lang==="es"||lang==="pt"
+                            ?"Esta es la rutina real documentada del atleta — diseñada para su nivel y años de adaptación. El volumen puede superar tus límites actuales (MEV/MRV) y llevar la carga semanal a zona de riesgo. Empieza con 3-4 días, escucha tu cuerpo y aumenta gradualmente."
+                            :lang==="fr"
+                            ?"Il s'agit de la vraie routine documentée de cet athlète — conçue pour son niveau et ses années d'adaptation. Le volume peut dépasser tes limites actuelles et augmenter le risque de blessure. Commence par 3-4 jours et augmente progressivement."
+                            :lang==="it"
+                            ?"Questa è la routine documentata reale dell'atleta — progettata per il suo livello e anni di adattamento. Il volume può superare i tuoi limiti attuali e portare il carico a zona di rischio. Inizia con 3-4 giorni e aumenta gradualmente."
+                            :lang==="de"
+                            ?"Dies ist die dokumentierte echte Routine des Athleten — entwickelt für sein Niveau und Jahre der Anpassung. Das Volumen kann deine aktuellen Grenzen übersteigen. Beginne mit 3-4 Tagen und steigere dich schrittweise."
+                            :"This is the athlete's real documented routine — designed for their level and years of adaptation. Volume may exceed your current limits (MEV/MRV) and push weekly load into risk zone. Start with 3-4 days, listen to your body, and build gradually."}
+                        </div>
+                        <div style={{fontFamily:mono,fontSize:7,color:"rgba(255,255,255,0.2)",marginTop:6,paddingLeft:22,letterSpacing:.3}}>
+                          {lang==="es"||lang==="pt"?"📖 Fuente verificada · Series/reps adaptadas al equipamiento":
+                           lang==="fr"?"📖 Source vérifiée · Séries/reps adaptées à l'équipement":
+                           lang==="it"?"📖 Fonte verificata · Serie/reps adattate all'attrezzatura":
+                           lang==="de"?"📖 Verifizierte Quelle · Sätze/Wdhl. ans Equipment angepasst":
+                           "📖 Verified source · Sets/reps adapted to available equipment"}
+                        </div>
+                      </div></div>
                       </div>
                     </div>
                   );
