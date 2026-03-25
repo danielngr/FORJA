@@ -6161,7 +6161,7 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
         group.scale.setScalar(17/Math.max(size.x,size.y,size.z));
         scene.add(group); modelRef.current=group;
         refreshMats(stRef.current);
-        setProgress(100); setPTxt(es?"listo":"ready");
+        setProgress(100); setPTxt(es?"listo":lang==="fr"?"prêt":lang==="it"?"pronto":lang==="de"?"bereit":"ready");
         setTimeout(()=>setLoaded(true),300);
       })
       .catch(err=>{ console.error(err); setPTxt("error"); });
@@ -6404,7 +6404,7 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
 
         // -- Legend ---------------------------------------------------------
     e("div",{style:{display:"flex",gap:10,padding:"8px 0 14px",flexWrap:"wrap",borderBottom:"1px solid "+C.bd}},
-      [{c:"#e53535",g:true,l:es?"activo 0–33%":"active 0–33%"},{c:"#ff7a1a",g:true,l:"33–66%"},{c:"#7ab82a",g:false,l:"66–99%"},{c:"#2a2a3a",g:false,l:es?"listo":"ready"}]
+      [{c:"#e53535",g:true,l:es?"activo 0–33%":lang==="es"||lang==="pt"?"activo 0–33%":lang==="fr"?"actif 0–33%":lang==="it"?"attivo 0–33%":lang==="de"?"aktiv 0–33%":"active 0–33%"},{c:"#ff7a1a",g:true,l:"33–66%"},{c:"#7ab82a",g:false,l:es?"66–99%":lang==="fr"?"66–99%":lang==="it"?"66–99%":lang==="de"?"66–99%":"66–99%"},{c:"#2a2a3a",g:false,l:es?"listo":lang==="fr"?"prêt":lang==="it"?"pronto":lang==="de"?"bereit":"ready"}]
       .map((x,i)=>e("div",{key:i,style:{display:"flex",alignItems:"center",gap:4}},
         e("span",{style:{width:5,height:5,borderRadius:"50%",background:x.c,boxShadow:x.g?`0 0 5px ${x.c}`:"none",flexShrink:0}}),
         e("span",{style:{fontSize:8,fontFamily:mono,color:C.tx3}},x.l)
@@ -6502,13 +6502,13 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
             display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10
           }},
             e("div",{style:{fontSize:8,fontFamily:mono_,color:C.tx3,letterSpacing:2}},
-              es?"// FIX MY BALANCE":"// FIX MY BALANCE"
+              es?"// FIX MY BALANCE":lang==="fr"?"// CORRIGER MON ÉQUILIBRE":lang==="it"?"// CORREGGI IL MIO EQUILIBRIO":lang==="de"?"// BALANCE VERBESSERN":"// FIX MY BALANCE"
             ),
             e("div",{style:{
               fontSize:7,fontFamily:mono_,color:scoreColor,letterSpacing:1,
               padding:"2px 8px",borderRadius:10,
               background:`rgba(${balanceScore>=75?"95,170,136":balanceScore>=55?"192,168,112":"217,96,96"},0.12)`,
-            }},toTrain.length>0?`+${Math.round(toTrain.length*(100/ZONES_MAIN.length)*1.2)} pts`:(es?"✓ Todo OK":"✓ All good"))
+            }},toTrain.length>0?`+${Math.round(toTrain.length*(100/ZONES_MAIN.length)*1.2)} pts`:(es?"✓ Todo OK":lang==="fr"?"✓ Tout bon":lang==="it"?"✓ Tutto OK":lang==="de"?"✓ Alles gut":"✓ All good"))
           ),
           ...(toTrain.length>0 ? [
           e("div",{style:{fontSize:9,color:"rgba(255,255,255,.75)",fontFamily:mono_,marginBottom:10,lineHeight:1.5}},
@@ -6532,7 +6532,7 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
                 }}),
                 e("div",{style:{flex:1,fontSize:10,color:C.tx2}},(ZONE_LABELS_3D[z.zk]||z.zk)),
                 e("div",{style:{fontSize:8,fontFamily:mono_,color:C.tx3}},
-                  isNever?(es?"sin entrenar":"not trained"):
+                  isNever?(es?"sin entrenar":lang==="fr"?"non entraîné":lang==="it"?"non allenato":lang==="de"?"nicht trainiert":"not trained"):
                   `${z.pct}% ${es?"recuperado":lang==="fr"?"récupéré":lang==="it"?"recuperato":lang==="de"?"erholt":"recovered"}`
                 ),
                 e("div",{style:{
@@ -6545,7 +6545,7 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
           )
         ] : [
           e("div",{style:{fontSize:11,color:"rgba(95,210,136,.7)",fontFamily:mono_,textAlign:"center",padding:"8px 0"}},
-            es?"✓ Todos tus músculos están al día":"✓ All muscles are on track"
+            es?"✓ Todos tus músculos están al día":lang==="fr"?"✓ Tous tes muscles sont à jour":lang==="it"?"✓ Tutti i muscoli sono aggiornati":lang==="de"?"✓ Alle Muskeln sind aktuell":"✓ All muscles are on track"
           )
         ])
         )
@@ -6556,12 +6556,12 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
     // -- PRs section ----------------------------------------------------
     e("div",{"data-tour":"prs-section",style:{marginTop:16}},
       e("div",{style:{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:3,marginBottom:12,textTransform:"uppercase"}},
-        "🏆 "+(es?"MIS PRs":"MY PRs")
+        "🏆 "+(es?"MIS PRs":lang==="fr"?"MES RECORDS":lang==="it"?"I MIEI RECORD":lang==="de"?"MEINE BESTW.":"MY PRs")
       ),
 
       // Empty state when no PRs yet
       prs.length===0&&e("div",{style:{padding:"12px 0",fontSize:11,color:C.tx3,fontFamily:mono,letterSpacing:1}},
-        es?"Registra sets para ver tus récords aquí":"Log sets to see your records here"
+        es?"Registra sets para ver tus récords aquí":lang==="fr"?"Enregistre des séries pour voir tes records":lang==="it"?"Registra serie per vedere i tuoi record":lang==="de"?"Sätze loggen um Bestleistungen zu sehen":"Log sets to see your records here"
       ),
       // PR selector pills
       prs.length>1&&e("div",{style:{display:"flex",gap:6,overflowX:"auto",paddingBottom:8,marginBottom:10}},
@@ -6616,9 +6616,9 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
 
     // -- Weekly stats ---------------------------------------------------
     e("div",{style:{display:"flex",gap:8,marginTop:14,marginBottom:14}},
-      [{l:es?"SEMANA":"WEEK",v:weekVol>=1000?(Math.round(weekVol/100)/10)+"t":Math.round(weekVol)+"kg",sub:weekSets+" sets"},
-       {l:es?"RACHA":"STREAK",v:streak,sub:streak>=3?"🔥":"días"},
-       {l:"PRs",v:prs.length,sub:es?"ejercicios":"exercises"},
+      [{l:es?"SEMANA":lang==="fr"?"SEMAINE":lang==="it"?"SETTIMANA":lang==="de"?"WOCHE":"WEEK",v:weekVol>=1000?(Math.round(weekVol/100)/10)+"t":Math.round(weekVol)+"kg",sub:weekSets+" sets"},
+       {l:es?"RACHA":lang==="fr"?"SÉRIE":lang==="it"?"SERIE":lang==="de"?"SERIE":"STREAK",v:streak,sub:streak>=3?"🔥":"días"},
+       {l:"PRs",v:prs.length,sub:es?"ejercicios":lang==="fr"?"exercices":lang==="it"?"esercizi":lang==="de"?"Übungen":"exercises"},
       ].map((s,i)=>e("div",{key:i,style:{flex:1,background:C.bg3,border:"1px solid "+C.bd,borderRadius:10,padding:"10px 10px 8px"}},
         e("div",{style:{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:4,display:"flex",alignItems:"center",gap:4}},
           s.l,
@@ -6642,7 +6642,7 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
     // -- Activity grid --------------------------------------------------
     e("div",{style:{background:C.bg3,border:"1px solid "+C.bd,borderRadius:12,padding:"12px 12px 10px",marginTop:4}},
       e("div",{style:{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:10,textTransform:"uppercase"}},
-        es?"ACTIVIDAD ÚLTIMAS 10 SEMANAS":"LAST 10 WEEKS"
+        es?"ACTIVIDAD ÚLTIMAS 10 SEMANAS":lang==="fr"?"ACTIVITÉ 10 DERNIÈRES SEMAINES":lang==="it"?"ATTIVITÀ ULTIME 10 SETTIMANE":lang==="de"?"AKTIVITÄT LETZTE 10 WOCHEN":"LAST 10 WEEKS"
       ),
       e("div",{style:{display:"flex",gap:3}},
         grid.map((week,wi)=>
@@ -6659,13 +6659,13 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
         )
       ),
       e("div",{style:{display:"flex",justifyContent:"flex-end",marginTop:6,gap:4,alignItems:"center"}},
-        e("span",{style:{fontSize:7,fontFamily:mono,color:C.tx3}},es?"menos":"less"),
+        e("span",{style:{fontSize:7,fontFamily:mono,color:C.tx3}},es?"menos":lang==="fr"?"moins":lang==="it"?"meno":lang==="de"?"weniger":"less"),
         e("div",{style:{width:8,height:8,borderRadius:1.5,background:"rgba(95,170,136,0.06)"}}),
         e("div",{style:{width:8,height:8,borderRadius:1.5,background:"rgba(95,170,136,0.25)"}}),
         e("div",{style:{width:8,height:8,borderRadius:1.5,background:"rgba(95,170,136,0.5)"}}),
         e("div",{style:{width:8,height:8,borderRadius:1.5,background:"rgba(95,170,136,0.75)"}}),
         e("div",{style:{width:8,height:8,borderRadius:1.5,background:"rgba(95,170,136,1)"}}),
-        e("span",{style:{fontSize:7,fontFamily:mono,color:C.tx3}},es?"más":"more")
+        e("span",{style:{fontSize:7,fontFamily:mono,color:C.tx3}},es?"más":lang==="fr"?"plus":lang==="it"?"più":lang==="de"?"mehr":"more")
       )
     )
   );
