@@ -2226,7 +2226,7 @@ const EX_META={
 };
 
 
-function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBack,tourStep=null,setTourStep=()=>{}}){
+function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBack,tourStep=null,setTourStep=()=>{},acwr={ratio:0,acute:0,chronic:0}}){
   // Sync tourStep from prop — delay 1 frame so exercise cards are in DOM
   const[wsTourStep,setWsTourStep]=React.useState(null);
   const[expandedEx,setExpandedEx]=React.useState(null);
@@ -3661,7 +3661,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
 
   if(inWorkout&&day&&day.ex&&day.ex.length){
     return <WorkoutScreen day={day} sel={sel} done={done} logs={logs}
-      onToggle={toggle} onSaveLog={saveLog} t={t} lang={lang} profile={profile} onBack={()=>{setInWorkout(false);window.__tourBackFromWorkout=null;}} tourStep={tourStep} setTourStep={setTourStep}/>;
+      onToggle={toggle} onSaveLog={saveLog} t={t} lang={lang} profile={profile} onBack={()=>{setInWorkout(false);window.__tourBackFromWorkout=null;}} tourStep={tourStep} setTourStep={setTourStep} acwr={acwr}/>;
   }
 
   return(
