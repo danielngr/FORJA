@@ -975,6 +975,31 @@ function applyGoal(ex,goal){
   return{e:ex.e,s,r};
 }
 
+// Convert rep range "6-10" → single target number
+// Uses the lower end of the range as the starting target (progressive overload: beat it each session)
+function repTarget(rStr){
+  if(!rStr) return "8";
+  const s=String(rStr);
+  if(s.includes("-")){
+    const [lo,hi]=s.split("-").map(n=>parseInt(n)||0);
+    // Target = lower end of range (user tries to beat it each session)
+    return String(lo||8);
+  }
+  if(s.includes("s")||s.includes("m")) return s; // time-based e.g. "30s"
+  return s;
+}
+
+// Rep range display: "6-10" → "6–10 reps" with target highlighted
+function repRangeDisplay(rStr){
+  if(!rStr) return {target:"8",range:null};
+  const s=String(rStr);
+  if(s.includes("-")){
+    const [lo,hi]=s.split("-").map(n=>parseInt(n)||0);
+    return {target:String(lo||8), range:s, lo, hi};
+  }
+  return {target:s, range:null};
+}
+
 // Distribuye N splits en 7 días según selectedDays (array de 0-6)
 // -- CELEBRITY ROUTINE BUILDER -------------------------------------
 // Maps each exercise to the equipment it needs
@@ -1943,18 +1968,43 @@ function canDoAuto(exName, eq){
   return exName; // keep original if no valid sub found
 }
 
-function buildRoutine7(splits,selectedDays,goal,eq=[]){
+// Get current week number (ISO) for weekly rotation
+function getWeekNum(){
+  const d=new Date();
+  const jan1=new Date(d.getFullYear(),0,1);
+  return Math.ceil(((d-jan1)/864e5+jan1.getDay()+1)/7);
+}
+
+function buildRoutine7(splits,selectedDays,goal,eq=[],weekOffset=null){
   const r=Array(7).fill(null);
   const adapted=splits.map(d=>({...d,ex:d.ex.map(e=>{
     const goalApplied=applyGoal(e,goal);
-    // Apply equipment substitution
     const exName=canDoAuto(goalApplied.e,eq);
     return {...goalApplied,e:exName};
   })}));
-  // Para 5beg: secuencia A B A B A
-  const seq=adapted.length===2
-    ?[adapted[0],adapted[1],adapted[0],adapted[1],adapted[0]].slice(0,selectedDays.length)
-    :adapted.slice(0,selectedDays.length);
+
+  // Weekly rotation: splits with A/B variants (6int, 6adv, 6beg) have 6 entries
+  // Odd weeks → use first half; Even weeks → use second half
+  const wk = weekOffset !== null ? weekOffset : getWeekNum();
+  const isWeekB = (wk % 2 === 0);
+  const half = Math.floor(adapted.length / 2);
+  const hasABVariant = adapted.length >= 4 && half >= selectedDays.length;
+
+  let seq;
+  if(adapted.length===2){
+    // Full Body A/B alternating: A B A B A...
+    seq=[adapted[0],adapted[1],adapted[0],adapted[1],adapted[0],adapted[1],adapted[0]]
+      .slice(0,selectedDays.length);
+  } else if(hasABVariant){
+    // PPL 6-day has PUSH A, PULL A, LEGS A, PUSH B, PULL B, LEGS B
+    // Week A: first half; Week B: second half
+    const base=isWeekB?adapted.slice(half):adapted.slice(0,half);
+    // Fill to selectedDays.length cycling through base
+    seq=selectedDays.map((_,i)=>base[i%base.length]);
+  } else {
+    seq=adapted.slice(0,selectedDays.length);
+  }
+
   selectedDays.forEach((dayIdx,i)=>{
     if(seq[i])r[dayIdx]={...seq[i],ex:seq[i].ex.map((x,j)=>({...x,id:`${dayIdx}${j}`}))};
   });
@@ -2260,7 +2310,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
     const numSets=ex.s||1;
     return Array.from({length:numSets},(_,si)=>{
       const kg=h&&h[si]?String(h[si].w):h&&h[0]?String(h[0].w):"";
-      const rp=h&&h[si]?String(h[si].r):h&&h[0]?String(h[0].r):String(ex.r||"8");
+      const rp=h&&h[si]?String(h[si].r):h&&h[0]?String(h[0].r):repTarget(ex.r||"8");
       return {kg,rp,done:false};
     });
   }));
@@ -2874,7 +2924,16 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                   </div>
                 )}
                 <div style={{display:"flex",alignItems:"center",gap:12,marginTop:5}}>
-                  {!ex.circuit&&<span style={{fontFamily:mono,fontSize:9,color:C2.tx3,letterSpacing:1.5}}>{ex.r}</span>}
+                  {!ex.circuit&&!showPrev&&(()=>{
+                  const rd=repRangeDisplay(ex.r);
+                  return rd.range
+                    ? <span style={{fontFamily:mono,fontSize:9,color:C2.tx3,letterSpacing:1.5}}>
+                        <span style={{color:C2.tx2,fontWeight:700}}>{rd.target}</span>
+                        <span style={{opacity:0.45}}>–{rd.hi}</span>
+                        <span style={{opacity:0.45}}> reps</span>
+                      </span>
+                    : <span style={{fontFamily:mono,fontSize:9,color:C2.tx3,letterSpacing:1.5}}>{ex.r}</span>;
+                })()}
                   {showPrev&&<span style={{fontFamily:mono,fontSize:9,color:C2.tx3}}>{lang==="es"||lang==="pt"?"ant: ":lang==="fr"?"préc: ":lang==="it"?"prec: ":lang==="de"?"vor: ":"prev: "}<span style={{color:C2.tx2}}>{prevKg}kg × {prevRp}</span></span>}
                   {exStarted&&<span style={{fontFamily:mono,fontSize:8,color:exDone?C2.green:C2.tx3,background:exDone?"rgba(95,170,136,.12)":"rgba(255,255,255,.05)",border:`1px solid ${exDone?"rgba(95,170,136,.25)":"rgba(82,90,110,.3)"}`,borderRadius:20,padding:"2px 8px",letterSpacing:1}}>
                     {sets[ei].filter(s=>s.done).length}/{sets[ei].length}
@@ -2953,7 +3012,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                       {/* REPS — locked for celebrity challenges */}
                       {profile?.mode==="celebrity"?(
                         <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:1,borderLeft:"1px solid rgba(82,90,110,.2)",padding:"4px 0",cursor:"default"}}>
-                          <div style={{fontSize:14,fontWeight:900,color:s.done?C2.green:"rgba(240,242,245,.4)",letterSpacing:-.5,lineHeight:1,letterSpacing:0}}>{exs[ei].r||"—"}</div>
+                          <div style={{fontSize:14,fontWeight:900,color:s.done?C2.green:"rgba(240,242,245,.4)",letterSpacing:-.5,lineHeight:1}}>{repTarget(exs[ei].r)||"—"}</div>
                           <div style={{fontFamily:mono,fontSize:7,color:"rgba(240,168,24,.5)",letterSpacing:1.5}}>{(L[lang]||L.en).reps} 🔒</div>
                         </div>
                       ):(
@@ -3897,8 +3956,24 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                     })}
                   </div>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:4}}>
-                    <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,0.7)",letterSpacing:2}}>
-                      {pct===1?(lang==="es"||lang==="pt"?"COMPLETADO":lang==="fr"?"TERMINÉ":lang==="it"?"COMPLETATO":lang==="de"?"ABGESCHLOSSEN":"COMPLETED"):(lang==="es"||lang==="pt"?"SEMANA EN CURSO":lang==="fr"?"SEMAINE EN COURS":lang==="it"?"SETTIMANA IN CORSO":lang==="de"?"WOCHE LÄUFT":"WEEK IN PROGRESS")}
+                    <div style={{display:"flex",alignItems:"center",gap:6}}>
+                      <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,0.7)",letterSpacing:2}}>
+                        {pct===1?(lang==="es"||lang==="pt"?"COMPLETADO":lang==="fr"?"TERMINÉ":lang==="it"?"COMPLETATO":lang==="de"?"ABGESCHLOSSEN":"COMPLETED"):(lang==="es"||lang==="pt"?"SEMANA EN CURSO":lang==="fr"?"SEMAINE EN COURS":lang==="it"?"SETTIMANA IN CORSO":lang==="de"?"WOCHE LÄUFT":"WEEK IN PROGRESS")}
+                      </div>
+                      {profile?.mode!=="celebrity"&&(()=>{
+                        const wNum=getWeekNum();
+                        const isB=wNum%2===0;
+                        return <span style={{fontSize:7,fontFamily:mono,padding:"1px 6px",borderRadius:10,
+                          background:isB?"rgba(106,143,192,0.15)":"rgba(63,207,142,0.12)",
+                          color:isB?"#4898e8":"#3fcf8e",border:`1px solid ${isB?"rgba(106,143,192,.3)":"rgba(63,207,142,.25)"}`,
+                          letterSpacing:1.5,fontWeight:700}}>
+                          {lang==="es"||lang==="pt"?`SEMANA ${isB?"B":"A"}`:
+                           lang==="fr"?`SEMAINE ${isB?"B":"A"}`:
+                           lang==="it"?`SETTIMANA ${isB?"B":"A"}`:
+                           lang==="de"?`WOCHE ${isB?"B":"A"}`:
+                           `WEEK ${isB?"B":"A"}`}
+                        </span>;
+                      })()}
                     </div>
                     <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,0.7)",letterSpacing:1}}>
                       {Math.round(pct*100)}%
