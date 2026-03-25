@@ -6265,7 +6265,10 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
   const prs=Object.entries(logs).map(([id,entries])=>{
     if(!entries||entries.length<2) return null;
     const best=entries.reduce((b,e)=>((e.rm||0)>(b.rm||0)?e:b),entries[0]);
-    if(!best.rm||best.rm<=0) return null;
+    // BW exercises (dominadas, fondos, etc.) track reps progression, not kg
+    const nlChk=(name||id||'').toLowerCase();
+    const isBWEx=["dominadas","pull up","weighted pull up","chin up","fondos","dips","bench dips","diamond push ups","flexiones","push up","decline push up","pistol squat","remo australiano","muscle up"].some(bw=>nlChk.includes(bw));
+    if(!best.rm||best.rm<=0){if(!isBWEx||!best.r) return null;}
     let name=id;
     if(routine) routine.forEach(d=>{if(!d)return;d.ex&&d.ex.forEach(e=>{if(e.id===id)name=e.e;});});
     // Fallback: use saved name map from localStorage (populated from Supabase exercise_name)
@@ -6277,9 +6280,20 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
     const nl=(name||'').toLowerCase().trim();
     const noRm=["cardio suave","cardio moderado","estiramientos","estiramiento","yoga","pilates","sprint 200m","jumping jacks","arm haulers","mountain climbers","mountain climber","bear crawl","burpee","plancha","plancha lateral","crunch","crunch bicicleta","elevacion de piernas","farmer walk","saltar la cuerda"].includes(nl);
     if(noRm) return null;
-    const hist=[...entries].sort((a,b)=>a.d.localeCompare(b.d)).map(e=>({d:e.d,rm:e.rm||0,w:e.w,r:e.r}));
-    return {id,name,best1rm:best.rm||0,bestW:best.w,bestR:best.r,date:best.d,hist};
-  }).filter(Boolean).filter(p=>p.best1rm>0).sort((a,b)=>b.best1rm-a.best1rm);
+    // For BW exercises: group by day and use max reps as the progression metric
+    const histEntries=[...entries].sort((a,b)=>a.d.localeCompare(b.d));
+    const hist=histEntries.map(e=>({d:e.d,rm:e.rm||0,w:e.w,r:parseInt(e.r)||0,isBW:isBWEx}));
+    const bestReps=Math.max(...entries.map(e=>parseInt(e.r)||0));
+    // For BW exercises: "best" = session with most reps; metric shown = reps not kg
+    const bestBW=isBWEx?entries.reduce((b,e)=>(parseInt(e.r||0)>parseInt(b.r||0)?e:b),entries[0]):null;
+    return {id,name,
+      best1rm:isBWEx?0:(best.rm||0),
+      bestReps:isBWEx?bestReps:null,
+      bestW:isBWEx?(bestBW?.w||0):(best.w),
+      bestR:isBWEx?(bestBW?.r||0):(best.r),
+      date:isBWEx?(bestBW?.d||best.d):best.d,
+      hist, isBW:isBWEx};
+  }).filter(Boolean).sort((a,b)=>(b.best1rm||0)-(a.best1rm||0));
 
   const today=new Date(), todayStr=today.toISOString().slice(0,10);
   const dow=today.getDay(), daysToMon=dow===0?6:dow-1;
@@ -6634,7 +6648,7 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
             background:(selPR===i||(selPR===null&&i===0))?"rgba(106,143,192,.12)":"transparent",
             color:(selPR===i||(selPR===null&&i===0))?C.blue:C.tx3,
             fontSize:9,fontFamily:mono,cursor:"pointer",whiteSpace:"nowrap",
-          }},pr.name+" ",e("span",{style:{opacity:.6}},pr.best1rm+"kg"))
+          }},pr.name+" ",e("span",{style:{opacity:.6}},pr.isBW?(pr.bestReps+"rep max"):(pr.best1rm+"kg")))
         )
       ),
 
@@ -6643,11 +6657,11 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
         e("div",{style:{position:"absolute",top:-30,right:-30,width:100,height:100,borderRadius:"50%",background:"rgba(106,143,192,.1)",filter:"blur(20px)",pointerEvents:"none"}}),
         e("div",{style:{fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:1,marginBottom:6,textTransform:"uppercase"}},prView.name),
         e("div",{style:{display:"flex",alignItems:"baseline",gap:6,marginBottom:4}},
-          e("div",{style:{fontSize:46,fontWeight:900,letterSpacing:-2,color:C.tx,lineHeight:1,fontFamily:sans}},prView.best1rm),
-          e("div",{style:{fontSize:13,fontFamily:mono,color:C.tx3}},"kg ",e("span",{style:{fontSize:9}},"1RM"))
+          e("div",{style:{fontSize:46,fontWeight:900,letterSpacing:-2,color:C.tx,lineHeight:1,fontFamily:sans}},prView.isBW?prView.bestReps:prView.best1rm),
+          e("div",{style:{fontSize:13,fontFamily:mono,color:C.tx3}},prView.isBW?e("span",{style:{fontSize:9}},"rep max"):["kg ",e("span",{style:{fontSize:9}},"1RM")])
         ),
         e("div",{style:{display:"flex",gap:14,marginBottom:12}},
-          e("div",null,e("div",{style:{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:1,marginBottom:2}},"PESO"),e("div",{style:{fontSize:16,fontWeight:700,color:C.tx}},prView.bestW,e("span",{style:{fontSize:9,color:C.tx3,fontWeight:400}},"kg"))),
+          e("div",null,e("div",{style:{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:1,marginBottom:2}},es?"PESO":lang==="fr"?"POIDS":lang==="it"?"PESO":lang==="de"?"GEWICHT":"WEIGHT"),e("div",{style:{fontSize:prView.isBW?10:16,fontWeight:700,color:C.tx}},prView.isBW?(es?"CORPORAL":lang==="fr"?"CORPOREL":lang==="it"?"CORPOREO":lang==="de"?"KÖRPERGEW.":"BODYWEIGHT"):prView.bestW,prView.isBW?null:e("span",{style:{fontSize:9,color:C.tx3,fontWeight:400}},"kg"))),
           e("div",{style:{width:1,background:C.borderL}}),
           e("div",null,e("div",{style:{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:1,marginBottom:2}},"REPS"),e("div",{style:{fontSize:16,fontWeight:700,color:C.tx}},prView.bestR||"-")),
           e("div",{style:{width:1,background:C.borderL}}),
@@ -6655,7 +6669,8 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
         ),
         // Sparkline
         prView.hist&&prView.hist.length>1&&(()=>{
-          const vals=prView.hist.map(h=>h.rm).filter(v=>v>0);
+          // For BW exercises: show reps progression; for weighted: show 1RM
+          const vals=prView.isBW?prView.hist.map(h=>h.r).filter(v=>v>0):prView.hist.map(h=>h.rm).filter(v=>v>0);
           if(vals.length<2) return null;
           const mn=Math.min(...vals),mx=Math.max(...vals),rng=mx-mn||1;
           const W=280,H=36;
@@ -6669,7 +6684,7 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
             e("div",{style:{display:"flex",justifyContent:"space-between",marginTop:3}},
               e("div",{style:{fontSize:8,fontFamily:mono,color:C.tx3}},prView.hist[0]?.d),
               e("div",{style:{fontSize:8,fontFamily:mono,color:up?C.green:C.red}},
-                (up?"↑":"↓")+" "+Math.abs(vals[vals.length-1]-vals[vals.length-2])+"kg "+(es?"vs anterior":"vs prev"))
+                (up?"↑":"↓")+" "+Math.abs(vals[vals.length-1]-vals[vals.length-2])+(prView.isBW?" reps ":" kg ")+(es?"vs anterior":lang==="fr"?"vs précédent":lang==="it"?"vs precedente":lang==="de"?"vs vorher":"vs prev"))
             )
           );
         })()
