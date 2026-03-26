@@ -2018,44 +2018,8 @@ const store={
   set:(k,v)=>{try{localStorage.setItem(k,v);}catch{}}
 };
 
-// Static exercise image map — wger.de open source DB
-const IMG={
-  "bench press":"https://wger.de/media/exercise-images/192/Bench-press-1.png",
-  "incline bench press":"https://wger.de/media/exercise-images/1049/Incline-Bench-Press-1.png",
-  "incline dumbbell press":"https://wger.de/media/exercise-images/2245/Incline-dumbbell-press-1.png",
-  "dumbbell bench press":"https://wger.de/media/exercise-images/2245/Incline-dumbbell-press-1.png",
-  "dumbbell flyes":"https://wger.de/media/exercise-images/2753/Dumbbell-Incline-Fly-1.png",
-  "dips":"https://wger.de/media/exercise-images/781/Dips-1.png",
-  "overhead press":"https://wger.de/media/exercise-images/1069/Overhead-Press-1.png",
-  "lateral raise":"https://wger.de/media/exercise-images/148/Lateral-Raises-1.png",
-  "tricep pushdown":"https://wger.de/media/exercise-images/2141/Triceps-Pushdown-1.png",
-  "overhead tricep extension":"https://wger.de/media/exercise-images/2141/Triceps-Pushdown-1.png",
-  "skull crusher":"https://wger.de/media/exercise-images/2431/Floor-Skull-Crusher-1.png",
-  "pull up":"https://wger.de/media/exercise-images/107/Pull-ups-1.png",
-  "chin up":"https://wger.de/media/exercise-images/803/Chin-Up-1.png",
-  "barbell row":"https://wger.de/media/exercise-images/2817/Barbell-Row-1.png",
-  "pendlay row":"https://wger.de/media/exercise-images/2817/Barbell-Row-1.png",
-  "dumbbell row":"https://wger.de/media/exercise-images/2192/Dumbbell-rear-delt-row-1.png",
-  "cable row":"https://wger.de/media/exercise-images/2086/Seated-Cable-Row-1.png",
-  "reverse fly":"https://wger.de/media/exercise-images/2832/Reverse-Fly-Standing-1.png",
-  "face pull":"https://wger.de/media/exercise-images/394/Facepull-1.png",
-  "barbell curl":"https://wger.de/media/exercise-images/758/Barbell-Wrist-Curl-1.png",
-  "hammer curl":"https://wger.de/media/exercise-images/86/Hammer-Curls-1.png",
-  "preacher curl":"https://wger.de/media/exercise-images/193/Preacher-Curls-1.png",
-  "reverse curl":"https://wger.de/media/exercise-images/86/Hammer-Curls-1.png",
-  "barbell squat":"https://wger.de/media/exercise-images/2931/Barbell-Squat-1.png",
-  "front squat":"https://wger.de/media/exercise-images/191/Front-Squats-1.png",
-  "romanian deadlift":"https://wger.de/media/exercise-images/2886/Romanian-Deadlift-1.png",
-  "deadlift":"https://wger.de/media/exercise-images/105/Deadlifts-1.png",
-  "bulgarian split squat":"https://wger.de/media/exercise-images/1602/Bulgarian-split-squats-1.png",
-  "leg extension":"https://wger.de/media/exercise-images/804/Leg-Extension-1.png",
-  "leg curl":"https://wger.de/media/exercise-images/792/Leg-Curl-1.png",
-  "hip thrust":"https://wger.de/media/exercise-images/854/Hip-Thrust-1.png",
-  "walking lunge":"https://wger.de/media/exercise-images/3050/Walking-Lunges-1.png",
-  "calf raise":"https://wger.de/media/exercise-images/2162/Calf-raises-1.png",
-  "seated calf raise":"https://wger.de/media/exercise-images/2145/Seated-Calf-Raises-1.png",
-};
-const getImg=name=>IMG[name.toLowerCase().trim()]||null;
+// Exercise images: videos from bunny CDN only
+const getImg=()=>null;
 
 const BASE="https://forjavideos.b-cdn.net/";
 const VID={
@@ -4863,19 +4827,19 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
 
   // EQ_CARDS hoisted for use in step 15
   const EQ_CARDS=[
-    {id:"rack",            n:{es:"Rack + Barra",en:"Rack + Bar",fr:"Rack + Barre",it:"Rack + Bilanciere",de:"Rack + Stange",pt:"Rack + Barra"},    c:"#6a8fc0",ex:24,img:"https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&q=70&fit=crop"},
-    {id:"bench",           n:{es:"Banco",en:"Bench",fr:"Banc",it:"Panca",de:"Bank",pt:"Banco"},         c:"#f0b429",ex:18,img:"https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=400&q=70&fit=crop"},
-    {id:"dumbbells",       n:{es:"Mancuernas",en:"Dumbbells",fr:"Haltères",it:"Manubri",de:"Kurzhanteln",pt:"Halteres"},     c:"#3fcf8e",ex:20,img:"https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=400&q=70&fit=crop"},
-    {id:"pull_up_bar",     n:{es:"Dominadas",en:"Pull-up bar",fr:"Barre de traction",it:"Sbarra trazioni",de:"Klimmzugstange",pt:"Barra de dominadas"},   c:"#8878c0",ex:8, img:"https://images.unsplash.com/photo-1601422407692-ec4eeec1d9b3?w=400&q=70&fit=crop"},
-    {id:"dip_bar",         n:{es:"Paralelas",en:"Dip bars",fr:"Barres parallèles",it:"Parallele",de:"Barren",pt:"Paralelas"},      c:"#5faa88",ex:5, img:"https://images.unsplash.com/photo-1576678927484-cc907957088c?w=400&q=70&fit=crop"},
-    {id:"ez_bar",          n:{es:"Barra Z / EZ",en:"EZ / Curl bar",fr:"EZ / Curl bar",it:"EZ / Curl bar",de:"EZ / Curl bar",pt:"Barra Z / EZ"}, c:"#c0a870",ex:8, img:"https://images.unsplash.com/photo-1581009137042-c552e485697a?w=400&q=70&fit=crop"},
-    {id:"leg_extension",   n:{es:"Leg Ext / Curl",en:"Leg ext / curl",fr:"Leg ext / curl",it:"Leg ext / curl",de:"Leg ext / curl",pt:"Leg Ext / Curl"},c:"#e05555",ex:6, img:"https://images.unsplash.com/photo-1574680178050-55c6a6a96e0a?w=400&q=70&fit=crop"},
-    {id:"cable_machine",   n:{es:"Polea",en:"Cable machine",fr:"Poulie",it:"Puleggia",de:"Kabelzug",pt:"Polia"}, c:"#d96060",ex:12,img:"https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400&q=70&fit=crop"},
-    {id:"weight_vest",     n:{es:"Chaleco lastrado","en":"Weight vest"},  c:"#8878c0",ex:6, img:"https://images.unsplash.com/photo-1609899464726-76e0e6c6aac7?w=400&q=70&fit=crop"},
-    {id:"kettlebell",      n:{es:"Kettlebell",en:"Kettlebell",fr:"Kettlebell",it:"Kettlebell",de:"Kettlebell",pt:"Kettlebell"},    c:"#5faa88",ex:10,img:"https://images.unsplash.com/photo-1517344884509-a0c97ec11bcc?w=400&q=70&fit=crop"},
-    {id:"resistance_band", n:{es:"Bandas",en:"Bands",fr:"Élastiques",it:"Elastici",de:"Widerstandsbänder",pt:"Faixas elásticas"},         c:"#6a8fc0",ex:8, img:"https://images.unsplash.com/photo-1598289431512-b97b0917affc?w=400&q=70&fit=crop"},
-          {id:"treadmill",        n:{es:"Caminadora",en:"Treadmill",fr:"Treadmill",it:"Treadmill",de:"Treadmill",pt:"Caminadora"},     c:"#5faa88",ex:0, img:"https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=70&fit=crop"},
-          {id:"jump_rope",        n:{es:"Cuerda saltar",en:"Jump Rope",fr:"Jump Rope",it:"Jump Rope",de:"Jump Rope",pt:"Cuerda saltar"},     c:"#c0a870",ex:0, img:"https://images.unsplash.com/photo-1599058918144-1ffabb6ab9a0?w=400&q=70&fit=crop"},
+    {id:"rack",            n:{es:"Rack + Barra",en:"Rack + Bar",fr:"Rack + Barre",it:"Rack + Bilanciere",de:"Rack + Stange",pt:"Rack + Barra"},    c:"#6a8fc0",ex:24},
+    {id:"bench",           n:{es:"Banco",en:"Bench",fr:"Banc",it:"Panca",de:"Bank",pt:"Banco"},         c:"#f0b429",ex:18},
+    {id:"dumbbells",       n:{es:"Mancuernas",en:"Dumbbells",fr:"Haltères",it:"Manubri",de:"Kurzhanteln",pt:"Halteres"},     c:"#3fcf8e",ex:20},
+    {id:"pull_up_bar",     n:{es:"Dominadas",en:"Pull-up bar",fr:"Barre de traction",it:"Sbarra trazioni",de:"Klimmzugstange",pt:"Barra de dominadas"},   c:"#8878c0",ex:8},
+    {id:"dip_bar",         n:{es:"Paralelas",en:"Dip bars",fr:"Barres parallèles",it:"Parallele",de:"Barren",pt:"Paralelas"},      c:"#5faa88",ex:5},
+    {id:"ez_bar",          n:{es:"Barra Z / EZ",en:"EZ / Curl bar",fr:"EZ / Curl bar",it:"EZ / Curl bar",de:"EZ / Curl bar",pt:"Barra Z / EZ"}, c:"#c0a870",ex:8},
+    {id:"leg_extension",   n:{es:"Leg Ext / Curl",en:"Leg ext / curl",fr:"Leg ext / curl",it:"Leg ext / curl",de:"Leg ext / curl",pt:"Leg Ext / Curl"},c:"#e05555",ex:6},
+    {id:"cable_machine",   n:{es:"Polea",en:"Cable machine",fr:"Poulie",it:"Puleggia",de:"Kabelzug",pt:"Polia"}, c:"#d96060",ex:12},
+    {id:"weight_vest",     n:{es:"Chaleco lastrado","en":"Weight vest"},  c:"#8878c0",ex:6},
+    {id:"kettlebell",      n:{es:"Kettlebell",en:"Kettlebell",fr:"Kettlebell",it:"Kettlebell",de:"Kettlebell",pt:"Kettlebell"},    c:"#5faa88",ex:10},
+    {id:"resistance_band", n:{es:"Bandas",en:"Bands",fr:"Élastiques",it:"Elastici",de:"Widerstandsbänder",pt:"Faixas elásticas"},         c:"#6a8fc0",ex:8},
+          {id:"treadmill",        n:{es:"Caminadora",en:"Treadmill",fr:"Treadmill",it:"Treadmill",de:"Treadmill",pt:"Caminadora"},     c:"#5faa88",ex:0},
+          {id:"jump_rope",        n:{es:"Cuerda saltar",en:"Jump Rope",fr:"Jump Rope",it:"Jump Rope",de:"Jump Rope",pt:"Cuerda saltar"},     c:"#c0a870",ex:0},
 ];
 
   const[eqMode,setEqMode]=useState(null); // "full" | "home" | "custom" | null
@@ -5513,7 +5477,6 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                     const cardShadow=on?"0 12px 32px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.12)":"inset 0 1px 0 rgba(255,255,255,.08),0 4px 16px rgba(0,0,0,.25)";
                     const iconBg=on?"rgba(255,255,255,.12)":"rgba(255,255,255,.06)";
                     const iconBorder=on?c:"rgba(255,255,255,.1)";
-                    const imgBrightness=on?"brightness(.28) saturate(.6) contrast(1.1)":"brightness(.15) saturate(.25) contrast(1.15)";
                     return(
                       <div key={id} onClick={()=>setEquipment(on?equipment.filter(x=>x!==id):[...equipment,id])} style={{
                         position:"relative",borderRadius:16,overflow:"hidden",cursor:"pointer",aspectRatio:".85",
@@ -5524,7 +5487,8 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                         transform:on?"translateY(-3px) scale(1.02)":"scale(1)",
                         transition:"all .25s cubic-bezier(.34,1.56,.64,1)",
                       }}>
-                        <img src={img} alt="" style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",filter:imgBrightness,transform:"scale(1.06)",transition:"filter .3s"}}/>
+                        {/* Background gradient */}
+                        <div style={{position:"absolute",inset:0,background:`linear-gradient(135deg,${c}18 0%,${c}06 60%,transparent 100%)`,pointerEvents:"none"}}/>
                         <div style={{position:"absolute",inset:0,background:"linear-gradient(135deg,rgba(255,255,255,.05) 0%,transparent 60%)",pointerEvents:"none",zIndex:1}}/>
                         {on&&<div style={{position:"absolute",inset:0,background:"rgba(255,255,255,.03)",pointerEvents:"none",zIndex:1}}/>}
                         <div style={{position:"absolute",top:8,left:8,zIndex:3,width:32,height:32,borderRadius:9,display:"flex",alignItems:"center",justifyContent:"center",background:iconBg,border:"1px solid "+iconBorder,backdropFilter:"blur(8px)",color:on?"rgba(255,255,255,.9)":"rgba(255,255,255,.5)",boxShadow:"inset 0 1px 0 rgba(255,255,255,.1)",transition:"all .25s"}}>
@@ -5768,11 +5732,17 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                           <div style={{width:3,flexShrink:0,background:added?"rgba(95,210,136,.6)":group.color+"33"}}/>
                           {vidUrl?(
                             <div style={{width:72,flexShrink:0,background:"rgba(0,0,0,.4)",overflow:"hidden"}}>
-                              <video src={vidUrl} muted loop playsInline preload="metadata" style={{width:"100%",height:"100%",objectFit:"cover",opacity:.5,display:"block"}} onMouseEnter={e=>e.currentTarget.play()} onMouseLeave={e=>{e.currentTarget.pause();e.currentTarget.currentTime=0;}}/>
+                              <video src={vidUrl} muted loop playsInline preload="metadata"
+                                style={{width:"100%",height:"100%",objectFit:"cover",opacity:.5,display:"block"}}
+                                onLoadedMetadata={e=>{e.currentTarget.currentTime=0.5;}}
+                                onMouseEnter={e=>e.currentTarget.play()}
+                                onMouseLeave={e=>{e.currentTarget.pause();e.currentTarget.currentTime=0.5;}}
+                                onTouchStart={e=>{const v=e.currentTarget;v.paused?v.play():v.pause();}}
+                              />
                             </div>
                           ):(
                             <div style={{width:72,flexShrink:0,background:"rgba(255,255,255,.02)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                              <div style={{fontFamily:mono,fontSize:7,color:"rgba(255,255,255,.1)",letterSpacing:1}}>—</div>
+                              <div style={{fontFamily:mono,fontSize:18,opacity:.15}}>{group.color?"●":"—"}</div>
                             </div>
                           )}
                           <div style={{flex:1,padding:"11px 10px",display:"flex",flexDirection:"column",justifyContent:"center",gap:4,minWidth:0}}>
