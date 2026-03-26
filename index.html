@@ -3805,24 +3805,36 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
 
   if(inWorkout&&day&&day.ex&&day.ex.length){
     // Express mode: use expressDay instead of scheduled day
-    const activeDay=expressDay||day;
-    return <WorkoutScreen day={activeDay} sel={sel} done={done} logs={logs}
-      onToggle={toggle} onSaveLog={(id,entry)=>{
-        saveLog(id,entry);
-        // Express: update heatmap for zones
-        if(expressDay&&expressDay.expressZones&&expressDay.expressZones.length){
-          const now=Date.now();
-          const newMxp={...JSON.parse(localStorage.getItem('fv8_mxp')||'{}')};
-          expressDay.expressZones.forEach(zk=>{
-            if(!newMxp[zk])newMxp[zk]={xp:0,level:1};
-            newMxp[zk].lastTrain=new Date().toISOString().slice(0,10);
-            newMxp[zk].xp=(newMxp[zk].xp||0)+15;
-          });
-          try{localStorage.setItem('fv8_mxp',JSON.stringify(newMxp));}catch(_){}
-        }
-      }}
+    // Express: go to ExpressTimer, else normal WorkoutScreen
+    if(expressDay){
+      return <ExpressTimer day={expressDay} lang={lang} profile={profile}
+        onDone={(zonesWorked)=>{
+          // Update heatmap + streak
+          if(zonesWorked&&zonesWorked.length){
+            const newMxp={...JSON.parse(localStorage.getItem('fv8_mxp')||'{}')};
+            zonesWorked.forEach(zk=>{
+              if(!newMxp[zk])newMxp[zk]={xp:0,level:1};
+              newMxp[zk].lastTrain=new Date().toISOString().slice(0,10);
+              newMxp[zk].xp=(newMxp[zk].xp||0)+20;
+            });
+            try{localStorage.setItem('fv8_mxp',JSON.stringify(newMxp));}catch(_){}
+          }
+          // Save to fv8_dl for ACWR (bodyweight ~500kg equivalent per session)
+          const today=new Date().toISOString().slice(0,10);
+          try{
+            const dl=JSON.parse(localStorage.getItem('fv8_dl')||'{}');
+            dl[today]=(dl[today]||0)+800;
+            localStorage.setItem('fv8_dl',JSON.stringify(dl));
+          }catch(_){}
+          setInWorkout(false);
+          setExpressDay(null);
+        }}
+        onBack={()=>{setInWorkout(false);setExpressDay(null);}}/>;
+    }
+    return <WorkoutScreen day={day} sel={sel} done={done} logs={logs}
+      onToggle={toggle} onSaveLog={saveLog}
       t={t} lang={lang} profile={profile}
-      onBack={()=>{setInWorkout(false);setExpressDay(null);window.__tourBackFromWorkout=null;}}
+      onBack={()=>{setInWorkout(false);window.__tourBackFromWorkout=null;}}
       tourStep={tourStep} setTourStep={setTourStep} acwr={acwr}/>;
   }
 
@@ -5020,6 +5032,319 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
 
   </>);
 }
+
+// ── EXPRESS TIMER COMPONENT ───────────────────────────────────────────────────
+function ExpressTimer({day, lang, profile, onDone, onBack}){
+  const mono="'SF Mono','Fira Code','Courier New',monospace";
+  const sans="-apple-system,'SF Pro Display','Helvetica Neue',sans-serif";
+
+  // Build flat sequence: [{exIdx, setIdx, exName, work, rest, isLastSet}]
+  const sequence=React.useMemo(()=>{
+    const seq=[];
+    (day.ex||[]).forEach((ex,ei)=>{
+      const sets=ex.s||3;
+      for(let si=0;si<sets;si++){
+        const isLast=ei===day.ex.length-1&&si===sets-1;
+        seq.push({ei,si,exName:ex.e,work:ex.work||40,rest:ex.rest||20,isLast});
+      }
+    });
+    return seq;
+  },[day]);
+
+  const totalSets=sequence.length;
+
+  // phase: 'preview' | 'work' | 'rest' | 'done'
+  const [phase, setPhase] = React.useState('preview');
+  const [seqIdx, setSeqIdx] = React.useState(0);
+  const [countdown, setCountdown] = React.useState(0);
+  const [paused, setPaused] = React.useState(false);
+  const [completedSets, setCompletedSets] = React.useState(0);
+
+  const timerRef = React.useRef(null);
+  const countRef = React.useRef(0);
+  const pausedRef = React.useRef(false);
+
+  // Beep using Web Audio API
+  function beep(freq=880, dur=0.12, vol=0.3){
+    try{
+      const ctx=new(window.AudioContext||window.webkitAudioContext)();
+      const osc=ctx.createOscillator();
+      const gain=ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type='sine'; osc.frequency.value=freq;
+      gain.gain.setValueAtTime(vol,ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+dur);
+      osc.start(ctx.currentTime); osc.stop(ctx.currentTime+dur);
+    }catch(_){}
+  }
+  function beepWork(){ beep(880,0.12,0.3); setTimeout(()=>beep(880,0.12,0.3),150); }
+  function beepRest(){ beep(440,0.2,0.25); }
+  function beepDone(){ beep(660,0.15,0.3); setTimeout(()=>beep(880,0.2,0.35),200); setTimeout(()=>beep(1100,0.3,0.4),450); }
+
+  // Start countdown for a duration, then call onEnd
+  function startCountdown(dur, onEnd){
+    clearInterval(timerRef.current);
+    countRef.current = dur;
+    setCountdown(dur);
+    timerRef.current = setInterval(()=>{
+      if(pausedRef.current) return;
+      countRef.current -= 1;
+      setCountdown(countRef.current);
+      if(countRef.current <= 0){
+        clearInterval(timerRef.current);
+        onEnd();
+      }
+    }, 1000);
+  }
+
+  function startWork(idx){
+    const item = sequence[idx];
+    if(!item){ finish(); return; }
+    setSeqIdx(idx);
+    setPhase('work');
+    beepWork();
+    startCountdown(item.work, ()=>{
+      if(item.isLast){ finish(); }
+      else{ startRest(idx); }
+    });
+  }
+
+  function startRest(idx){
+    const item = sequence[idx];
+    setPhase('rest');
+    beepRest();
+    setCompletedSets(s=>s+1);
+    startCountdown(item.rest, ()=>{ startWork(idx+1); });
+  }
+
+  function finish(){
+    clearInterval(timerRef.current);
+    setCompletedSets(totalSets);
+    setPhase('done');
+    beepDone();
+  }
+
+  function togglePause(){
+    pausedRef.current = !pausedRef.current;
+    setPaused(pausedRef.current);
+  }
+
+  React.useEffect(()=>()=>clearInterval(timerRef.current),[]);
+
+  const cur = sequence[seqIdx]||sequence[0];
+  const next = sequence[seqIdx+1];
+  const totalTime = sequence.reduce((s,x)=>s+x.work+(!x.isLast?x.rest:0),0);
+  const totalMin = Math.round(totalTime/60);
+
+  // ── PREVIEW SCREEN ──────────────────────────────────────────────────────────
+  if(phase==='preview') return(
+    <div style={{position:'fixed',inset:0,background:'#080a0e',display:'flex',
+      flexDirection:'column',color:'#f0f2f5',fontFamily:sans,
+      paddingTop:'env(safe-area-inset-top)'}}>
+
+      {/* Header */}
+      <div style={{display:'flex',alignItems:'center',gap:12,padding:'16px 20px',
+        borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
+        <button onClick={onBack} style={{background:'none',border:'none',color:'rgba(255,255,255,.5)',
+          fontSize:20,cursor:'pointer',padding:'4px 8px',lineHeight:1}}>←</button>
+        <div>
+          <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,letterSpacing:2,
+            color:'#3fcf8e',lineHeight:1}}>⚡ EXPRESS</div>
+          <div style={{fontFamily:mono,fontSize:8,color:'rgba(255,255,255,.35)',letterSpacing:2}}>
+            {day.l} · ~{totalMin} MIN · {totalSets} {lang==='es'||lang==='pt'?'SERIES':lang==='it'?'SERIE':'SETS'}
+          </div>
+        </div>
+      </div>
+
+      {/* Exercise list */}
+      <div style={{flex:1,overflowY:'auto',padding:'16px 20px'}}>
+        <div style={{fontFamily:mono,fontSize:8,color:'rgba(255,255,255,.3)',letterSpacing:3,marginBottom:12}}>
+          {lang==='es'||lang==='pt'?'CIRCUITO':lang==='it'?'CIRCUITO':lang==='de'?'SCHALTKREIS':'CIRCUIT'}
+        </div>
+        {(day.ex||[]).map((ex,ei)=>(
+          <div key={ei} style={{marginBottom:12,padding:'12px 14px',borderRadius:12,
+            background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.07)'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+              <div style={{fontWeight:700,fontSize:14,letterSpacing:-.3}}>{ex.e}</div>
+              <div style={{fontFamily:mono,fontSize:9,color:'rgba(255,255,255,.4)',
+                background:'rgba(255,255,255,0.06)',borderRadius:8,padding:'3px 8px'}}>
+                {ex.s} {lang==='es'||lang==='pt'?'series':lang==='it'?'serie':'sets'}
+              </div>
+            </div>
+            <div style={{display:'flex',gap:16,marginTop:6}}>
+              <span style={{fontFamily:mono,fontSize:8,color:'#3fcf8e'}}>▶ {ex.work}s</span>
+              <span style={{fontFamily:mono,fontSize:8,color:'rgba(240,180,40,.7)'}}>◼ {ex.rest}s</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Start button */}
+      <div style={{padding:'16px 20px 32px'}}>
+        <button onClick={()=>startWork(0)}
+          style={{width:'100%',padding:'18px',borderRadius:16,border:'none',
+            background:'#3fcf8e',color:'#080a0e',
+            fontFamily:mono,fontSize:13,fontWeight:700,letterSpacing:3,
+            cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:10}}>
+          ▶ {lang==='es'||lang==='pt'?'EMPEZAR':lang==='it'?'INIZIA':lang==='de'?'STARTEN':lang==='fr'?'COMMENCER':'START'}
+        </button>
+      </div>
+    </div>
+  );
+
+  // ── DONE SCREEN ─────────────────────────────────────────────────────────────
+  if(phase==='done') return(
+    <div style={{position:'fixed',inset:0,background:'#080a0e',display:'flex',
+      flexDirection:'column',alignItems:'center',justifyContent:'center',
+      color:'#f0f2f5',fontFamily:sans,padding:'20px',
+      paddingTop:'env(safe-area-inset-top)'}}>
+
+      <div style={{fontSize:64,marginBottom:16}}>🏁</div>
+      <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:42,letterSpacing:3,
+        color:'#3fcf8e',marginBottom:4}}>
+        {lang==='es'||lang==='pt'?'¡COMPLETADO!':lang==='it'?'COMPLETATO!':lang==='de'?'GESCHAFFT!':lang==='fr'?'TERMINÉ!':'DONE!'}
+      </div>
+      <div style={{fontFamily:mono,fontSize:9,color:'rgba(255,255,255,.4)',letterSpacing:2,marginBottom:32}}>
+        ⚡ {day.l}
+      </div>
+
+      {/* Stats */}
+      <div style={{display:'flex',gap:16,marginBottom:40}}>
+        {[
+          {v:totalMin+'min',l:lang==='es'||lang==='pt'?'TIEMPO':lang==='it'?'TEMPO':'TIME'},
+          {v:totalSets,l:lang==='es'||lang==='pt'?'SERIES':lang==='it'?'SERIE':'SETS'},
+          {v:(day.ex||[]).length,l:lang==='es'||lang==='pt'?'EJERCICIOS':lang==='it'?'ESERCIZI':'EXERCISES'},
+        ].map(({v,l})=>(
+          <div key={l} style={{textAlign:'center',padding:'16px 20px',borderRadius:14,
+            background:'rgba(63,207,142,0.08)',border:'1px solid rgba(63,207,142,0.2)'}}>
+            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:32,color:'#3fcf8e',lineHeight:1}}>{v}</div>
+            <div style={{fontFamily:mono,fontSize:7,color:'rgba(255,255,255,.4)',letterSpacing:2,marginTop:4}}>{l}</div>
+          </div>
+        ))}
+      </div>
+
+      <button onClick={()=>onDone(day.expressZones||[])}
+        style={{width:'100%',maxWidth:340,padding:'16px',borderRadius:14,border:'none',
+          background:'#3fcf8e',color:'#080a0e',
+          fontFamily:mono,fontSize:12,fontWeight:700,letterSpacing:2,cursor:'pointer'}}>
+        {lang==='es'||lang==='pt'?'VOLVER AL INICIO':lang==='it'?'TORNA ALLA HOME':lang==='de'?'ZURÜCK':'BACK HOME'}
+      </button>
+    </div>
+  );
+
+  // ── ACTIVE TIMER (work / rest) ───────────────────────────────────────────────
+  const isWork = phase==='work';
+  const bgColor = isWork ? '#0a1a0f' : '#1a1200';
+  const accentColor = isWork ? '#3fcf8e' : '#f0b429';
+  const progress = isWork
+    ? 1 - countdown / (cur?.work||40)
+    : 1 - countdown / (cur?.rest||20);
+
+  // Progress ring
+  const R=90, CIRC=2*Math.PI*R;
+  const strokeDash = CIRC * progress;
+
+  return(
+    <div style={{position:'fixed',inset:0,background:bgColor,display:'flex',
+      flexDirection:'column',color:'#f0f2f5',fontFamily:sans,transition:'background .5s',
+      paddingTop:'env(safe-area-inset-top)'}}>
+
+      {/* Top bar */}
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',
+        padding:'14px 20px'}}>
+        <div style={{fontFamily:mono,fontSize:8,color:'rgba(255,255,255,.35)',letterSpacing:2}}>
+          {completedSets}/{totalSets} {lang==='es'||lang==='pt'?'SERIES':lang==='it'?'SERIE':'SETS'}
+        </div>
+        {/* Progress bar */}
+        <div style={{flex:1,margin:'0 16px',height:3,borderRadius:2,
+          background:'rgba(255,255,255,0.08)'}}>
+          <div style={{height:'100%',borderRadius:2,background:accentColor,
+            width:(completedSets/totalSets*100)+'%',transition:'width .3s'}}/>
+        </div>
+        <button onClick={togglePause}
+          style={{background:'rgba(255,255,255,.08)',border:'none',borderRadius:8,
+            padding:'6px 12px',cursor:'pointer',fontFamily:mono,fontSize:9,
+            color:'rgba(255,255,255,.6)',letterSpacing:1}}>
+          {paused?(lang==='es'||lang==='pt'?'▶ SEGUIR':'▶ RESUME'):'⏸'}
+        </button>
+      </div>
+
+      {/* Phase label */}
+      <div style={{textAlign:'center',marginTop:20}}>
+        <div style={{fontFamily:mono,fontSize:10,letterSpacing:4,
+          color:accentColor,opacity:.8}}>
+          {isWork
+            ?(lang==='es'||lang==='pt'?'TRABAJO':lang==='it'?'LAVORO':lang==='de'?'ARBEIT':lang==='fr'?'TRAVAIL':'WORK')
+            :(lang==='es'||lang==='pt'?'DESCANSO':lang==='it'?'RIPOSO':lang==='de'?'PAUSE':lang==='fr'?'REPOS':'REST')}
+        </div>
+      </div>
+
+      {/* Big timer ring */}
+      <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',
+        justifyContent:'center',gap:8}}>
+
+        <div style={{position:'relative',width:220,height:220}}>
+          <svg width="220" height="220" style={{transform:'rotate(-90deg)'}}>
+            <circle cx="110" cy="110" r={R} fill="none"
+              stroke="rgba(255,255,255,0.06)" strokeWidth="8"/>
+            <circle cx="110" cy="110" r={R} fill="none"
+              stroke={accentColor} strokeWidth="8"
+              strokeDasharray={`${strokeDash} ${CIRC}`}
+              strokeLinecap="round"
+              style={{transition:'stroke-dasharray .9s linear,stroke .5s'}}/>
+          </svg>
+          <div style={{position:'absolute',inset:0,display:'flex',flexDirection:'column',
+            alignItems:'center',justifyContent:'center'}}>
+            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:72,
+              color:accentColor,lineHeight:1,letterSpacing:-2}}>
+              {countdown}
+            </div>
+            <div style={{fontFamily:mono,fontSize:8,color:'rgba(255,255,255,.3)',letterSpacing:2}}>
+              {lang==='es'||lang==='pt'?'SEG':'SEC'}
+            </div>
+          </div>
+        </div>
+
+        {/* Exercise name */}
+        <div style={{textAlign:'center',padding:'0 24px'}}>
+          <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:32,letterSpacing:1,
+            color:isWork?'#f0f2f5':'rgba(255,255,255,.35)',lineHeight:1.1,
+            transition:'color .5s'}}>
+            {cur?.exName}
+          </div>
+          <div style={{fontFamily:mono,fontSize:9,color:'rgba(255,255,255,.3)',letterSpacing:2,marginTop:4}}>
+            {lang==='es'||lang==='pt'?'SERIE':'SET'} {(cur?.si||0)+1} / {day.ex?.[cur?.ei||0]?.s||1}
+          </div>
+        </div>
+      </div>
+
+      {/* Next up */}
+      {next&&(
+        <div style={{margin:'0 20px 16px',padding:'10px 14px',borderRadius:12,
+          background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.07)',
+          display:'flex',alignItems:'center',gap:10}}>
+          <div style={{fontFamily:mono,fontSize:7,color:'rgba(255,255,255,.3)',letterSpacing:2,
+            flexShrink:0}}>
+            {lang==='es'||lang==='pt'?'SIGUIENTE':lang==='it'?'PROSSIMO':lang==='de'?'NÄCHSTES':'NEXT'}
+          </div>
+          <div style={{fontSize:13,fontWeight:600,color:'rgba(255,255,255,.55)'}}>
+            {next.exName}
+            {next.ei!==(cur?.ei) && (
+              <span style={{fontFamily:mono,fontSize:7,color:'rgba(255,255,255,.25)',marginLeft:8}}>
+                {lang==='es'||lang==='pt'?'nuevo ejercicio':lang==='it'?'nuovo esercizio':'new exercise'}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Bottom safe area */}
+      <div style={{height:'env(safe-area-inset-bottom)',minHeight:20}}/>
+    </div>
+  );
+}
+// ── END ExpressTimer ──────────────────────────────────────────────────────────
+
 
 // Thumbnail lazy — solo carga cuando entra al viewport
 function VideoThumb({src,size=56}){
