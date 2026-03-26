@@ -2014,6 +2014,90 @@ function buildRoutine7(splits,selectedDays,goal,eq=[],weekOffset=null){
 // ── FREEMIUM ───────────────────────────────────────────────────────────
 const PRO_PRICE = "$4.99/mes";
 const FREE_CELEB_LIMIT = 3; // first N celebrities are free
+// ── EXPRESS CIRCUITS ─────────────────────────────────────────────────────────
+const EXPRESS_GROUPS=[
+  {id:"pecho_tricep",
+   label:{es:"Pecho + Tríceps",en:"Chest + Triceps",it:"Petto + Tricipiti",de:"Brust + Trizeps",fr:"Poitrine + Triceps",pt:"Peito + Tríceps"},
+   icon:"💪", zones:["pecho","tricep_izq","tricep_der"],
+   circuits:[
+    [{e:"Flexiones",s:3,work:40,rest:20},{e:"Flexiones diamante",s:3,work:30,rest:20},{e:"Flexiones declinadas",s:3,work:35,rest:25}],
+    [{e:"Flexiones explosivas",s:4,work:30,rest:30},{e:"Fondos entre sillas",s:3,work:40,rest:20},{e:"Flexiones inclinadas",s:3,work:35,rest:20}],
+    [{e:"Flexiones arquero",s:3,work:40,rest:25},{e:"Flexiones diamante",s:4,work:30,rest:20},{e:"Flexiones lentas",s:3,work:45,rest:30}],
+    [{e:"Flexiones",s:5,work:30,rest:20},{e:"Fondos entre sillas",s:4,work:35,rest:25},{e:"Flexiones explosivas",s:3,work:25,rest:30}],
+    [{e:"Flexiones inclinadas",s:3,work:40,rest:20},{e:"Flexiones diamante",s:3,work:35,rest:20},{e:"Fondos entre sillas",s:3,work:40,rest:25},{e:"Flexiones",s:2,work:30,rest:20}],
+   ]},
+  {id:"espalda_bicep",
+   label:{es:"Espalda + Bíceps",en:"Back + Biceps",it:"Schiena + Bicipiti",de:"Rücken + Bizeps",fr:"Dos + Biceps",pt:"Costas + Bíceps"},
+   icon:"🔙", zones:["dorsal","trapecio","bicep_izq","bicep_der"],
+   circuits:[
+    [{e:"Dominadas",s:4,work:40,rest:30},{e:"Remo invertido",s:3,work:40,rest:20},{e:"Superman",s:3,work:35,rest:20}],
+    [{e:"Remo invertido",s:4,work:45,rest:25},{e:"Superman",s:4,work:35,rest:20},{e:"Dominadas",s:3,work:40,rest:35}],
+    [{e:"Dominadas",s:5,work:35,rest:35},{e:"Superman",s:3,work:40,rest:20},{e:"Remo invertido",s:3,work:40,rest:20}],
+    [{e:"Remo invertido",s:3,work:50,rest:25},{e:"Dominadas agarre supino",s:3,work:40,rest:35},{e:"Superman",s:4,work:35,rest:20}],
+    [{e:"Dominadas",s:3,work:40,rest:30},{e:"Remo invertido",s:3,work:40,rest:20},{e:"Dominadas agarre supino",s:3,work:35,rest:30},{e:"Superman",s:2,work:35,rest:20}],
+   ]},
+  {id:"piernas_gluteos",
+   label:{es:"Piernas + Glúteos",en:"Legs + Glutes",it:"Gambe + Glutei",de:"Beine + Gesäß",fr:"Jambes + Fessiers",pt:"Pernas + Glúteos"},
+   icon:"🦵", zones:["quad","gluteos","isquiotibiales","gemelos"],
+   circuits:[
+    [{e:"Sentadilla",s:4,work:40,rest:20},{e:"Zancadas",s:3,work:40,rest:20},{e:"Puente de glúteos",s:3,work:45,rest:20}],
+    [{e:"Sentadilla sumo",s:3,work:45,rest:20},{e:"Sentadilla búlgara",s:3,work:40,rest:25},{e:"Puente de glúteos",s:4,work:40,rest:20}],
+    [{e:"Sentadilla explosiva",s:4,work:30,rest:25},{e:"Zancadas laterales",s:3,work:40,rest:20},{e:"Hip thrust",s:3,work:45,rest:20}],
+    [{e:"Sentadilla",s:5,work:35,rest:20},{e:"Puente de glúteos",s:4,work:45,rest:15},{e:"Zancadas",s:3,work:40,rest:20}],
+    [{e:"Sentadilla búlgara",s:3,work:40,rest:25},{e:"Sentadilla sumo",s:3,work:45,rest:20},{e:"Hip thrust",s:3,work:40,rest:20},{e:"Sentadilla explosiva",s:2,work:30,rest:25}],
+   ]},
+  {id:"hombros_tricep",
+   label:{es:"Hombros + Tríceps",en:"Shoulders + Triceps",it:"Spalle + Tricipiti",de:"Schultern + Trizeps",fr:"Épaules + Triceps",pt:"Ombros + Tríceps"},
+   icon:"🏋️", zones:["hombro_izq","hombro_der","tricep_izq","tricep_der"],
+   circuits:[
+    [{e:"Flexiones pike",s:3,work:40,rest:20},{e:"Fondos entre sillas",s:3,work:40,rest:20},{e:"Flexiones diamante",s:3,work:35,rest:20}],
+    [{e:"Flexiones pike",s:4,work:35,rest:25},{e:"Flexiones diamante",s:4,work:30,rest:20},{e:"Fondos entre sillas",s:3,work:40,rest:25}],
+    [{e:"Flexiones declinadas",s:3,work:40,rest:20},{e:"Fondos entre sillas",s:4,work:35,rest:25},{e:"Flexiones pike",s:3,work:40,rest:20}],
+    [{e:"Flexiones pike",s:5,work:35,rest:20},{e:"Fondos entre sillas",s:3,work:40,rest:25},{e:"Flexiones diamante",s:3,work:30,rest:20}],
+    [{e:"Flexiones declinadas",s:3,work:40,rest:20},{e:"Flexiones pike",s:3,work:35,rest:20},{e:"Fondos entre sillas",s:3,work:40,rest:20},{e:"Flexiones diamante",s:2,work:30,rest:20}],
+   ]},
+  {id:"abdomen",
+   label:{es:"Abdomen",en:"Core",it:"Addome",de:"Bauch",fr:"Abdominaux",pt:"Abdômen"},
+   icon:"🔥", zones:["abdomen","oblicuos"],
+   circuits:[
+    [{e:"Crunch",s:3,work:40,rest:15},{e:"Plancha",s:3,work:40,rest:15},{e:"Mountain climbers",s:3,work:35,rest:15}],
+    [{e:"Elevación de piernas",s:3,work:40,rest:15},{e:"Russian twist",s:3,work:40,rest:15},{e:"Plancha lateral",s:3,work:35,rest:15}],
+    [{e:"Crunch",s:4,work:35,rest:15},{e:"Mountain climbers",s:3,work:35,rest:15},{e:"Elevación de piernas",s:3,work:40,rest:15}],
+    [{e:"Plancha",s:4,work:45,rest:15},{e:"Russian twist",s:3,work:40,rest:15},{e:"Crunch bicicleta",s:3,work:40,rest:15}],
+    [{e:"Elevación de piernas",s:3,work:40,rest:15},{e:"Plancha",s:3,work:45,rest:15},{e:"Russian twist",s:3,work:35,rest:15},{e:"Mountain climbers",s:2,work:30,rest:15}],
+   ]},
+  {id:"cardio_hiit",
+   label:{es:"Cardio HIIT",en:"Cardio HIIT",it:"Cardio HIIT",de:"Cardio HIIT",fr:"Cardio HIIT",pt:"Cardio HIIT"},
+   icon:"⚡", zones:[],
+   circuits:[
+    [{e:"Burpees",s:3,work:30,rest:30},{e:"Saltos de tijera",s:3,work:40,rest:20},{e:"Mountain climbers",s:3,work:35,rest:20}],
+    [{e:"Sentadilla explosiva",s:4,work:30,rest:25},{e:"Burpees",s:3,work:30,rest:30},{e:"Saltos de tijera",s:3,work:40,rest:20}],
+    [{e:"Mountain climbers",s:4,work:35,rest:20},{e:"Sentadilla explosiva",s:3,work:30,rest:25},{e:"Burpees",s:3,work:30,rest:30}],
+    [{e:"Burpees",s:4,work:30,rest:30},{e:"Mountain climbers",s:3,work:35,rest:20},{e:"Saltos de tijera",s:4,work:35,rest:20}],
+    [{e:"Saltos de tijera",s:3,work:40,rest:20},{e:"Burpees",s:3,work:30,rest:30},{e:"Mountain climbers",s:3,work:35,rest:20},{e:"Sentadilla explosiva",s:2,work:30,rest:25}],
+   ]},
+];
+
+// Pick a random circuit for a group and scale to target minutes
+function pickExpressCircuit(groupId, targetMins){
+  const g=EXPRESS_GROUPS.find(x=>x.id===groupId);
+  if(!g) return null;
+  // Pick random circuit
+  const circuit=g.circuits[Math.floor(Math.random()*g.circuits.length)];
+  // Calculate natural duration
+  const naturalSecs=circuit.reduce((sum,ex)=>sum+ex.s*(ex.work+ex.rest),0);
+  const naturalMins=naturalSecs/60;
+  // Scale sets to fit targetMins (±20%)
+  const ratio=targetMins/naturalMins;
+  return circuit.map(ex=>({
+    ...ex,
+    s:Math.max(1,Math.round(ex.s*ratio)),
+    id:'exp_'+ex.e.toLowerCase().replace(/\s+/g,'_'),
+    isExpress:true,
+  }));
+}
+
+
 // isPro: reads from localStorage, Supabase subscription status checked server-side
 function isPro(){
   try{ return localStorage.getItem('fv8_pro')==='1'; }catch{ return false; }
@@ -2978,14 +3062,28 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                       <div style={{display:"flex",alignItems:"center",fontFamily:mono,fontSize:10,color:s.done?C2.green:C2.tx3,letterSpacing:1}}>
                         {String(si+1).padStart(2,'0')}
                       </div>
-                      {/* KG */}
+                      {/* KG — express shows TRABAJO timer */}
+                      {ex.isExpress?(
+                        <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+                          gap:1,borderLeft:"1px solid rgba(82,90,110,.2)",padding:"4px 0"}}>
+                          <div style={{fontSize:18,fontWeight:800,color:s.done?"#3fcf8e":C2.tx,letterSpacing:-.5,lineHeight:1}}>{ex.work}s</div>
+                          <div style={{fontFamily:mono,fontSize:6,color:C2.tx3,letterSpacing:1}}>TRABAJO</div>
+                        </div>
+                      ):(
                       <div onClick={()=>openNp(ei,si,'kg')} style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:1,cursor:"pointer",borderLeft:"1px solid rgba(82,90,110,.2)",padding:"4px 0",position:"relative"}}>
                         {suggest&&<span style={{position:"absolute",top:4,right:4,fontFamily:mono,fontSize:7,color:suggestColor,opacity:.7}}>{suggest}</span>}
                         <div style={{fontSize:20,fontWeight:800,color:s.done?"#3fcf8e":C2.tx,letterSpacing:-.5,lineHeight:1}}>{s.kg||"—"}</div>
                         <div style={{fontFamily:mono,fontSize:7,color:C2.tx3,letterSpacing:1.5}}>KG</div>
                       </div>
-                      {/* REPS — locked for celebrity challenges */}
-                      {profile?.mode==="celebrity"?(
+                      )}
+                      {/* REPS — express shows DESCANSO timer */}
+                      {ex.isExpress?(
+                        <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+                          gap:1,borderLeft:"1px solid rgba(82,90,110,.2)",padding:"4px 0"}}>
+                          <div style={{fontSize:18,fontWeight:800,color:s.done?"#3fcf8e":"rgba(240,242,245,.5)",letterSpacing:-.5,lineHeight:1}}>{ex.rest}s</div>
+                          <div style={{fontFamily:mono,fontSize:6,color:C2.tx3,letterSpacing:1}}>DESCANSO</div>
+                        </div>
+                      ):profile?.mode==="celebrity"?(
                         <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:1,borderLeft:"1px solid rgba(82,90,110,.2)",padding:"4px 0",cursor:"default"}}>
                           <div style={{fontSize:14,fontWeight:900,color:s.done?C2.green:"rgba(240,242,245,.4)",letterSpacing:-.5,lineHeight:1}}>{repTarget(exs[ei].r)||"—"}</div>
                           <div style={{fontFamily:mono,fontSize:7,color:"rgba(240,168,24,.5)",letterSpacing:1.5}}>{(L[lang]||L.en).reps} 🔒</div>
@@ -3412,6 +3510,10 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   const[macros,setMacros]=useState({});
   const[inWorkout,setInWorkout]=useState(false);
   const[showProModal,setShowProModal]=useState(false);
+  const[showExpress,setShowExpress]=useState(false);
+  const[expressGroup,setExpressGroup]=useState(null);
+  const[expressTime,setExpressTime]=useState(15);
+  const[expressDay,setExpressDay]=useState(null);
   const[addEx,setAddEx]=useState(false);
   const[nex,setNex]=useState({e:"",s:3,r:"8-12"});
   const[addF,setAddF]=useState(false);
@@ -3702,8 +3804,26 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   );
 
   if(inWorkout&&day&&day.ex&&day.ex.length){
-    return <WorkoutScreen day={day} sel={sel} done={done} logs={logs}
-      onToggle={toggle} onSaveLog={saveLog} t={t} lang={lang} profile={profile} onBack={()=>{setInWorkout(false);window.__tourBackFromWorkout=null;}} tourStep={tourStep} setTourStep={setTourStep} acwr={acwr}/>;
+    // Express mode: use expressDay instead of scheduled day
+    const activeDay=expressDay||day;
+    return <WorkoutScreen day={activeDay} sel={sel} done={done} logs={logs}
+      onToggle={toggle} onSaveLog={(id,entry)=>{
+        saveLog(id,entry);
+        // Express: update heatmap for zones
+        if(expressDay&&expressDay.expressZones&&expressDay.expressZones.length){
+          const now=Date.now();
+          const newMxp={...JSON.parse(localStorage.getItem('fv8_mxp')||'{}')};
+          expressDay.expressZones.forEach(zk=>{
+            if(!newMxp[zk])newMxp[zk]={xp:0,level:1};
+            newMxp[zk].lastTrain=new Date().toISOString().slice(0,10);
+            newMxp[zk].xp=(newMxp[zk].xp||0)+15;
+          });
+          try{localStorage.setItem('fv8_mxp',JSON.stringify(newMxp));}catch(_){}
+        }
+      }}
+      t={t} lang={lang} profile={profile}
+      onBack={()=>{setInWorkout(false);setExpressDay(null);window.__tourBackFromWorkout=null;}}
+      tourStep={tourStep} setTourStep={setTourStep} acwr={acwr}/>;
   }
 
   // PRO Modal — triggered by forja:showPro event
@@ -3752,6 +3872,14 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
       <div style={{background:"rgba(8,10,14,0.92)",backdropFilter:"blur(24px)",WebkitBackdropFilter:"blur(24px)",borderBottom:"1px solid rgba(255,255,255,0.06)",padding:"14px 18px 10px",position:"sticky",top:0,zIndex:10}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
           <div>
+            {day?.isExpress&&(
+              <div style={{display:"inline-flex",alignItems:"center",gap:5,
+                background:"rgba(63,207,142,0.12)",border:"1px solid rgba(63,207,142,0.3)",
+                borderRadius:20,padding:"3px 10px",marginBottom:6,
+                fontFamily:mono,fontSize:8,color:"#3fcf8e",letterSpacing:2}}>
+                ⚡ EXPRESS
+              </div>
+            )}
             <div style={{fontSize:10,fontFamily:mono,color:"rgba(255,255,255,.6)",letterSpacing:5,marginBottom:4,fontWeight:700}}>FORJA</div>
             <div style={{fontSize:26,fontWeight:900,letterSpacing:-1.2,lineHeight:.9}}>{day?translateDayLabel(day.l,lang):t.rest}</div>
             <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:1.5,marginTop:2}}>{DF[lang][sel].toUpperCase()} {day?`. ${day.ex.length} ${lang==="es"||lang==="pt"?"ejercicios":lang==="fr"?"exercices":lang==="it"?"esercizi":lang==="de"?"Übungen":"exercises"}`:""}
@@ -4020,6 +4148,21 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                     ▶ {t.startWorkout}
                   </div>
                 </div>
+
+                {/* ⚡ EXPRESS — solo cuando hay rutina asignada */}
+                {day&&day.ex&&day.ex.length>0&&(
+                  <div style={{textAlign:"center",marginTop:10,marginBottom:2}}>
+                    <button onClick={()=>{setExpressGroup(null);setExpressTime(15);setShowExpress(true);}}
+                      style={{background:"transparent",border:"1px solid rgba(255,255,255,0.15)",
+                        borderRadius:20,padding:"6px 18px",cursor:"pointer",
+                        fontFamily:mono,fontSize:9,color:"rgba(255,255,255,0.45)",letterSpacing:2,
+                        display:"inline-flex",alignItems:"center",gap:6,transition:"all .2s"}}
+                      onMouseEnter={e=>e.target.style.borderColor="rgba(255,255,255,0.3)"}
+                      onMouseLeave={e=>e.target.style.borderColor="rgba(255,255,255,0.15)"}>
+                      ⚡ {lang==="es"||lang==="pt"?"ENTRENO EXPRESS":lang==="it"?"ALLENAMENTO EXPRESS":lang==="de"?"EXPRESS-TRAINING":lang==="fr"?"ENTRAÎNEMENT EXPRESS":"EXPRESS WORKOUT"}
+                    </button>
+                  </div>
+                )}
 
                 {/* -- CARGA SEMANAL (ACWR) -- */}
                 {tab==="train"&&(()=>{
@@ -4522,6 +4665,100 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
         })()}
 
       </div>
+      {/* ⚡ EXPRESS MODAL */}
+      {showExpress&&(
+        <div onClick={()=>setShowExpress(false)} style={{position:"fixed",inset:0,zIndex:9000,
+          background:"rgba(0,0,0,0.85)",display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
+          <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:480,
+            background:"#131720",borderRadius:"24px 24px 0 0",padding:"24px 20px 40px",
+            boxShadow:"0 -8px 40px rgba(0,0,0,0.6)"}}>
+
+            {/* Header */}
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
+              <div>
+                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,letterSpacing:2,color:"#f0f2f5",lineHeight:1}}>
+                  ⚡ {lang==="es"||lang==="pt"?"ENTRENO EXPRESS":lang==="it"?"ALLENAMENTO EXPRESS":lang==="de"?"EXPRESS-TRAINING":lang==="fr"?"ENTRAÎNEMENT EXPRESS":"EXPRESS WORKOUT"}
+                </div>
+                <div style={{fontFamily:mono,fontSize:8,color:"rgba(255,255,255,0.35)",letterSpacing:2,marginTop:4}}>
+                  {lang==="es"||lang==="pt"?"BODYWEIGHT · SIN EQUIPO":lang==="it"?"SOLO PESO CORPOREO":lang==="de"?"NUR KÖRPERGEWICHT":lang==="fr"?"POIDS DU CORPS UNIQUEMENT":"BODYWEIGHT · NO EQUIPMENT"}
+                </div>
+              </div>
+              <button onClick={()=>setShowExpress(false)} style={{background:"none",border:"none",
+                color:"rgba(255,255,255,0.4)",fontSize:20,cursor:"pointer",padding:"4px 8px"}}>✕</button>
+            </div>
+
+            {/* Time selector */}
+            <div style={{marginBottom:18}}>
+              <div style={{fontFamily:mono,fontSize:8,color:"rgba(255,255,255,0.35)",letterSpacing:2,marginBottom:10}}>
+                {lang==="es"||lang==="pt"?"¿CUÁNTO TIEMPO TIENES?":lang==="it"?"QUANTO TEMPO HAI?":lang==="de"?"WIEVIEL ZEIT HAST DU?":lang==="fr"?"COMBIEN DE TEMPS AS-TU?":"HOW MUCH TIME DO YOU HAVE?"}
+              </div>
+              <div style={{display:"flex",gap:8}}>
+                {[10,15,20].map(mins=>(
+                  <button key={mins} onClick={()=>setExpressTime(mins)}
+                    style={{flex:1,padding:"12px 0",borderRadius:12,border:"none",cursor:"pointer",
+                      background:expressTime===mins?"rgba(63,207,142,0.2)":"rgba(255,255,255,0.06)",
+                      color:expressTime===mins?"#3fcf8e":"rgba(255,255,255,0.5)",
+                      fontFamily:"'Bebas Neue',cursive",fontSize:22,letterSpacing:1,
+                      boxShadow:expressTime===mins?"0 0 0 1.5px #3fcf8e44":"none",
+                      transition:"all .2s"}}>
+                    {mins}<span style={{fontSize:11,opacity:.7}}>min</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Group selector */}
+            <div style={{marginBottom:22}}>
+              <div style={{fontFamily:mono,fontSize:8,color:"rgba(255,255,255,0.35)",letterSpacing:2,marginBottom:10}}>
+                {lang==="es"||lang==="pt"?"ZONA MUSCULAR":lang==="it"?"ZONA MUSCOLARE":lang==="de"?"MUSKELGRUPPE":lang==="fr"?"GROUPE MUSCULAIRE":"MUSCLE GROUP"}
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                {EXPRESS_GROUPS.map(g=>(
+                  <button key={g.id} onClick={()=>setExpressGroup(expressGroup===g.id?null:g.id)}
+                    style={{padding:"12px 10px",borderRadius:12,border:"none",cursor:"pointer",
+                      textAlign:"left",
+                      background:expressGroup===g.id?"rgba(63,207,142,0.15)":"rgba(255,255,255,0.05)",
+                      boxShadow:expressGroup===g.id?"0 0 0 1.5px #3fcf8e55":"none",
+                      transition:"all .2s"}}>
+                    <div style={{fontSize:18,marginBottom:3}}>{g.icon}</div>
+                    <div style={{fontFamily:mono,fontSize:8,
+                      color:expressGroup===g.id?"#3fcf8e":"rgba(255,255,255,0.55)",
+                      letterSpacing:1,lineHeight:1.3}}>{g.label[lang]||g.label.es}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Start button */}
+            <button
+              disabled={!expressGroup}
+              onClick={()=>{
+                if(!expressGroup) return;
+                const circuit=pickExpressCircuit(expressGroup,expressTime);
+                if(!circuit) return;
+                const g=EXPRESS_GROUPS.find(x=>x.id===expressGroup);
+                const expressDay={
+                  l:(g.label[lang]||g.label.es)+' · '+expressTime+'min',
+                  ex:circuit,
+                  isExpress:true,
+                  expressZones:g.zones,
+                };
+                setExpressDay(expressDay);
+                setShowExpress(false);
+                setInWorkout(true);
+              }}
+              style={{width:"100%",padding:"16px",borderRadius:14,border:"none",
+                cursor:expressGroup?"pointer":"not-allowed",
+                background:expressGroup?"#3fcf8e":"rgba(255,255,255,0.08)",
+                color:expressGroup?"#080a0e":"rgba(255,255,255,0.25)",
+                fontFamily:mono,fontSize:11,fontWeight:700,letterSpacing:2,
+                transition:"all .2s"}}>
+              {lang==="es"||lang==="pt"?"EMPEZAR ⚡":lang==="it"?"INIZIA ⚡":lang==="de"?"STARTEN ⚡":lang==="fr"?"COMMENCER ⚡":"START ⚡"}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── TOUR OVERLAY ─────────────────────────────────────── */}
       {/* ── MAIN TOUR ─────────────────────────────── */}
       {(tourAskVisible||(tourStep!==null&&tourStep!==-1&&(tourStep<4||tourStep>7)))&&(()=>{
