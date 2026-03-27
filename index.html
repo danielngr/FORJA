@@ -2124,8 +2124,8 @@ const VID={
   "elevación de piernas":                      BASE+"hanging-knee-raises.mp4",
   "elevación de rodillas colgado":             BASE+"hanging-knee-raises.mp4",
   "elevación piernas colgado":                 BASE+"hanging-knee-raises.mp4",
-  "crunch":                                    BASE+"machine-crunch.mp4",
-  "abdominal":                                 BASE+"machine-crunch.mp4",
+  "crunch":                                    BASE+"crunch.mp4",
+  "abdominal":                                 BASE+"crunch.mp4",
   "mountain climber":                          BASE+"mountain-climber.mp4",
   "mountain climbers":                         BASE+"mountain-climber.mp4",
   "press cerrado":                  BASE+"barbell-close-grip-bench-press.mp4",
@@ -2157,6 +2157,67 @@ const VID={
   "crunch bicicleta":                          BASE+"crunch.mp4",
   "burpees":                                   BASE+"burpee.mp4",
   "saltos de tijera":                          BASE+"jumping-jacks.mp4",
+  "hack squat":                                BASE+"hack-squat.mp4",
+  "sentadilla hack":                           BASE+"hack-squat.mp4",
+  "pantorrilla sentado":                       BASE+"seated-calf-raise.mp4",
+  "gemelos sentado":                           BASE+"seated-calf-raise.mp4",
+  "elevación de piernas suelo":                BASE+"floor-leg-raise.mp4",
+  "kettlebell swing":                          BASE+"kettlebell-swing.mp4",
+  "kettlebell swings":                         BASE+"kettlebell-swing.mp4",
+  "heel touch":                                BASE+"heel-touch.mp4",
+  "lateral raise":                             BASE+"lateral-raise.mp4",
+  "elevaciones laterales":                     BASE+"lateral-raise.mp4",
+  "laterales mancuerna":                       BASE+"lateral-raise.mp4",
+  "power clean":                               BASE+"power-clean.mp4",
+  "power cleans":                              BASE+"power-clean.mp4",
+  "walking lunge":                             BASE+"walking-lunge.mp4",
+  "zancadas caminando":                        BASE+"walking-lunge.mp4",
+  "barbell lunge":                             BASE+"walking-lunge.mp4",
+  "jumping lunges":                            BASE+"walking-lunge.mp4",
+  "zancadas con salto":                        BASE+"walking-lunge.mp4",
+  "external rotation":                         BASE+"external-rotation.mp4",
+  "rotaciones externas con banda":             BASE+"external-rotation.mp4",
+  "overhead tricep extension":                 BASE+"overhead-tricep-extension.mp4",
+  "tríceps por encima":                        BASE+"overhead-tricep-extension.mp4",
+  "tríceps mancuerna":                         BASE+"overhead-tricep-extension.mp4",
+  "extensión tríceps":                         BASE+"overhead-tricep-extension.mp4",
+  "extensión tríceps mancuerna":               BASE+"overhead-tricep-extension.mp4",
+  "hip abductor":                              BASE+"hip-abductor.mp4",
+  "abductores":                                BASE+"hip-abductor.mp4",
+  "deadlift":                                  BASE+"deadlift.mp4",
+  "peso muerto":                               BASE+"deadlift.mp4",
+  "peso muerto rumano":                        BASE+"deadlift.mp4",
+  "peso muerto piernas rectas":                BASE+"deadlift.mp4",
+  "peso muerto 1 pierna":                      BASE+"deadlift.mp4",
+  "tricep pushdown":                           BASE+"tricep-pushdown.mp4",
+  "tríceps polea":                             BASE+"tricep-pushdown.mp4",
+  "jalón tríceps polea":                       BASE+"tricep-pushdown.mp4",
+  "jalón tríceps":                             BASE+"tricep-pushdown.mp4",
+  "press declinado":                           BASE+"decline-bench-press.mp4",
+  "decline bench press":                       BASE+"decline-bench-press.mp4",
+  "curl inverso":                              BASE+"reverse-curl.mp4",
+  "reverse curl":                              BASE+"reverse-curl.mp4",
+  "curl femoral":                              BASE+"leg-curl.mp4",
+  "curl femoral tumbado":                      BASE+"leg-curl.mp4",
+  "curl femoral sentado":                      BASE+"leg-curl.mp4",
+  "curl femoral unilateral":                   BASE+"leg-curl.mp4",
+  "leg curl":                                  BASE+"leg-curl.mp4",
+  "farmer walk":                               BASE+"farmer-walk.mp4",
+  "farmers walk":                              BASE+"farmer-walk.mp4",
+  "curl inverso barra":                        BASE+"reverse-curl.mp4",
+  "press banca agarre cerrado":                BASE+"barbell-close-grip-bench-press.mp4",
+  "press hombro mancuerna":                    BASE+"dumbbell-seated-overhead-press.mp4",
+  "pullover":                                  BASE+"barbell-pullover.mp4",
+  "remo sentado":                              BASE+"machine-neutral-row.mp4",
+  "sentadilla con pausa":                      BASE+"barbell-squat.mp4",
+  "sentadillas peso corporal":                 BASE+"bodyweight-squat.mp4",
+  "step up con mancuerna":                     BASE+"box-jump.mp4",
+  "zancada con mancuerna":                     BASE+"walking-lunge.mp4",
+  "zancadas con barra":                        BASE+"walking-lunge.mp4",
+  "zancadas peso corporal":                    BASE+"dumbbell-lunge.mp4",
+  "flexiones pike":                            BASE+"decline-push-up.mp4",
+  "arm haulers":                               BASE+"supermans.mp4",
+  "jumping jacks":                             BASE+"jumping-jacks.mp4",
 };
 const getVid=name=>{
   if(!name) return null;
@@ -2423,7 +2484,6 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
     const confettiColors=["#3fcf8e","#6a8fc0","#f0b429","#8878c0","#F0F2F5","#e05555"];
     return(
       <div style={{position:"fixed",inset:0,background:"#080a0e",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:"sans-serif",overflow:"hidden"}}>
-        
         <div style={{position:"absolute",inset:0,pointerEvents:"none",overflow:"hidden"}}>
           {confettiPieces.map((p,i)=>(
             <div key={i} style={{
@@ -2470,7 +2530,6 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
   const sans="-apple-system,'SF Pro Display','Helvetica Neue',Arial,sans-serif";
   return(
     <div style={{position:"fixed",inset:0,background:C2.bg,display:"flex",flexDirection:"column",fontFamily:sans,overflow:"hidden"}}>
-      
       {restActive&&(
         <div style={{
           position:"fixed",inset:0,zIndex:200,
@@ -2478,13 +2537,11 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
           display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
           animation:"fogIn .2s ease",
         }}>
-          
           {restCtx&&(
             <div style={{fontFamily:mono,fontSize:9,color:C2.tx3,letterSpacing:3,textTransform:"uppercase",marginBottom:20}}>
               {sets[restCtx.ei]&&exs[restCtx.ei]?.e} — {lang==="es"||lang==="pt"?"SERIE":lang==="fr"?"SÉRIE":lang==="it"?"SERIE":lang==="de"?"SATZ":"SET"} {restCtx.si+1}
             </div>
           )}
-          
           <div style={{position:"relative",width:220,height:220,marginBottom:32}}>
             <svg viewBox="0 0 220 220" width="220" height="220" style={{position:"absolute",inset:0,transform:"rotate(-90deg)"}}>
               <circle cx="110" cy="110" r="95" fill="none" stroke="rgba(82,90,110,.2)" strokeWidth="6"/>
@@ -2511,7 +2568,6 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
               </div>
             </div>
           </div>
-          
           <div style={{display:"flex",gap:8,marginBottom:32}}>
             {[30,60,90,120,180].map(s=>(
               <button key={s} onClick={()=>{setRestDur(s);setRestSecs(s);}} style={{
@@ -2522,7 +2578,6 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
               }}>{s<60?s+"s":s/60+"m"}</button>
             ))}
           </div>
-          
           <div style={{display:"flex",gap:12}}>
             <button onClick={()=>{setRestSecs(r=>Math.min(r+15,restDur));}} style={{
               padding:"12px 20px",borderRadius:12,border:"1px solid rgba(82,90,110,.4)",
@@ -2546,7 +2601,6 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
             {doneSets}/{totalSets} {(L[lang]||L.en).sets.toLowerCase()}
           </div>
         </div>
-        
         <div style={{position:"relative",width:44,height:44,cursor:"pointer",flexShrink:0}} onClick={()=>setArcPopOpen(p=>!p)}>
           <svg viewBox="0 0 44 44" width="44" height="44" style={{position:"absolute",inset:0,transform:"rotate(-90deg)"}}>
             <circle cx="22" cy="22" r="18" fill="none" stroke="rgba(82,90,110,.3)" strokeWidth="2.5"/>
@@ -2560,7 +2614,6 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
           </div>
         </div>
       </div>
-      
       {arcPopOpen&&(
         <div style={{position:"fixed",top:56,right:14,background:C2.bgD,border:`1px solid ${C2.borderL}`,borderRadius:10,padding:8,zIndex:80,animation:"fu .15s ease both"}}>
           <div style={{fontFamily:mono,fontSize:7,color:C2.tx3,letterSpacing:2,padding:"2px 14px 6px",borderBottom:`1px solid rgba(82,90,110,.3)`,marginBottom:4}}>
@@ -2580,15 +2633,12 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
           </button>}
         </div>
       )}
-      
       <div style={{height:2,background:"transparent",flexShrink:0}}>
         <div style={{height:"100%",width:restActive?(restSecs/restDur*100)+"%" : "0%",
           background:restSecs<=10?C2.red:restSecs<=30?C2.yellow:C2.blue,
           transition:"width 1s linear, background .5s"}}/>
       </div>
-      
       <div style={{flex:1,overflowY:"auto",overflowX:"hidden",paddingBottom:100}} id="workout-scroll">
-        
         {acwr.ratio>=1.5&&(
           <div style={{margin:"12px 16px 0",padding:"10px 14px",borderRadius:10,
             background:"rgba(232,48,32,0.10)",border:"1.5px solid rgba(232,48,32,0.40)",
@@ -2612,7 +2662,6 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
             </div>
           </div>
         )}
-        
         {day?.circuit&&(
           <div style={{margin:"12px 16px 0",padding:"12px 14px",background:"rgba(240,168,24,0.08)",
             border:"1px solid rgba(240,168,24,0.25)",borderRadius:12}}>
@@ -2658,7 +2707,6 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                   <div style={{flex:1,height:1,background:"rgba(82,90,110,.3)"}}/>
                 </div>
               )}
-              
               {expandedEx===ei&&(()=>{
                 const hist=(strengthData[ex.id]||[]).slice(0,10).reverse();
                 const hasHist=hist.length>0;
@@ -2670,7 +2718,6 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                 const pct=oldest&&newest&&oldest.rm>0?Math.round(((newest.rm-oldest.rm)/oldest.rm)*100):null;
                 return(
                   <div style={{margin:"8px 0 4px",padding:"14px 16px",background:"rgba(255,255,255,0.03)",borderRadius:12,border:"1px solid rgba(255,255,255,0.07)"}}>
-                    
                     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:hasHist?10:6}}>
                       <div style={{display:"flex",alignItems:"center",gap:6}}>
                         <span style={{fontFamily:mono,fontSize:9,color:C2.tx3,letterSpacing:2}}>// {lang==="es"||lang==="pt"?"PROGRESIÓN DE FUERZA":lang==="fr"?"PROGRESSION FORCE":lang==="it"?"PROGRESSIONE FORZA":lang==="de"?"KRAFTFORTSCHRITT":"STRENGTH CURVE"}</span>
@@ -2680,7 +2727,6 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                         {pct>=0?"+":""}{pct}% <span style={{fontSize:9,color:C2.tx3,fontWeight:400}}>{lang==="es"||lang==="pt"?"(últ.sesiones)":lang==="fr"?"(récent)":lang==="it"?"(recente)":lang==="de"?"(kürzlich)":"(recent)"}</span>
                       </span>}
                     </div>
-                    
                     <div id={"sc-help-"+ex.id} style={{display:"none",marginBottom:10,padding:"8px 10px",background:"rgba(255,255,255,0.04)",borderRadius:8,borderLeft:"2px solid #e8a020",fontFamily:mono,fontSize:9,color:C2.tx2,letterSpacing:1,lineHeight:1.7}}>
                       {lang==="es"
                         ?"1RM estimado con la fórmula de Epley basado en tus mejores sets. Muestra tu evolución de fuerza en este ejercicio."
@@ -2688,12 +2734,9 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                     </div>
                     {hasHist?(
                       <>
-                        
                         <svg width="100%" viewBox={`0 0 ${W} ${H+pad*2}`} style={{overflow:"visible",marginBottom:4}}>
-                          
                           <line x1={pad} y1={pad} x2={W-pad} y2={pad} stroke="rgba(255,255,255,0.05)" strokeWidth="1"/>
                           <line x1={pad} y1={H/2+pad} x2={W-pad} y2={H/2+pad} stroke="rgba(255,255,255,0.05)" strokeWidth="1"/>
-                          
                           {hist.length>1&&(()=>{
                             const pts=hist.map((h,i)=>{
                               const x=pad+(i/(hist.length-1))*(W-pad*2);
@@ -2704,7 +2747,6 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                             return<path d={`M${pts[0]} L${pts.join(" L")} L${last[0]},${H+pad} L${first[0]},${H+pad} Z`}
                               fill="rgba(191,169,138,0.08)" stroke="none"/>;
                           })()}
-                          
                           {hist.length>1&&<polyline
                             points={hist.map((h,i)=>{
                               const x=pad+(i/(hist.length-1))*(W-pad*2);
@@ -2712,7 +2754,6 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                               return`${x},${y}`;
                             }).join(" ")}
                             fill="none" stroke="#BFA98A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>}
-                          
                           {hist.map((h,i)=>{
                             const x=pad+(hist.length>1?(i/(hist.length-1))*(W-pad*2):W/2);
                             const y=pad+H-((h.rm-minRM)/range)*H;
@@ -2722,7 +2763,6 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                             </g>;
                           })}
                         </svg>
-                        
                         <div style={{display:"flex",justifyContent:"space-between"}}>
                           <div>
                             <div style={{fontFamily:mono,fontSize:8,color:C2.tx3,letterSpacing:1}}>{lang==="es"||lang==="pt"?"MÁX HISTÓRICO":lang==="fr"?"RECORD":lang==="it"?"MASSIMO":lang==="de"?"BESTLEISTUNG":"ALL-TIME BEST"}</div>
@@ -2742,7 +2782,6 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                   </div>
                 );
               })()}
-              
               <div id={`vid-${ei}`} data-tour={ei===0?"ws-video":undefined} style={{width:"100%",height:220,background:C2.bgD,position:"relative",overflow:"hidden",flexShrink:0}}>
                 {vidUrl
                   ?<video autoPlay loop muted playsInline src={vidUrl}
@@ -2755,7 +2794,6 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                     <div style={{fontSize:48,color:C2.tx2}}>◎</div>
                   </div>
                 }
-                
                 <div style={{position:"absolute",inset:0,background:`linear-gradient(90deg,transparent 0%,rgba(255,255,255,.04) 50%,transparent 100%)`,animation:"shimmer 1.5s ease infinite",pointerEvents:"none",opacity:vidUrl?1:0}}/>
                 <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom,transparent 45%,rgba(44,48,64,.85) 100%)",pointerEvents:"none"}}/>
                 <div style={{position:"absolute",top:12,left:16,fontFamily:mono,fontSize:9,color:"rgba(255,255,255,.65)",letterSpacing:2}}>FORJA</div>
@@ -2763,7 +2801,6 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                   {ex.e.toUpperCase()}
                 </div>
               </div>
-              
               <div style={{padding:"14px 20px 0"}}>
                 <div style={{fontFamily:mono,fontSize:9,color:C2.tx3,letterSpacing:2,marginBottom:4}}>
                   {String(ei+1).padStart(2,'0')} / {String(exs.length).padStart(2,'0')}
@@ -2781,7 +2818,6 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                       {ex.e}
                       <span style={{fontSize:11,color:C2.tx3,fontFamily:mono,opacity:0.5}}>{expandedEx===ei?"▲":"▼"}</span>
                     </div>
-                    
                     {EX_META[exMetaKey(ex.e)]&&(
                       <div style={{display:"flex",gap:5,flexWrap:"wrap",marginTop:5}}>
                         {EX_META[exMetaKey(ex.e)].p.map(m=>(
@@ -2794,14 +2830,12 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                     )}
                   </div>
                   <div style={{display:"flex",gap:6,alignItems:"center",flexShrink:0,marginLeft:8}}>
-                    
                     {EX_META[exMetaKey(ex.e)]&&(
                       <button onClick={()=>setTechOpen(techOpen===ei?null:ei)}
                         style={{padding:"4px 8px",borderRadius:7,border:"1px solid rgba(106,143,192,.3)",background:"rgba(106,143,192,.08)",color:C2.blue,fontSize:8,fontFamily:mono,letterSpacing:.5,cursor:"pointer",whiteSpace:"nowrap"}}>
                         {lang==="es"||lang==="pt"?"TÉCNICA":lang==="fr"?"TECHNIQUE":lang==="it"?"TECNICA":lang==="de"?"TECHNIK":"TECHNIQUE"}
                       </button>
                     )}
-                    
                     <button onClick={()=>{setNoteText(notes[ei]||"");setNoteOpen(ei);}}
                       style={{background:"none",border:"none",cursor:"pointer",padding:4,color:notes[ei]?C2.yellow:C2.tx3,opacity:notes[ei]?1:.5,flexShrink:0}}>
                       <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -2810,7 +2844,6 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                     </button>
                   </div>
                 </div>
-                
                 {techOpen===ei&&EX_META[exMetaKey(ex.e)]&&(
                   <div style={{background:C2.bgD,borderRadius:10,padding:12,marginTop:10,animation:"fu .2s ease"}}>
                     <div style={{display:"flex",flexDirection:"column",gap:8}}>
@@ -2839,22 +2872,18 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                     {sets[ei].filter(s=>s.done).length}/{sets[ei].length}
                   </span>}
                 </div>
-                
                 {vol>0&&(
                   <div style={{fontFamily:mono,fontSize:9,color:C2.tx3,letterSpacing:1.5,marginTop:3}}>
                     VOL <span style={{color:C2.blue,fontWeight:400}}>{vol}kg</span>
                   </div>
                 )}
-                
                 {notes[ei]&&(
                   <div style={{fontFamily:mono,fontSize:9,color:C2.yellow,letterSpacing:.5,marginTop:4,opacity:.7,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
                     ✏ {notes[ei]}
                   </div>
                 )}
               </div>
-              
               <div style={{padding:"10px 20px 0"}}>
-                
                 {ex.circuit ? (
                   <div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 0",
                     borderBottom:"1px solid rgba(82,90,110,.2)"}}>
@@ -2879,7 +2908,6 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                     </div>
                   </div>
                 ) : (<>
-                
                 <div style={{display:"grid",gridTemplateColumns:"28px 1fr 1fr 44px",padding:"0 0 5px",borderBottom:"1px solid rgba(82,90,110,.4)"}}>
                   {[(lang==="es"||lang==="pt"?"SER":lang==="fr"?"SÉR":lang==="it"?"SER":lang==="de"?"STZ":"SET"),lang==="de"?"GEW":"KG",(L[lang]||L.en).reps,"✓"].map((h,i)=>(
                     <span key={i} style={{fontFamily:mono,fontSize:7,color:"rgba(255,255,255,.55)",letterSpacing:3,textAlign:i===0?"left":"center",textTransform:"uppercase"}}>{h}</span>
@@ -2900,7 +2928,6 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                       <div style={{display:"flex",alignItems:"center",fontFamily:mono,fontSize:10,color:s.done?C2.green:C2.tx3,letterSpacing:1}}>
                         {String(si+1).padStart(2,'0')}
                       </div>
-                      
                       {ex.isExpress?(
                         <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
                           gap:1,borderLeft:"1px solid rgba(82,90,110,.2)",padding:"4px 0"}}>
@@ -2914,7 +2941,6 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                         <div style={{fontFamily:mono,fontSize:7,color:C2.tx3,letterSpacing:1.5}}>KG</div>
                       </div>
                       )}
-                      
                       {ex.isExpress?(
                         <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
                           gap:1,borderLeft:"1px solid rgba(82,90,110,.2)",padding:"4px 0"}}>
@@ -2932,7 +2958,6 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                           <div style={{fontFamily:mono,fontSize:7,color:C2.tx3,letterSpacing:1.5}}>{(L[lang]||L.en).reps}</div>
                         </div>
                       )}
-                      
                       <div data-tour={ei===0&&si===0?"ws-check":undefined} onClick={()=>toggleDone(ei,si)} style={{display:"flex",alignItems:"center",justifyContent:"center",borderLeft:"1px solid rgba(82,90,110,.2)",cursor:"pointer"}}>
                         <div id={`chkring-${ei}-${si}`} style={{width:26,height:26,borderRadius:"50%",border:`1.5px solid ${s.done?"rgba(63,207,142,.8)":"rgba(255,255,255,.08)"}`,background:s.done?"rgba(63,207,142,.15)":"transparent",display:"flex",alignItems:"center",justifyContent:"center",transition:"all .18s"}}>
                           {s.done&&<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6.5L5 9.5L10 3" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
@@ -2958,11 +2983,9 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
           );
         })}
       </div>
-      
       <div style={{height:1,background:"rgba(255,255,255,.04)",flexShrink:0}}>
         <div style={{height:"100%",width:`${totalSets>0?doneSets/totalSets*100:0}%`,background:C2.tx,transition:"width .5s ease"}}/>
       </div>
-      
       {restActive&&(
         <div style={{position:"fixed",bottom:0,left:0,right:0,maxWidth:430,margin:"0 auto",
           display:"flex",alignItems:"center",justifyContent:"space-between",
@@ -2985,7 +3008,6 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
           </button>
         </div>
       )}
-      
       {npOpen&&(
         <div style={{position:"fixed",inset:0,zIndex:100,background:"rgba(0,0,0,.5)",backdropFilter:"blur(4px)",display:"flex",flexDirection:"column",justifyContent:"flex-end",maxWidth:430,margin:"0 auto"}}
           onClick={e=>{if(e.target===e.currentTarget)npOk();}}>
@@ -2995,7 +3017,6 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
               <div style={{fontSize:34,fontWeight:900,color:C2.tx,letterSpacing:-2}}>{npVal}</div>
               <button onClick={npOk} style={{background:C2.tx,color:C2.bgD,border:"none",borderRadius:10,padding:"8px 20px",fontFamily:mono,fontSize:10,fontWeight:700,letterSpacing:1,cursor:"pointer"}}>OK</button>
             </div>
-            
             <div style={{display:"flex",gap:6,padding:"10px 16px",borderBottom:`1px solid rgba(82,90,110,.25)`}}>
               {(npOpen.field==='kg'?[[-5,"-5"],[-2.5,"-2.5"],[2.5,"+2.5"],[5,"+5"]]:[[-2,"-2"],[-1,"-1"],[1,"+1"],[2,"+2"]]).map(([d,label])=>(
                 <button key={label} onClick={()=>npAdj(d)}
@@ -3004,7 +3025,6 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                 </button>
               ))}
             </div>
-            
             <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:1,background:`rgba(82,90,110,.3)`}}>
               {['1','2','3','4','5','6','7','8','9',npOpen.field==='kg'?'.':'','0','⌫'].map((k,i)=>(
                 <button key={i} onClick={()=>k&&npKey(k)}
@@ -3016,7 +3036,6 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
           </div>
         </div>
       )}
-      
       {noteOpen!==null&&(
         <div style={{position:"fixed",inset:0,zIndex:110,background:"rgba(0,0,0,.55)",backdropFilter:"blur(4px)",display:"flex",flexDirection:"column",justifyContent:"flex-end",maxWidth:430,margin:"0 auto"}}
           onClick={e=>{if(e.target===e.currentTarget){setNotes({...notes,[noteOpen]:noteText});setNoteOpen(null);}}}>
@@ -3040,9 +3059,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
           </div>
         </div>
       )}
-      
       {arcPopOpen&&<div style={{position:"fixed",inset:0,zIndex:79}} onClick={()=>setArcPopOpen(false)}/>}
-      
       {wsTourStep!==null&&wsTourStep!==-1&&wsReady&&(wsScrollV>=0)&&(()=>{
         const M_="'SF Mono','Fira Code',monospace";
         const S_="'DM Sans',sans-serif";
@@ -3109,7 +3126,6 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                 borderRadius:14,pointerEvents:"none",
                 border:"2.5px solid rgba(191,169,138,1)",
                 boxShadow:"0 0 0 1px rgba(191,169,138,0.2),0 0 24px rgba(191,169,138,0.45)"}}/>
-              
               {step.id!=="mannequin"&&<div style={{position:"fixed",
                 top:bounds.top-pad,left:bounds.left-pad,
                 width:bounds.width+pad*2,height:bounds.height+pad*2,
@@ -3691,7 +3707,6 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
             {!isUserAnonymous()&&<button onClick={doSignOut} style={{padding:"7px 12px",borderRadius:7,border:`1.5px solid ${C.borderL}`,background:C.card,color:"rgba(95,210,136,.7)",fontSize:10,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>✓ {getUserEmail()?.split('@')[0]||"Google"}</button>}
           </div>
         )}
-        
         {(()=>{
           const now = new Date();
           const dow = now.getDay(); // 0=Sun
@@ -3838,7 +3853,6 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
               </div>
             ):(
               <>
-                
                 <div style={{
                   width:"100%",borderRadius:22,background:"linear-gradient(135deg,#1A2540 0%,#0D1520 100%)",cursor:"default",
                   marginBottom:16,padding:"26px 22px 22px",
@@ -3899,7 +3913,6 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                     </div>
                   </div>
                 </div>
-                
                 <div id="forja-dumbbell-wrap" data-tour="start-workout" style={{width:"100%",height:260,marginTop:16,borderRadius:16,overflow:"hidden",position:"relative",background:C.bg,cursor:"pointer"}}
                   onClick={()=>{if(day&&day.ex&&day.ex.length)setInWorkout(true);}}
                 >
@@ -3914,7 +3927,6 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                     ▶ {t.startWorkout}
                   </div>
                 </div>
-                
                 {day&&day.ex&&day.ex.length>0&&(
                   <div style={{textAlign:"center",marginTop:10,marginBottom:2}}>
                     <button onClick={()=>{setExpressGroup(null);setExpressTime(15);setShowExpress(true);}}
@@ -3928,7 +3940,6 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                     </button>
                   </div>
                 )}
-                
                 {tab==="train"&&(()=>{
                   const{acute,chronic,ratio}=acwr;
                   const hasData=(acute>=50||chronic>=50); // require meaningful training load (≥50kg)
@@ -3945,7 +3956,6 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                   const barW=ratio>0?Math.min(100,Math.round((ratio/2)*100)):0;
                   return(
                     <div data-tour="carga-semanal" style={{marginTop:14,padding:"14px 16px",background:C.card,borderRadius:12,border:`1px solid ${hasData?zoneColor+"44":"rgba(255,255,255,0.06)"}`,marginBottom:4}}>
-                      
                       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:hasData?10:0}}>
                         <div style={{display:"flex",alignItems:"center",gap:6}}>
                           <span style={{fontFamily:mono,fontSize:9,color:C.tx3,letterSpacing:2}}>// {lang==="es"||lang==="pt"?"CARGA SEMANAL":lang==="fr"?"CHARGE HEBDOMADAIRE":lang==="it"?"CARICO SETTIMANALE":lang==="de"?"WOCHENLAST":"WEEKLY LOAD"}</span>
@@ -3956,7 +3966,6 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                           {hasRatio&&<span style={{fontFamily:mono,fontSize:16,fontWeight:700,color:zoneColor}}>{ratio.toFixed(2)}</span>}
                         </div>:null}
                       </div>
-                      
                       <div id="acwr-help" style={{display:"none",marginBottom:10,padding:"10px 12px",background:"rgba(255,255,255,0.04)",borderRadius:8,borderLeft:`2px solid ${zoneColor}`}}>
                         <div style={{fontFamily:mono,fontSize:9,color:C.tx2,letterSpacing:1,lineHeight:1.7}}>
                           {lang==="es"||lang==="pt"
@@ -3977,15 +3986,11 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                       </div>
                       {hasData?(
                         <>
-                          
                           <div style={{height:5,borderRadius:3,background:"rgba(255,255,255,0.06)",overflow:"hidden",marginBottom:8,position:"relative"}}>
-                            
                             {hasRatio&&<div style={{position:"absolute",left:"40%",width:"25%",height:"100%",background:"rgba(45,168,74,0.15)",borderRadius:3}}/>}
                             <div style={{height:"100%",width:`${barW}%`,borderRadius:3,background:`linear-gradient(90deg,${zoneColor}88,${zoneColor})`,transition:"width 0.8s ease"}}/>
-                            
                             <div style={{position:"absolute",left:"75%",top:0,width:1,height:"100%",background:"rgba(232,48,32,0.4)"}}/>
                           </div>
-                          
                           <div style={{display:"flex",justifyContent:"space-between"}}>
                             <div style={{textAlign:"center"}}>
                               <div style={{fontFamily:mono,fontSize:14,fontWeight:700,color:C.tx}}>{acute>=1000?(acute/1000).toFixed(1)+"t":Math.round(acute)+"kg"}</div>
@@ -4009,7 +4014,6 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                     </div>
                   );
                 })()}
-            
                 {(()=>{
                   const zoneToGroup={
                     pecho:lang==="es"||lang==="pt"?"Pecho":lang==="fr"?"Pectoraux":lang==="it"?"Petto":lang==="de"?"Brust":"Chest",
@@ -4318,7 +4322,6 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
         {tab==="body"&&(
           <BodyHeatmapTab logs={logs} routine={routine} lang={lang} muscleXP={muscleXP} xpLevelUps={xpLevelUps} setXpLevelUps={setXpLevelUps} showXPTooltip={showXPTooltip} setShowXPTooltip={setShowXPTooltip} xpAnimZone={xpAnimZone} setXpAnimZone={setXpAnimZone}/>
         )}
-        
         {tab==="body"&&showXPTooltip&&(()=>{
           const zk=showXPTooltip;
           const zd=muscleXP[zk]||muscleXP[zk.replace('_izq','_der')]||{xp:0};
@@ -4346,10 +4349,8 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
               boxShadow:`0 0 0 1px ${lvlC}22,0 12px 40px rgba(0,0,0,0.7),inset 0 1px 0 rgba(255,255,255,0.05)`,
               padding:'16px 18px 14px',
             }}>
-              
               <div style={{position:'absolute',top:-40,right:-40,width:120,height:120,borderRadius:'50%',
                 background:`radial-gradient(circle,${lvlC}28 0%,transparent 70%)`,pointerEvents:'none'}}/>
-              
               <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
                 <div style={{display:'flex',alignItems:'center',gap:8}}>
                   <div style={{width:8,height:8,borderRadius:'50%',background:lvlC,boxShadow:`0 0 8px ${lvlC}`}}/>
@@ -4361,13 +4362,11 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                   {lvl<10&&<span style={{fontFamily:"'SF Mono','Fira Code',monospace",fontSize:8,color:'rgba(255,255,255,0.3)',letterSpacing:1}}> / 10</span>}
                 </div>
               </div>
-              
               <div style={{height:6,borderRadius:3,background:'rgba(255,255,255,0.06)',overflow:'hidden',boxShadow:'inset 0 1px 3px rgba(0,0,0,0.4)',marginBottom:8}}>
                 <div style={{height:'100%',width:`${pct}%`,borderRadius:3,
                   background:`linear-gradient(90deg,${lvlC}aa,${lvlC})`,
                   boxShadow:`0 0 8px ${lvlC}66`,transition:'width 0.6s cubic-bezier(0.34,1.56,0.64,1)'}}/>
               </div>
-              
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
                 <span style={{fontFamily:"'SF Mono','Fira Code',monospace",fontSize:10,color:'rgba(255,255,255,0.5)',letterSpacing:1}}>{xpCur.toLocaleString()} XP</span>
                 {lvl<10
@@ -4379,7 +4378,6 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
             </div>
           );
         })()}
-        
         {tab==="body"&&xpLevelUps&&xpLevelUps.length>0&&(()=>{
           const latest=xpLevelUps[xpLevelUps.length-1];
           const lvlC=xpLevelColor(latest.level);
@@ -4409,14 +4407,12 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
           );
         })()}
       </div>
-      
       {showExpress&&(
         <div onClick={()=>setShowExpress(false)} style={{position:"fixed",inset:0,zIndex:9000,
           background:"rgba(0,0,0,0.85)",display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
           <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:480,
             background:"#131720",borderRadius:"24px 24px 0 0",padding:"24px 20px 40px",
             boxShadow:"0 -8px 40px rgba(0,0,0,0.6)"}}>
-            
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
               <div>
                 <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,letterSpacing:2,color:"#f0f2f5",lineHeight:1}}>
@@ -4429,7 +4425,6 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
               <button onClick={()=>setShowExpress(false)} style={{background:"none",border:"none",
                 color:"rgba(255,255,255,0.4)",fontSize:20,cursor:"pointer",padding:"4px 8px"}}>✕</button>
             </div>
-            
             <div style={{marginBottom:18}}>
               <div style={{fontFamily:mono,fontSize:8,color:"rgba(255,255,255,0.35)",letterSpacing:2,marginBottom:10}}>
                 {lang==="es"||lang==="pt"?"¿CUÁNTO TIEMPO TIENES?":lang==="it"?"QUANTO TEMPO HAI?":lang==="de"?"WIEVIEL ZEIT HAST DU?":lang==="fr"?"COMBIEN DE TEMPS AS-TU?":"HOW MUCH TIME DO YOU HAVE?"}
@@ -4448,7 +4443,6 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                 ))}
               </div>
             </div>
-            
             <div style={{marginBottom:22}}>
               <div style={{fontFamily:mono,fontSize:8,color:"rgba(255,255,255,0.35)",letterSpacing:2,marginBottom:10}}>
                 {lang==="es"||lang==="pt"?"ZONA MUSCULAR":lang==="it"?"ZONA MUSCOLARE":lang==="de"?"MUSKELGRUPPE":lang==="fr"?"GROUPE MUSCULAIRE":"MUSCLE GROUP"}
@@ -4469,7 +4463,6 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                 ))}
               </div>
             </div>
-            
             <button
               disabled={!expressGroup}
               onClick={()=>{
@@ -4498,8 +4491,6 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
           </div>
         </div>
       )}
-      
-      
       {(tourAskVisible||(tourStep!==null&&tourStep!==-1&&(tourStep<4||tourStep>7)))&&(()=>{
         const M_="'SF Mono','Fira Code',monospace";
         const S_="'DM Sans',sans-serif";
@@ -4635,7 +4626,6 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
         };
         return(
           <div style={{position:"fixed",inset:0,zIndex:9000,pointerEvents:"none"}}>
-            
             {bounds?<>
               <div style={{position:"fixed",top:0,left:0,right:0,
                 height:Math.max(0,bounds.top-pad),
@@ -4657,7 +4647,6 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                 borderRadius:14,pointerEvents:"none",
                 border:"2.5px solid rgba(191,169,138,1)",
                 boxShadow:"0 0 0 1px rgba(191,169,138,0.2),0 0 24px rgba(191,169,138,0.45)"}}/>
-              
               {step.id!=="mannequin"&&<div style={{position:"fixed",
                 top:bounds.top-pad,left:bounds.left-pad,
                 width:bounds.width+pad*2,height:bounds.height+pad*2,
@@ -4666,7 +4655,6 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                 onClick={e=>e.stopPropagation()}/>}
             </>:<div style={{position:"absolute",inset:0,
               background:"rgba(0,0,0,0.88)",pointerEvents:"all"}}/>}
-            
             <div style={{
               position:"fixed",left:16,right:16,
               ...(()=>{
@@ -4683,7 +4671,6 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
               boxShadow:"0 20px 48px rgba(0,0,0,0.75)",
               pointerEvents:"all",zIndex:2,
               maxHeight:"50vh",overflow:"hidden"}}>
-              
               <div style={{fontFamily:M_,fontSize:8,color:"rgba(255,255,255,0.3)",
                 letterSpacing:2,marginBottom:8,display:"flex",alignItems:"center",gap:8}}>
                 {tourStep+1} / {TOTAL}
@@ -4694,17 +4681,14 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                     background:"#BFA98A",borderRadius:1,transition:"width 0.3s ease"}}/>
                 </div>
               </div>
-              
               <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:24,letterSpacing:1.5,
                 color:"#EEEAE3",marginBottom:8,lineHeight:1}}>
                 {lang==="fr"?(step.tFR||step.tEN):lang==="it"?(step.tIT||step.tEN):lang==="de"?(step.tDE||step.tEN):lang==="pt"?(step.tES||step.tEN):es?step.tES:step.tEN}
               </div>
-              
               <div style={{fontSize:13,color:"rgba(238,234,227,0.85)",lineHeight:1.65,
                 marginBottom:16,fontFamily:S_}}>
                 {lang==="fr"?(step.xFR||step.xEN):lang==="it"?(step.xIT||step.xEN):lang==="de"?(step.xDE||step.xEN):lang==="pt"?(step.xES||step.xEN):es?step.xES:step.xEN}
               </div>
-              
               <div style={{display:"flex",alignItems:"center",
                 justifyContent:"space-between",gap:12}}>
                 <button onClick={endTour} style={{background:"none",border:"none",
@@ -4813,7 +4797,6 @@ function ExpressTimer({day, lang, profile, onDone, onBack}){
     <div style={{position:'fixed',inset:0,background:'#080a0e',display:'flex',
       flexDirection:'column',color:'#f0f2f5',fontFamily:sans,
       paddingTop:'env(safe-area-inset-top)'}}>
-      
       <div style={{display:'flex',alignItems:'center',gap:12,padding:'16px 20px',
         borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
         <button onClick={onBack} style={{background:'none',border:'none',color:'rgba(255,255,255,.5)',
@@ -4826,7 +4809,6 @@ function ExpressTimer({day, lang, profile, onDone, onBack}){
           </div>
         </div>
       </div>
-      
       <div style={{flex:1,overflowY:'auto',padding:'16px 20px'}}>
         <div style={{fontFamily:mono,fontSize:8,color:'rgba(255,255,255,.3)',letterSpacing:3,marginBottom:12}}>
           {lang==='es'||lang==='pt'?'CIRCUITO':lang==='it'?'CIRCUITO':lang==='de'?'SCHALTKREIS':'CIRCUIT'}
@@ -4861,7 +4843,6 @@ function ExpressTimer({day, lang, profile, onDone, onBack}){
           </div>
         );})}
       </div>
-      
       <div style={{padding:'16px 20px 32px'}}>
         <button onClick={()=>startWork(0)}
           style={{width:'100%',padding:'18px',borderRadius:16,border:'none',
@@ -4886,7 +4867,6 @@ function ExpressTimer({day, lang, profile, onDone, onBack}){
       <div style={{fontFamily:mono,fontSize:9,color:'rgba(255,255,255,.4)',letterSpacing:2,marginBottom:32}}>
         ⚡ {day.l}
       </div>
-      
       <div style={{display:'flex',gap:16,marginBottom:40}}>
         {[
           {v:totalMin+'min',l:lang==='es'||lang==='pt'?'TIEMPO':lang==='it'?'TEMPO':'TIME'},
@@ -4920,13 +4900,11 @@ function ExpressTimer({day, lang, profile, onDone, onBack}){
     <div style={{position:'fixed',inset:0,background:bgColor,display:'flex',
       flexDirection:'column',color:'#f0f2f5',fontFamily:sans,transition:'background .5s',
       paddingTop:'env(safe-area-inset-top)'}}>
-      
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',
         padding:'14px 20px'}}>
         <div style={{fontFamily:mono,fontSize:8,color:'rgba(255,255,255,.35)',letterSpacing:2}}>
           {completedSets}/{totalSets} {lang==='es'||lang==='pt'?'SERIES':lang==='it'?'SERIE':'SETS'}
         </div>
-        
         <div style={{flex:1,margin:'0 16px',height:3,borderRadius:2,
           background:'rgba(255,255,255,0.08)'}}>
           <div style={{height:'100%',borderRadius:2,background:accentColor,
@@ -4939,7 +4917,6 @@ function ExpressTimer({day, lang, profile, onDone, onBack}){
           {paused?(lang==='es'||lang==='pt'?'▶ SEGUIR':'▶ RESUME'):'⏸'}
         </button>
       </div>
-      
       <div style={{textAlign:'center',marginTop:20}}>
         <div style={{fontFamily:mono,fontSize:10,letterSpacing:4,
           color:accentColor,opacity:.8}}>
@@ -4948,7 +4925,6 @@ function ExpressTimer({day, lang, profile, onDone, onBack}){
             :(lang==='es'||lang==='pt'?'DESCANSO':lang==='it'?'RIPOSO':lang==='de'?'PAUSE':lang==='fr'?'REPOS':'REST')}
         </div>
       </div>
-      
       <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',
         justifyContent:'center',gap:8}}>
         <div style={{position:'relative',width:220,height:220}}>
@@ -4972,7 +4948,6 @@ function ExpressTimer({day, lang, profile, onDone, onBack}){
             </div>
           </div>
         </div>
-        
         <div style={{textAlign:'center',padding:'0 24px',display:'flex',flexDirection:'column',alignItems:'center',gap:10}}>
           {(()=>{
             const vidSrc=getVid(cur?.exName);
@@ -4996,7 +4971,6 @@ function ExpressTimer({day, lang, profile, onDone, onBack}){
           </div>
         </div>
       </div>
-      
       {next&&(
         <div style={{margin:'0 20px 16px',padding:'10px 14px',borderRadius:12,
           background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.07)',
@@ -5015,7 +4989,6 @@ function ExpressTimer({day, lang, profile, onDone, onBack}){
           </div>
         </div>
       )}
-      
       <div style={{height:'env(safe-area-inset-bottom)',minHeight:20}}/>
     </div>
   );
@@ -5310,15 +5283,12 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
       </button>}
       {step===0&&(
         <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:"radial-gradient(ellipse 120% 80% at 50% 110%, rgba(191,169,138,.06) 0%, #07080a 60%)",position:"relative",overflow:"hidden"}}>
-          
           <div style={{position:"relative",zIndex:2,display:"flex",flexDirection:"column",alignItems:"center",width:"100%",maxWidth:340,padding:"0 28px"}}>
-            
             <div style={{marginBottom:8,textAlign:"center"}}>
               <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:72,letterSpacing:16,color:"#EEEAE3",lineHeight:1,
                 textShadow:"0 0 60px rgba(191,169,138,.15)"}}>FORJA</div>
               <div style={{width:32,height:1,background:"#BFA98A",opacity:.4,margin:"0 auto 0"}}/>
             </div>
-            
             <div style={{marginBottom:40,width:"100%",maxWidth:320}}>
               <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
                 {[
@@ -5352,12 +5322,10 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                 ))}
               </div>
             </div>
-            
             <div style={{fontFamily:"'SF Mono','Courier New',monospace",fontSize:9,letterSpacing:4,
               color:"rgba(238,234,227,.25)",textTransform:"uppercase",marginBottom:36,marginTop:20,textAlign:"center"}}>
               {lang==="es"?"FORJA TU CUERPO":lang==="fr"?"FORGE TON CORPS":lang==="it"?"FORGIA IL TUO CORPO":lang==="de"?"SCHMIEДЕ DEINEN KÖRPER":lang==="pt"?"FORJA TEU CORPO":"BUILD YOUR BODY"}
             </div>
-            
             {!isUserAnonymous()?(
               <div style={{width:"100%",display:"flex",flexDirection:"column",alignItems:"center",gap:14}}>
                 <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 18px",borderRadius:30,
@@ -5387,7 +5355,6 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             ):(
               <div style={{width:"100%",display:"flex",flexDirection:"column",alignItems:"center",gap:12,
                 opacity:lang?1:0.3,pointerEvents:lang?"all":"none",transition:"opacity .3s"}}>
-                
                 <button onClick={doGoogleSignIn}
                   style={{width:"100%",padding:"17px 20px",borderRadius:16,cursor:"pointer",
                     background:"#fff",color:"#1f1f1f",border:"none",
@@ -5403,7 +5370,6 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                   </svg>
                   {lang==="fr"?"Continuer avec Google":lang==="it"?"Continua con Google":lang==="de"?"Mit Google fortfahren":lang==="pt"?"Continuar com Google":(lang||"es")==="es"?"Continuar con Google":"Continue with Google"}
                 </button>
-                
                 <div style={{display:"flex",alignItems:"center",gap:10,width:"100%",margin:"4px 0"}}>
                   <div style={{flex:1,height:1,background:"rgba(255,255,255,.07)"}}/>
                   <span style={{fontFamily:"'SF Mono',monospace",fontSize:9,
@@ -5412,7 +5378,6 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                   </span>
                   <div style={{flex:1,height:1,background:"rgba(255,255,255,.07)"}}/>
                 </div>
-                
                 <button onClick={()=>setStep(1)}
                   style={{width:"100%",padding:"15px 20px",borderRadius:16,cursor:"pointer",
                     background:"transparent",color:"rgba(238,234,227,.5)",
@@ -5422,7 +5387,6 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                   >
                   {lang==="fr"?"Continuer sans compte":lang==="it"?"Continua senza account":lang==="de"?"Ohne Konto fortfahren":lang==="pt"?"Continuar sem conta":(lang||"es")==="es"?"Continuar sin cuenta":"Continue without account"}
                 </button>
-                
                 <div style={{fontFamily:"'SF Mono',monospace",fontSize:8,
                   color:"rgba(255,255,255,.12)",textAlign:"center",lineHeight:1.6,marginTop:4}}>
                   {(lang||'es')==="es"
@@ -5722,7 +5686,6 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                         transform:on?"translateY(-3px) scale(1.02)":"scale(1)",
                         transition:"all .25s cubic-bezier(.34,1.56,.64,1)",
                       }}>
-                        
                         <div style={{position:"absolute",inset:0,background:`linear-gradient(135deg,${c}18 0%,${c}06 60%,transparent 100%)`,pointerEvents:"none"}}/>
                         <div style={{position:"absolute",inset:0,background:"linear-gradient(135deg,rgba(255,255,255,.05) 0%,transparent 60%)",pointerEvents:"none",zIndex:1}}/>
                         {on&&<div style={{position:"absolute",inset:0,background:"rgba(255,255,255,.03)",pointerEvents:"none",zIndex:1}}/>}
@@ -5864,9 +5827,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
       )}
       {step===23&&(
         <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",background:"#07080a",color:"#EEEAE3"}}>
-          
           <div style={{position:"sticky",top:0,zIndex:20,background:"rgba(7,8,10,.97)",backdropFilter:"blur(24px)",WebkitBackdropFilter:"blur(24px)",borderBottom:"1px solid rgba(255,255,255,.06)",padding:"52px 20px 0"}}>
-            
             <div style={{display:"flex",alignItems:"center",justifyContent:"center",marginBottom:12}}>
               <div style={{flex:1,padding:"0 12px"}}>
                 <div style={{display:"flex",gap:4,alignItems:"center"}}>
@@ -5883,7 +5844,6 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                 {(manualRoutine[catalogDay]||[]).length>0&&`${(manualRoutine[catalogDay]||[]).length}✓`}
               </div>
             </div>
-            
             {(()=>{
               const dayIdx=manualSelDays[catalogDay];
               const DAY_FULL=lang==="es"?["LUNES","MARTES","MIÉRCOLES","JUEVES","VIERNES","SÁBADO","DOMINGO"]:["MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY","SUNDAY"];
@@ -5898,7 +5858,6 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                 </div>
               );
             })()}
-            
             <div style={{display:"flex",gap:5,overflowX:"auto",paddingBottom:14,scrollbarWidth:"none"}}>
               <button onClick={()=>setCatalogMuscle("")} style={{flexShrink:0,padding:"6px 14px",borderRadius:20,cursor:"pointer",fontFamily:mono,fontSize:9,letterSpacing:.5,whiteSpace:"nowrap",transition:"all .15s",border:`1px solid ${catalogMuscle===""?"rgba(255,255,255,.35)":"rgba(255,255,255,.07)"}`,background:catalogMuscle===""?"rgba(255,255,255,.08)":"transparent",color:catalogMuscle===""?"#EEEAE3":"rgba(255,255,255,.3)"}}>
                 {lang==="es"||lang==="pt"?"Todo":lang==="fr"?"Tout":lang==="it"?"Tutto":lang==="de"?"Alle":"All"}
@@ -5909,9 +5868,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               })}
             </div>
           </div>
-          
           <div style={{flex:1,overflowY:"auto",padding:"14px 16px 140px"}}>
-            
             {(manualRoutine[catalogDay]||[]).length>0&&(
               <div style={{marginBottom:16,padding:"10px 14px",borderRadius:12,background:"rgba(95,210,136,.05)",border:"1px solid rgba(95,210,136,.1)"}}>
                 <div style={{fontFamily:mono,fontSize:8,color:"rgba(95,210,136,.5)",letterSpacing:2,textTransform:"uppercase",marginBottom:8}}>
@@ -5928,7 +5885,6 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                 </div>
               </div>
             )}
-            
             {CATALOG.filter(g=>!catalogMuscle||g.muscle===catalogMuscle).map(group=>{
               const filtered=mode==="manual" ? group.exs : group.exs.filter(ex=>hasEquip(ex));
               if(filtered.length===0) return null;
@@ -5987,7 +5943,6 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               );
             })}
           </div>
-          
           <div style={{position:"sticky",bottom:0,background:"rgba(7,8,10,.98)",backdropFilter:"blur(24px)",padding:"14px 20px 36px",borderTop:"1px solid rgba(255,255,255,.05)"}}>
             {(manualRoutine[catalogDay]||[]).length===0&&(
               <div style={{fontFamily:mono,fontSize:9,color:"rgba(255,255,255,.2)",letterSpacing:1,textAlign:"center",marginBottom:10}}>
@@ -6047,8 +6002,6 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                   WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"
                 }}>{lang==="es"||lang==="pt"?"ENTRENA COMO":lang==="fr"?"ENTRAÎNE-TOI COMME":lang==="it"?"ALLENATI COME":lang==="de"?"TRAINIERE WIE":"TRAIN LIKE"}<br/>{lang==="es"||lang==="pt"?"UNA LEYENDA":lang==="fr"?"UNE LÉGENDE":lang==="it"?"UNA LEGGENDA":lang==="de"?"EINE LEGENDE":"A LEGEND"}</div>
                 <div style={{fontFamily:mono,fontSize:9,color:"rgba(255,255,255,.18)",letterSpacing:2,marginBottom:18}}>{lang==="es"||lang==="pt"?"RETO SEMANAL . RUTINA VERIFICADA":lang==="fr"?"DÉFI HEBDO . ROUTINE VÉRIFIÉE":lang==="it"?"SFIDA SETTIMANALE . ROUTINE VERIFICATA":lang==="de"?"WOCHENROUTINE . VERIFIZIERTES PROGRAMM":"WEEKLY CHALLENGE . VERIFIED ROUTINE"}</div>
-                
-                
                 <div style={{display:"flex",gap:6,marginBottom:14}}>
                   {[{v:"m",label:lang==="es"?"♂ HOMBRES":"♂ MEN",color:"#4898e8"},
                     {v:"f",label:lang==="es"?"♀ MUJERES":"♀ WOMEN",color:"#e84393"}].map(g=>(
@@ -6063,7 +6016,6 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                     </button>
                   ))}
                 </div>
-                
                 <div style={{marginLeft:-26,marginRight:-26,paddingLeft:26,paddingRight:26,overflowX:"auto",overflowY:"visible",marginBottom:16,WebkitOverflowScrolling:"touch",msOverflowStyle:"none",scrollbarWidth:"none"}}>
                   <div style={{display:"flex",gap:10,paddingTop:14,paddingBottom:12,width:"max-content",overflow:"visible"}}>
                     {(celebGender==="f"?CELEB_CARDS_F:CELEB_CARDS).map(({id,img,ac,label,name,badge,days,lvl},cardIdx)=>{
@@ -6078,33 +6030,23 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                           transform:on?"translateY(-8px) scale(1.04)":"scale(1)",
                           boxShadow:on?`0 0 0 1px ${ac},0 20px 48px rgba(0,0,0,.7),0 0 40px ${ac}33`:"none",
                         }}>
-                          
                           <img src={img||""} alt="" style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",
                             filter:on?"brightness(.9) saturate(1.1)":"brightness(.7) saturate(.8)",
                             transition:"filter .3s",transform:"scale(1.05)"}}
                             onError={e=>{e.target.style.display="none";}}/>
-                          
                           <div style={{position:"absolute",top:0,left:0,right:0,height:"30%",background:"linear-gradient(rgba(0,0,0,.4),transparent)",pointerEvents:"none"}}/>
-                          
                           <div style={{position:"absolute",bottom:0,left:0,right:0,height:"60%",background:"linear-gradient(transparent,rgba(0,0,0,.97) 60%)",pointerEvents:"none"}}/>
-                          
                           {on&&<div style={{position:"absolute",inset:0,background:`radial-gradient(ellipse at 50% 60%,${ac}20 0%,transparent 70%)`,pointerEvents:"none"}}/>}
-                          
                           <div style={{position:"absolute",inset:0,borderRadius:18,background:"linear-gradient(135deg,rgba(255,255,255,.08) 0%,transparent 40%,rgba(0,0,0,.2) 100%)",pointerEvents:"none"}}/>
-                          
                           <div style={{position:"absolute",top:0,left:0,width:3,height:"100%",background:`linear-gradient(180deg,${ac},transparent)`,opacity:on?1:.7,borderRadius:"18px 0 0 18px"}}/>
-                          
                           <div style={{position:"absolute",top:11,right:11,fontFamily:mono,fontSize:7,letterSpacing:2,color:ac,background:"rgba(0,0,0,.75)",padding:"3px 7px",borderRadius:5,border:`1px solid ${ac}55`,backdropFilter:"blur(4px)"}}>{badge}</div>
-                          
                           <div style={{position:"absolute",top:11,left:11,width:20,height:20,borderRadius:"50%",background:ac,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#fff",fontWeight:900,opacity:on?1:0,transform:on?"scale(1) rotate(0)":"scale(0) rotate(-180deg)",transition:"all .3s cubic-bezier(.34,1.56,.64,1)",boxShadow:`0 0 12px ${ac}`}}>✓</div>
-                          
                           {locked&&(
                             <div style={{position:"absolute",inset:0,zIndex:10,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:"rgba(8,10,14,0.65)",backdropFilter:"blur(2px)"}}>
                               <div style={{fontSize:20,marginBottom:6}}>🔒</div>
                               <div style={{fontFamily:"'SF Mono','Fira Code',monospace",fontSize:8,color:"#c0a870",letterSpacing:2,fontWeight:700}}>PRO</div>
                             </div>
                           )}
-                          
                           <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"6px 12px 14px"}}>
                             <div style={{fontFamily:mono,fontSize:8,letterSpacing:2.5,color:ac,marginBottom:3,opacity:.95}}>{label}</div>
                             <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:18,letterSpacing:1.5,color:"#fff",lineHeight:1,marginBottom:7}}>{name[lang]||name.en}</div>
@@ -6121,7 +6063,6 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                     })}
                   </div>
                 </div>
-                
                 {selCeleb&&(()=>{
                   const card=[...CELEB_CARDS,...CELEB_CARDS_F].find(x=>x.id===selCeleb);
                   if(!card)return null;
