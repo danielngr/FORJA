@@ -5648,9 +5648,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
     </div>
   );
   const handleBack=()=>{
-    if(step===25&&typeof showForjaOnboarding==='function'){
-      showForjaOnboarding(); return;
-    }
+    if(step===25&&typeof showForjaOnboarding==='function'){showForjaOnboarding();return;}
     const map={1:0,15:1,2:15,3:2,4:3,5:4,6:5,7:6,8:7,9:8,10:9,20:2,21:20,22:21,23:21,26:25};
     if(map[step]!==undefined){setStep(map[step]);window.scrollTo({top:0,behavior:"instant"});}
   };
@@ -6518,9 +6516,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                   <div style={{flex:2}}><Btn disabled={!selCeleb} onClick={()=>{
                     const cel=[...CELEB_CARDS,...CELEB_CARDS_F].find(x=>x.id===selCeleb);
                     if(!cel)return;
-                    setDays(cel.days);
-                    setCelebData(cel);
-                    setStep(26);
+setDays(cel.days);setCelebData(cel);const sd=profile?.selDays;setSelDays(sd&&sd.length===cel.days?sd:[1,2,3,4,5,6,0].slice(0,cel.days));setStep(99);
                   }}>{lang==="es"?"ELEGIR ESTA RUTINA →":"SELECT THIS ROUTINE →"}</Btn></div>
                 </div>
               </>);
@@ -7297,11 +7293,7 @@ function App(){
         setReady(true);
         setAuthChecked(true);
        
-        window.__forjaOnboardingDone = function(profile, routine, targetStep) {
-          setProfile(profile);
-          if(routine) setRoutine(routine);
-          setStep(targetStep || 99);
-        };
+        window.__forjaOnboardingDone=function(p,r,s,e){setProfile(p);if(r)setRoutine(r);if(e){if(e.selDays)setSelDays(e.selDays);if(e.days)setDays(e.days);}setStep(s||99);};
       }).catch(()=>{setReady(true);setAuthChecked(true);});
     };
     const search=window.location.search;
@@ -8285,11 +8277,10 @@ function finish() {
       if (routine) localStorage.setItem('fv8r', JSON.stringify(routine));
     }
   } catch(e) {}
-  // Notify React app via registered callback
-  // If celebrity mode, go to celebrity picker (step 25) instead of main app
   var targetStep = (state.mode === 'celebrity') ? 25 : 99;
+  var extraState={selDays:state.selectedDays||[1,3,5],days:state.selectedDays?state.selectedDays.length:parseInt(state.days||3),goal:goalMap[state.goal]||'general',level:'int'};
   if (typeof window.__forjaOnboardingDone === 'function') {
-    window.__forjaOnboardingDone(profile, routine, targetStep);
+    window.__forjaOnboardingDone(profile, routine, targetStep, extraState);
   }
   // Fade out overlay
   var ov = document.getElementById('forja-onboarding');
