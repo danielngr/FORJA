@@ -15,6 +15,11 @@ body{overscroll-behavior:none;padding-top:env(safe-area-inset-top);padding-botto
 input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;}
 input[type=number]{-moz-appearance:textfield;}
 @keyframes spin{to{transform:rotate(360deg)}}
+@keyframes stickIdle{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-2px) rotate(1deg)}}
+@keyframes stickFire{0%{transform:translateY(0) rotate(-3deg)}100%{transform:translateY(-4px) rotate(3deg)}}
+@keyframes stickRun{0%{transform:translateY(0) skewX(-8deg)}100%{transform:translateY(-3px) skewX(8deg)}}
+@keyframes stickCeleb{0%{transform:rotate(-10deg) scale(1.1)}100%{transform:rotate(10deg) scale(1.15)}}
+@keyframes stickBob{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(2px) rotate(2deg)}}
 @keyframes levelUpPulse{
   0%{opacity:0;transform:translateY(-8px) scale(0.96);}
   15%{opacity:1;transform:translateY(0) scale(1.02);}
@@ -1951,7 +1956,7 @@ const PRO_PRICE = "$4.99/mes";
 const FREE_CELEB_LIMIT = 3; // first N celebrities are free
 const EXPRESS_GROUPS=[
   {id:"tren_superior",
-   label:{es:"Tren Superior",en:"Upper Body",it:"Parte Superiore",de:"Oberkörper",fr:"Haut du Corps",pt:"Parte Superior"},
+   label:{es:"Tren Superior",en:"Upper Body",it:"Parte Superiore",fr:"Haut du Corps",pt:"Parte Superior"},
    icon:"💪", zones:["pecho","tricep_izq","tricep_der","hombro_izq","hombro_der"],
    circuits:[
     [{e:"Flexiones",s:3,work:40,rest:20},{e:"Flexiones diamante",s:3,work:30,rest:20},{e:"Flexiones pike",s:3,work:35,rest:25}],
@@ -1961,7 +1966,7 @@ const EXPRESS_GROUPS=[
     [{e:"Flexiones inclinadas",s:3,work:40,rest:20},{e:"Fondos entre sillas",s:3,work:40,rest:20},{e:"Flexiones declinadas",s:3,work:35,rest:25},{e:"Flexiones pike",s:2,work:35,rest:20}],
    ]},
   {id:"tren_inferior",
-   label:{es:"Tren Inferior",en:"Lower Body",it:"Parte Inferiore",de:"Unterkörper",fr:"Bas du Corps",pt:"Parte Inferior"},
+   label:{es:"Tren Inferior",en:"Lower Body",it:"Parte Inferiore",fr:"Bas du Corps",pt:"Parte Inferior"},
    icon:"🦵", zones:["quad","gluteos","isquiotibiales","gemelos"],
    circuits:[
     [{e:"Sentadilla",s:4,work:40,rest:20},{e:"Zancadas",s:3,work:40,rest:20},{e:"Puente de glúteos",s:3,work:45,rest:20}],
@@ -2781,9 +2786,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                 <div style={{position:"absolute",inset:0,background:`linear-gradient(90deg,transparent 0%,rgba(255,255,255,.04) 50%,transparent 100%)`,animation:"shimmer 1.5s ease infinite",pointerEvents:"none",opacity:vidUrl?1:0}}/>
                 <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom,transparent 45%,rgba(44,48,64,.85) 100%)",pointerEvents:"none"}}/>
                 <div style={{position:"absolute",top:12,left:16,fontFamily:mono,fontSize:9,color:"rgba(255,255,255,.65)",letterSpacing:2}}>FORJA</div>
-                <div style={{position:"absolute",top:12,right:12,background:"rgba(0,0,0,.45)",backdropFilter:"blur(8px)",border:"1px solid rgba(255,255,255,.1)",borderRadius:20,padding:"4px 11px",fontFamily:mono,fontSize:8,color:"rgba(255,255,255,.75)",letterSpacing:1.5}}>
-                  {ex.e.toUpperCase()}
-                </div>
+
               </div>
               <div style={{padding:"14px 20px 0"}}>
                 <div style={{fontFamily:mono,fontSize:9,color:C2.tx3,letterSpacing:2,marginBottom:4}}>
@@ -3207,32 +3210,35 @@ function computeACWR(loads){
 }
 const DAY_LABEL_TRANS={
   "Pecho":             {fr:"Pectoraux",    it:"Petto",          de:"Brust",          pt:"Peitoral"},
-  "Espalda":           {fr:"Dos",          it:"Schiena",        de:"Rücken",         pt:"Costas"},
+  "Espalda":           {fr:"Dos",          it:"Schiena",        de:"Rücken"},
   "Piernas":           {fr:"Jambes",       it:"Gambe",          de:"Beine",          pt:"Pernas"},
-  "Hombros":           {fr:"Épaules",      it:"Spalle",         de:"Schultern",      pt:"Ombros"},
-  "Brazos":            {fr:"Bras",         it:"Braccia",        de:"Arme",           pt:"Braços"},
-  "Bíceps":            {fr:"Biceps",       it:"Bicipiti",       de:"Bizeps",         pt:"Bíceps"},
+  "Hombros":           {fr:"Épaules",      it:"Spalle",         de:"Schultern"},
+  "Brazos":            {fr:"Bras",         it:"Braccia",        de:"Arme"},
+  "Bíceps":            {fr:"Biceps",       it:"Bicipiti",       de:"Bizeps"},
   "Tríceps":           {fr:"Triceps",      it:"Tricipiti",      de:"Trizeps",        pt:"Tríceps"},
-  "Core":              {fr:"Core",         it:"Core",           de:"Core",           pt:"Core"},
-  "Abs":               {fr:"Abdos",        it:"Addome",         de:"Bauch",          pt:"Abdômen"},
-  "Cardio":            {fr:"Cardio",       it:"Cardio",         de:"Cardio",         pt:"Cardio"},
-  "Full Body":         {fr:"Full Body",    it:"Full Body",      de:"Ganzkörper",     pt:"Corpo Inteiro"},
-  "Fuerza":            {fr:"Force",        it:"Forza",          de:"Kraft",          pt:"Força"},
+  "Core":              {fr:"Core",         it:"Core",           de:"Core"},
+  "Abs":               {fr:"Abdos",        it:"Addome",         de:"Bauch"},
+  "Cardio":            {fr:"Cardio",       it:"Cardio",         de:"Cardio"},
+  "Full Body":         {fr:"Full Body",    it:"Full Body",      de:"Ganzkörper"},
+  "Fuerza":            {fr:"Force",        it:"Forza",          de:"Kraft"},
   "Piernas B":         {fr:"Jambes B",     it:"Gambe B",        de:"Beine B",        pt:"Pernas B"},
-  "Gemelos":           {fr:"Mollets",      it:"Polpacci",       de:"Waden",          pt:"Gêmeos"},
-  "Tren inferior":     {fr:"Bas du corps", it:"Parte bassa",    de:"Unterkörper",    pt:"Parte inferior"},
-  "Tren superior":     {fr:"Haut du corps",it:"Parte alta",     de:"Oberkörper",     pt:"Parte superior"},
-  "Unilateral A":      {fr:"Unilatéral A", it:"Unilaterale A",  de:"Unilateral A",   pt:"Unilateral A"},
-  "Unilateral+Core":   {fr:"Unilatéral+Core",it:"Unilaterale+Core",de:"Unilateral+Core",pt:"Unilateral+Core"},
+  "Gemelos":           {fr:"Mollets",      it:"Polpacci",       de:"Waden"},
+  "Tren inferior":     {fr:"Bas du corps", it:"Parte bassa",    de:"Unterkörper"},
+  "Tren superior":     {fr:"Haut du corps",it:"Parte alta",     de:"Oberkörper"},
   "Recuperación":      {fr:"Récupération", it:"Recupero",       de:"Erholung",       pt:"Recuperação"},
-  "Estabilidad":       {fr:"Stabilité",    it:"Stabilità",      de:"Stabilität",     pt:"Estabilidade"},
+  "Estabilidad":       {fr:"Stabilité",    it:"Stabilità",      de:"Stabilität"},
   "Movilidad":         {fr:"Mobilité",     it:"Mobilità",       de:"Mobilität",      pt:"Mobilität"},
   "Pilates":           {fr:"Pilates",      it:"Pilates",        de:"Pilates",        pt:"Pilates"},
-  "Yoga":              {fr:"Yoga",         it:"Yoga",           de:"Yoga",           pt:"Yoga"},
-  "Boxing":            {fr:"Boxe",         it:"Boxe",           de:"Boxen",          pt:"Boxe"},
-  "Gimnasio":          {fr:"Salle",        it:"Palestra",       de:"Studio",         pt:"Academia"},
+  "Gimnasio":          {fr:"Salle",        it:"Palestra",       de:"Studio"},
   "Calistenia":        {fr:"Callisthénie", it:"Calistenics",    de:"Kalisthenics",   pt:"Calistenia"},
   "Pump":              {fr:"Pump",         it:"Pump",           de:"Pump",           pt:"Pump"},
+  "Circuito":          {fr:"Circuit",      it:"Circuito",       de:"Zirkel",         pt:"Circuito"},
+  "Explosivo":         {fr:"Explosif",     it:"Esplosivo",      de:"Explosiv",       pt:"Explosivo"},
+  "Descanso":          {fr:"Repos",        it:"Riposo",         de:"Ruhetag",        pt:"Descanso"},
+  "Pull Day":          {fr:"Tirage",       it:"Tirata",         de:"Zug-Tag"},
+  "Push Day":          {fr:"Poussée",      it:"Spinta",         de:"Druck-Tag"},
+  "Leg Day":           {fr:"Jambes",       it:"Gambe",          de:"Bein-Tag"},
+  "HIIT":              {fr:"HIIT",         it:"HIIT",           de:"HIIT",           pt:"HIIT"},
 };
 function translateDayLabel(label, lang){
   if(!label||lang==="es"||lang==="pt"&&label) {
@@ -3245,7 +3251,7 @@ function translateDayLabel(label, lang){
     }
     return label;
   }
-  if(lang==="en") return label; // keep Spanish for EN as well (it's a proper label)
+  if(lang==="en") { let t=label; Object.entries(DAY_LABEL_TRANS).sort((a,b)=>b[0].length-a[0].length).forEach(([es,trans])=>{ if(trans.en) t=t.replace(new RegExp(es.replace(/[+]/g,'\\$&'),'g'),trans.en); }); return t; }
   let translated=label;
   const entries=Object.entries(DAY_LABEL_TRANS).sort((a,b)=>b[0].length-a[0].length);
   entries.forEach(([es,trans])=>{
@@ -3652,12 +3658,18 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                 ⚡ EXPRESS
               </div>
             )}
-            <div style={{fontSize:10,fontFamily:mono,color:"rgba(255,255,255,.6)",letterSpacing:5,marginBottom:4,fontWeight:700}}>FORJA</div>
-            <div style={{fontSize:26,fontWeight:900,letterSpacing:-1.2,lineHeight:.9}}>{day?translateDayLabel(day.l,lang):t.rest}</div>
-            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:1.5,marginTop:2}}>{DF[lang][sel].toUpperCase()} {day?`. ${day.ex.length} ${lang==="es"||lang==="pt"?"ejercicios":lang==="fr"?"exercices":lang==="it"?"esercizi":lang==="de"?"Übungen":"exercises"}`:""}
-            </div>
+            <div style={{fontSize:8,fontFamily:mono,color:"rgba(255,255,255,.35)",letterSpacing:4,marginBottom:3,fontWeight:700}}>FORJA</div>
+            <div id="forja-stick-wrap" data-state={(()=>{
+              const _t=new Date().toISOString().slice(0,10),_d=new Set(Object.values(logs).flat().map(e=>e.d).filter(Boolean));
+              let _s=0,_c=new Date();if(!_d.has(_t))_c.setDate(_c.getDate()-1);
+              while(_s<365){const _x=_c.toISOString().slice(0,10);if(!_d.has(_x))break;_s++;_c.setDate(_c.getDate()-1);}
+              const _r=!day?.ex?.length,_p=day?.ex?.length?dc/day.ex.length:0;
+              const _st=_r?"rest":_d.has(_t)&&_p>=1?"done":_d.has(_t)&&_p>0?"work":_s>=3?"fire":"idle";
+              window._fStick={s:_s,dc:dc,tot:day?.ex?.length||0};
+              return _st;
+            })()} style={{width:"100%",height:72,position:"relative",overflow:"hidden"}}/>
           </div>
-          <div style={{display:"flex",alignItems:"flex-start",gap:10,paddingTop:2}}>
+            <div style={{display:"flex",alignItems:"flex-start",gap:10,paddingTop:2}}>
             {day&&exs.length>0&&(
               <div style={{textAlign:"right"}}>
                 <div data-tour="day-progress" style={{fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:1,marginBottom:4}}>{dc}/{exs.length}</div>
@@ -3737,7 +3749,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
           {(()=>{
             const isCeleb=profile?.mode==="celebrity";
             const celebId=profile?.celebrity;
-            const CMETA_={arnold:{l:"ARNOLD",c:"#f0a830"},hemsworth:{l:"THOR",c:"#4898e8"},rock:{l:"ROCK",c:"#30c870"},goggins:{l:"GOGGINS",c:"#e09020"},cavill:{l:"CAVILL",c:"#8868d8"},ronaldo:{l:"CR7",c:"#e83030"},stallone:{l:"ROCKY",c:"#e88020"},lebron:{l:"KING",c:"#f0a818"},zyzz:{l:"ZYZZ",c:"#e050a8"}};
+            const CMETA_={arnold:{l:"PUMP⚡",c:"#f0a830"},hemsworth:{l:"ODIN🪓",c:"#4898e8"},rock:{l:"4AM🪨",c:"#30c870"},goggins:{l:"CANT💀",c:"#e09020"},cavill:{l:"KRYPT💪",c:"#8868d8"},ronaldo:{l:"SIUUU⚽",c:"#e83030"},stallone:{l:"YO!🥊",c:"#e88020"},lebron:{l:"KING👑",c:"#f0a818"},zyzz:{l:"WGMM✨",c:"#e050a8"},serena:{l:"ACE🎾",c:"#e84393"},galgadot:{l:"ALMA⚔️",c:"#c0a870"},jlo:{l:"JLO💃",c:"#f0b429"},margot:{l:"WILD🃏",c:"#4898e8"},brie:{l:"CAPT⭐",c:"#e05555"},rihanna:{l:"RIH🌊",c:"#e91e63"}};
             const cm=celebId?CMETA_[celebId]:null;
             const now=new Date();
             const dow=now.getDay();
@@ -7542,5 +7554,1047 @@ if('serviceWorker' in navigator){
   });
 }
 </script>
+
+
+<script>
+(function initMeditation(){
+  const BASE="https://forjavideos.b-cdn.net/";
+  const MALE_URL  =BASE+"Firefly%20silver%20chrome%20muscular%20man%20sitting%20in%20lotus%20meditation%20pose%2C%20pure%20solid%20black%20background%2C%20no.jpg";
+  const FEMALE_URL=BASE+"Firefly%20silver%20chrome%20athletic%20female%20figure%20sitting%20in%20lotus%20meditation%20pose%2C%20pure%20solid%20black%20back.jpg";
+  const MALE_FB="https://i.imgur.com/ldscGFx.jpeg";
+  const FEMALE_FB="https://i.imgur.com/wd5KvKF.jpeg";
+
+  function tryInit(){
+    const canvas=document.getElementById("forja-meditation-canvas");
+    if(!canvas||!window.THREE) return;
+    if(canvas.dataset.minit) return;
+    canvas.dataset.minit="1";
+
+    const gender=canvas.dataset.gender||"male";
+    const W=canvas.offsetWidth||380;
+    const H=canvas.offsetHeight||400;
+    const aspect=W/H;
+
+    // Fondo del color de la página — sin caja negra
+    const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+    renderer.setSize(W,H);
+    renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+    renderer.setClearColor(0x383e4e,1); // mismo color que C.bg de FORJA
+
+    const scene=new THREE.Scene();
+    const camera=new THREE.PerspectiveCamera(44,aspect,0.1,500);
+    // Vista lateral baja — disco de canto como en la película
+    camera.position.set(0,0.15,6.4);
+    camera.lookAt(0,-0.5,0);
+
+    // -- Paleta Gargantua film-accurate -------------------------------
+    function diskColor(norm,doppler){
+      let r,g,b;
+      if(norm<0.05){r=1.00;g=0.97;b=0.90;}
+      else if(norm<0.18){r=1.00;g=0.95;b=0.80;}
+      else if(norm<0.35){r=1.00;g=0.88;b=0.65;}
+      else if(norm<0.55){r=0.98;g=0.78;b=0.45;}
+      else if(norm<0.75){r=0.82;g=0.52;b=0.22;}
+      else{r=0.52;g=0.25;b=0.08;}
+      const bs=Math.max(0,doppler),ds=Math.max(0,-doppler);
+      const boost=1+bs*1.8,dim=1-ds*0.72,blue=bs*0.10;
+      return[Math.min(1,r*boost*dim),Math.min(1,(g+blue*0.04)*boost*dim),Math.min(1,(b+blue)*boost*dim)];
+    }
+
+    // Gargantua — valores calibrados en prototipo interactivo
+    const G=1.10;
+    const BH_Y=-0.62;
+
+    // -- DISCO PRINCIPAL -----------------------------------------------
+    const DISC_N=80000;
+    const dPos=new Float32Array(DISC_N*3);
+    const dCol=new Float32Array(DISC_N*3);
+    const dAng=new Float32Array(DISC_N);
+    const dRad=new Float32Array(DISC_N);
+    for(let i=0;i<DISC_N;i++){
+      const r=(1.08+Math.pow(Math.random(),0.38)*4.0)*G;
+      const ang=Math.random()*Math.PI*2;
+      const maxThick=0.055*G;
+      const thick=(Math.random()-0.5)*Math.exp(-(r/G-1.08)*1.4)*maxThick*2;
+      dPos[i*3  ]=Math.cos(ang)*r;
+      dPos[i*3+1]=thick+BH_Y;
+      dPos[i*3+2]=Math.sin(ang)*r;
+      dAng[i]=ang; dRad[i]=r;
+      const norm=Math.min((r/G-1.08)/4.0,1);
+      const doppler=Math.sin(ang-Math.PI*0.55);
+      const[cr,cg,cb]=diskColor(norm,doppler);
+      const br=(0.28+Math.random()*0.58)*(1-norm*0.65);
+      dCol[i*3]=cr*br; dCol[i*3+1]=cg*br; dCol[i*3+2]=cb*br;
+    }
+    const dGeo=new THREE.BufferGeometry();
+    dGeo.setAttribute('position',new THREE.BufferAttribute(dPos,3));
+    dGeo.setAttribute('color',new THREE.BufferAttribute(dCol,3));
+    {const pts=new THREE.Points(dGeo,new THREE.PointsMaterial({
+      size:0.018,vertexColors:true,transparent:true,
+      opacity:0.92,sizeAttenuation:true,depthWrite:false
+    }));pts.renderOrder=1;scene.add(pts);}
+
+    // -- PHOTON RING ---------------------------------------------------
+    {
+      const N=6000,p=new Float32Array(N*3),c=new Float32Array(N*3);
+      for(let i=0;i<N;i++){
+        const ang=Math.random()*Math.PI*2,r=(1.01+Math.random()*0.07)*G;
+        p[i*3]=Math.cos(ang)*r; p[i*3+1]=(Math.random()-0.5)*0.014+BH_Y; p[i*3+2]=Math.sin(ang)*r;
+        const doppler=Math.sin(ang-Math.PI*0.55);
+        const boost=1+Math.max(0,doppler)*2.0,blue=Math.max(0,doppler)*0.15;
+        const br=Math.min(1,(0.60+Math.random()*0.40)*boost);
+        c[i*3]=br; c[i*3+1]=br*(0.93+blue*0.04); c[i*3+2]=br*(0.78+blue);
+      }
+      const g=new THREE.BufferGeometry();
+      g.setAttribute('position',new THREE.BufferAttribute(p,3));
+      g.setAttribute('color',new THREE.BufferAttribute(c,3));
+      {const pts=new THREE.Points(g,new THREE.PointsMaterial({
+        size:0.040,vertexColors:true,transparent:true,
+        opacity:0.96,sizeAttenuation:true,depthWrite:false
+      }));pts.renderOrder=1;scene.add(pts);}
+    }
+
+    // -- ARCO SUPERIOR (lente gravitacional) ---------------------------
+    {
+      const N=30000,p=new Float32Array(N*3),c=new Float32Array(N*3);
+      for(let i=0;i<N;i++){
+        const r=(1.10+Math.pow(Math.random(),0.44)*3.2)*G;
+        const ang=Math.random()*Math.PI*2;
+        const norm=Math.min((r/G-1.10)/3.2,1);
+        // Limitar altura máxima — arco no sube más allá de BH_Y+0.55
+        // para no tapar al mono que está en Y positivo
+        const hRaw=(0.35+Math.exp(-(r/G-1.10)*0.85)*0.90+(Math.random()-0.5)*0.03)*G;
+        const hClamped=Math.min(hRaw, 1.20); // arco rodea al mono
+        p[i*3  ]=Math.cos(ang)*r*0.97;
+        p[i*3+1]=hClamped+BH_Y;
+        p[i*3+2]=Math.sin(ang)*r*0.15;
+        const doppler=Math.sin(ang-Math.PI*0.55);
+        const[cr,cg,cb]=diskColor(norm*1.1,doppler*0.8);
+        const br=(0.16+Math.random()*0.32)*(1-norm*0.82);
+        c[i*3]=Math.min(1,cr*br); c[i*3+1]=Math.min(1,cg*br); c[i*3+2]=Math.min(1,cb*br);
+      }
+      const g=new THREE.BufferGeometry();
+      g.setAttribute('position',new THREE.BufferAttribute(p,3));
+      g.setAttribute('color',new THREE.BufferAttribute(c,3));
+      {const pts=new THREE.Points(g,new THREE.PointsMaterial({
+        size:0.018,vertexColors:true,transparent:true,
+        opacity:0.82,sizeAttenuation:true,depthWrite:false
+      }));pts.renderOrder=1;scene.add(pts);}
+    }
+
+    // -- ARCO INFERIOR -------------------------------------------------
+    {
+      const N=8000,p=new Float32Array(N*3),c=new Float32Array(N*3);
+      for(let i=0;i<N;i++){
+        const r=(1.15+Math.pow(Math.random(),0.5)*2.5)*G;
+        const ang=Math.random()*Math.PI*2;
+        const norm=Math.min((r/G-1.15)/2.5,1);
+        const h=-(0.26+Math.exp(-(r/G-1.15)*0.90)*0.65+(Math.random()-0.5)*0.03)*G;
+        p[i*3]=Math.cos(ang)*r*0.95; p[i*3+1]=h+BH_Y; p[i*3+2]=Math.sin(ang)*r*0.12;
+        const doppler=Math.sin(ang-Math.PI*0.55);
+        const[cr,cg,cb]=diskColor(norm*1.2,doppler*0.6);
+        const br=(0.09+Math.random()*0.22)*(1-norm*0.85);
+        c[i*3]=Math.min(1,cr*br); c[i*3+1]=Math.min(1,cg*br); c[i*3+2]=Math.min(1,cb*br);
+      }
+      const g=new THREE.BufferGeometry();
+      g.setAttribute('position',new THREE.BufferAttribute(p,3));
+      g.setAttribute('color',new THREE.BufferAttribute(c,3));
+      {const pts=new THREE.Points(g,new THREE.PointsMaterial({
+        size:0.016,vertexColors:true,transparent:true,
+        opacity:0.62,sizeAttenuation:true,depthWrite:false
+      }));pts.renderOrder=1;scene.add(pts);}
+    }
+
+    // -- ESFERA NEGRA — tapa el disco pero el mono se agrega después ---
+    // renderOrder negativo para que se dibuje antes que las partículas
+    const sphere=new THREE.Mesh(
+      new THREE.SphereGeometry(G*0.94,64,64),
+      new THREE.MeshBasicMaterial({color:0x383e4e})
+    );
+    sphere.position.y=BH_Y;
+    sphere.renderOrder=0;
+    scene.add(sphere);
+
+    // -- FIGURA PLATEADA -----------------------------------------------
+    let figPts=null,T=0,animId=null;
+
+    function loadImg(url,fb){
+      const img=new Image();
+      img.crossOrigin="anonymous";
+      img.onload=()=>buildFigure(img);
+      img.onerror=()=>{
+        if(fb){const i2=new Image();i2.crossOrigin="anonymous";i2.onload=()=>buildFigure(i2);i2.onerror=()=>startAnim();i2.src=fb;}
+        else startAnim();
+      };
+      img.src=url;
+    }
+
+    function buildFigure(img){
+      const OW=320,OH=320;
+      const off=document.createElement("canvas");
+      off.width=OW;off.height=OH;
+      const ctx=off.getContext("2d");
+      ctx.drawImage(img,0,0,OW,OH);
+      const data=ctx.getImageData(0,0,OW,OH).data;
+      const pts2d=[];
+      const yStart=Math.floor(OH*0.08),yMax=Math.floor(OH*0.86),yRange=yMax-yStart;
+      for(let y=yStart;y<yMax;y++){
+        for(let x=0;x<OW;x++){
+          const i=(y*OW+x)*4,r=data[i],g=data[i+1],b=data[i+2];
+          if(r*0.299+g*0.587+b*0.114>20)
+            pts2d.push({nx:((x/OW)*2-1),ny:(1-((y-yStart)/yRange)*2),r:r/255,g:g/255,b:b/255});
+        }
+      }
+      if(!pts2d.length){startAnim();return;}
+
+      // sX se multiplica por aspect para compensar que la cámara
+      // es más angosta en X (aspect=0.95) — así el mono no se estira
+      const sY=1.38;
+      const sX=sY*aspect; // ~1.31 — mantiene proporciones reales
+      const FIG_Y=-0.20;
+
+      // SPLIT_NY: puntos por debajo de esta línea van detrás del disco,
+      // por encima van delante. ny=0 = centro del cuerpo.
+      // Calibrado en prototipo: split en ny=0.00 (50% del cuerpo)
+      const SPLIT_NY=0.0;
+
+      const ptBottom=pts2d.filter(p=>p.ny<=SPLIT_NY);
+      const ptTop   =pts2d.filter(p=>p.ny> SPLIT_NY);
+
+      function makeLayer(pts,renderOrder){
+        if(!pts.length) return null;
+        const CORE=Math.min(pts.length*4,50000);
+        const pos=new Float32Array(CORE*3),col=new Float32Array(CORE*3);
+        for(let i=0;i<CORE;i++){
+          const p=pts[Math.floor(Math.random()*pts.length)];
+          pos[i*3  ]=p.nx*sX+(Math.random()-0.5)*0.008;
+          pos[i*3+1]=p.ny*sY+FIG_Y+(Math.random()-0.5)*0.008;
+          pos[i*3+2]=(Math.random()-0.5)*0.06;
+          col[i*3]=p.r; col[i*3+1]=p.g; col[i*3+2]=p.b;
+        }
+        const geo=new THREE.BufferGeometry();
+        geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+        geo.setAttribute('color',new THREE.BufferAttribute(col,3));
+        const mesh=new THREE.Points(geo,new THREE.PointsMaterial({
+          size:0.0095,vertexColors:true,transparent:true,
+          opacity:0.98,sizeAttenuation:true,depthWrite:false,depthTest:false
+        }));
+        mesh.renderOrder=renderOrder;
+        scene.add(mesh);
+        return mesh;
+      }
+
+      // Bottom (piernas/cintura) → renderOrder 0 → detrás del disco (renderOrder 1)
+      // Top (torso/cabeza)       → renderOrder 2 → delante del disco
+      figPts = makeLayer(ptBottom, 0);
+      const figTop = makeLayer(ptTop, 2);
+      // Guardar ambos para la animación breathing
+      figPts._top = figTop;
+
+      startAnim();
+    }
+
+    function startAnim(){
+      if(animId) cancelAnimationFrame(animId);
+      function animate(){
+        animId=requestAnimationFrame(animate);
+        T+=0.003;
+
+        // Rotación kepleriana
+        const arr=dGeo.attributes.position.array;
+        for(let i=0;i<DISC_N;i++){
+          dAng[i]+=0.45/Math.pow(dRad[i]/G,1.5)*0.003;
+          arr[i*3]=Math.cos(dAng[i])*dRad[i];
+          arr[i*3+2]=Math.sin(dAng[i])*dRad[i];
+        }
+        dGeo.attributes.position.needsUpdate=true;
+
+        // Figura: breathing — animar ambas capas juntas
+        if(figPts){
+          const by=Math.sin(T*0.45)*0.038;
+          const bry=Math.sin(T*0.18)*0.045;
+          const brx=Math.sin(T*0.13)*0.010;
+          figPts.position.y=by; figPts.rotation.y=bry; figPts.rotation.x=brx;
+          if(figPts._top){
+            figPts._top.position.y=by;
+            figPts._top.rotation.y=bry;
+            figPts._top.rotation.x=brx;
+          }
+        }
+
+        // Cámara: leve órbita
+        camera.position.x=Math.sin(T*0.022)*0.4;
+        camera.position.y=0.15+Math.sin(T*0.035)*0.10;
+        camera.lookAt(0,-0.5,0);
+
+        renderer.render(scene,camera);
+      }
+      animate();
+      document.addEventListener("visibilitychange",()=>{
+        if(document.hidden) cancelAnimationFrame(animId); else startAnim();
+      });
+    }
+
+    loadImg(gender==="female"?FEMALE_URL:MALE_URL,gender==="female"?FEMALE_FB:MALE_FB);
+  }
+
+  window.addEventListener("forja:mount",tryInit);
+  window.addEventListener("load",tryInit);
+  setInterval(tryInit,300);
+})();
+</script>
+
+<script>
+(function initLogoParticles(){
+  function tryInit(){
+    const canvas=document.getElementById("forja-logo-canvas");
+    if(!canvas||!window.THREE) return;
+    if(canvas.dataset.linit) return;
+    canvas.dataset.linit="1";
+
+    const W=window.innerWidth||canvas.offsetWidth||360;
+    const H=window.innerHeight||canvas.offsetHeight||640;
+
+    const OW=800,OH=200; // canvas offscreen para renderizar "FORJA"
+    const off=document.createElement("canvas");
+    off.width=OW; off.height=OH;
+    const ctx=off.getContext("2d");
+    ctx.fillStyle="#ffffff";
+    ctx.fillRect(0,0,OW,OH);
+    ctx.fillStyle="#000000";
+    ctx.font="900 148px Arial Black,Arial,sans-serif";
+    ctx.textBaseline="middle";
+    ctx.textAlign="center";
+    ctx.fillText("FORJA",OW/2,OH/2);
+
+    // Samplear píxeles del texto
+    const imgData=ctx.getImageData(0,0,OW,OH);
+    const pts2d=[];    // todos los píxeles del texto (para el logo estático)
+    const edge2d=[];   // solo bordes (para la explosión)
+
+    for(let y=0;y<OH;y+=2){
+      for(let x=0;x<OW;x+=2){
+        const i=(y*OW+x)*4;
+        const isDark=imgData.data[i]<140;
+        if(!isDark) continue;
+        pts2d.push({x:((x/OW)*2-1), y:(1-(y/OH)*2)});
+
+        // Borde: al menos un vecino es blanco (fuera de la letra)
+        const isEdge=(
+          imgData.data[((y-2)*OW+x)*4]>140 ||
+          imgData.data[((y+2)*OW+x)*4]>140 ||
+          imgData.data[(y*OW+(x-2))*4]>140 ||
+          imgData.data[(y*OW+(x+2))*4]>140
+        );
+        if(isEdge) edge2d.push({x:((x/OW)*2-1), y:(1-(y/OH)*2)});
+      }
+    }
+
+    const renderer=new THREE.WebGLRenderer({canvas,antialias:false,alpha:true});
+    renderer.setSize(W,H);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+    renderer.setClearColor(0x000000,0);
+
+    const scene=new THREE.Scene();
+    const aspect=W/H;
+    // Canvas es ahora full viewport — frustum cubre todo
+    const vRange=1.0;
+    const cam=new THREE.OrthographicCamera(-aspect,aspect,vRange,-vRange,0.1,100);
+    cam.position.set(0,0,10);
+
+    const TOTAL=pts2d.length;
+    const DISP=Math.floor(TOTAL*8);
+    const pos=new Float32Array(TOTAL*3);
+    const col=new Float32Array(TOTAL*3);
+    const posD=new Float32Array(DISP*3);
+    const colD=new Float32Array(DISP*3);
+
+    // Texto en el tercio superior — partículas explotan hacia toda la pantalla
+    const scaleX=aspect*0.90, scaleY=vRange*0.28;
+    const textOffsetY=0.52; // offset hacia arriba
+    const edgeSrc=edge2d.length>0?edge2d:pts2d;
+
+    for(let i=0;i<TOTAL;i++){
+      const p=pts2d[i];
+      pos[i*3  ]=p.x*scaleX+(Math.random()-0.5)*0.012;
+      pos[i*3+1]=p.y*scaleY+textOffsetY+(Math.random()-0.5)*0.012;
+      pos[i*3+2]=(Math.random()-0.5)*0.03;
+      const v=0.80+Math.random()*0.18;
+      col[i*3]=v*0.94; col[i*3+1]=v*0.96; col[i*3+2]=v;
+    }
+
+    for(let i=0;i<DISP;i++){
+      const src=edgeSrc[Math.floor(Math.random()*edgeSrc.length)];
+      const cx=src.x, cy=src.y;
+      const len=Math.sqrt(cx*cx+cy*cy)+0.001;
+      const baseAngX=cx/len, baseAngY=cy/len;
+      const deviation=(Math.random()-0.5)*Math.PI*1.2;
+      const cosD=Math.cos(deviation), sinD=Math.sin(deviation);
+      const dirX=baseAngX*cosD-baseAngY*sinD;
+      const dirY=baseAngX*sinD+baseAngY*cosD;
+
+      const u=Math.random();
+      const eD=-Math.log(1-u*0.98)*0.55*aspect;
+      const jitterD=(Math.random()-0.5)*0.3*aspect;
+      const finalD=Math.max(0.1, eD+jitterD);
+
+      posD[i*3  ]=src.x*scaleX+dirX*finalD;
+      posD[i*3+1]=src.y*scaleY+textOffsetY+dirY*finalD; // Y sin compresión — pantalla completa
+      posD[i*3+2]=(Math.random()-0.5)*0.6;
+
+      const op=Math.max(0, Math.exp(-finalD/(aspect*0.5))*0.85*(0.5+Math.random()*0.5));
+      colD[i*3  ]=0.94*op+0.22*(1-op);
+      colD[i*3+1]=0.96*op+0.243*(1-op);
+      colD[i*3+2]=1.0*op+0.306*(1-op);
+    }
+
+    const geoC=new THREE.BufferGeometry();
+    geoC.setAttribute("position",new THREE.BufferAttribute(pos,3));
+    geoC.setAttribute("color",new THREE.BufferAttribute(col,3));
+    scene.add(new THREE.Points(geoC,new THREE.PointsMaterial({size:0.020,vertexColors:true,transparent:true,opacity:0.95,sizeAttenuation:true})));
+
+    const geoD=new THREE.BufferGeometry();
+    geoD.setAttribute("position",new THREE.BufferAttribute(posD,3));
+    geoD.setAttribute("color",new THREE.BufferAttribute(colD,3));
+    const matD=new THREE.PointsMaterial({size:0.018,vertexColors:true,transparent:true,opacity:0.90,sizeAttenuation:true});
+    const ptsD=new THREE.Points(geoD,matD);
+    scene.add(ptsD);
+
+    // Per-particle phase + speed para movimiento notorio e independiente
+    const phases=Array.from({length:DISP},()=>Math.random()*Math.PI*2);
+    const speeds=Array.from({length:DISP},()=>0.6+Math.random()*1.4); // más rápido
+    const amps  =Array.from({length:DISP},()=>0.04+Math.random()*0.08); // muy notorio
+
+    let t=0,animId;
+    const posD0=new Float32Array(posD);
+    function animate(){
+      animId=requestAnimationFrame(animate);
+      t+=0.006;
+      // Texto FORJA: wobble sutil
+      scene.children[0].rotation.x=Math.sin(t*0.35)*0.04;
+      scene.children[0].rotation.z=Math.sin(t*0.22)*0.012;
+      // Partículas dispersas: drift independiente y notorio
+      const arr=geoD.attributes.position.array;
+      for(let i=0;i<DISP;i++){
+        const ph=phases[i], sp=speeds[i], am=amps[i];
+        arr[i*3  ]=posD0[i*3  ]+Math.sin(t*sp+ph)*am;
+        arr[i*3+1]=posD0[i*3+1]+Math.cos(t*sp*0.7+ph)*am*0.7;
+        arr[i*3+2]=posD0[i*3+2];
+      }
+      geoD.attributes.position.needsUpdate=true;
+      renderer.render(scene,cam);
+    }
+    animate();
+
+    document.addEventListener("visibilitychange",()=>{
+      if(document.hidden){cancelAnimationFrame(animId);}else{animate();}
+    });
+  }
+
+  window.addEventListener("forja:mount", tryInit);
+  window.addEventListener("load",tryInit);
+  setInterval(tryInit, 200);
+})();
+</script>
+
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('/FORJA/sw.js', {scope:'/FORJA/'})
+      .then(r=>console.log('SW registered:', r.scope))
+      .catch(e=>console.log('SW error:', e));
+  });
+}
+</script>
+
+<script>
+// ── FORJA Stick Figure Engine ─────────────────────────────────────────────
+(function(){
+  var RAF = requestAnimationFrame;
+  var SVG_NS = "http://www.w3.org/2000/svg";
+
+  function mkSVG(w,h){
+    var s = document.createElementNS(SVG_NS,"svg");
+    s.setAttribute("width",w); s.setAttribute("height",h);
+    s.setAttribute("viewBox","0 0 "+w+" "+h);
+    return s;
+  }
+  function circle(svg,cx,cy,r,col){
+    var c=document.createElementNS(SVG_NS,"circle");
+    c.setAttribute("cx",cx);c.setAttribute("cy",cy);c.setAttribute("r",r);
+    c.setAttribute("fill","none");c.setAttribute("stroke",col);c.setAttribute("stroke-width","1.8");
+    c.setAttribute("stroke-linecap","round");
+    svg.appendChild(c); return c;
+  }
+  function line(svg,x1,y1,x2,y2,col,w){
+    var l=document.createElementNS(SVG_NS,"line");
+    l.setAttribute("x1",x1);l.setAttribute("y1",y1);
+    l.setAttribute("x2",x2);l.setAttribute("y2",y2);
+    l.setAttribute("stroke",col);l.setAttribute("stroke-width",w||1.8);
+    l.setAttribute("stroke-linecap","round");
+    svg.appendChild(l); return l;
+  }
+  function text(svg,x,y,str,col,size){
+    var t=document.createElementNS(SVG_NS,"text");
+    t.setAttribute("x",x);t.setAttribute("y",y);
+    t.setAttribute("fill",col);t.setAttribute("font-size",size||8);
+    t.setAttribute("font-family","'SF Mono','Fira Code',monospace");
+    t.setAttribute("letter-spacing","1.5");t.setAttribute("font-weight","700");
+    t.setAttribute("text-anchor","middle");
+    t.textContent=str;
+    svg.appendChild(t); return t;
+  }
+
+  // ── Physics ──────────────────────────────────────────────────────────────
+  var t=0, phase=0;
+  // Body joints: head, torso_top, torso_bot, lshoulder, rshoulder, lelbow, relbow, lhand, rhand, lhip, rhip, lknee, rknee, lfoot, rfoot
+  // Base pose (idle standing)
+  var BASE = {
+    hx:40, hy:16,           // head center
+    tx:40, ty:22,           // torso top (neck)
+    bx:40, by:38,           // torso bottom (hips)
+    lsx:40,lsy:24,          // left shoulder
+    rsx:40,rsy:24,          // right shoulder
+    lex:34,ley:32,          // left elbow
+    rex:46,rey:32,          // right elbow
+    lhx:30,lhy:40,          // left hand
+    rhx:50,rhy:40,          // right hand
+    lhix:37,lhiy:38,        // left hip
+    rhix:43,rhiy:38,        // right hip
+    lkx:35,lky:50,          // left knee
+    rkx:45,rky:50,          // right knee
+    lfx:33,lfy:60,          // left foot
+    rfx:47,rfy:60,          // right foot
+  };
+
+  // Easing helpers
+  function sin(v){ return Math.sin(v); }
+  function cos(v){ return Math.cos(v); }
+  function lerp(a,b,k){ return a+(b-a)*k; }
+  // Organic noise: layered sines with prime frequencies
+  function noise(seed,speed){
+    return sin(t*speed+seed)*0.5 + sin(t*speed*1.618+seed*2.1)*0.3 + sin(t*speed*2.414+seed*0.7)*0.2;
+  }
+
+  // ── State poses ──────────────────────────────────────────────────────────
+  function getPose(state, streak){
+    var p = JSON.parse(JSON.stringify(BASE));
+    var s = state || "idle";
+
+    if(s==="idle"){
+      // Subtle breathing: torso rises, arms hang slightly, weight shifts
+      var breath = noise(0, 0.6);       // slow breath cycle
+      var sway = noise(1, 0.22);        // very slow weight shift
+      var headNod = noise(2, 0.35);     // subtle head movement
+      
+      // Body breathing
+      p.hx  += sway*1.2;  p.hy  += breath*(-0.8);
+      p.tx  += sway*0.8;  p.ty  += breath*(-0.6);
+      p.bx  += sway*0.3;
+      
+      // Arms hang with gravity — secondary motion after torso
+      var armDelay = noise(0, 0.6 - 0.05); // slight delay
+      p.lex += sway*0.8 + armDelay*0.3; p.ley += armDelay*(-0.3)+1;
+      p.rex += sway*0.8 - armDelay*0.3; p.rey += armDelay*(-0.3)+1;
+      p.lhx += sway*1.0 + armDelay*0.5; p.lhy += armDelay*(-0.4)+2;
+      p.rhx += sway*1.0 - armDelay*0.5; p.rhy += armDelay*(-0.4)+2;
+      
+      // Weight shift affects legs
+      p.lkx += sway*0.5; p.rkx += sway*0.3;
+      p.lfx += sway*0.4; p.rfx += sway*0.2;
+      p.hy  += headNod*0.5;
+      
+    } else if(s==="fire"){
+      // Pumped up — bouncing with energy, arms wide
+      // Faster, bouncier, but still organic
+      var bounce = noise(0, 1.8);
+      var pump = Math.abs(sin(t*1.8))*0.7 + Math.abs(noise(3,1.2))*0.3;
+      var armSwing = noise(1, 1.4);
+      
+      // Whole body bounces up slightly
+      var bodyUp = pump*(-3);
+      p.hy += bodyUp; p.ty += bodyUp*0.9; p.bx += noise(2,0.9)*0.8;
+      
+      // Arms raise triumphantly, secondary wave through forearms
+      p.lsx=36; p.lsy=22+bodyUp*0.5;
+      p.rsx=44; p.rsy=22+bodyUp*0.5;
+      p.lex=28+armSwing; p.ley=16+bodyUp*0.7+noise(0,1.4-0.08)*1.5;
+      p.rex=52-armSwing; p.rey=16+bodyUp*0.7+noise(1,1.4-0.08)*1.5;
+      p.lhx=24+armSwing*1.5; p.lhy=10+bodyUp+noise(0,1.4-0.15)*2;
+      p.rhx=56-armSwing*1.5; p.rhy=10+bodyUp+noise(1,1.4-0.15)*2;
+      
+      // Legs spring
+      p.lky=52+pump*2; p.rky=50-pump*2;
+      p.lfy=62+pump*1.5; p.rfy=60-pump;
+      
+    } else if(s==="work"){
+      // Running/working — alternating legs and arms
+      var run = t*2.2;
+      var legPhase = sin(run);
+      var armPhase = sin(run + Math.PI); // opposite to legs
+      var bounce2 = Math.abs(sin(run))*(-1.5);
+      var lean = sin(run*0.5)*1.5; // body lean
+      
+      p.hx += lean + noise(5, 2.2)*0.4;
+      p.hy += bounce2 + noise(5,2.2-0.1)*0.3;
+      p.bx += lean*0.5;
+      
+      // Arms alternating
+      p.lex=34+armPhase*5; p.ley=29+armPhase*3;
+      p.rex=46-armPhase*5; p.rey=29-armPhase*3;
+      p.lhx=30+armPhase*8; p.lhy=36+armPhase*4;
+      p.rhx=50-armPhase*8; p.rhy=36-armPhase*4;
+      
+      // Legs alternating
+      p.lkx=35+legPhase*4; p.lky=50-Math.abs(legPhase)*4;
+      p.rkx=45-legPhase*4; p.rky=50-Math.abs(legPhase)*4;
+      p.lfx=33+legPhase*6; p.lfy=60-Math.abs(legPhase)*6;
+      p.rfx=47-legPhase*6; p.rfy=60-Math.abs(legPhase)*6;
+      
+    } else if(s==="done"){
+      // Victory — arms up, subtle celebration, then pause, repeat
+      // Non-perfect loop: 3s up, 0.5s pause, quick down, up again
+      var cycleT = (t*0.8) % (Math.PI*2);
+      var celebrate = Math.max(0, sin(cycleT));
+      var pauseRegion = cycleT > Math.PI*0.7 && cycleT < Math.PI*0.9;
+      var armUp = pauseRegion ? 1 : celebrate;
+      
+      // Body sway of joy
+      var joy = noise(0, 0.5) * 0.8;
+      p.hx += joy; p.hy += (-1)*celebrate;
+      
+      // Arms up in victory — secondary: hands trail slightly
+      p.lex=30+joy*0.5; p.ley=18-armUp*10+noise(0,1.2-0.1)*2;
+      p.rex=50-joy*0.5; p.rey=18-armUp*10+noise(1,1.2-0.1)*2;
+      p.lhx=25+joy; p.lhy=10-armUp*10+noise(0,1.2-0.18)*3;
+      p.rhx=55-joy; p.rhy=10-armUp*10+noise(1,1.2-0.18)*3;
+      
+    } else if(s==="rest"){
+      // Sitting/slumped — head droops, body hunched
+      var restBreath = noise(0, 0.25)*0.5; // very slow breath
+      var headDroop = 2 + sin(t*0.18)*1.5; // slow head bob down
+      
+      // Slump body
+      p.hy += headDroop + restBreath;
+      p.ty += headDroop*0.6 + restBreath;
+      p.bx += noise(1,0.15)*0.5;
+      
+      // Arms hang limp at sides
+      p.lsx=38; p.lsy=26;
+      p.rsx=42; p.rsy=26;
+      p.lex=34+noise(2,0.3); p.ley=36+headDroop*0.3;
+      p.rex=46+noise(3,0.3); p.rey=36+headDroop*0.3;
+      p.lhx=32; p.lhy=46+headDroop*0.2+noise(2,0.3)*0.5;
+      p.rhx=48; p.rhy=46+headDroop*0.2+noise(3,0.3)*0.5;
+      
+      // Slightly bent knees
+      p.lky=48; p.rky=48;
+      p.lfy=58; p.rfy=58;
+    }
+    return p;
+  }
+
+  var COLOR = {
+    idle: "rgba(255,255,255,0.45)",
+    fire: "#f0b429",
+    work: "#3fcf8e",
+    done: "#3fcf8e",
+    rest: "rgba(255,255,255,0.2)"
+  };
+  var LABEL = {
+    idle: function(lang){ return lang==="es"||lang==="pt"?"A entrenar 💪":"Let's go 💪"; },
+    fire: function(lang,streak){ return "🔥 "+streak+"d"; },
+    work: function(lang,dc,total){ return "⚡ "+dc+"/"+total; },
+    done: function(lang){ return lang==="es"||lang==="pt"?"¡Hecho! ✓":"Done! ✓"; },
+    rest: function(lang){ return lang==="es"||lang==="pt"?"Descansando":"Rest day"; }
+  };
+
+  // ── Render loop ───────────────────────────────────────────────────────────
+  var svg = null, parts = {}, lastState = null, labelEl = null;
+
+  function buildSVG(wrap){
+    var W=80, H=70;
+    svg = mkSVG(W,H);
+    svg.style.cssText="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);overflow:visible;";
+    
+    // Draw order: feet → knees → torso → arms → head (painter's algorithm)
+    parts.lleg1  = line(svg,0,0,0,0,"#fff",1.8); // hip→knee L
+    parts.rleg1  = line(svg,0,0,0,0,"#fff",1.8);
+    parts.lleg2  = line(svg,0,0,0,0,"#fff",1.8); // knee→foot L
+    parts.rleg2  = line(svg,0,0,0,0,"#fff",1.8);
+    parts.torso  = line(svg,0,0,0,0,"#fff",2.2);
+    parts.larm1  = line(svg,0,0,0,0,"#fff",1.8); // shoulder→elbow
+    parts.rarm1  = line(svg,0,0,0,0,"#fff",1.8);
+    parts.larm2  = line(svg,0,0,0,0,"#fff",1.8); // elbow→hand
+    parts.rarm2  = line(svg,0,0,0,0,"#fff",1.8);
+    parts.head   = circle(svg,0,0,5,"#fff");
+    
+    wrap.appendChild(svg);
+
+    // Label below
+    labelEl = document.createElement("div");
+    labelEl.style.cssText="position:absolute;bottom:0;left:0;right:0;text-align:center;font-family:'SF Mono','Fira Code',monospace;font-size:8px;letter-spacing:1.5px;font-weight:700;opacity:0.8;";
+    wrap.appendChild(labelEl);
+  }
+
+  function setColor(col){
+    Object.values(parts).forEach(function(el){
+      if(el.tagName==="line") el.setAttribute("stroke",col);
+      else el.setAttribute("stroke",col);
+    });
+    if(labelEl) labelEl.style.color=col;
+  }
+
+  function render(state, streak, lang, dc, total){
+    if(!svg) return;
+    var p = getPose(state, streak);
+    var col = COLOR[state]||COLOR.idle;
+
+    // Update positions
+    parts.lleg1.setAttribute("x1",p.lhix);parts.lleg1.setAttribute("y1",p.lhiy);parts.lleg1.setAttribute("x2",p.lkx);parts.lleg1.setAttribute("y2",p.lky);
+    parts.rleg1.setAttribute("x1",p.rhix);parts.rleg1.setAttribute("y1",p.rhiy);parts.rleg1.setAttribute("x2",p.rkx);parts.rleg1.setAttribute("y2",p.rky);
+    parts.lleg2.setAttribute("x1",p.lkx); parts.lleg2.setAttribute("y1",p.lky); parts.lleg2.setAttribute("x2",p.lfx);parts.lleg2.setAttribute("y2",p.lfy);
+    parts.rleg2.setAttribute("x1",p.rkx); parts.rleg2.setAttribute("y1",p.rky); parts.rleg2.setAttribute("x2",p.rfx);parts.rleg2.setAttribute("y2",p.rfy);
+    parts.torso.setAttribute("x1",p.tx);  parts.torso.setAttribute("y1",p.ty);  parts.torso.setAttribute("x2",p.bx); parts.torso.setAttribute("y2",p.by);
+    parts.larm1.setAttribute("x1",p.lsx); parts.larm1.setAttribute("y1",p.lsy); parts.larm1.setAttribute("x2",p.lex);parts.larm1.setAttribute("y2",p.ley);
+    parts.rarm1.setAttribute("x1",p.rsx); parts.rarm1.setAttribute("y1",p.rsy); parts.rarm1.setAttribute("x2",p.rex);parts.rarm1.setAttribute("y2",p.rey);
+    parts.larm2.setAttribute("x1",p.lex); parts.larm2.setAttribute("y1",p.ley); parts.larm2.setAttribute("x2",p.lhx);parts.larm2.setAttribute("y2",p.lhy);
+    parts.rarm2.setAttribute("x1",p.rex); parts.rarm2.setAttribute("y1",p.rey); parts.rarm2.setAttribute("x2",p.rhx);parts.rarm2.setAttribute("y2",p.rhy);
+    parts.head.setAttribute("cx",p.hx);   parts.head.setAttribute("cy",p.hy);
+
+    setColor(col);
+
+    // Label
+    if(labelEl){
+      var fn = LABEL[state];
+      if(fn) labelEl.textContent = fn(lang, streak, dc, total);
+    }
+  }
+
+  // ── Main tick ─────────────────────────────────────────────────────────────
+  var DT = 1/60;
+  function tick(){
+    t += DT;
+    var wrap = document.getElementById("forja-stick-wrap");
+    if(!wrap){ RAF(tick); return; }
+    
+    // Build SVG once
+    if(!svg){ buildSVG(wrap); }
+    
+    // Read state from data attrs
+    var state = wrap.getAttribute("data-state") || "idle";
+    var streak = parseInt(wrap.getAttribute("data-streak")||"0");
+    var lang = document.documentElement.lang || "es";
+    // dc/total from data
+    var dc = parseInt(wrap.getAttribute("data-dc")||"0");
+    var total = parseInt(wrap.getAttribute("data-total")||"0");
+    
+    render(state, streak, lang, dc, total);
+    RAF(tick);
+  }
+  RAF(tick);
+})();
+</script>
+
+
+
+
+
+
+<!-- ── FORJA Stickman: thick SVG with white outline, CSS animated ── -->
+<style>
+#forja-stick-wrap {
+  width: 100%;
+  height: 80px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+}
+/* The SVG stickman — thick strokes + white outline via paint-order */
+#forja-stick-svg {
+  overflow: visible;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3));
+}
+#forja-stick-svg .stick-part {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  paint-order: stroke fill;
+}
+/* Label */
+#forja-stick-label {
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'SF Mono','Fira Code',monospace;
+  font-size: 8px;
+  letter-spacing: 2px;
+  font-weight: 700;
+  white-space: nowrap;
+  opacity: 0.8;
+  color: rgba(255,255,255,0.6);
+}
+
+/* ── IDLE: gentle breathing sway ── */
+.anim-idle #sg-body   { animation: idle-body  4s ease-in-out infinite; transform-origin: 50% 100%; }
+.anim-idle #sg-head   { animation: idle-head  4s ease-in-out infinite; transform-origin: 50% 100%; }
+.anim-idle #sg-armL   { animation: idle-armL  4s ease-in-out infinite; transform-origin: 2px 2px; }
+.anim-idle #sg-armR   { animation: idle-armR  4s ease-in-out infinite; transform-origin: 2px 2px; }
+.anim-idle #sg-legL   { animation: idle-legL  4s ease-in-out infinite; transform-origin: 2px 2px; }
+.anim-idle #sg-legR   { animation: idle-legR  4s ease-in-out infinite; transform-origin: 2px 2px; }
+
+@keyframes idle-body  { 0%,100%{transform:translateY(0) rotate(-0.5deg)} 50%{transform:translateY(-1.5px) rotate(0.5deg)} }
+@keyframes idle-head  { 0%,100%{transform:rotate(-1deg)} 50%{transform:rotate(1deg)} }
+@keyframes idle-armL  { 0%,100%{transform:rotate(0deg)}  50%{transform:rotate(-4deg)} }
+@keyframes idle-armR  { 0%,100%{transform:rotate(0deg)}  50%{transform:rotate(4deg)} }
+@keyframes idle-legL  { 0%,100%{transform:rotate(0deg)}  50%{transform:rotate(-2deg)} }
+@keyframes idle-legR  { 0%,100%{transform:rotate(0deg)}  50%{transform:rotate(2deg)} }
+
+/* ── RUN: stride cycle ── */
+.anim-run #sg-body { animation: run-body 0.52s ease-in-out infinite alternate; transform-origin: 50% 50%; }
+.anim-run #sg-head { animation: run-head 0.52s ease-in-out infinite alternate; transform-origin: 50% 100%; }
+.anim-run #sg-armL { animation: run-armL 0.52s ease-in-out infinite alternate; transform-origin: 2px 2px; }
+.anim-run #sg-armR { animation: run-armR 0.52s ease-in-out infinite alternate; transform-origin: 2px 2px; }
+.anim-run #sg-legL { animation: run-legL 0.52s ease-in-out infinite alternate; transform-origin: 2px 0px; }
+.anim-run #sg-legR { animation: run-legR 0.52s ease-in-out infinite alternate; transform-origin: 2px 0px; }
+
+@keyframes run-body { from{transform:translateY(0) rotate(-4deg)} to{transform:translateY(-5px) rotate(4deg)} }
+@keyframes run-head { from{transform:rotate(-6deg)} to{transform:rotate(6deg)} }
+@keyframes run-armL { from{transform:rotate(-60deg)} to{transform:rotate(25deg)} }
+@keyframes run-armR { from{transform:rotate(25deg)}  to{transform:rotate(-60deg)} }
+@keyframes run-legL { from{transform:rotate(-40deg)} to{transform:rotate(40deg)} }
+@keyframes run-legR { from{transform:rotate(40deg)}  to{transform:rotate(-40deg)} }
+
+/* ── FIRE: bounce + fist pump ── */
+.anim-fire #sg-root { animation: fire-jump 0.48s cubic-bezier(0.34,1.56,0.64,1) infinite alternate; transform-origin: 50% 100%; }
+.anim-fire #sg-head { animation: fire-head 0.48s ease-in-out infinite alternate; transform-origin: 50% 100%; }
+.anim-fire #sg-armL { animation: fire-armL 0.48s ease-in-out infinite alternate; transform-origin: 2px 2px; }
+.anim-fire #sg-armR { animation: fire-armR 0.48s ease-in-out infinite alternate; transform-origin: 2px 2px; animation-delay: 0.1s; }
+
+@keyframes fire-jump { from{transform:translateY(0)} to{transform:translateY(-9px) scaleY(0.95)} }
+@keyframes fire-head { from{transform:rotate(-4deg)} to{transform:rotate(4deg)} }
+@keyframes fire-armL { from{transform:rotate(-120deg)} to{transform:rotate(-80deg)} }
+@keyframes fire-armR { from{transform:rotate(80deg)} to{transform:rotate(120deg)} }
+
+/* ── DONE: celebrate jump ── */
+.anim-done #sg-root { animation: done-jump 0.65s cubic-bezier(0.34,1.56,0.64,1) infinite; transform-origin: 50% 100%; }
+.anim-done #sg-armL { animation: done-armL 0.65s ease-in-out infinite; transform-origin: 2px 2px; }
+.anim-done #sg-armR { animation: done-armR 0.65s ease-in-out infinite; transform-origin: 2px 2px; animation-delay: 0.08s; }
+.anim-done #sg-legL { animation: done-legL 0.65s ease-in-out infinite; transform-origin: 2px 0px; }
+.anim-done #sg-legR { animation: done-legR 0.65s ease-in-out infinite; transform-origin: 2px 0px; }
+
+@keyframes done-jump { 0%{transform:translateY(0)} 35%{transform:translateY(-14px) scaleY(0.94)} 60%{transform:translateY(-14px)} 100%{transform:translateY(0)} }
+@keyframes done-armL { 0%,100%{transform:rotate(-140deg)} 30%,70%{transform:rotate(-160deg)} }
+@keyframes done-armR { 0%,100%{transform:rotate(140deg)}  30%,70%{transform:rotate(160deg)} }
+@keyframes done-legL { 0%,100%{transform:rotate(0)} 40%{transform:rotate(-20deg)} }
+@keyframes done-legR { 0%,100%{transform:rotate(0)} 40%{transform:rotate(20deg)} }
+
+/* ── REST/SLEEP ── */
+.anim-rest #sg-root { animation: rest-droop 4s ease-in-out infinite; transform-origin: 50% 30%; }
+.anim-rest #sg-head { animation: rest-head 4s ease-in-out infinite; transform-origin: 50% 100%; }
+.anim-rest #sg-armL { animation: rest-armL 4s ease-in-out infinite; transform-origin: 2px 2px; }
+.anim-rest #sg-armR { animation: rest-armR 4s ease-in-out infinite; transform-origin: 2px 2px; }
+
+@keyframes rest-droop { 0%,100%{transform:rotate(-6deg)} 50%{transform:rotate(-9deg)} }
+@keyframes rest-head  { 0%,100%{transform:rotate(-10deg) translateY(1px)} 50%{transform:rotate(-14deg) translateY(3px)} }
+@keyframes rest-armL  { 0%,100%{transform:rotate(55deg)}  50%{transform:rotate(60deg)} }
+@keyframes rest-armR  { 0%,100%{transform:rotate(-45deg)} 50%{transform:rotate(-40deg)} }
+
+/* ZZZ */
+.zzz-el {
+  position: absolute;
+  font-family: 'SF Mono',monospace;
+  font-weight: 900;
+  color: rgba(160,210,255,0.8);
+  opacity: 0;
+  pointer-events: none;
+  display: none;
+}
+.anim-rest ~ .zzz-el { display: block; }
+.zzz-el.z1 { font-size: 9px;  top: 4px;  left: calc(50% + 18px); animation: zzz-float 2.6s ease-in-out infinite; }
+.zzz-el.z2 { font-size: 11px; top: -4px; left: calc(50% + 24px); animation: zzz-float 2.6s ease-in-out 0.85s infinite; }
+.zzz-el.z3 { font-size: 14px; top:-14px; left: calc(50% + 30px); animation: zzz-float 2.6s ease-in-out 1.7s infinite; }
+@keyframes zzz-float {
+  0%   { opacity:0; transform:translate(0,0) rotate(-5deg); }
+  15%  { opacity:0.9; }
+  85%  { opacity:0.4; }
+  100% { opacity:0; transform:translate(4px,-16px) rotate(8deg); }
+}
+</style>
+
+<script>
+(function(){
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+  var built = false;
+
+  // SVG path data for the thick stickman
+  // All coordinates in a 40×64 viewBox, figure centered at x=20
+  function buildFigure(wrap, col) {
+    var svg = document.createElementNS(SVG_NS, 'svg');
+    svg.setAttribute('id', 'forja-stick-svg');
+    svg.setAttribute('width', '40');
+    svg.setAttribute('height', '68');
+    svg.setAttribute('viewBox', '0 0 40 68');
+    svg.style.overflow = 'visible';
+
+    // Root group (for whole-body transforms like jump)
+    var root = document.createElementNS(SVG_NS, 'g');
+    root.setAttribute('id', 'sg-root');
+
+    // Body group (torso)
+    var body = document.createElementNS(SVG_NS, 'g');
+    body.setAttribute('id', 'sg-body');
+
+    // HEAD — big filled circle with white outline
+    var head = document.createElementNS(SVG_NS, 'circle');
+    head.setAttribute('id', 'sg-head');
+    head.setAttribute('cx', '20'); head.setAttribute('cy', '9');
+    head.setAttribute('r', '8');
+    head.setAttribute('fill', col);
+    head.setAttribute('stroke', 'rgba(255,255,255,0.9)');
+    head.setAttribute('stroke-width', '2.5');
+    head.setAttribute('class', 'stick-part');
+
+    // TORSO
+    var torso = document.createElementNS(SVG_NS, 'line');
+    torso.setAttribute('x1','20'); torso.setAttribute('y1','17');
+    torso.setAttribute('x2','20'); torso.setAttribute('y2','38');
+    torso.setAttribute('stroke', col);
+    torso.setAttribute('stroke-width', '5');
+    torso.setAttribute('stroke', col);
+    // White outline via second line behind
+    var torsoOut = torso.cloneNode();
+    torsoOut.setAttribute('stroke', 'rgba(255,255,255,0.9)');
+    torsoOut.setAttribute('stroke-width', '8');
+    torsoOut.setAttribute('stroke-linecap', 'round');
+
+    // ARM LEFT — from shoulder pivot
+    var armLg = document.createElementNS(SVG_NS, 'g');
+    armLg.setAttribute('id','sg-armL');
+    armLg.setAttribute('transform','translate(20,22)');
+    var armL = document.createElementNS(SVG_NS,'line');
+    armL.setAttribute('x1','0');armL.setAttribute('y1','0');
+    armL.setAttribute('x2','-16');armL.setAttribute('y2','6');
+    var armLo = armL.cloneNode();
+
+    // ARM RIGHT
+    var armRg = document.createElementNS(SVG_NS,'g');
+    armRg.setAttribute('id','sg-armR');
+    armRg.setAttribute('transform','translate(20,22)');
+    var armR = document.createElementNS(SVG_NS,'line');
+    armR.setAttribute('x1','0');armR.setAttribute('y1','0');
+    armR.setAttribute('x2','16');armR.setAttribute('y2','6');
+    var armRo = armR.cloneNode();
+
+    // LEG LEFT — from hip pivot
+    var legLg = document.createElementNS(SVG_NS,'g');
+    legLg.setAttribute('id','sg-legL');
+    legLg.setAttribute('transform','translate(18,38)');
+    var legL = document.createElementNS(SVG_NS,'line');
+    legL.setAttribute('x1','0');legL.setAttribute('y1','0');
+    legL.setAttribute('x2','-5');legL.setAttribute('y2','20');
+    var legLo = legL.cloneNode();
+
+    // LEG RIGHT
+    var legRg = document.createElementNS(SVG_NS,'g');
+    legRg.setAttribute('id','sg-legR');
+    legRg.setAttribute('transform','translate(22,38)');
+    var legR = document.createElementNS(SVG_NS,'line');
+    legR.setAttribute('x1','0');legR.setAttribute('y1','0');
+    legR.setAttribute('x2','5');legR.setAttribute('y2','20');
+    var legRo = legR.cloneNode();
+
+    // Style all lines: thick fill color + white outline
+    function styleLine(out, fill, line) {
+      out.setAttribute('stroke','rgba(255,255,255,0.9)');
+      out.setAttribute('stroke-width','8');
+      out.setAttribute('stroke-linecap','round');
+      fill.setAttribute('stroke', col);
+      fill.setAttribute('stroke-width','5');
+      fill.setAttribute('stroke-linecap','round');
+    }
+    styleLine(torsoOut,torso);
+    styleLine(armLo,armL); styleLine(armRo,armR);
+    styleLine(legLo,legL); styleLine(legRo,legR);
+
+    // Assemble: outline first, then fill on top
+    armLg.appendChild(armLo); armLg.appendChild(armL);
+    armRg.appendChild(armRo); armRg.appendChild(armR);
+    legLg.appendChild(legLo); legLg.appendChild(legL);
+    legRg.appendChild(legRo); legRg.appendChild(legR);
+
+    body.appendChild(torsoOut); body.appendChild(torso);
+    body.appendChild(armLg); body.appendChild(armRg);
+    body.appendChild(legLg); body.appendChild(legRg);
+    body.appendChild(head);
+
+    root.appendChild(body);
+    svg.appendChild(root);
+    return svg;
+  }
+
+  function render() {
+    var wrap = document.getElementById('forja-stick-wrap');
+    if (!wrap) return setTimeout(render, 150);
+
+    var state  = wrap.getAttribute('data-state') || 'idle';
+    var streak = wrap.getAttribute('data-streak') || '0';
+    var fStick = window._fStick || {};
+    var dc  = fStick.dc  || 0;
+    var tot = fStick.tot || 0;
+    var lang = document.documentElement.lang || 'es';
+    var isEs = lang==='es'||lang==='pt';
+
+    var COLS = { idle:'rgba(255,255,255,0.85)', work:'#3fcf8e', fire:'#f0b429', done:'#3fcf8e', rest:'rgba(180,200,240,0.7)' };
+    var col = COLS[state] || COLS.idle;
+
+    var ANIM = { idle:'anim-idle', work:'anim-run', fire:'anim-fire', done:'anim-done', rest:'anim-rest' };
+    var animClass = ANIM[state] || 'anim-idle';
+
+    var LABELS = {
+      idle:'', work:'⚡ '+dc+'/'+tot,
+      fire:'🔥 '+streak+'d',
+      done: isEs?'¡Hecho! ✓':'Done! ✓',
+      rest:'😴'
+    };
+
+    var svg = buildFigure(wrap, col);
+    svg.classList.add(animClass);
+
+    wrap.innerHTML = '';
+    wrap.appendChild(svg);
+
+    // ZZZ elements
+    ['z','Z','Z'].forEach(function(ch, i) {
+      var z = document.createElement('div');
+      z.className = 'zzz-el z'+(i+1);
+      z.textContent = ch;
+      wrap.appendChild(z);
+    });
+
+    // Label
+    var lbl = document.createElement('div');
+    lbl.id = 'forja-stick-label';
+    lbl.style.color = col;
+    lbl.textContent = LABELS[state] || '';
+    wrap.appendChild(lbl);
+  }
+
+  // Watch for state changes
+  var prevState = null;
+  function watch() {
+    var w = document.getElementById('forja-stick-wrap');
+    var cur = w && w.getAttribute('data-state');
+    var dc2 = window._fStick ? window._fStick.dc : 0;
+    var key = cur + '|' + dc2;
+    if (key !== prevState) { prevState = key; render(); }
+    requestAnimationFrame(watch);
+  }
+  setTimeout(function() { render(); watch(); }, 300);
+})();
+</script>
+
 </body>
 </html>
