@@ -5648,7 +5648,10 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
     </div>
   );
   const handleBack=()=>{
-    const map={1:0,15:1,2:15,3:2,4:3,5:4,6:5,7:6,8:7,9:8,10:9,20:2,21:20,22:21,23:21,25:2,26:25};
+    if(step===25&&typeof showForjaOnboarding==='function'){
+      showForjaOnboarding(); return;
+    }
+    const map={1:0,15:1,2:15,3:2,4:3,5:4,6:5,7:6,8:7,9:8,10:9,20:2,21:20,22:21,23:21,26:25};
     if(map[step]!==undefined){setStep(map[step]);window.scrollTo({top:0,behavior:"instant"});}
   };
   return(
@@ -7289,11 +7292,11 @@ function App(){
           setStep(99);
         } else if(skipOnboard){
           setLangS(l=>l||'es');
-          setStep(1); // Skip login screen, go straight to onboarding
+          setStep(1);
         }
         setReady(true);
         setAuthChecked(true);
-        // Register callback for new onboarding overlay
+       
         window.__forjaOnboardingDone = function(profile, routine, targetStep) {
           setProfile(profile);
           if(routine) setRoutine(routine);
@@ -7984,12 +7987,19 @@ function _foMarkOnboarded() {
 
 function showForjaOnboarding() {
   localStorage.removeItem('forja_onboarded');
+  state = { name:'', goal:null, days:null, mode:null, selectedDays:[] };
+  currentScreen = 0;
   var ov = document.getElementById('forja-onboarding');
   if (!ov) return;
-  currentScreen = 0;
   ov.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active','exit'); });
   var s0 = document.getElementById('screen-0');
   if (s0) s0.classList.add('active');
+  ['.opt.selected','.wday.selected','.day-pill.selected'].forEach(function(sel){document.querySelectorAll(sel).forEach(function(el){el.classList.remove('selected');});});
+  var wn = document.getElementById('wday-note'); if(wn) wn.style.opacity='0';
+  var bn = document.getElementById('btn-goal'); if(bn) bn.disabled=true;
+  var bm = document.getElementById('btn-mode'); if(bm) bm.disabled=true;
+  var bd = document.getElementById('btn-days'); if(bd) bd.disabled=true;
+  var ni = document.getElementById('name-input'); if(ni) ni.value='';
   var pw = document.getElementById('progress-wrap');
   if (pw) pw.style.opacity = '0';
   ov.classList.remove('hidden');
