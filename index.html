@@ -5459,7 +5459,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
   const[catalogDiff,setCatalogDiff]=useState("");   // "beginner"|"intermediate"|"advanced"|""
   const[drawerEx,setDrawerEx]=useState(null);       // ejercicio con drawer abierto
   const[equipment,setEquipment]=useState([]); // equipo disponible
-  const[selCeleb,setSelCeleb]=useState(null);
+  const[selCeleb,setSelCeleb]=useState('arnold');
   const[showProModal,setShowProModal]=useState(false);
   const[celebGender,setCelebGender]=useState("m"); // "m" or "f"
   const[gymType,setGymType]=useState(null); // 'gym' | 'homegym' // celebrity routine selection
@@ -6516,7 +6516,8 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                   <div style={{flex:2}}><Btn disabled={!selCeleb} onClick={()=>{
                     const cel=[...CELEB_CARDS,...CELEB_CARDS_F].find(x=>x.id===selCeleb);
                     if(!cel)return;
-setDays(cel.days);setCelebData(cel);const sd=profile?.selDays;setSelDays(sd&&sd.length===cel.days?sd:[1,2,3,4,5,6,0].slice(0,cel.days));setStep(99);
+setDays(cel.days);setCelebData(cel);const sd=profile?.selDays;const autoSd=[1,2,3,4,5,6,0].slice(0,cel.days);setSelDays(sd&&sd.length===cel.days?sd:autoSd);
+sp(p=>({...p,celebrity:selCeleb,mode:'celebrity',selDays:sd&&sd.length===cel.days?sd:autoSd,days:cel.days}));setStep(99);
                   }}>{lang==="es"?"ELEGIR ESTA RUTINA →":"SELECT THIS ROUTINE →"}</Btn></div>
                 </div>
               </>);
@@ -7273,6 +7274,7 @@ function App(){
     try{if(l)localStorage.setItem('fv8_lang',l);}catch{}
   },[]);
   const[step,setStep]=useState(0);
+  window._fss=setStep;
   const[profile,setProfile]=useState(null);
   const[routine,setRoutine]=useState(null);
   const[ready,setReady]=useState(false);
@@ -7293,7 +7295,7 @@ function App(){
         setReady(true);
         setAuthChecked(true);
        
-        window.__forjaOnboardingDone=function(p,r,s){setProfile(p);if(r)setRoutine(r);setStep(s||99);};
+        window.__forjaOnboardingDone=function(p,r,s){setProfile(p);if(r)setRoutine(r);window._fss(s||99);};
       }).catch(()=>{setReady(true);setAuthChecked(true);});
     };
     const search=window.location.search;
@@ -7302,9 +7304,7 @@ function App(){
       hash.includes('refresh_token')||
       search.includes('code=');
     if(hasOAuthHash&&sb){
-      console.log('FORJA: OAuth callback detected, exchanging code...');
       const{data:{subscription}}=sb.auth.onAuthStateChange((event,session)=>{
-        console.log('FORJA: Auth event during callback:', event, session?.user?.email || 'no email');
         if(event==='SIGNED_IN'&&session?.user){
           _user=session.user;
           subscription.unsubscribe();
@@ -7319,7 +7319,6 @@ function App(){
       });
       sb.auth.getSession().then(({data:{session},error})=>{
         if(error) console.error('FORJA: code exchange error:', error.message);
-        console.log('FORJA: getSession result:', session?.user?.email || 'no session yet');
         if(session?.user&&session.user.app_metadata?.provider==='google'){
           _user=session.user;
           subscription.unsubscribe();
