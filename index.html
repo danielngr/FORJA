@@ -8527,7 +8527,7 @@ function bone(a, b, w2) {
 </script>
 
 
-<script>
+<<script>
 /* FORJA BOT - 3D robot on workout start screen */
 (function initForjaBot(){
   var BOT_URL="https://danielngr.github.io/FORJA/idle.glb";
@@ -8538,36 +8538,40 @@ function bone(a, b, w2) {
     if(!wrap||!window.THREE||!window.THREE.GLTFLoader)return;
     if(wrap.dataset.botInit)return;
     wrap.dataset.botInit="1";done=true;
+    var W=200,H=wrap.offsetHeight||260;
     var bc=document.createElement("canvas");
-    bc.style.cssText="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;";
-    wrap.appendChild(bc);
-    var W=wrap.offsetWidth||360,H=wrap.offsetHeight||260;
+    bc.setAttribute("data-bot","1");
+    bc.style.cssText="position:absolute;top:0;right:0;width:"+W+"px;height:"+H+"px;pointer-events:none;z-index:2;";
     bc.width=W;bc.height=H;
+    wrap.appendChild(bc);
     var renderer=new THREE.WebGLRenderer({canvas:bc,antialias:false,alpha:true});
-    renderer.setSize(W,H);renderer.setPixelRatio(1);
-    renderer.setClearColor(0x000000,0);
+    renderer.setSize(W,H);renderer.setPixelRatio(1);renderer.setClearColor(0x000000,0);
     var scene=new THREE.Scene();
-    var cam=new THREE.PerspectiveCamera(38,W/H,0.01,100);
-    cam.position.set(0,1.3,3.2);cam.lookAt(0,0.8,0);
-    scene.add(new THREE.AmbientLight(0xffffff,0.8));
-    var k=new THREE.DirectionalLight(0xffffff,2);k.position.set(2,4,3);scene.add(k);
-    var f=new THREE.DirectionalLight(0x6699ff,0.5);f.position.set(-2,1,1);scene.add(f);
-    var r=new THREE.DirectionalLight(0xff5500,0.8);r.position.set(0,-1,-2);scene.add(r);
-    var pt=new THREE.PointLight(0xff3300,0.6,5);pt.position.set(0,0.5,1.2);scene.add(pt);
+    var cam=new THREE.PerspectiveCamera(42,W/H,0.01,100);
+    cam.position.set(0,1.2,3.0);cam.lookAt(0,0.8,0);
+    scene.add(new THREE.AmbientLight(0xffffff,0.9));
+    var k=new THREE.DirectionalLight(0xffffff,2.2);k.position.set(2,4,3);scene.add(k);
+    var f=new THREE.DirectionalLight(0x88aaff,0.6);f.position.set(-2,1,1);scene.add(f);
+    var ri=new THREE.DirectionalLight(0xff5500,0.9);ri.position.set(0,-1,-2);scene.add(ri);
+    var pt=new THREE.PointLight(0xff3300,0.7,5);pt.position.set(0,0.5,1.2);scene.add(pt);
     fetch(BOT_URL)
-      .then(function(res){return res.arrayBuffer();})
-      .then(function(buf){
-        return new Promise(function(resolve,reject){
-          var loader=new THREE.GLTFLoader();
-          loader.parse(buf,"",resolve,reject);
-        });
-      })
+      .then(function(r){return r.arrayBuffer();})
+      .then(function(buf){return new Promise(function(res,rej){new THREE.GLTFLoader().parse(buf,"",res,rej);});})
       .then(function(gltf){
         var model=gltf.scene;
+        // Fix white materials — apply nice color
+        model.traverse(function(c){
+          if(c.isMesh){
+            var isBody=true;
+            c.material=new THREE.MeshStandardMaterial({
+              color:isBody?0x4a9eff:0x2266cc,
+              roughness:0.35,metalness:0.4
+            });
+          }
+        });
         var box=new THREE.Box3().setFromObject(model);
         var size=box.getSize(new THREE.Vector3());
-        var maxDim=Math.max(size.x,size.y,size.z);
-        var scale=1.6/maxDim;
+        var scale=1.5/Math.max(size.x,size.y,size.z);
         model.scale.setScalar(scale);
         model.updateMatrixWorld();
         var box2=new THREE.Box3().setFromObject(model);
@@ -8575,29 +8579,29 @@ function bone(a, b, w2) {
         model.position.x=-(box2.min.x+box2.max.x)/2;
         scene.add(model);
         var mixer=new THREE.AnimationMixer(model);
-        if(gltf.animations&&gltf.animations.length>0)mixer.clipAction(gltf.animations[0]).play();
+        if(gltf.animations&&gltf.animations.length)mixer.clipAction(gltf.animations[0]).play();
         var clock=new THREE.Clock();var t=0;
-        var mouse={x:0};
-        wrap.addEventListener("mousemove",function(e){
-          var r=wrap.getBoundingClientRect();
-          mouse.x=((e.clientX-r.left)/r.width-0.5)*2;
-        });
         (function tick(){
           requestAnimationFrame(tick);
           var dt=clock.getDelta();t+=dt;
           mixer.update(dt);
           var b=new THREE.Box3().setFromObject(model);
           model.position.y=-b.min.y+Math.sin(t*0.8)*0.04;
-          model.rotation.y+=(mouse.x*0.45-model.rotation.y)*0.05;
-          pt.intensity=0.4+Math.sin(t*2)*0.2;
+          model.rotation.y=Math.sin(t*0.3)*0.3;
+          pt.intensity=0.5+Math.sin(t*2)*0.2;
           renderer.render(scene,cam);
         })();
       })
       .catch(function(e){console.warn("ForjaBot:",e);});
   }
-  window.addEventListener("forja:mount",tryBot);
+  // Re-run on every mount event since React re-creates the DOM
+  function reset(){done=false;tryBot();}
+  window.addEventListener("forja:mount",reset);
   window.addEventListener("load",tryBot);
-  setInterval(tryBot,400);
+  setInterval(function(){
+    var wrap=document.getElementById("forja-dumbbell-wrap");
+    if(wrap&&!wrap.dataset.botInit){done=false;tryBot();}
+  },500);
 })();
 </script>
 </body>
