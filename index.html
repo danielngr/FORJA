@@ -4239,7 +4239,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
               </div>
             ):(
               <>
-                <div id="forja-dumbbell-wrap" data-tour="start-workout" style={{width:"100%",height:260,borderRadius:16,overflow:"hidden",position:"relative",background:C.bg,cursor:"pointer"}}
+                <div id="forja-dumbbell-wrap" data-tour="start-workout" style={{width:"100%",height:180,borderRadius:16,overflow:"hidden",position:"relative",background:C.bg,cursor:"pointer"}}
                   onClick={()=>{if(day&&day.ex&&day.ex.length)setInWorkout(true);}}
                 >
                   <canvas id="forja-dumbbell-canvas" style={{width:"100%",height:"100%",display:"block"}}></canvas>
@@ -7606,9 +7606,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
     scene=new THREE.Scene();
     const aspect=W/H;
-    // FOV=50, camZ=8 → halfH=3.73 → robot 1.51u = 20% del canvas
-    camera=new THREE.PerspectiveCamera(50,aspect,0.1,200);
-    camera.position.set(0,0,8);
+    // FOV=30 angosto, camZ=6 → halfH=1.608
+    // Robot base=0.028u, scale=70 → height=1.96u = 61% del canvas
+    camera=new THREE.PerspectiveCamera(30,aspect,0.1,200);
+    camera.position.set(0,0,6);
 
     scene.add(new THREE.AmbientLight(0xffffff,1.4));
     const key=new THREE.DirectionalLight(0xffeedd,1.2);
@@ -7618,14 +7619,13 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
     clock=new THREE.Clock();
 
-    // halfH = 8*tan(25°) = 3.73, robot_h = 1.68*0.9 = 1.51u
-    // FLOOR_Y = pies pegados al borde inferior + pequeño margen
-    const halfH=8*Math.tan(25*Math.PI/180); // 3.73
+    // halfH=6*tan(15°)=1.608, halfW=halfH*aspect
+    const halfH=6*Math.tan(15*Math.PI/180);
     const halfW=halfH*aspect;
-    MX=halfW*0.72;
-    const FLOOR_Y=-halfH+0.08; // pies casi en el borde inferior
+    MX=halfW*0.72;                // ±2.82 — zona de movimiento
+    const FLOOR_Y=-halfH+0.05;   // pies pegados al borde inferior
 
-    charX=MX*0.75; charY=FLOOR_Y;
+    charX=MX*0.78; charY=FLOOR_Y;
     targetX=charX; targetY=FLOOR_Y;
 
     // Determinar mood inicial
@@ -7646,8 +7646,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
               else child.material.skinning=true;
             }
           });
-          // scale=0.9: Armature interno tiene scale=0.01, robot mide 168*0.01*0.9=1.51u
-          model.scale.setScalar(0.9);
+          // scale=70: modelo base 0.028u × 70 = 1.96u = 61% del canvas de 160px
+          model.scale.setScalar(70);
           model.position.set(charX,FLOOR_Y,0);
           scene.add(model);
 
@@ -7699,8 +7699,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       canvas.width=W2*window.devicePixelRatio; canvas.height=160*window.devicePixelRatio;
       renderer.setSize(W2,160);
       camera.aspect=W2/160; camera.updateProjectionMatrix();
-      const halfH2=8*Math.tan(25*Math.PI/180);
-      MX=halfH2*(W2/160)*0.72;
+      MX=6*Math.tan(15*Math.PI/180)*(W2/160)*0.72;
     });
 
     document.addEventListener("visibilitychange",()=>{
