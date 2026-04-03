@@ -4234,7 +4234,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
               </div>
             ):(
               <>
-                <div id="forja-dumbbell-wrap" data-tour="start-workout" style={{width:"100%",height:320,borderRadius:16,overflow:"hidden",position:"relative",background:C.bg,cursor:"pointer"}}
+                <div id="forja-dumbbell-wrap" data-tour="start-workout" style={{width:"100%",height:320,borderRadius:16,overflow:"visible",position:"relative",background:C.bg,cursor:"pointer"}}
                   onClick={()=>{if(day&&day.ex&&day.ex.length)setInWorkout(true);}}
                 >
                   <canvas id="forja-dumbbell-canvas" style={{width:"100%",height:"100%",display:"block"}}></canvas>
@@ -7329,7 +7329,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(46,W/H,0.1,100);
-    camera.position.set(0,0,9.5);
+    camera.position.set(0,0,14);
 
     const parts = [
       {xC:0,     r:0.12, th:1.44, type:"cyl"},
@@ -7415,10 +7415,27 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     // Robot state — wanders inside the canvas
     let robotMixer=null, robotClock=new THREE.Clock();
     let robotRoot=null, robotReady=false;
-    // Frustum at Z=0: X=±5.58, Y=±4.03
-    let rbx=3.0, rby=0.0, rvx=0, rvy=0;
-    const RB_MARGIN_X=1.2, RB_MARGIN_Y=1.0;
-    const FRUSTUM_X=5.2, FRUSTUM_Y=3.6;
+    // Frustum at Z=0 with cam at Z=14, FOV=46: X=±8.2, Y=±5.9
+    let rbx=2.0, rby=0.0, rvx=0, rvy=0;
+    const RB_MARGIN_X=1.5, RB_MARGIN_Y=1.2;
+    const FRUSTUM_X=7.8, FRUSTUM_Y=5.5;
+
+    // Character movement state
+    let charX=2.0, charY=0.0;         // current position
+    let targetX=2.0, targetY=0.0;     // destination
+    let charState="idle";              // idle | walking
+    let idleTimer=0;                   // seconds to wait before next move
+    let charFacing=0;                  // current Y rotation
+    let charTargetFacing=0;            // desired Y rotation
+
+    function pickNewTarget(){
+      targetX=(Math.random()*2-1)*( FRUSTUM_X-RB_MARGIN_X);
+      targetY=(Math.random()*2-1)*(FRUSTUM_Y-RB_MARGIN_Y)*0.5;
+      const dx=targetX-charX, dy=targetY-charY;
+      charTargetFacing=Math.atan2(dx,0); // face direction of travel (X axis)
+      charState="walking";
+    }
+    pickNewTarget();
 
     fetch("https://danielngr.github.io/FORJA/idle.glb")
       .then(r=>r.arrayBuffer())
@@ -7426,19 +7443,15 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
         const loader=new THREE.GLTFLoader();
         loader.parse(buf,"",(gltf)=>{
           const model=gltf.scene;
+          // Respetar materiales originales del GLB — no sobreescribir colores
+          // Solo asegurar skinning en SkinnedMesh
           model.traverse(child=>{
-            if(child.isMesh||child.isSkinnedMesh){
-              const n=(child.name||"").toLowerCase();
-              let col=0x8899aa, rough=0.4, metal=0.6;
-              if(n.includes("cabeza"))      { col=0x99aabb; rough=0.3; metal=0.7; }
-              else if(n.includes("mascara")){ col=0xff6622; rough=0.5; metal=0.3; }
-              else if(n.includes("cuerpo")) { col=0x778899; rough=0.4; metal=0.65; }
-              else if(n.includes("pcube")||n.includes("pcylinder")){ col=0x334455; rough=0.6; metal=0.5; }
-              else if(n.includes("pierna")) { col=0x7788aa; rough=0.4; metal=0.6; }
-              child.material=new THREE.MeshStandardMaterial({color:col,roughness:rough,metalness:metal,skinning:child.isSkinnedMesh});
+            if(child.isSkinnedMesh && child.material){
+              if(Array.isArray(child.material)) child.material.forEach(m=>{ m.skinning=true; });
+              else child.material.skinning=true;
             }
           });
-          // GLB internal scale=0.01, bone height ~2.83 → world height ~0.028 → scale 45 = ~1.25 units tall
+          // scale 45 @ cam Z=14 → robot ~1.2 units tall, bien visible
           model.scale.setScalar(45);
           model.position.set(rbx, rby, 0);
           scene.add(model);
@@ -7458,15 +7471,36 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       pts.rotation.y=Math.sin(t*0.45)*0.50;
       pts.rotation.x=Math.sin(t*0.28)*0.05;
       if(robotReady&&robotMixer&&robotRoot){
-        robotMixer.update(robotClock.getDelta());
-        // Slow wander inside canvas bounds
-        rvx+=(Math.sin(t*0.18)*0.05-rvx)*0.03;
-        rvy+=(Math.cos(t*0.13)*0.04-rvy)*0.03;
-        rbx=Math.max(-FRUSTUM_X+RB_MARGIN_X, Math.min(FRUSTUM_X-RB_MARGIN_X, rbx+rvx));
-        rby=Math.max(-FRUSTUM_Y+RB_MARGIN_Y, Math.min(FRUSTUM_Y-RB_MARGIN_Y, rby+rvy));
-        robotRoot.position.set(rbx, rby, 0);
-        // Face direction of movement
-        if(Math.abs(rvx)>0.005) robotRoot.rotation.y=rvx>0?0:Math.PI;
+        const dt=Math.min(robotClock.getDelta(),0.05);
+        robotMixer.update(dt);
+
+        if(charState==="walking"){
+          const dx=targetX-charX, dy=targetY-charY;
+          const dist=Math.sqrt(dx*dx+dy*dy);
+          const speed=1.8; // units per second
+          if(dist<0.08){
+            // Arrived
+            charX=targetX; charY=targetY;
+            charState="idle";
+            idleTimer=1.5+Math.random()*2.5; // wait 1.5–4s
+          } else {
+            const step=Math.min(speed*dt, dist);
+            charX+=( dx/dist)*step;
+            charY+=(dy/dist)*step;
+          }
+          // Smooth rotation toward movement direction
+          charTargetFacing=Math.atan2(dx,1)*0.6;
+          charFacing+=( charTargetFacing-charFacing)*0.08;
+        } else {
+          // Idle — countdown then pick new target
+          idleTimer-=dt;
+          if(idleTimer<=0) pickNewTarget();
+          // Subtle idle sway
+          charFacing=Math.sin(performance.now()*0.0005)*0.08;
+        }
+
+        robotRoot.position.set(charX, charY, 0);
+        robotRoot.rotation.y=charFacing;
       }
       renderer.render(scene,camera);
     }
