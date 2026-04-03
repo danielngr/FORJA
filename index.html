@@ -4052,10 +4052,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                 ⚡ EXPRESS
               </div>
             )}
-            <div style={{fontSize:8,fontFamily:mono,color:"rgba(255,255,255,.35)",letterSpacing:4,marginBottom:3,fontWeight:700}}>FORJA</div>
-            <div style={{fontSize:26,fontWeight:900,letterSpacing:-1.2,lineHeight:.9}}>{DF[lang][sel].toUpperCase()}</div>
-            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:1,marginTop:3}}>{day?translateDayLabel(day.l,lang):t.rest}{day?`. ${day.ex.length} ${lang==="es"||lang==="pt"?"ejercicios":lang==="fr"?"exercices":lang==="it"?"esercizi":lang==="de"?"Übungen":"exercises"}`:""}
-            </div>
+            <div style={{fontSize:8,fontFamily:mono,color:"rgba(255,255,255,.35)",letterSpacing:4,marginBottom:3,fontWeight:700}}></div>
           </div>
             <div style={{display:"flex",alignItems:"flex-start",gap:10,paddingTop:2}}>
             {day&&exs.length>0&&(
@@ -7441,8 +7438,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
               child.material=new THREE.MeshStandardMaterial({color:col,roughness:rough,metalness:metal,skinning:child.isSkinnedMesh});
             }
           });
-          // GLB internal scale=0.01, bone height ~2.83 → world height ~0.028 → scale 88 = 2.46 units tall
-          model.scale.setScalar(88);
+          // GLB internal scale=0.01, bone height ~2.83 → world height ~0.028 → scale 45 = ~1.25 units tall
+          model.scale.setScalar(45);
           model.position.set(rbx, rby, 0);
           scene.add(model);
           robotRoot=model;
