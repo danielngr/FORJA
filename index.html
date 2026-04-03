@@ -7493,40 +7493,28 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
           loader.parse(buf,"",(gltf)=>{
             const model=gltf.scene;
 
-            // Measure raw size to auto-scale
-            const rawBox=new THREE.Box3().setFromObject(model);
-            const rawSize=rawBox.getSize(new THREE.Vector3());
-
-            // Override all materials with clean toon look — avoids texture/encoding issues
-            const ROBOT_COLORS={
-              default: 0x4a90d9,   // blue body
-              head:    0x5ba0e8,
-              body:    0x3a7bc8,
-              limb:    0x4a90d9,
-              dark:    0x1a2a3a,   // joints/details
-            };
+            // Override materials con toon look limpio
             model.traverse(child=>{
               if(child.isMesh||child.isSkinnedMesh){
                 const name=(child.name||"").toLowerCase();
-                let color=ROBOT_COLORS.default;
-                if(name.includes("cabeza")||name.includes("head")||name.includes("mascara")) color=ROBOT_COLORS.head;
-                else if(name.includes("cuerpo")||name.includes("body")) color=ROBOT_COLORS.body;
-                else if(name.includes("cuello")||name.includes("cube")||name.includes("cylinder")) color=ROBOT_COLORS.dark;
+                let color=0x4a90d9;
+                if(name.includes("cabeza")||name.includes("mascara")) color=0x5ba0e8;
+                else if(name.includes("cuerpo")) color=0x2a6ab8;
+                else if(name.includes("cuello")||name.includes("pcube")||name.includes("pcylinder")) color=0x1a3a5a;
+                else if(name.includes("pierna")) color=0x3a80c8;
                 child.material=new THREE.MeshToonMaterial({
                   color,
                   skinning: child.isSkinnedMesh,
                 });
-                child.castShadow=false;
-                child.receiveShadow=false;
               }
             });
 
             // Fix orientation — Sketchfab inverted axes
             model.rotation.x=-Math.PI/2;
-            // Auto-scale to ~2.2 units tall
-            const autoScale=2.2/Math.max(rawSize.x,rawSize.y,rawSize.z);
-            model.scale.setScalar(autoScale);
-            model.position.set(3.5,-1.2,0);
+            // Model is ~0.10 units tall, scale to 2.2 units
+            model.scale.setScalar(22);
+            // Position: right side of dumbbell, vertically centered
+            model.position.set(3.5, -1.1, 0);
             scene.add(model);
             robotRoot=model;
 
