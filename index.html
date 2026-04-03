@@ -4045,8 +4045,8 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
     </div>
   );}
   return(<>
-      <div style={{background:"rgba(8,10,14,0.92)",backdropFilter:"blur(24px)",WebkitBackdropFilter:"blur(24px)",borderBottom:"1px solid rgba(255,255,255,0.06)",padding:"14px 18px 10px",position:"sticky",top:0,zIndex:10,minHeight:120,overflow:"visible"}}>
-        <canvas id="forja-bot-canvas" style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",pointerEvents:"none",zIndex:5,overflow:"visible"}}></canvas>
+      <div style={{background:"rgba(8,10,14,0.92)",backdropFilter:"blur(24px)",WebkitBackdropFilter:"blur(24px)",borderBottom:"1px solid rgba(255,255,255,0.06)",padding:"14px 18px 10px",position:"sticky",top:0,zIndex:10,minHeight:160,overflow:"visible"}}>
+        <canvas id="forja-bot-canvas" style={{position:"absolute",top:0,left:0,width:"100%",height:"160px",pointerEvents:"none",zIndex:5}}></canvas>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
           <div>
             {day?.isExpress&&(
@@ -7563,26 +7563,27 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
   }
 
   // ── Lógica de secuencias ──────────────────────────────────────────
-  function advanceSequence(dt){
+  function advanceSequence(dt,FLOOR_Y){
     const seq=MOOD_SEQUENCES[currentMood]||MOOD_SEQUENCES.normal;
-    const[animKey,dur,isWalk]=seq[seqIdx%seq.length];
-    walkMode=isWalk;
     seqTimer-=dt;
     if(seqTimer<=0){
-      seqIdx++;
-      const[nextKey,nextDur,nextWalk]=seq[seqIdx%seq.length];
-      const useDur=nextDur>0?nextDur:3.5;
-      seqTimer=useDur;
+      seqIdx=(seqIdx+1)%seq.length;
+      const[nextKey,nextDur,nextWalk]=seq[seqIdx];
+      seqTimer=nextDur>0?nextDur:3.5;
       walkMode=nextWalk;
-      // Preload y reproducir
-      loadClip(nextKey).then(()=>playClip(nextKey,true));
-      if(!nextWalk){
-        // Stand still en el suelo
-        targetX=charX; targetY=0;
+      // Si ya cargó: tocar inmediato. Si no: cargar y tocar cuando esté listo
+      if(loadedClips[nextKey]){
+        playClip(nextKey,true);
       } else {
-        // Nuevo destino
-        targetX=(Math.random()*2-1)*MX;
-        targetY=0; // siempre en el suelo
+        if(loadedClips.idle) playClip("idle",true); // fallback mientras carga
+        loadClip(nextKey).then(()=>playClip(nextKey,true));
+      }
+      if(nextWalk){
+        const side=charX>0?-1:1;
+        targetX=side*(MX*0.4+Math.random()*MX*0.5);
+        targetX=Math.max(-MX,Math.min(MX,targetX));
+      } else {
+        targetX=charX;
       }
     }
   }
@@ -7594,7 +7595,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     canvas.dataset.botInit="1";
 
     const W=canvas.offsetWidth||360;
-    const H=canvas.offsetHeight||120;
+    const H=160; // altura fija del banner
     canvas.width=W*window.devicePixelRatio;
     canvas.height=H*window.devicePixelRatio;
 
@@ -7605,8 +7606,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
     scene=new THREE.Scene();
     const aspect=W/H;
-    camera=new THREE.PerspectiveCamera(46,aspect,0.1,200);
-    camera.position.set(0,0,12);
+    camera=new THREE.PerspectiveCamera(50,aspect,0.1,200);
+    camera.position.set(0,0,10);
 
     // Iluminación que respeta los colores originales del modelo
     scene.add(new THREE.AmbientLight(0xffffff,1.4));
@@ -7617,14 +7618,14 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
     clock=new THREE.Clock();
 
-    // Calcular frustum bounds al nivel del suelo (Z=0, cam Z=12)
-    const fH=12*Math.tan(46*Math.PI/360)*2;
-    const fW=fH*aspect;
-    MX=fW/2-1.0;
-    // Suelo: el robot siempre camina en Y=-fH*0.25 (tercio inferior del canvas)
-    const FLOOR_Y=-fH*0.22;
+    // Frustum a Z=0, cam Z=10, FOV=50 → halfH=4.66, halfW=halfH*aspect
+    const halfH=10*Math.tan(25*Math.PI/180); // ~4.66
+    const halfW=halfH*aspect;
+    MX=halfW-0.9;
+    // Robot scale=42 → altura ~1.17 units. Pies en borde inferior del canvas
+    const FLOOR_Y=-halfH+0.15;
 
-    charX=(Math.random()-0.5)*MX; charY=FLOOR_Y;
+    charX=MX*0.7; charY=FLOOR_Y;
     targetX=charX; targetY=FLOOR_Y;
 
     // Determinar mood inicial
@@ -7644,7 +7645,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
               else child.material.skinning=true;
             }
           });
-          model.scale.setScalar(55);
+          model.scale.setScalar(42);
           model.position.set(charX,FLOOR_Y,0);
           scene.add(model);
 
@@ -7668,29 +7669,23 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       const dt=Math.min(clock.getDelta(),0.05);
       if(mixer) mixer.update(dt);
 
-      // Avanzar secuencia
-      advanceSequence(dt);
+      advanceSequence(dt,FLOOR_Y);
 
-      // Movimiento — solo si walkMode
       if(walkMode){
         const dx=targetX-charX;
         const dist=Math.abs(dx);
         if(dist<0.08){
           charX=targetX;
-          // Llegó — la secuencia decidirá qué sigue
         } else {
           const step=Math.min(1.8*dt,dist);
           charX+=Math.sign(dx)*step;
-          // Orientar hacia donde camina
           const tf=dx>0?0.3:-0.3;
           charFacing+=(tf-charFacing)*0.12;
         }
       } else {
-        // Idle en el suelo — pequeño sway
         charFacing*=0.92;
       }
 
-      // Siempre en el suelo
       model.position.set(charX,FLOOR_Y,0);
       model.rotation.y=charFacing;
       renderer.render(scene,camera);
@@ -7698,11 +7693,12 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     animate();
 
     window.addEventListener("resize",()=>{
-      const W2=canvas.offsetWidth||360,H2=canvas.offsetHeight||120;
-      canvas.width=W2*window.devicePixelRatio; canvas.height=H2*window.devicePixelRatio;
-      renderer.setSize(W2,H2);
-      camera.aspect=W2/H2; camera.updateProjectionMatrix();
-      MX=(12*Math.tan(46*Math.PI/360)*2*(W2/H2))/2-1.0;
+      const W2=canvas.offsetWidth||360;
+      canvas.width=W2*window.devicePixelRatio; canvas.height=160*window.devicePixelRatio;
+      renderer.setSize(W2,160);
+      camera.aspect=W2/160; camera.updateProjectionMatrix();
+      const halfH2=10*Math.tan(25*Math.PI/180);
+      MX=halfH2*(W2/160)-0.9;
     });
 
     document.addEventListener("visibilitychange",()=>{
