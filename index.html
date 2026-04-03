@@ -8527,81 +8527,125 @@ function bone(a, b, w2) {
 </script>
 
 
-<<script>
+<<<script>
 /* FORJA BOT - 3D robot on workout start screen */
 (function initForjaBot(){
   var BOT_URL="https://danielngr.github.io/FORJA/idle.glb";
-  var done=false;
+  var botRaf=null;
+
+  function cleanup(){
+    if(botRaf){cancelAnimationFrame(botRaf);botRaf=null;}
+    var wrap=document.getElementById("forja-dumbbell-wrap");
+    if(wrap){
+      wrap.querySelectorAll("canvas[data-bot]").forEach(function(c){c.remove();});
+      delete wrap.dataset.botInit;
+    }
+  }
+
   function tryBot(){
-    if(done)return;
     var wrap=document.getElementById("forja-dumbbell-wrap");
     if(!wrap||!window.THREE||!window.THREE.GLTFLoader)return;
     if(wrap.dataset.botInit)return;
-    wrap.dataset.botInit="1";done=true;
-    var W=200,H=wrap.offsetHeight||260;
+    wrap.dataset.botInit="1";
+
+    var H=wrap.offsetHeight||260;
+    var W=Math.round(H*0.75); // portrait ratio
+
     var bc=document.createElement("canvas");
     bc.setAttribute("data-bot","1");
-    bc.style.cssText="position:absolute;top:0;right:0;width:"+W+"px;height:"+H+"px;pointer-events:none;z-index:2;";
-    bc.width=W;bc.height=H;
+    // Position right side, no white background
+    bc.style.cssText="position:absolute;top:0;right:0;width:"+W+"px;height:"+H+"px;pointer-events:none;z-index:2;background:transparent;";
+    bc.width=W; bc.height=H;
     wrap.appendChild(bc);
-    var renderer=new THREE.WebGLRenderer({canvas:bc,antialias:false,alpha:true});
-    renderer.setSize(W,H);renderer.setPixelRatio(1);renderer.setClearColor(0x000000,0);
+
+    var renderer=new THREE.WebGLRenderer({canvas:bc,antialias:false,alpha:true,premultipliedAlpha:false});
+    renderer.setSize(W,H);
+    renderer.setPixelRatio(1);
+    renderer.setClearColor(0x000000,0); // fully transparent
+    renderer.outputEncoding=THREE.sRGBEncoding;
+
     var scene=new THREE.Scene();
+    // No background — transparent
+    
     var cam=new THREE.PerspectiveCamera(42,W/H,0.01,100);
-    cam.position.set(0,1.2,3.0);cam.lookAt(0,0.8,0);
+    cam.position.set(0,1.2,3.0);
+    cam.lookAt(0,0.9,0);
+
     scene.add(new THREE.AmbientLight(0xffffff,0.9));
-    var k=new THREE.DirectionalLight(0xffffff,2.2);k.position.set(2,4,3);scene.add(k);
+    var k=new THREE.DirectionalLight(0xffffff,2.2);k.position.set(2,5,4);scene.add(k);
     var f=new THREE.DirectionalLight(0x88aaff,0.6);f.position.set(-2,1,1);scene.add(f);
-    var ri=new THREE.DirectionalLight(0xff5500,0.9);ri.position.set(0,-1,-2);scene.add(ri);
-    var pt=new THREE.PointLight(0xff3300,0.7,5);pt.position.set(0,0.5,1.2);scene.add(pt);
-    fetch(BOT_URL)
+    var ri=new THREE.DirectionalLight(0xff5500,1.0);ri.position.set(0,-2,-3);scene.add(ri);
+    var pt=new THREE.PointLight(0xff3300,0.8,6);pt.position.set(0,1,2);scene.add(pt);
+
+    fetch(BOT_URL+"?v=2")
       .then(function(r){return r.arrayBuffer();})
       .then(function(buf){return new Promise(function(res,rej){new THREE.GLTFLoader().parse(buf,"",res,rej);});})
       .then(function(gltf){
         var model=gltf.scene;
-        // Fix white materials — apply nice color
+
+        // Fix orientation — Sketchfab models often need this
+        model.rotation.x = -Math.PI/2; // un-flip from boca abajo
+        
+        // Keep original materials, just fix roughness
         model.traverse(function(c){
-          if(c.isMesh){
-            var isBody=true;
-            c.material=new THREE.MeshStandardMaterial({
-              color:isBody?0x4a9eff:0x2266cc,
-              roughness:0.35,metalness:0.4
+          if(c.isMesh||c.isSkinnedMesh){
+            var mats=Array.isArray(c.material)?c.material:[c.material];
+            mats.forEach(function(m){
+              if(m){m.roughness=0.5;m.metalness=0.2;}
             });
           }
         });
+
+        // Auto-scale after rotation
+        model.updateMatrixWorld(true);
         var box=new THREE.Box3().setFromObject(model);
         var size=box.getSize(new THREE.Vector3());
-        var scale=1.5/Math.max(size.x,size.y,size.z);
+        var scale=1.6/Math.max(size.x,size.y,size.z);
         model.scale.setScalar(scale);
-        model.updateMatrixWorld();
+        model.updateMatrixWorld(true);
+        
+        // Re-center
         var box2=new THREE.Box3().setFromObject(model);
         model.position.y=-box2.min.y;
         model.position.x=-(box2.min.x+box2.max.x)/2;
+        model.position.z=-(box2.min.z+box2.max.z)/2;
         scene.add(model);
+
+        // Animation
         var mixer=new THREE.AnimationMixer(model);
-        if(gltf.animations&&gltf.animations.length)mixer.clipAction(gltf.animations[0]).play();
+        if(gltf.animations&&gltf.animations.length){
+          mixer.clipAction(gltf.animations[0]).play();
+        }
+
         var clock=new THREE.Clock();var t=0;
-        (function tick(){
-          requestAnimationFrame(tick);
+        function tick(){
+          botRaf=requestAnimationFrame(tick);
           var dt=clock.getDelta();t+=dt;
           mixer.update(dt);
           var b=new THREE.Box3().setFromObject(model);
           model.position.y=-b.min.y+Math.sin(t*0.8)*0.04;
-          model.rotation.y=Math.sin(t*0.3)*0.3;
+          model.rotation.y=Math.sin(t*0.3)*0.25;
           pt.intensity=0.5+Math.sin(t*2)*0.2;
           renderer.render(scene,cam);
-        })();
+        }
+        tick();
+        console.log("ForjaBot: loaded");
       })
       .catch(function(e){console.warn("ForjaBot:",e);});
   }
-  // Re-run on every mount event since React re-creates the DOM
-  function reset(){done=false;tryBot();}
+
+  // Re-init every time React remounts the DOM
+  function reset(){
+    cleanup();
+    setTimeout(tryBot,300);
+  }
+
   window.addEventListener("forja:mount",reset);
-  window.addEventListener("load",tryBot);
+  window.addEventListener("load",function(){setTimeout(tryBot,500);});
   setInterval(function(){
     var wrap=document.getElementById("forja-dumbbell-wrap");
-    if(wrap&&!wrap.dataset.botInit){done=false;tryBot();}
-  },500);
+    if(wrap&&!wrap.dataset.botInit){tryBot();}
+  },600);
 })();
 </script>
 </body>
