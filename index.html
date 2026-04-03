@@ -7373,6 +7373,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/RGBELoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
 (function initDumbbell(){
   function tryInit(){
@@ -8525,5 +8526,79 @@ function bone(a, b, w2) {
 
 </script>
 
+
+<script>
+/* FORJA BOT - 3D robot on workout start screen */
+(function initForjaBot(){
+  var BOT_URL="https://danielngr.github.io/FORJA/idle.glb";
+  var done=false;
+  function tryBot(){
+    if(done)return;
+    var wrap=document.getElementById("forja-dumbbell-wrap");
+    if(!wrap||!window.THREE||!window.THREE.GLTFLoader)return;
+    if(wrap.dataset.botInit)return;
+    wrap.dataset.botInit="1";done=true;
+    var bc=document.createElement("canvas");
+    bc.style.cssText="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;";
+    wrap.appendChild(bc);
+    var W=wrap.offsetWidth||360,H=wrap.offsetHeight||260;
+    bc.width=W;bc.height=H;
+    var renderer=new THREE.WebGLRenderer({canvas:bc,antialias:false,alpha:true});
+    renderer.setSize(W,H);renderer.setPixelRatio(1);
+    renderer.setClearColor(0x000000,0);
+    var scene=new THREE.Scene();
+    var cam=new THREE.PerspectiveCamera(38,W/H,0.01,100);
+    cam.position.set(0,1.3,3.2);cam.lookAt(0,0.8,0);
+    scene.add(new THREE.AmbientLight(0xffffff,0.8));
+    var k=new THREE.DirectionalLight(0xffffff,2);k.position.set(2,4,3);scene.add(k);
+    var f=new THREE.DirectionalLight(0x6699ff,0.5);f.position.set(-2,1,1);scene.add(f);
+    var r=new THREE.DirectionalLight(0xff5500,0.8);r.position.set(0,-1,-2);scene.add(r);
+    var pt=new THREE.PointLight(0xff3300,0.6,5);pt.position.set(0,0.5,1.2);scene.add(pt);
+    fetch(BOT_URL)
+      .then(function(res){return res.arrayBuffer();})
+      .then(function(buf){
+        return new Promise(function(resolve,reject){
+          var loader=new THREE.GLTFLoader();
+          loader.parse(buf,"",resolve,reject);
+        });
+      })
+      .then(function(gltf){
+        var model=gltf.scene;
+        var box=new THREE.Box3().setFromObject(model);
+        var size=box.getSize(new THREE.Vector3());
+        var maxDim=Math.max(size.x,size.y,size.z);
+        var scale=1.6/maxDim;
+        model.scale.setScalar(scale);
+        model.updateMatrixWorld();
+        var box2=new THREE.Box3().setFromObject(model);
+        model.position.y=-box2.min.y;
+        model.position.x=-(box2.min.x+box2.max.x)/2;
+        scene.add(model);
+        var mixer=new THREE.AnimationMixer(model);
+        if(gltf.animations&&gltf.animations.length>0)mixer.clipAction(gltf.animations[0]).play();
+        var clock=new THREE.Clock();var t=0;
+        var mouse={x:0};
+        wrap.addEventListener("mousemove",function(e){
+          var r=wrap.getBoundingClientRect();
+          mouse.x=((e.clientX-r.left)/r.width-0.5)*2;
+        });
+        (function tick(){
+          requestAnimationFrame(tick);
+          var dt=clock.getDelta();t+=dt;
+          mixer.update(dt);
+          var b=new THREE.Box3().setFromObject(model);
+          model.position.y=-b.min.y+Math.sin(t*0.8)*0.04;
+          model.rotation.y+=(mouse.x*0.45-model.rotation.y)*0.05;
+          pt.intensity=0.4+Math.sin(t*2)*0.2;
+          renderer.render(scene,cam);
+        })();
+      })
+      .catch(function(e){console.warn("ForjaBot:",e);});
+  }
+  window.addEventListener("forja:mount",tryBot);
+  window.addEventListener("load",tryBot);
+  setInterval(tryBot,400);
+})();
+</script>
 </body>
 </html>
