@@ -451,7 +451,6 @@ input[type=number]{-moz-appearance:textfield;}
 
 <div id="root"></div>
 <div id="forja-sync" title="sync"></div>
-<canvas id="forja-bot-canvas" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:500;"></canvas>
 <script>
 // ===============================================================
 // FORJA SUPABASE LAYER v1.0
@@ -4238,67 +4237,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
               </div>
             ):(
               <>
-                <div style={{
-                  width:"100%",borderRadius:22,background:"linear-gradient(135deg,#1A2540 0%,#0D1520 100%)",cursor:"default",
-                  marginBottom:16,padding:"26px 22px 22px",
-                  boxShadow:"0 16px 56px rgba(0,0,0,0.22)",
-                  position:"relative",overflow:"hidden",userSelect:"none"}}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:18}}>
-                    <div>
-                      <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,0.7)",letterSpacing:3,marginBottom:7,textTransform:"uppercase"}}>
-                        {DF[lang][sel]}
-                      </div>
-                      <div style={{fontSize:32,fontWeight:900,color:C.white,letterSpacing:-1.5,lineHeight:1,textTransform:"uppercase"}}>
-                        {translateDayLabel(day.l,lang)}
-                      </div>
-                      <div style={{fontSize:10,fontFamily:mono,color:"rgba(255,255,255,0.7)",marginTop:6,letterSpacing:1}}>
-                        {exs.length} {lang==="es"||lang==="pt"?"ejercicios":lang==="fr"?"exercices":lang==="it"?"esercizi":lang==="de"?"Übungen":"exercises"}
-                      </div>
-                    </div>
-                    <div style={{textAlign:"right",paddingTop:2}}>
-                      <div style={{fontSize:36,fontWeight:900,lineHeight:1,
-                        color:pct===1?"#4ade80":pct>0?"rgba(255,255,255,0.9)":"rgba(255,255,255,0.2)"}}>
-                        {dc}
-                      </div>
-                      <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,0.65)",letterSpacing:1}}>
-                        / {exs.length}
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{display:"flex",gap:3,marginBottom:22}}>
-                    {exs.map((ex,i)=>{
-                      const isDone=done[`${sel}-${ex.id}`];
-                      return <div key={i} style={{height:3,flex:1,borderRadius:2,
-                        background:isDone?"rgba(255,255,255,0.85)":"rgba(255,255,255,0.12)",
-                        transition:"background 0.3s"}}/>;
-                    })}
-                  </div>
-                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:4}}>
-                    <div style={{display:"flex",alignItems:"center",gap:6}}>
-                      <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,0.7)",letterSpacing:2}}>
-                        {pct===1?(lang==="es"||lang==="pt"?"COMPLETADO":lang==="fr"?"TERMINÉ":lang==="it"?"COMPLETATO":lang==="de"?"ABGESCHLOSSEN":"COMPLETED"):(lang==="es"||lang==="pt"?"SEMANA EN CURSO":lang==="fr"?"SEMAINE EN COURS":lang==="it"?"SETTIMANA IN CORSO":lang==="de"?"WOCHE LÄUFT":"WEEK IN PROGRESS")}
-                      </div>
-                      {profile?.mode!=="celebrity"&&(()=>{
-                        const wNum=getWeekNum();
-                        const isB=wNum%2===0;
-                        return <span style={{fontSize:7,fontFamily:mono,padding:"1px 6px",borderRadius:10,
-                          background:isB?"rgba(106,143,192,0.15)":"rgba(63,207,142,0.12)",
-                          color:isB?"#4898e8":"#3fcf8e",border:`1px solid ${isB?"rgba(106,143,192,.3)":"rgba(63,207,142,.25)"}`,
-                          letterSpacing:1.5,fontWeight:700}}>
-                          {lang==="es"||lang==="pt"?`SEMANA ${isB?"B":"A"}`:
-                           lang==="fr"?`SEMAINE ${isB?"B":"A"}`:
-                           lang==="it"?`SETTIMANA ${isB?"B":"A"}`:
-                           lang==="de"?`WOCHE ${isB?"B":"A"}`:
-                           `WEEK ${isB?"B":"A"}`}
-                        </span>;
-                      })()}
-                    </div>
-                    <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,0.7)",letterSpacing:1}}>
-                      {Math.round(pct*100)}%
-                    </div>
-                  </div>
-                </div>
-                <div id="forja-dumbbell-wrap" data-tour="start-workout" style={{width:"100%",height:260,marginTop:16,borderRadius:16,overflow:"hidden",position:"relative",background:C.bg,cursor:"pointer"}}
+                <div id="forja-dumbbell-wrap" data-tour="start-workout" style={{width:"100%",height:320,borderRadius:16,overflow:"hidden",position:"relative",background:C.bg,cursor:"pointer"}}
                   onClick={()=>{if(day&&day.ex&&day.ex.length)setInWorkout(true);}}
                 >
                   <canvas id="forja-dumbbell-canvas" style={{width:"100%",height:"100%",display:"block"}}></canvas>
@@ -7471,83 +7410,25 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     const pts=new THREE.Points(geo,mat);
     scene.add(pts);
 
-    let t=0, animId;
-    function animate(){
-      animId=requestAnimationFrame(animate);
-      t+=0.006;
-      pts.rotation.y=Math.sin(t*0.45)*0.50;
-      pts.rotation.x=Math.sin(t*0.28)*0.05;
-      renderer.render(scene,camera);
-    }
-    animate();
+    // Lights for robot
+    scene.add(new THREE.AmbientLight(0xffffff,1.0));
+    const kl2=new THREE.DirectionalLight(0xfff0d0,1.6); kl2.position.set(4,8,6); scene.add(kl2);
+    const fl2=new THREE.DirectionalLight(0x6090ff,0.5); fl2.position.set(-4,2,4); scene.add(fl2);
 
-    document.addEventListener("visibilitychange",()=>{
-      if(document.hidden){ cancelAnimationFrame(animId); } else { animate(); }
-    });
-  }
+    // Robot state — wanders inside the canvas
+    let robotMixer=null, robotClock=new THREE.Clock();
+    let robotRoot=null, robotReady=false;
+    // Frustum at Z=0: X=±5.58, Y=±4.03
+    let rbx=3.0, rby=0.0, rvx=0, rvy=0;
+    const RB_MARGIN_X=1.2, RB_MARGIN_Y=1.0;
+    const FRUSTUM_X=5.2, FRUSTUM_Y=3.6;
 
-  window.addEventListener("forja:mount", tryInit);
-  document.addEventListener("DOMContentLoaded", tryInit);
-  window.addEventListener("load", tryInit);
-  setInterval(tryInit, 200);
-})();
-</script>
-
-<script>
-(function initBot(){
-  const GLB_URL="https://danielngr.github.io/FORJA/idle.glb";
-  let renderer,scene,camera,mixer,clock,model,animId;
-  let botReady=false;
-  let vw=window.innerWidth, vh=window.innerHeight;
-
-  // Bot state
-  let bx=vw*0.75, by=vh*0.6;   // screen position (pixels)
-  let vx=0, vy=0;               // velocity
-  const BOT_H_PX=160;           // visual height in pixels
-
-  function tryInit(){
-    const canvas=document.getElementById("forja-bot-canvas");
-    if(!canvas||!window.THREE||!window.THREE.GLTFLoader) return;
-    if(canvas.dataset.botInit) return;
-    canvas.dataset.botInit="1";
-
-    vw=window.innerWidth; vh=window.innerHeight;
-    canvas.width=vw*window.devicePixelRatio;
-    canvas.height=vh*window.devicePixelRatio;
-
-    renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
-    renderer.setSize(vw,vh);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
-    renderer.setClearColor(0x000000,0);
-
-    scene=new THREE.Scene();
-
-    // Orthographic camera mapped to screen pixels for easy positioning
-    camera=new THREE.OrthographicCamera(0,vw,0,-vh,0.1,1000);
-    camera.position.set(0,0,10);
-
-    // Lights
-    scene.add(new THREE.AmbientLight(0xffffff,1.2));
-    const key=new THREE.DirectionalLight(0xfff0d0,1.8);
-    key.position.set(200,400,300);
-    scene.add(key);
-    const fill=new THREE.DirectionalLight(0x6090ff,0.6);
-    fill.position.set(-200,100,200);
-    scene.add(fill);
-
-    clock=new THREE.Clock();
-    loadModel();
-  }
-
-  function loadModel(){
-    fetch(GLB_URL)
+    fetch("https://danielngr.github.io/FORJA/idle.glb")
       .then(r=>r.arrayBuffer())
       .then(buf=>{
         const loader=new THREE.GLTFLoader();
         loader.parse(buf,"",(gltf)=>{
-          model=gltf.scene;
-
-          // Materials
+          const model=gltf.scene;
           model.traverse(child=>{
             if(child.isMesh||child.isSkinnedMesh){
               const n=(child.name||"").toLowerCase();
@@ -7557,76 +7438,57 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
               else if(n.includes("cuerpo")) { col=0x778899; rough=0.4; metal=0.65; }
               else if(n.includes("pcube")||n.includes("pcylinder")){ col=0x334455; rough=0.6; metal=0.5; }
               else if(n.includes("pierna")) { col=0x7788aa; rough=0.4; metal=0.6; }
-              const mat=new THREE.MeshStandardMaterial({color:col, roughness:rough, metalness:metal});
-              child.material=mat;
-              if(child.isSkinnedMesh) child.material.skinning=true;
+              child.material=new THREE.MeshStandardMaterial({color:col,roughness:rough,metalness:metal,skinning:child.isSkinnedMesh});
             }
           });
-
-          // Scale: internal scale is 0.01, bone height ~2.83 → world height ~0.028
-          // We want BOT_H_PX pixels tall → in ortho camera 1px = 1 unit
-          const targetUnits=BOT_H_PX;
-          model.scale.setScalar(targetUnits/0.028);
-          model.position.set(bx, -by, 0);
+          // GLB internal scale=0.01, bone height ~2.83 → world height ~0.028 → scale 88 = 2.46 units tall
+          model.scale.setScalar(88);
+          model.position.set(rbx, rby, 0);
           scene.add(model);
-
+          robotRoot=model;
           if(gltf.animations&&gltf.animations.length>0){
-            mixer=new THREE.AnimationMixer(model);
-            mixer.clipAction(gltf.animations[0]).play();
+            robotMixer=new THREE.AnimationMixer(model);
+            robotMixer.clipAction(gltf.animations[0]).play();
           }
-          botReady=true;
-          animate();
-        },e=>console.warn("BOT parse error:",e));
-      })
-      .catch(e=>console.warn("BOT fetch error:",e));
+          robotReady=true;
+        },e=>console.warn("BOT parse:",e));
+      }).catch(e=>console.warn("BOT fetch:",e));
+
+    let t=0, animId;
+    function animate(){
+      animId=requestAnimationFrame(animate);
+      t+=0.006;
+      pts.rotation.y=Math.sin(t*0.45)*0.50;
+      pts.rotation.x=Math.sin(t*0.28)*0.05;
+      if(robotReady&&robotMixer&&robotRoot){
+        robotMixer.update(robotClock.getDelta());
+        // Slow wander inside canvas bounds
+        rvx+=(Math.sin(t*0.18)*0.05-rvx)*0.03;
+        rvy+=(Math.cos(t*0.13)*0.04-rvy)*0.03;
+        rbx=Math.max(-FRUSTUM_X+RB_MARGIN_X, Math.min(FRUSTUM_X-RB_MARGIN_X, rbx+rvx));
+        rby=Math.max(-FRUSTUM_Y+RB_MARGIN_Y, Math.min(FRUSTUM_Y-RB_MARGIN_Y, rby+rvy));
+        robotRoot.position.set(rbx, rby, 0);
+        // Face direction of movement
+        if(Math.abs(rvx)>0.005) robotRoot.rotation.y=rvx>0?0:Math.PI;
+      }
+      renderer.render(scene,camera);
+    }
+    animate();
+
+    document.addEventListener("visibilitychange",()=>{
+      if(document.hidden){ cancelAnimationFrame(animId); } else { robotClock=new THREE.Clock(); animate(); }
+    });
+
+    window.FORJA_BOT={ get model(){ return robotRoot; }, get mixer(){ return robotMixer; } };
   }
 
-  function animate(){
-    animId=requestAnimationFrame(animate);
-    if(!botReady||!model) return;
-
-    const dt=Math.min(clock.getDelta(),0.05);
-    if(mixer) mixer.update(dt);
-
-    // Idle wander — slow drift
-    const t=performance.now()*0.001;
-    vx+=(Math.sin(t*0.3)*0.4-vx)*0.02;
-    vy+=(Math.cos(t*0.23)*0.3-vy)*0.02;
-    bx=Math.max(BOT_H_PX*0.4, Math.min(vw-BOT_H_PX*0.4, bx+vx));
-    by=Math.max(BOT_H_PX*0.6, Math.min(vh-BOT_H_PX*0.2, by+vy));
-
-    model.position.set(bx,-by,0);
-    renderer.render(scene,camera);
-  }
-
-  window.addEventListener("resize",()=>{
-    vw=window.innerWidth; vh=window.innerHeight;
-    const canvas=document.getElementById("forja-bot-canvas");
-    if(!canvas||!renderer) return;
-    canvas.width=vw*window.devicePixelRatio;
-    canvas.height=vh*window.devicePixelRatio;
-    renderer.setSize(vw,vh);
-    camera.right=vw; camera.bottom=-vh;
-    camera.updateProjectionMatrix();
-  });
-
-  document.addEventListener("visibilitychange",()=>{
-    if(document.hidden) cancelAnimationFrame(animId);
-    else if(botReady) animate();
-  });
-
-  // Expose for future control (animations, commands)
-  window.FORJA_BOT={
-    get model(){ return model; },
-    get mixer(){ return mixer; },
-    moveTo(x,y){ bx=x; by=y; },
-  };
-
-  window.addEventListener("load", tryInit);
+  window.addEventListener("forja:mount", tryInit);
   document.addEventListener("DOMContentLoaded", tryInit);
-  setInterval(()=>{ if(!botReady) tryInit(); },300);
+  window.addEventListener("load", tryInit);
+  setInterval(tryInit, 200);
 })();
 </script>
+
 
 
 
