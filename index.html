@@ -7606,8 +7606,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
     scene=new THREE.Scene();
     const aspect=W/H;
-    // FOV angosto + cam cerca = robot grande y visible, bien contenido
-    camera=new THREE.PerspectiveCamera(30,aspect,0.1,200);
+    // FOV=50, camZ=8 → halfH=3.73 → robot 1.51u = 20% del canvas
+    camera=new THREE.PerspectiveCamera(50,aspect,0.1,200);
     camera.position.set(0,0,8);
 
     scene.add(new THREE.AmbientLight(0xffffff,1.4));
@@ -7618,13 +7618,12 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
     clock=new THREE.Clock();
 
-    // Frustum exacto: camZ=8, FOV=30 → halfH=2.14, halfW=halfH*aspect
-    // Robot scale=55 → height=1.56 units → cabe perfectamente
-    const halfH=8*Math.tan(15*Math.PI/180); // ~2.14
-    const halfW=halfH*aspect;               // ~5.23
-    MX=halfW*0.72;                          // margen lateral
-    // FLOOR_Y: pies en tercio inferior del canvas, cabeza sin salirse
-    const FLOOR_Y=-halfH*0.30;             // -0.64 → top robot a +0.92, cabe en halfH=2.14
+    // halfH = 8*tan(25°) = 3.73, robot_h = 1.68*0.9 = 1.51u
+    // FLOOR_Y = pies pegados al borde inferior + pequeño margen
+    const halfH=8*Math.tan(25*Math.PI/180); // 3.73
+    const halfW=halfH*aspect;
+    MX=halfW*0.72;
+    const FLOOR_Y=-halfH+0.08; // pies casi en el borde inferior
 
     charX=MX*0.75; charY=FLOOR_Y;
     targetX=charX; targetY=FLOOR_Y;
@@ -7647,7 +7646,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
               else child.material.skinning=true;
             }
           });
-          model.scale.setScalar(55);
+          // scale=0.9: Armature interno tiene scale=0.01, robot mide 168*0.01*0.9=1.51u
+          model.scale.setScalar(0.9);
           model.position.set(charX,FLOOR_Y,0);
           scene.add(model);
 
@@ -7699,7 +7699,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       canvas.width=W2*window.devicePixelRatio; canvas.height=160*window.devicePixelRatio;
       renderer.setSize(W2,160);
       camera.aspect=W2/160; camera.updateProjectionMatrix();
-      const halfH2=8*Math.tan(15*Math.PI/180);
+      const halfH2=8*Math.tan(25*Math.PI/180);
       MX=halfH2*(W2/160)*0.72;
     });
 
