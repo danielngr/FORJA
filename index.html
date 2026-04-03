@@ -7509,12 +7509,12 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
               }
             });
 
-            // Fix orientation — Sketchfab inverted axes
-            model.rotation.x=-Math.PI/2;
-            // Model is ~0.10 units tall, scale to 2.2 units
-            model.scale.setScalar(22);
-            // Position: right side of dumbbell, vertically centered
-            model.position.set(3.5, -1.1, 0);
+            // GLB has internal scale=0.01 and rotation already applied by GLTFLoader
+            // HeadTop is at Y=2.83 in bone space → 2.83*0.01 = 0.028 world units
+            // Scale to ~2.5 units tall: 2.5/0.028 ≈ 88
+            model.scale.setScalar(88);
+            // Position: right of dumbbell, feet at bottom of canvas
+            model.position.set(3.2, -1.4, 0);
             scene.add(model);
             robotRoot=model;
 
@@ -7542,7 +7542,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
         const delta=robotClock.getDelta();
         robotMixer.update(delta);
         // Subtle idle bob
-        if(robotRoot) robotRoot.position.y=-1.6+Math.sin(t*0.9)*0.08;
+        if(robotRoot) robotRoot.position.y=-1.4+Math.sin(t*0.9)*0.06;
       }
       renderer.render(scene,camera);
     }
