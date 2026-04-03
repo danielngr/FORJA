@@ -7493,13 +7493,31 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
           const loader=new THREE.GLTFLoader();
           loader.parse(buf,"",(gltf)=>{
             const model=gltf.scene;
+            // Measure raw size before transforms
+            const rawBox=new THREE.Box3().setFromObject(model);
+            const rawSize=rawBox.getSize(new THREE.Vector3());
+            const rawCenter=rawBox.getCenter(new THREE.Vector3());
+            console.log("FORJA BOT raw size:",rawSize);
+            console.log("FORJA BOT raw center:",rawCenter);
+            console.log("FORJA BOT animations:",gltf.animations.length);
+
             // Fix orientation — Sketchfab inverted axes
             model.rotation.x=-Math.PI/2;
-            // Scale & position: robot to the right of the dumbbell
-            model.scale.setScalar(0.013);
-            model.position.set(3.8,-1.6,0);
+            // Scale to ~2.5 units tall in scene
+            const targetH=2.5;
+            const autoScale=targetH/Math.max(rawSize.x,rawSize.y,rawSize.z);
+            model.scale.setScalar(autoScale);
+            // Center at origin first, then offset right
+            model.position.set(3.5,-1.2,0);
             scene.add(model);
             robotRoot=model;
+
+            // Post-add bounding box
+            const finalBox=new THREE.Box3().setFromObject(model);
+            const finalSize=finalBox.getSize(new THREE.Vector3());
+            console.log("FORJA BOT final size:",finalSize);
+            console.log("FORJA BOT final pos:",model.position);
+            console.log("FORJA BOT camera at Z:",camera.position.z,"frustum X: ±",( camera.position.z*Math.tan(46*Math.PI/360)*(W/H)).toFixed(2));
 
             // Animations
             if(gltf.animations&&gltf.animations.length>0){
@@ -7507,6 +7525,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
               const idleClip=gltf.animations[0];
               const action=robotMixer.clipAction(idleClip);
               action.play();
+              console.log("FORJA BOT animation playing:",idleClip.name);
             }
             robotReady=true;
           },err=>console.warn("FORJA Robot load error:",err));
