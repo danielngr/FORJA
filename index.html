@@ -7646,8 +7646,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
               else child.material.skinning=true;
             }
           });
-          // scale=70: modelo base 0.028u × 70 = 1.96u = 61% del canvas de 160px
-          model.scale.setScalar(70);
+          // Bounding box real medido: h=0.023u con scale=25 → base=0.00092u
+          // scale=2400 → h=2.208u = 69% del canvas de 160px (FOV=30, camZ=6)
+          model.scale.setScalar(2400);
           model.position.set(charX,FLOOR_Y,0);
           scene.add(model);
 
