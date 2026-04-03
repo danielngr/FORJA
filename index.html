@@ -4041,7 +4041,8 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
     </div>
   );}
   return(<>
-      <div style={{background:"rgba(8,10,14,0.92)",backdropFilter:"blur(24px)",WebkitBackdropFilter:"blur(24px)",borderBottom:"1px solid rgba(255,255,255,0.06)",padding:"14px 18px 10px",position:"sticky",top:0,zIndex:10}}>
+      <div style={{background:"rgba(8,10,14,0.92)",backdropFilter:"blur(24px)",WebkitBackdropFilter:"blur(24px)",borderBottom:"1px solid rgba(255,255,255,0.06)",padding:"14px 18px 10px",position:"sticky",top:0,zIndex:10,minHeight:120,overflow:"visible"}}>
+        <canvas id="forja-bot-canvas" style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",pointerEvents:"none",zIndex:5,overflow:"visible"}}></canvas>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
           <div>
             {day?.isExpress&&(
@@ -4234,7 +4235,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
               </div>
             ):(
               <>
-                <div id="forja-dumbbell-wrap" data-tour="start-workout" style={{width:"100%",height:320,borderRadius:16,overflow:"visible",position:"relative",background:C.bg,cursor:"pointer"}}
+                <div id="forja-dumbbell-wrap" data-tour="start-workout" style={{width:"100%",height:260,borderRadius:16,overflow:"hidden",position:"relative",background:C.bg,cursor:"pointer"}}
                   onClick={()=>{if(day&&day.ex&&day.ex.length)setInWorkout(true);}}
                 >
                   <canvas id="forja-dumbbell-canvas" style={{width:"100%",height:"100%",display:"block"}}></canvas>
@@ -7407,110 +7408,19 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     const pts=new THREE.Points(geo,mat);
     scene.add(pts);
 
-    // Lights for robot
-    scene.add(new THREE.AmbientLight(0xffffff,1.0));
-    const kl2=new THREE.DirectionalLight(0xfff0d0,1.6); kl2.position.set(4,8,6); scene.add(kl2);
-    const fl2=new THREE.DirectionalLight(0x6090ff,0.5); fl2.position.set(-4,2,4); scene.add(fl2);
-
-    // Robot state — wanders inside the canvas
-    let robotMixer=null, robotClock=new THREE.Clock();
-    let robotRoot=null, robotReady=false;
-    // Frustum at Z=0 with cam at Z=14, FOV=46: X=±8.2, Y=±5.9
-    let rbx=2.0, rby=0.0, rvx=0, rvy=0;
-    const RB_MARGIN_X=1.5, RB_MARGIN_Y=1.2;
-    const FRUSTUM_X=7.8, FRUSTUM_Y=5.5;
-
-    // Character movement state
-    let charX=2.0, charY=0.0;         // current position
-    let targetX=2.0, targetY=0.0;     // destination
-    let charState="idle";              // idle | walking
-    let idleTimer=0;                   // seconds to wait before next move
-    let charFacing=0;                  // current Y rotation
-    let charTargetFacing=0;            // desired Y rotation
-
-    function pickNewTarget(){
-      targetX=(Math.random()*2-1)*( FRUSTUM_X-RB_MARGIN_X);
-      targetY=(Math.random()*2-1)*(FRUSTUM_Y-RB_MARGIN_Y)*0.5;
-      const dx=targetX-charX, dy=targetY-charY;
-      charTargetFacing=Math.atan2(dx,0); // face direction of travel (X axis)
-      charState="walking";
-    }
-    pickNewTarget();
-
-    fetch("https://danielngr.github.io/FORJA/idle.glb")
-      .then(r=>r.arrayBuffer())
-      .then(buf=>{
-        const loader=new THREE.GLTFLoader();
-        loader.parse(buf,"",(gltf)=>{
-          const model=gltf.scene;
-          // Respetar materiales originales del GLB — no sobreescribir colores
-          // Solo asegurar skinning en SkinnedMesh
-          model.traverse(child=>{
-            if(child.isSkinnedMesh && child.material){
-              if(Array.isArray(child.material)) child.material.forEach(m=>{ m.skinning=true; });
-              else child.material.skinning=true;
-            }
-          });
-          // scale 45 @ cam Z=14 → robot ~1.2 units tall, bien visible
-          model.scale.setScalar(45);
-          model.position.set(rbx, rby, 0);
-          scene.add(model);
-          robotRoot=model;
-          if(gltf.animations&&gltf.animations.length>0){
-            robotMixer=new THREE.AnimationMixer(model);
-            robotMixer.clipAction(gltf.animations[0]).play();
-          }
-          robotReady=true;
-        },e=>console.warn("BOT parse:",e));
-      }).catch(e=>console.warn("BOT fetch:",e));
-
     let t=0, animId;
     function animate(){
       animId=requestAnimationFrame(animate);
       t+=0.006;
       pts.rotation.y=Math.sin(t*0.45)*0.50;
       pts.rotation.x=Math.sin(t*0.28)*0.05;
-      if(robotReady&&robotMixer&&robotRoot){
-        const dt=Math.min(robotClock.getDelta(),0.05);
-        robotMixer.update(dt);
-
-        if(charState==="walking"){
-          const dx=targetX-charX, dy=targetY-charY;
-          const dist=Math.sqrt(dx*dx+dy*dy);
-          const speed=1.8; // units per second
-          if(dist<0.08){
-            // Arrived
-            charX=targetX; charY=targetY;
-            charState="idle";
-            idleTimer=1.5+Math.random()*2.5; // wait 1.5–4s
-          } else {
-            const step=Math.min(speed*dt, dist);
-            charX+=( dx/dist)*step;
-            charY+=(dy/dist)*step;
-          }
-          // Smooth rotation toward movement direction
-          charTargetFacing=Math.atan2(dx,1)*0.6;
-          charFacing+=( charTargetFacing-charFacing)*0.08;
-        } else {
-          // Idle — countdown then pick new target
-          idleTimer-=dt;
-          if(idleTimer<=0) pickNewTarget();
-          // Subtle idle sway
-          charFacing=Math.sin(performance.now()*0.0005)*0.08;
-        }
-
-        robotRoot.position.set(charX, charY, 0);
-        robotRoot.rotation.y=charFacing;
-      }
       renderer.render(scene,camera);
     }
     animate();
 
     document.addEventListener("visibilitychange",()=>{
-      if(document.hidden){ cancelAnimationFrame(animId); } else { robotClock=new THREE.Clock(); animate(); }
+      if(document.hidden){ cancelAnimationFrame(animId); } else { animate(); }
     });
-
-    window.FORJA_BOT={ get model(){ return robotRoot; }, get mixer(){ return robotMixer; } };
   }
 
   window.addEventListener("forja:mount", tryInit);
@@ -7520,10 +7430,158 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 })();
 </script>
 
+<script>
+(function initBot(){
+  let renderer,scene,camera,mixer,clock,model,animId;
+  let actionIdle=null, actionWalk=null;
+  let ready=false;
 
+  // Character state
+  let charX=0, charY=0, targetX=0, targetY=0;
+  let charState="idle", idleTimer=2.0, charFacing=0;
 
+  function tryInit(){
+    const canvas=document.getElementById("forja-bot-canvas");
+    if(!canvas||!window.THREE||!window.THREE.GLTFLoader) return;
+    if(canvas.dataset.botInit) return;
+    canvas.dataset.botInit="1";
 
+    const W=canvas.offsetWidth||360;
+    const H=canvas.offsetHeight||120;
+    canvas.width=W*window.devicePixelRatio;
+    canvas.height=H*window.devicePixelRatio;
 
+    renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+    renderer.setSize(W,H);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+    renderer.setClearColor(0x000000,0);
+
+    scene=new THREE.Scene();
+
+    // Perspective camera — robot vive en coordenadas del canvas
+    const aspect=W/H;
+    camera=new THREE.PerspectiveCamera(46,aspect,0.1,200);
+    camera.position.set(0,0,12);
+
+    // Iluminación neutra para respetar los colores originales
+    scene.add(new THREE.AmbientLight(0xffffff,1.4));
+    const key=new THREE.DirectionalLight(0xffeedd,1.2);
+    key.position.set(3,6,8); scene.add(key);
+    const fill=new THREE.DirectionalLight(0x8899bb,0.4);
+    fill.position.set(-4,1,3); scene.add(fill);
+
+    clock=new THREE.Clock();
+
+    // Frustum at Z=0, cam Z=12, FOV=46
+    const fH=12*Math.tan(46*Math.PI/360)*2;
+    const fW=fH*aspect;
+    const MX=fW/2-0.8, MY=fH/2-0.6;
+    charX=(Math.random()-0.5)*MX; charY=0;
+    targetX=charX; targetY=charY;
+
+    function pickTarget(){
+      targetX=(Math.random()*2-1)*MX;
+      targetY=(Math.random()*2-1)*MY*0.4;
+      charState="walking";
+    }
+    pickTarget();
+
+    fetch("https://danielngr.github.io/FORJA/idle.glb")
+      .then(r=>r.arrayBuffer())
+      .then(buf=>{
+        const loader=new THREE.GLTFLoader();
+        loader.parse(buf,"",(gltf)=>{
+          model=gltf.scene;
+
+          // NO tocar materiales — respetar colores y ojos brillantes originales del GLB
+          model.traverse(child=>{
+            if(child.isSkinnedMesh&&child.material){
+              if(Array.isArray(child.material)) child.material.forEach(m=>m.skinning=true);
+              else child.material.skinning=true;
+            }
+          });
+
+          model.scale.setScalar(55);
+          model.position.set(charX,charY,0);
+          scene.add(model);
+
+          if(gltf.animations&&gltf.animations.length>=2){
+            mixer=new THREE.AnimationMixer(model);
+            // Anim 0 = idle (3.2s breathing), Anim 1 = walk (12.2s)
+            actionIdle=mixer.clipAction(gltf.animations[0]);
+            actionWalk=mixer.clipAction(gltf.animations[1]);
+            actionIdle.play();
+          }
+          ready=true;
+        },e=>console.warn("BOT:",e));
+      }).catch(e=>console.warn("BOT:",e));
+
+    function animate(){
+      animId=requestAnimationFrame(animate);
+      if(!ready||!model) return;
+
+      const dt=Math.min(clock.getDelta(),0.05);
+      if(mixer) mixer.update(dt);
+
+      if(charState==="walking"){
+        const dx=targetX-charX, dy=targetY-charY;
+        const dist=Math.sqrt(dx*dx+dy*dy);
+        if(dist<0.06){
+          charX=targetX; charY=targetY;
+          charState="idle";
+          idleTimer=1.8+Math.random()*2.5;
+          // Crossfade a idle
+          if(actionIdle&&actionWalk){
+            actionIdle.reset().play();
+            actionWalk.crossFadeTo(actionIdle,0.4,false);
+          }
+        } else {
+          const step=Math.min(1.6*dt,dist);
+          charX+=dx/dist*step;
+          charY+=dy/dist*step;
+          const targetFacing=Math.atan2(dx,1)*0.5;
+          charFacing+=(targetFacing-charFacing)*0.1;
+        }
+      } else {
+        idleTimer-=dt;
+        if(idleTimer<=0){
+          pickTarget();
+          // Crossfade a walk
+          if(actionIdle&&actionWalk){
+            actionWalk.reset().play();
+            actionIdle.crossFadeTo(actionWalk,0.4,false);
+          }
+        }
+        charFacing*=0.95;
+      }
+
+      model.position.set(charX,charY,0);
+      model.rotation.y=charFacing;
+      renderer.render(scene,camera);
+    }
+    animate();
+
+    // Resize
+    window.addEventListener("resize",()=>{
+      const W2=canvas.offsetWidth||360, H2=canvas.offsetHeight||120;
+      canvas.width=W2*window.devicePixelRatio; canvas.height=H2*window.devicePixelRatio;
+      renderer.setSize(W2,H2);
+      camera.aspect=W2/H2; camera.updateProjectionMatrix();
+    });
+
+    document.addEventListener("visibilitychange",()=>{
+      if(document.hidden) cancelAnimationFrame(animId);
+      else{ clock=new THREE.Clock(); animate(); }
+    });
+
+    window.FORJA_BOT={get model(){return model;},get mixer(){return mixer;}};
+  }
+
+  window.addEventListener("load",tryInit);
+  document.addEventListener("DOMContentLoaded",tryInit);
+  setInterval(()=>{ if(!ready) tryInit(); },400);
+})();
+</script>
 <script>
 (function initMeditation(){
   const BASE="https://forjavideos.b-cdn.net/";
