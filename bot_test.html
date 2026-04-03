@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body { margin:0; background:#0a0a0d; color:#fff; font-family:monospace; }
+#banner { 
+  width:100%; height:160px; 
+  background:rgba(8,10,14,0.95);
+  border-bottom:2px solid #ff6600;
+  position:relative; overflow:hidden;
+}
+canvas { position:absolute; top:0; left:0; width:100%; height:100%; }
+#info { padding:12px; font-size:11px; line-height:1.8; }
+#controls { padding:8px 12px; display:flex; gap:8px; flex-wrap:wrap; }
+button { 
+  padding:6px 12px; background:#333; color:#fff; 
+  border:1px solid #555; border-radius:4px; cursor:pointer;
+  font-family:monospace; font-size:11px;
+}
+button:active { background:#555; }
+#log { padding:8px 12px; font-size:10px; color:#aaa; max-height:200px; overflow-y:auto; }
+</style>
+</head>
+<body>
+
+<div id="banner">
+  <canvas id="c"></canvas>
+</div>
+
+<div id="controls">
+  <button onclick="changeScale(-5)">Scale -5</button>
+  <button onclick="changeScale(5)">Scale +5</button>
+  <button onclick="changeFloor(-0.1)">Floor -0.1</button>
+  <button onclick="changeFloor(0.1)">Floor +0.1</button>
+  <button onclick="changeFOV(-5)">FOV -5</button>
+  <button onclick="changeFOV(5)">FOV +5</button>
+  <button onclick="changeCamZ(-0.5)">CamZ -0.5</button>
+  <button onclick="changeCamZ(0.5)">CamZ +0.5</button>
+</div>
+
+<div id="info">Cargando...</div>
+<div id="log"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script>
+const GLB = 'https://danielngr.github.io/FORJA/idle.glb';
+let renderer, scene, camera, model, mixer, clock, animId;
+let currentScale = 70;
+let currentFOV = 30;
+let currentCamZ = 6;
+let FLOOR_Y = -1.558;
+let W, H, halfH, halfW, MX;
+let ready = false;
+
+function log(msg) {
+  const el = document.getElementById('log');
+  el.innerHTML = msg + '<br>' + el.innerHTML;
+}
+
+function updateInfo() {
+  const aspect = W/H;
+  halfH = currentCamZ * Math.tan(currentFOV/2 * Math.PI/180);
+  halfW = halfH * aspect;
+  MX = halfW * 0.72;
+  const robot_h = 0.028 * currentScale;
+  const pct = robot_h/(halfH*2)*100;
+  
+  document.getElementById('info').innerHTML = 
+    `scale=${currentScale} | FOV=${currentFOV} | camZ=${currentCamZ}<br>` +
+    `halfH=${halfH.toFixed(3)} | halfW=${halfW.toFixed(3)} | MX=${MX.toFixed(3)}<br>` +
+    `robot_h=${robot_h.toFixed(3)}u (${pct.toFixed(0)}% canvas) | FLOOR_Y=${FLOOR_Y.toFixed(3)}<br>` +
+    `Cabeza Y=${(FLOOR_Y+robot_h).toFixed(3)} vs halfH=${halfH.toFixed(3)} → ${FLOOR_Y+robot_h < halfH ? '✓ cabe' : '✗ SALE'}<br>` +
+    `Canvas: ${W}x${H}px`;
+}
+
+function init() {
+  const canvas = document.getElementById('c');
+  W = canvas.offsetWidth;
+  H = 160;
+  canvas.width = W * devicePixelRatio;
+  canvas.height = H * devicePixelRatio;
+
+  renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+  renderer.setSize(W, H);
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setClearColor(0x000000, 0);
+
+  scene = new THREE.Scene();
+  const aspect = W/H;
+  camera = new THREE.PerspectiveCamera(currentFOV, aspect, 0.1, 200);
+  camera.position.set(0, 0, currentCamZ);
+
+  scene.add(new THREE.AmbientLight(0xffffff, 1.4));
+  const key = new THREE.DirectionalLight(0xffeedd, 1.2);
+  key.position.set(3,6,8); scene.add(key);
+
+  // Grid helper para ver el "piso"
+  const grid = new THREE.GridHelper(10, 20, 0x444444, 0x222222);
+  grid.position.y = -1.558; // FLOOR_Y
+  scene.add(grid);
+
+  clock = new THREE.Clock();
+  halfH = currentCamZ * Math.tan(currentFOV/2 * Math.PI/180);
+  halfW = halfH * aspect;
+  MX = halfW * 0.72;
+  FLOOR_Y = -halfH + 0.05;
+
+  fetch(GLB)
+    .then(r => r.arrayBuffer())
+    .then(buf => {
+      new THREE.GLTFLoader().parse(buf, '', (gltf) => {
+        model = gltf.scene;
+        model.traverse(child => {
+          if(child.isSkinnedMesh && child.material) child.material.skinning = true;
+        });
+        model.scale.setScalar(currentScale);
+        model.position.set(0, FLOOR_Y, 0);
+        scene.add(model);
+
+        if(gltf.animations && gltf.animations.length > 0) {
+          mixer = new THREE.AnimationMixer(model);
+          mixer.clipAction(gltf.animations[0]).play();
+        }
+
+        // Medir bounding box REAL
+        const box = new THREE.Box3().setFromObject(model);
+        const size = box.getSize(new THREE.Vector3());
+        const center = box.getCenter(new THREE.Vector3());
+        log(`BOUNDING BOX REAL: h=${size.y.toFixed(3)}u w=${size.x.toFixed(3)}u`);
+        log(`Center: ${center.x.toFixed(2)}, ${center.y.toFixed(2)}, ${center.z.toFixed(2)}`);
+        log(`Min Y=${box.min.y.toFixed(3)}, Max Y=${box.max.y.toFixed(3)}`);
+
+        ready = true;
+        updateInfo();
+        animate();
+      });
+    });
+  
+  updateInfo();
+  animate();
+}
+
+function animate() {
+  animId = requestAnimationFrame(animate);
+  if(mixer) mixer.update(clock.getDelta());
+  if(model) model.position.set(0, FLOOR_Y, 0);
+  renderer.render(scene, camera);
+}
+
+function applyChanges() {
+  if(!model || !camera) return;
+  const aspect = W/H;
+  camera.fov = currentFOV;
+  camera.position.z = currentCamZ;
+  camera.updateProjectionMatrix();
+  halfH = currentCamZ * Math.tan(currentFOV/2 * Math.PI/180);
+  halfW = halfH * aspect;
+  MX = halfW * 0.72;
+  FLOOR_Y = -halfH + 0.05;
+  model.scale.setScalar(currentScale);
+  model.position.set(0, FLOOR_Y, 0);
+
+  // Re-medir
+  const box = new THREE.Box3().setFromObject(model);
+  const size = box.getSize(new THREE.Vector3());
+  log(`scale=${currentScale} FOV=${currentFOV} camZ=${currentCamZ}: h=${size.y.toFixed(3)}u (${(size.y/(halfH*2)*100).toFixed(0)}% canvas)`);
+  updateInfo();
+}
+
+function changeScale(d) { currentScale += d; applyChanges(); }
+function changeFloor(d) { FLOOR_Y += d; updateInfo(); }
+function changeFOV(d) { currentFOV += d; applyChanges(); }
+function changeCamZ(d) { currentCamZ += d; applyChanges(); }
+
+window.addEventListener('load', init);
+</script>
+</body>
+</html>
