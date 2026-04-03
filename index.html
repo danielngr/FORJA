@@ -2792,7 +2792,11 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
       startRest(ei,si);
     }
     const allDone=ns.every(e=>e.every(s=>s.done));
-    if(allDone) setTimeout(()=>{setFinalSecs(sessSecs);setAllDone(true);FStore.saveSession(day&&day.l,exs,sessSecs);},700);
+    if(allDone) setTimeout(()=>{
+      setFinalSecs(sessSecs);setAllDone(true);FStore.saveSession(day&&day.l,exs,sessSecs);
+      // Trigger bot celebración
+      if(window.FORJA_BOT) window.FORJA_BOT.trigger("victory");
+    },700);
   }
   function addSet(ei){
     const last=sets[ei][sets[ei].length-1];
@@ -7432,13 +7436,156 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
 <script>
 (function initBot(){
-  let renderer,scene,camera,mixer,clock,model,animId;
-  let actionIdle=null, actionWalk=null;
-  let ready=false;
+  const BASE="https://danielngr.github.io/FORJA/animations/";
+  const MODEL_URL="https://danielngr.github.io/FORJA/idle.glb";
 
-  // Character state
-  let charX=0, charY=0, targetX=0, targetY=0;
-  let charState="idle", idleTimer=2.0, charFacing=0;
+  // ── Leer desempeño del usuario desde localStorage ──────────────────
+  function getUserPerf(){
+    try{
+      const profile=JSON.parse(localStorage.getItem("fv8_profile")||"{}");
+      const done=JSON.parse(localStorage.getItem("fv8_done")||"{}");
+      // Contar días entrenados en los últimos 30 días
+      const now=Date.now();
+      const DAY=86400000;
+      let streak=0, daysSinceLast=999, totalRecent=0;
+      // Buscar sesiones completadas
+      const keys=Object.keys(done);
+      const daySet=new Set();
+      keys.forEach(k=>{
+        // key format: "YYYY-MM-DD-exId" o similar
+        const parts=k.split("-");
+        if(parts.length>=3){
+          const dateStr=parts.slice(0,3).join("-");
+          daySet.add(dateStr);
+        }
+      });
+      // También revisar historial de workouts
+      const hist=JSON.parse(localStorage.getItem("fv8_hist")||"[]");
+      hist.forEach(h=>{
+        if(h.date) daySet.add(h.date.slice(0,10));
+      });
+      const sortedDays=Array.from(daySet).sort().reverse();
+      if(sortedDays.length>0){
+        const lastDate=new Date(sortedDays[0]);
+        daysSinceLast=Math.floor((now-lastDate.getTime())/DAY);
+        // Calcular racha
+        let s=0, prev=null;
+        for(const d of sortedDays){
+          const dt=new Date(d);
+          if(!prev){ s=1; prev=dt; continue; }
+          const diff=Math.floor((prev.getTime()-dt.getTime())/DAY);
+          if(diff<=1){ s++; prev=dt; }
+          else break;
+        }
+        streak=s;
+        totalRecent=sortedDays.filter(d=>now-new Date(d).getTime()<30*DAY).length;
+      }
+      // Detectar si completó entreno HOY
+      const today=new Date().toISOString().slice(0,10);
+      const completedToday=sortedDays[0]===today;
+      return{streak,daysSinceLast,totalRecent,completedToday};
+    }catch(e){ return{streak:0,daysSinceLast:999,totalRecent:0,completedToday:false}; }
+  }
+
+  // ── Estado emocional según desempeño ───────────────────────────────
+  function getMood(){
+    const p=getUserPerf();
+    if(p.completedToday) return "victory";     // completó hoy → celebra
+    if(p.streak>=7)      return "hype";        // racha 7+ → taunt/rumba
+    if(p.streak>=3)      return "active";      // racha 3+ → activo, walk
+    if(p.daysSinceLast>=7) return "depressed"; // 7+ días → sitting/defeated
+    if(p.daysSinceLast>=3) return "sad";       // 3-6 días → shake/look
+    return "normal";                           // default → idle/walk/look
+  }
+
+  // ── Animaciones por mood ────────────────────────────────────────────
+  // Cada entrada: [archivo, duración loop s, es one-shot]
+  const ANIM_FILES={
+    idle:     BASE+"bot_idle.glb",
+    walk:     BASE+"bot_walk.glb",
+    look:     BASE+"bot_look.glb",
+    rumba:    BASE+"bot_rumba.glb",
+    defeated: BASE+"bot_defeated.glb",
+    victory:  BASE+"bot_victory.glb",
+    clap:     BASE+"bot_clap.glb",
+    shake:    BASE+"bot_shake.glb",
+    sitting:  BASE+"bot_sitting.glb",
+    taunt:    BASE+"bot_taunt.glb",
+    strafe:   BASE+"bot_strafe.glb",
+  };
+
+  // Secuencias por mood: [animKey, duración override en s (0=full loop), walkAfter]
+  const MOOD_SEQUENCES={
+    victory:  [["victory",6,false],["clap",4,false],["idle",3,true]],
+    hype:     [["taunt",4,false],["rumba",5,false],["walk",0,true],["strafe",3,false]],
+    active:   [["walk",0,true],["look",4,false],["walk",0,true],["strafe",3,false]],
+    sad:      [["shake",4,false],["look",5,false],["idle",4,false],["walk",0,true]],
+    depressed:[["defeated",6,false],["sitting",8,false],["idle",3,false]],
+    normal:   [["idle",3,false],["walk",0,true],["look",4,false],["idle",3,false]],
+  };
+
+  let renderer,scene,camera,mixer,clock,model,animId;
+  let ready=false, loadedClips={};
+  let charX=0,charY=0,targetX=0,targetY=0,charFacing=0;
+  let seqIdx=0, seqTimer=0, currentMood="normal";
+  let walkMode=false;
+  let MX=4, MY=0.5; // frustum bounds
+
+  // ── Cargar un GLB y extraer su AnimationClip ───────────────────────
+  function loadClip(key){
+    return new Promise((resolve)=>{
+      if(loadedClips[key]){ resolve(loadedClips[key]); return; }
+      fetch(ANIM_FILES[key])
+        .then(r=>r.arrayBuffer())
+        .then(buf=>{
+          new THREE.GLTFLoader().parse(buf,"",(gltf)=>{
+            const clip=gltf.animations&&gltf.animations[0]||null;
+            loadedClips[key]=clip;
+            resolve(clip);
+          },()=>resolve(null));
+        }).catch(()=>resolve(null));
+    });
+  }
+
+  // ── Reproducir animación con crossfade ────────────────────────────
+  let currentAction=null;
+  function playClip(key, loop=true){
+    const clip=loadedClips[key];
+    if(!clip||!mixer) return;
+    const next=mixer.clipAction(clip);
+    next.setLoop(loop?THREE.LoopRepeat:THREE.LoopOnce,Infinity);
+    next.clampWhenFinished=!loop;
+    next.reset().play();
+    if(currentAction&&currentAction!==next){
+      currentAction.crossFadeTo(next,0.35,false);
+    }
+    currentAction=next;
+  }
+
+  // ── Lógica de secuencias ──────────────────────────────────────────
+  function advanceSequence(dt){
+    const seq=MOOD_SEQUENCES[currentMood]||MOOD_SEQUENCES.normal;
+    const[animKey,dur,isWalk]=seq[seqIdx%seq.length];
+    walkMode=isWalk;
+    seqTimer-=dt;
+    if(seqTimer<=0){
+      seqIdx++;
+      const[nextKey,nextDur,nextWalk]=seq[seqIdx%seq.length];
+      const useDur=nextDur>0?nextDur:3.5;
+      seqTimer=useDur;
+      walkMode=nextWalk;
+      // Preload y reproducir
+      loadClip(nextKey).then(()=>playClip(nextKey,true));
+      if(!nextWalk){
+        // Stand still en el suelo
+        targetX=charX; targetY=0;
+      } else {
+        // Nuevo destino
+        targetX=(Math.random()*2-1)*MX;
+        targetY=0; // siempre en el suelo
+      }
+    }
+  }
 
   function tryInit(){
     const canvas=document.getElementById("forja-bot-canvas");
@@ -7457,13 +7604,11 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     renderer.setClearColor(0x000000,0);
 
     scene=new THREE.Scene();
-
-    // Perspective camera — robot vive en coordenadas del canvas
     const aspect=W/H;
     camera=new THREE.PerspectiveCamera(46,aspect,0.1,200);
     camera.position.set(0,0,12);
 
-    // Iluminación neutra para respetar los colores originales
+    // Iluminación que respeta los colores originales del modelo
     scene.add(new THREE.AmbientLight(0xffffff,1.4));
     const key=new THREE.DirectionalLight(0xffeedd,1.2);
     key.position.set(3,6,8); scene.add(key);
@@ -7472,101 +7617,92 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
     clock=new THREE.Clock();
 
-    // Frustum at Z=0, cam Z=12, FOV=46
+    // Calcular frustum bounds al nivel del suelo (Z=0, cam Z=12)
     const fH=12*Math.tan(46*Math.PI/360)*2;
     const fW=fH*aspect;
-    const MX=fW/2-0.8, MY=fH/2-0.6;
-    charX=(Math.random()-0.5)*MX; charY=0;
-    targetX=charX; targetY=charY;
+    MX=fW/2-1.0;
+    // Suelo: el robot siempre camina en Y=-fH*0.25 (tercio inferior del canvas)
+    const FLOOR_Y=-fH*0.22;
 
-    function pickTarget(){
-      targetX=(Math.random()*2-1)*MX;
-      targetY=(Math.random()*2-1)*MY*0.4;
-      charState="walking";
-    }
-    pickTarget();
+    charX=(Math.random()-0.5)*MX; charY=FLOOR_Y;
+    targetX=charX; targetY=FLOOR_Y;
 
-    fetch("https://danielngr.github.io/FORJA/idle.glb")
+    // Determinar mood inicial
+    currentMood=getMood();
+    const seq=MOOD_SEQUENCES[currentMood];
+    seqIdx=0; seqTimer=seq[0][1]||3;
+
+    // Cargar modelo base (idle.glb tiene el mesh + skin)
+    fetch(MODEL_URL)
       .then(r=>r.arrayBuffer())
       .then(buf=>{
-        const loader=new THREE.GLTFLoader();
-        loader.parse(buf,"",(gltf)=>{
+        new THREE.GLTFLoader().parse(buf,"",(gltf)=>{
           model=gltf.scene;
-
-          // NO tocar materiales — respetar colores y ojos brillantes originales del GLB
           model.traverse(child=>{
             if(child.isSkinnedMesh&&child.material){
               if(Array.isArray(child.material)) child.material.forEach(m=>m.skinning=true);
               else child.material.skinning=true;
             }
           });
-
           model.scale.setScalar(55);
-          model.position.set(charX,charY,0);
+          model.position.set(charX,FLOOR_Y,0);
           scene.add(model);
 
-          if(gltf.animations&&gltf.animations.length>=2){
-            mixer=new THREE.AnimationMixer(model);
-            // Anim 0 = idle (3.2s breathing), Anim 1 = walk (12.2s)
-            actionIdle=mixer.clipAction(gltf.animations[0]);
-            actionWalk=mixer.clipAction(gltf.animations[1]);
-            actionIdle.play();
-          }
-          ready=true;
-        },e=>console.warn("BOT:",e));
-      }).catch(e=>console.warn("BOT:",e));
+          mixer=new THREE.AnimationMixer(model);
+
+          // Precargar animaciones del mood actual en paralelo
+          const seq=MOOD_SEQUENCES[currentMood];
+          const keysToLoad=[...new Set(seq.map(s=>s[0]))];
+          keysToLoad.push("walk","idle"); // siempre tener estos
+          Promise.all(keysToLoad.map(k=>loadClip(k))).then(()=>{
+            // Empezar con la primera anim del mood
+            playClip(seq[0][0],true);
+            ready=true;
+          });
+        },e=>console.warn("BOT model:",e));
+      }).catch(e=>console.warn("BOT fetch:",e));
 
     function animate(){
       animId=requestAnimationFrame(animate);
       if(!ready||!model) return;
-
       const dt=Math.min(clock.getDelta(),0.05);
       if(mixer) mixer.update(dt);
 
-      if(charState==="walking"){
-        const dx=targetX-charX, dy=targetY-charY;
-        const dist=Math.sqrt(dx*dx+dy*dy);
-        if(dist<0.06){
-          charX=targetX; charY=targetY;
-          charState="idle";
-          idleTimer=1.8+Math.random()*2.5;
-          // Crossfade a idle
-          if(actionIdle&&actionWalk){
-            actionIdle.reset().play();
-            actionWalk.crossFadeTo(actionIdle,0.4,false);
-          }
+      // Avanzar secuencia
+      advanceSequence(dt);
+
+      // Movimiento — solo si walkMode
+      if(walkMode){
+        const dx=targetX-charX;
+        const dist=Math.abs(dx);
+        if(dist<0.08){
+          charX=targetX;
+          // Llegó — la secuencia decidirá qué sigue
         } else {
-          const step=Math.min(1.6*dt,dist);
-          charX+=dx/dist*step;
-          charY+=dy/dist*step;
-          const targetFacing=Math.atan2(dx,1)*0.5;
-          charFacing+=(targetFacing-charFacing)*0.1;
+          const step=Math.min(1.8*dt,dist);
+          charX+=Math.sign(dx)*step;
+          // Orientar hacia donde camina
+          const tf=dx>0?0.3:-0.3;
+          charFacing+=(tf-charFacing)*0.12;
         }
       } else {
-        idleTimer-=dt;
-        if(idleTimer<=0){
-          pickTarget();
-          // Crossfade a walk
-          if(actionIdle&&actionWalk){
-            actionWalk.reset().play();
-            actionIdle.crossFadeTo(actionWalk,0.4,false);
-          }
-        }
-        charFacing*=0.95;
+        // Idle en el suelo — pequeño sway
+        charFacing*=0.92;
       }
 
-      model.position.set(charX,charY,0);
+      // Siempre en el suelo
+      model.position.set(charX,FLOOR_Y,0);
       model.rotation.y=charFacing;
       renderer.render(scene,camera);
     }
     animate();
 
-    // Resize
     window.addEventListener("resize",()=>{
-      const W2=canvas.offsetWidth||360, H2=canvas.offsetHeight||120;
+      const W2=canvas.offsetWidth||360,H2=canvas.offsetHeight||120;
       canvas.width=W2*window.devicePixelRatio; canvas.height=H2*window.devicePixelRatio;
       renderer.setSize(W2,H2);
       camera.aspect=W2/H2; camera.updateProjectionMatrix();
+      MX=(12*Math.tan(46*Math.PI/360)*2*(W2/H2))/2-1.0;
     });
 
     document.addEventListener("visibilitychange",()=>{
@@ -7574,7 +7710,13 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       else{ clock=new THREE.Clock(); animate(); }
     });
 
-    window.FORJA_BOT={get model(){return model;},get mixer(){return mixer;}};
+    // API pública — permite triggers externos (ej: completar entreno)
+    window.FORJA_BOT={
+      get model(){ return model; },
+      get mood(){ return currentMood; },
+      trigger(mood){ currentMood=mood; seqIdx=0; seqTimer=0.01; },
+      refreshMood(){ currentMood=getMood(); seqIdx=0; seqTimer=0.01; },
+    };
   }
 
   window.addEventListener("load",tryInit);
