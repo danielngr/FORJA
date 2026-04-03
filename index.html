@@ -7595,7 +7595,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     canvas.dataset.botInit="1";
 
     const W=canvas.offsetWidth||360;
-    const H=160; // altura fija del banner
+    const H=160;
     canvas.width=W*window.devicePixelRatio;
     canvas.height=H*window.devicePixelRatio;
 
@@ -7606,10 +7606,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
     scene=new THREE.Scene();
     const aspect=W/H;
-    camera=new THREE.PerspectiveCamera(50,aspect,0.1,200);
-    camera.position.set(0,0,10);
+    // FOV angosto + cam cerca = robot grande y visible, bien contenido
+    camera=new THREE.PerspectiveCamera(30,aspect,0.1,200);
+    camera.position.set(0,0,8);
 
-    // Iluminación que respeta los colores originales del modelo
     scene.add(new THREE.AmbientLight(0xffffff,1.4));
     const key=new THREE.DirectionalLight(0xffeedd,1.2);
     key.position.set(3,6,8); scene.add(key);
@@ -7618,20 +7618,22 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
     clock=new THREE.Clock();
 
-    // Frustum a Z=0, cam Z=10, FOV=50 → halfH=4.66, halfW=halfH*aspect
-    const halfH=10*Math.tan(25*Math.PI/180); // ~4.66
-    const halfW=halfH*aspect;
-    MX=halfW-0.9;
-    // Robot scale=42 → altura ~1.17 units. Pies en borde inferior del canvas
-    const FLOOR_Y=-halfH+0.15;
+    // Frustum exacto: camZ=8, FOV=30 → halfH=2.14, halfW=halfH*aspect
+    // Robot scale=55 → height=1.56 units → cabe perfectamente
+    const halfH=8*Math.tan(15*Math.PI/180); // ~2.14
+    const halfW=halfH*aspect;               // ~5.23
+    MX=halfW*0.72;                          // margen lateral
+    // FLOOR_Y: pies en tercio inferior del canvas, cabeza sin salirse
+    const FLOOR_Y=-halfH*0.30;             // -0.64 → top robot a +0.92, cabe en halfH=2.14
 
-    charX=MX*0.7; charY=FLOOR_Y;
+    charX=MX*0.75; charY=FLOOR_Y;
     targetX=charX; targetY=FLOOR_Y;
 
     // Determinar mood inicial
     currentMood=getMood();
     const seq=MOOD_SEQUENCES[currentMood];
-    seqIdx=0; seqTimer=seq[0][1]||3;
+    seqIdx=0; seqTimer=1.0; // timer corto para que empiece a moverse rápido
+    walkMode=true; // empieza caminando
 
     // Cargar modelo base (idle.glb tiene el mesh + skin)
     fetch(MODEL_URL)
@@ -7645,7 +7647,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
               else child.material.skinning=true;
             }
           });
-          model.scale.setScalar(42);
+          model.scale.setScalar(55);
           model.position.set(charX,FLOOR_Y,0);
           scene.add(model);
 
@@ -7697,8 +7699,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       canvas.width=W2*window.devicePixelRatio; canvas.height=160*window.devicePixelRatio;
       renderer.setSize(W2,160);
       camera.aspect=W2/160; camera.updateProjectionMatrix();
-      const halfH2=10*Math.tan(25*Math.PI/180);
-      MX=halfH2*(W2/160)-0.9;
+      const halfH2=8*Math.tan(15*Math.PI/180);
+      MX=halfH2*(W2/160)*0.72;
     });
 
     document.addEventListener("visibilitychange",()=>{
