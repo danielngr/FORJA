@@ -7480,7 +7480,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
         const rm=[];
         model.traverse(c=>{
           if(c.name==="Cube"||c.name==="default")rm.push(c);
-          if(c.isMesh||c.isSkinnedMesh) console.log('MESH:',c.name);
+          if(c.name==="pCube6"||c.name==="pCube7"||c.name==="pCylinder6"||c.name==="pCylinder9") c.visible=false;
         });
         rm.forEach(c=>c.parent&&c.parent.remove(c));
         // Materiales
