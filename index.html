@@ -7437,15 +7437,53 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
 <script>
 (function initBot(){
-  console.log('BOT IIFE arrancó');
   const CDN="https://pub-28277a6ce79d49479afd0cb1bba27b44.r2.dev/bot-anims/";
-  const WALK_URL=CDN+"walking_skin.glb";
-  const PLANK_URL=CDN+"plank.glb";
   const FY=-8.5, FOV=35, CZ=14, CAM_Y=-4.4;
+
+  // Animaciones disponibles por estado
+  // canWalk=true → robot camina de lado a lado
+  // canWalk=false → robot estático en centro
+  const STATES = {
+    // Sin datos / primer uso
+    normal:   { anims:["walking_skin","jogging"],          canWalk:true  },
+    // Entrenaste hoy
+    victory:  { anims:["excited","capoeira","baseball"],   canWalk:false },
+    // Streak 3+ días
+    active:   { anims:["jogging","capoeira","plank"],      canWalk:true  },
+    // Sin entrenar hoy
+    idle:     { anims:["fishing","cowmilking","rifleaiming","climb"], canWalk:false },
+    // 2 días sin entrenar
+    low:      { anims:["laying","plank"],                  canWalk:false },
+    // 3+ días sin entrenar
+    dead:     { anims:["falling","laying"],                canWalk:false },
+  };
+
+  function getMood(){
+    try{
+      const done=JSON.parse(localStorage.getItem("fv8_done")||"{}");
+      const hist=JSON.parse(localStorage.getItem("fv8_hist")||"[]");
+      const today=new Date().toISOString().slice(0,10);
+      const DAY=86400000, days=new Set();
+      Object.keys(done).forEach(k=>{const p=k.split("-");if(p.length>=3)days.add(p.slice(0,3).join("-"));});
+      hist.forEach(h=>{if(h.date)days.add(h.date.slice(0,10));});
+      const sorted=[...days].sort().reverse();
+      if(!sorted.length) return "normal";
+      const daysSince=Math.floor((Date.now()-new Date(sorted[0]))/DAY);
+      if(sorted[0]===today) return "victory";
+      if(daysSince>=3) return "dead";
+      if(daysSince>=2) return "low";
+      let streak=0,prev=null;
+      for(const d of sorted){const dt=new Date(d);if(!prev){streak=1;prev=dt;continue;}if(Math.floor((prev-dt)/DAY)<=1){streak++;prev=dt;}else break;}
+      if(streak>=3) return "active";
+      return "idle";
+    }catch(e){}
+    return "normal";
+  }
 
   let ren,scene,cam,mixer,clock,model,aid;
   let ready=false;
   let cx=-4, tx=3, facing=0, wm=true, st=0.1;
+  let canWalk=true;
 
   function newTarget(){
     cx>=0 ? tx=-(1.5+Math.random()*2.5) : tx=(1.5+Math.random()*2.5);
@@ -7453,7 +7491,6 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
   function tryInit(){
     const canvas=document.getElementById("forja-bot-canvas");
-    console.log('BOT tryInit canvas=',!!canvas,'THREE=',!!window.THREE,'GLTFLoader=',!!(window.THREE&&window.THREE.GLTFLoader),'bi=',canvas&&canvas.dataset.bi);
     if(!canvas||canvas.dataset.bi) return;
     if(!window.THREE||!window.THREE.GLTFLoader) return;
     canvas.dataset.bi="1";
@@ -7469,19 +7506,20 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     const dl=new THREE.DirectionalLight(0xffffff,1.5); dl.position.set(2,5,4); scene.add(dl);
     clock=new THREE.Clock();
 
-    // Cargar walking_skin.glb directamente — tiene modelo + animación walk
-    console.log('BOT fetch walk model');
-    fetch(WALK_URL).then(r=>r.arrayBuffer()).then(buf=>{
-      console.log('BOT walk buf',buf.byteLength);
-      new THREE.GLTFLoader().parse(buf,BASE,(gltf)=>{
-        console.log('BOT walk parsed, anims:',gltf.animations.length);
+    // Elegir animación según mood
+    const mood=getMood();
+    const state=STATES[mood]||STATES.normal;
+    canWalk=state.canWalk;
+    const anim=state.anims[Math.floor(Math.random()*state.anims.length)];
+    const url=CDN+anim+".glb";
+    console.log('BOT mood=',mood,'anim=',anim,'canWalk=',canWalk);
+
+    fetch(url).then(r=>r.arrayBuffer()).then(buf=>{
+      new THREE.GLTFLoader().parse(buf,CDN,(gltf)=>{
         model=gltf.scene;
         // Remover artefactos Blender
         const rm=[];
-        model.traverse(c=>{
-          if(c.name==="Cube"||c.name==="default")rm.push(c);
-          // malla entre pies: parte de geometría de Pierna, fix en Blender
-        });
+        model.traverse(c=>{if(c.name==="Cube"||c.name==="default")rm.push(c);});
         rm.forEach(c=>c.parent&&c.parent.remove(c));
         // Materiales
         model.traverse(c=>{
@@ -7494,47 +7532,49 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
           c.material=mat;
         });
         model.scale.setScalar(36);
-        model.rotation.x=-0.15; // inclinar ligeramente para verse más erguido
-        model.position.set(cx,FY,0);
+        model.rotation.x=-0.15;
+        model.position.set(canWalk?cx:0, FY, 0);
         scene.add(model);
         mixer=new THREE.AnimationMixer(model);
         if(gltf.animations[0]){
           const clip=gltf.animations[0];
-          clip.tracks=clip.tracks.filter(t=>!(t.name.toLowerCase().includes('hip')&&t.name.toLowerCase().includes('position')));
-          console.log('BOT walk tracks:',clip.tracks.length);
-          const wa=mixer.clipAction(clip);
-          wa.setLoop(THREE.LoopRepeat); // loop continuo
-          wa.clampWhenFinished=true;
-          wa.play();
+          if(canWalk) clip.tracks=clip.tracks.filter(t=>!(t.name.toLowerCase().includes('hip')&&t.name.toLowerCase().includes('position')));
+          const a=mixer.clipAction(clip);
+          a.setLoop(THREE.LoopRepeat);
+          a.play();
         }
-        window._botCanWalk=false; // plank: estático
         ready=true;
         animate();
       },e=>console.error('BOT parse err:',e));
     }).catch(e=>console.error('BOT fetch err:',e));
 
-    let _dbgt=0;
     function animate(){
       aid=requestAnimationFrame(animate);
       if(!ready||!model) return;
       const dt=Math.min(clock.getDelta(),0.05);
-      _dbgt+=dt; if(_dbgt>2){_dbgt=0;console.log('BOT animate cx=',cx.toFixed(2),'wm=',wm,'st=',st.toFixed(1));}
       mixer&&mixer.update(dt);
-      st-=dt;
-      if(st<=0){ wm=!wm; st=wm?5:2.5; if(wm) newTarget(); }
-      if(wm){
-        const dx=tx-cx;
-        if(Math.abs(dx)<0.1){ wm=false; st=1.5; }
-        else{
-          cx+=Math.sign(dx)*Math.min(1.8*dt,Math.abs(dx));
-          // facing: 0=derecha, Math.PI=izquierda — giro instantáneo al cambiar dirección
-          const targetFacing=Math.sign(dx)>0?0:Math.PI;
-          facing+=(targetFacing-facing)*0.15;
+
+      if(canWalk){
+        st-=dt;
+        if(st<=0){ wm=!wm; st=wm?5:2.5; if(wm) newTarget(); }
+        if(wm){
+          const dx=tx-cx;
+          if(Math.abs(dx)<0.1){ wm=false; st=1.5; }
+          else{
+            cx+=Math.sign(dx)*Math.min(1.8*dt,Math.abs(dx));
+            const targetFacing=Math.sign(dx)>0?0:Math.PI;
+            facing+=(targetFacing-facing)*0.15;
+          }
         }
-      } else { /* parado */ }
-      model.position.x=cx;
-      model.rotation.y=Math.PI/2+facing;
-      // camara fija, solo modelo se mueve
+        model.position.x=cx;
+        model.rotation.y=Math.PI/2+facing;
+      } else {
+        // estático en centro, mirando de frente
+        cx+=(0-cx)*0.05;
+        model.position.x=cx;
+        model.rotation.y=Math.PI/2;
+      }
+
       cam.lookAt(0,CAM_Y,0);
       ren.render(scene,cam);
     }
@@ -7548,11 +7588,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       canvas.width=W2*devicePixelRatio; canvas.height=H*devicePixelRatio;
       ren.setSize(W2,H); cam.aspect=W2/H; cam.updateProjectionMatrix();
     });
-    window.FORJA_BOT={ trigger(){ wm=true; st=5; newTarget(); } };
+    window.FORJA_BOT={ trigger(){ /* victory handled by mood */ } };
   }
 
   window.addEventListener("load",()=>setTimeout(tryInit,100));
-  document.addEventListener("DOMContentLoaded",()=>setTimeout(tryInit,500));
   setInterval(()=>{if(!ready)tryInit();},500);
 })();
 </script>
