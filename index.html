@@ -7480,7 +7480,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
         const rm=[];
         model.traverse(c=>{
           if(c.name==="Cube"||c.name==="default")rm.push(c);
-          if(c.name==="Pierna"||c.name==="Pierna1") c.visible=false;
+          // malla entre pies: parte de geometría de Pierna, fix en Blender
         });
         rm.forEach(c=>c.parent&&c.parent.remove(c));
         // Materiales
