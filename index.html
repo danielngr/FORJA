@@ -7494,6 +7494,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
           c.material=mat;
         });
         model.scale.setScalar(36);
+        model.rotation.x=-0.15; // inclinar ligeramente para verse más erguido
         model.position.set(cx,FY,0);
         scene.add(model);
         mixer=new THREE.AnimationMixer(model);
