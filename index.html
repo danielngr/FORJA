@@ -7536,11 +7536,11 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
           const oldModel=model, oldMixer=mixer;
           model=newModel; mixer=newMixer; canWalk=walk; currentAnim=name;
           const doFade=()=>{
-            t+=0.02;
+            t+=0.08;
             if(oldModel) setOpacity(oldModel, 1-t);
             setOpacity(newModel, t);
             if(t<1) requestAnimationFrame(doFade);
-            else if(oldModel) scene.remove(oldModel);
+            else{ if(oldModel) scene.remove(oldModel); setOpacity(newModel,1); }
           };
           doFade();
         }
