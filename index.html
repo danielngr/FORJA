@@ -14,6 +14,8 @@ html,body{height:100%;background:#0d0f14;}
 body{overscroll-behavior:none;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right);}
 input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;}
 input[type=number]{-moz-appearance:textfield;}
+@keyframes pulse2{0%,100%{opacity:1}50%{opacity:0.4}}
+@keyframes botdot{0%,80%,100%{transform:scale(0.5);opacity:0.2}40%{transform:scale(1);opacity:1}}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 @keyframes levelUpPulse{
@@ -4220,17 +4222,10 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
 
             {/* Header */}
             <div style={{display:"flex",alignItems:"center",gap:12,padding:"8px 20px 14px",flexShrink:0}}>
-              {/* Avatar con glow */}
-              <div style={{position:"relative",flexShrink:0}}>
-                <div style={{position:"absolute",inset:-3,borderRadius:"50%",
-                  background:"conic-gradient(from 0deg,#3fcf8e,#4a90ff,#3fcf8e)",
-                  animation:"spin 4s linear infinite",opacity:0.6}}/>
-                <div style={{position:"relative",width:38,height:38,borderRadius:"50%",
-                  background:"rgba(20,22,32,0.95)",
-                  display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,
-                  border:"0.5px solid rgba(255,255,255,0.1)"}}>
-                  🤖
-                </div>
+              <div style={{width:38,height:38,borderRadius:"50%",
+                background:"rgba(63,207,142,0.12)",border:"0.5px solid rgba(63,207,142,0.25)",
+                display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>
+                🤖
               </div>
               <div style={{flex:1}}>
                 <div style={{fontSize:13,fontFamily:mono,fontWeight:700,
@@ -4256,10 +4251,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
 
             <BotChat profile={profile} routine={routine} done={done} lang={lang} mono={mono}/>
 
-            <style>{`
-              @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-              @keyframes pulse2{0%,100%{opacity:1}50%{opacity:0.4}}
-            `}</style>
+
           </div>
         </div>
       )}
@@ -7532,7 +7524,7 @@ function BotChat({profile,routine,done,lang,mono}){
           </button>
         </div>
       </div>
-      <style>{`@keyframes botdot{0%,80%,100%{transform:scale(0.5);opacity:0.2}40%{transform:scale(1);opacity:1}}`}</style>
+
     </>
   );
 }
