@@ -4145,6 +4145,35 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
           })()}
         </div>
       </div>
+
+      {showBotChat&&(
+        <div style={{position:"fixed",inset:0,zIndex:9999,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}>
+          <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.5)"}} onClick={()=>setShowBotChat(false)}/>
+          <div style={{position:"relative",borderRadius:"28px 28px 0 0",height:"70vh",
+            display:"flex",flexDirection:"column",overflow:"hidden",
+            background:"rgba(12,14,22,0.96)",
+            backdropFilter:"blur(40px)",WebkitBackdropFilter:"blur(40px)",
+            boxShadow:"0 -1px 0 rgba(255,255,255,0.1),0 -30px 60px rgba(0,0,0,0.8)"}}>
+            <div style={{height:1,background:"linear-gradient(90deg,transparent,rgba(255,255,255,0.15),transparent)",flexShrink:0}}/>
+            <div style={{display:"flex",justifyContent:"center",paddingTop:12,flexShrink:0}}>
+              <div style={{width:40,height:4,borderRadius:2,background:"rgba(255,255,255,0.15)"}}/>
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 20px 12px",borderBottom:"0.5px solid rgba(255,255,255,0.06)",flexShrink:0}}>
+              <div style={{width:38,height:38,borderRadius:"50%",background:"rgba(63,207,142,0.1)",border:"0.5px solid rgba(63,207,142,0.25)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>🤖</div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:12,fontFamily:mono,fontWeight:700,color:"rgba(255,255,255,0.9)",letterSpacing:2}}>FORJA BOT</div>
+                <div style={{display:"flex",alignItems:"center",gap:5,marginTop:2}}>
+                  <div style={{width:5,height:5,borderRadius:"50%",background:"#3fcf8e",boxShadow:"0 0 6px rgba(63,207,142,0.8)"}}/>
+                  <span style={{fontSize:8,fontFamily:mono,color:"rgba(63,207,142,0.6)",letterSpacing:1}}>COACH ACTIVO</span>
+                </div>
+              </div>
+              <button onClick={()=>setShowBotChat(false)} style={{width:28,height:28,borderRadius:"50%",background:"rgba(255,255,255,0.05)",border:"0.5px solid rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.4)",fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>&#10005;</button>
+            </div>
+            <BotChat profile={profile} routine={routine} done={done} lang={lang} mono={mono}/>
+          </div>
+        </div>
+      )}
+
       <div style={{padding:"10px 20px 0",background:"rgba(8,10,14,0.95)",
         borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
         <div style={{display:"flex",background:"rgba(255,255,255,0.05)",
@@ -7699,7 +7728,7 @@ function BotChat({profile,routine,done,lang,mono}){
     const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
     renderer.setSize(W,H);
     renderer.setPixelRatio(Math.min(devicePixelRatio,2));
-    renderer.setClearColor(0x08090e,1); // mismo color que C.bg de FORJA
+    renderer.setClearColor(0x0d0f14,1); // mismo color que C.bg de FORJA
 
     const scene=new THREE.Scene();
     const camera=new THREE.PerspectiveCamera(44,aspect,0.1,500);
