@@ -4188,7 +4188,34 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
             </div>
           );
         })()}
-      </div>      <div style={{padding:"10px 20px 0",background:"rgba(8,10,14,0.95)",
+      </div>
+
+      {showBotChat&&(
+        <div style={{position:"fixed",inset:0,zIndex:9999,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}>
+          <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.6)"}} onClick={()=>setShowBotChat(false)}/>
+          <div style={{position:"relative",background:"#0d0f16",borderRadius:"20px 20px 0 0",
+            border:"0.5px solid rgba(255,255,255,0.08)",height:"65vh",display:"flex",flexDirection:"column"}}>
+            <div style={{display:"flex",justifyContent:"center",padding:"12px 0 0"}}>
+              <div style={{width:36,height:3,borderRadius:2,background:"rgba(255,255,255,0.15)"}}/>
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 16px 8px",borderBottom:"0.5px solid rgba(255,255,255,0.06)"}}>
+              <div style={{width:32,height:32,borderRadius:"50%",background:"rgba(255,255,255,0.06)",
+                border:"0.5px solid rgba(255,255,255,0.1)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>
+                🤖
+              </div>
+              <div>
+                <div style={{fontSize:11,fontFamily:mono,fontWeight:700,color:"rgba(255,255,255,0.9)",letterSpacing:1}}>FORJA BOT</div>
+                <div style={{fontSize:8,fontFamily:mono,color:"rgba(255,255,255,0.3)",letterSpacing:1}}>TU COACH DE IA</div>
+              </div>
+              <button onClick={()=>setShowBotChat(false)}
+                style={{marginLeft:"auto",background:"none",border:"none",color:"rgba(255,255,255,0.3)",fontSize:20,cursor:"pointer",lineHeight:1,padding:"0 4px"}}>&#10005;</button>
+            </div>
+            <BotChat profile={profile} routine={routine} done={done} lang={lang} mono={mono}/>
+          </div>
+        </div>
+      )}
+
+      <div style={{padding:"10px 20px 0",background:"rgba(8,10,14,0.95)",
         borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
         <div style={{display:"flex",background:"rgba(255,255,255,0.05)",
           borderRadius:12,padding:3,gap:0}}>
