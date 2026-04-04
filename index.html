@@ -7622,8 +7622,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     // halfH=6*tan(15°)=1.608, halfW=halfH*aspect
     const halfH=6*Math.tan(15*Math.PI/180);
     const halfW=halfH*aspect;
-    MX=halfW*0.72;                // ±2.82 — zona de movimiento
-    const FLOOR_Y=-halfH+0.05;   // pies pegados al borde inferior
+    MX=halfW*0.72;
+    // scale=6500: robot 66% del canvas, pies en -halfH+0.05
+    // FLOOR_Y calculado con center_offset=1.062 (medido empíricamente)
+    const FLOOR_Y=-0.496;
 
     charX=MX*0.78; charY=FLOOR_Y;
     targetX=charX; targetY=FLOOR_Y;
@@ -7646,9 +7648,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
               else child.material.skinning=true;
             }
           });
-          // Bounding box real medido: h=0.023u con scale=25 → base=0.00092u
-          // scale=2400 → h=2.208u = 69% del canvas de 160px (FOV=30, camZ=6)
-          model.scale.setScalar(2400);
+          // scale=6500: 66% del canvas 160px, FOV=30, camZ=6
+          model.scale.setScalar(6500);
           model.position.set(charX,FLOOR_Y,0);
           scene.add(model);
 
