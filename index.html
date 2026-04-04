@@ -7503,7 +7503,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
           clip.tracks=clip.tracks.filter(t=>!(t.name.toLowerCase().includes('hip')&&t.name.toLowerCase().includes('position')));
           console.log('BOT walk tracks:',clip.tracks.length);
           const wa=mixer.clipAction(clip);
-          wa.setLoop(THREE.LoopRepeat); wa.play();
+          wa.setLoop(THREE.LoopRepeat); // loop continuo
+          wa.clampWhenFinished=true;
+          wa.play();
         }
         window._botCanWalk=false; // plank: estático
         ready=true;
