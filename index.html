@@ -7441,7 +7441,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
   const BASE="https://danielngr.github.io/FORJA/";
   const IDLE_URL=BASE+"idle.glb";
   const WALK_URL=BASE+"walking_skin.glb";
-  const FY=-4.2, FOV=75, CZ=6, CAM_Y=-4.4;
+  const FY=-7.5, FOV=75, CZ=6, CAM_Y=-4.4;
 
   let ren,scene,cam,mixer,clock,model,aid;
   let ready=false;
@@ -7495,6 +7495,15 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
           console.log('BOT walk buf',buf2.byteLength);
           new THREE.GLTFLoader().parse(buf2,BASE,(g2)=>{
             console.log('BOT walk parsed, anims:',g2.animations.length);
+            if(g2.animations[0]){
+              const clip=g2.animations[0];
+              clip.tracks=clip.tracks.filter(t=>!t.name.includes('Hips.position'));
+              // Detener idle, iniciar walk
+              mixer.stopAllAction();
+              const wa=mixer.clipAction(clip);
+              wa.setLoop(THREE.LoopRepeat); wa.play();
+              wm=true; st=5; newTarget();
+            }
           },e=>console.error('BOT walk parse err:',e));
         }).catch(e=>console.error('BOT walk fetch err:',e));
       },e=>console.error('BOT idle parse err:',e));
