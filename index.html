@@ -7471,6 +7471,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     fetch(WALK_URL)
     .then(r=>{ console.log('BOT fetch ok',r.status); return r.arrayBuffer(); })
     .then(buf=>{ console.log('BOT buf',buf.byteLength);
+      try{
       new THREE.GLTFLoader().parse(buf,"",(gltf)=>{
         model=gltf.scene;
         // Remover artefactos de Blender
@@ -7502,6 +7503,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
         ready=true;
         animate();
       },e=>console.error("BOT GLB parse error:",e));
+      }catch(ex){console.error('BOT parse CRASH:',ex.message,ex.stack);}
     }).catch(e=>console.error("BOT fetch CATCH:",e));
 
     function animate(){
