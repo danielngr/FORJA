@@ -4045,8 +4045,8 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
     </div>
   );}
   return(<>
-      <div style={{background:"rgba(8,10,14,0.92)",backdropFilter:"blur(24px)",WebkitBackdropFilter:"blur(24px)",borderBottom:"1px solid rgba(255,255,255,0.06)",padding:"14px 18px 10px",position:"sticky",top:0,zIndex:10,minHeight:160,overflow:"visible"}}>
-        <canvas id="forja-bot-canvas" style={{position:"absolute",top:0,left:0,width:"100%",height:"160px",pointerEvents:"none",zIndex:5}}></canvas>
+      <div style={{background:"rgba(8,10,14,0.92)",backdropFilter:"blur(24px)",WebkitBackdropFilter:"blur(24px)",borderBottom:"1px solid rgba(255,255,255,0.06)",padding:"14px 18px 10px",position:"sticky",top:0,zIndex:10,minHeight:220,overflow:"visible"}}>
+        <canvas id="forja-bot-canvas" style={{position:"absolute",top:0,left:0,width:"100%",height:"220px",pointerEvents:"none",zIndex:5}}></canvas>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
           <div>
             {day?.isExpress&&(
@@ -7595,7 +7595,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     canvas.dataset.botInit="1";
 
     const W=canvas.offsetWidth||360;
-    const H=160;
+    const H=220;
     canvas.width=W*window.devicePixelRatio;
     canvas.height=H*window.devicePixelRatio;
 
@@ -7608,8 +7608,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     const aspect=W/H;
     // FOV=30 angosto, camZ=6 → halfH=1.608
     // Robot base=0.028u, scale=70 → height=1.96u = 61% del canvas
-    camera=new THREE.PerspectiveCamera(110,aspect,0.1,200);
-    camera.position.set(0,0,6);
+    camera=new THREE.PerspectiveCamera(70,aspect,0.1,200);
+    camera.position.set(0,0,12.5);
 
     scene.add(new THREE.AmbientLight(0xffffff,1.4));
     const key=new THREE.DirectionalLight(0xffeedd,1.2);
@@ -7620,10 +7620,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     clock=new THREE.Clock();
 
     // halfH=6*tan(15°)=1.608, halfW=halfH*aspect
-    const halfH=6*Math.tan(55*Math.PI/180); // FOV=110, camZ=6 → halfH=8.569
+    const halfH=12.5*Math.tan(35*Math.PI/180); // FOV=70, camZ=12.5 → halfH=8.753
     const halfW=halfH*aspect;
     MX=halfW*0.65;
-    const FLOOR_Y=-6.500; // medido directamente en iPhone
+    const FLOOR_Y=-6.639; // proporcional al medido en iPhone
 
     charX=MX*0.6; charY=FLOOR_Y;
     targetX=charX; targetY=FLOOR_Y;
@@ -7696,10 +7696,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
     window.addEventListener("resize",()=>{
       const W2=canvas.offsetWidth||360;
-      canvas.width=W2*window.devicePixelRatio; canvas.height=160*window.devicePixelRatio;
-      renderer.setSize(W2,160);
-      camera.aspect=W2/160; camera.updateProjectionMatrix();
-      MX=6*Math.tan(55*Math.PI/180)*(W2/160)*0.65;
+      canvas.width=W2*window.devicePixelRatio; canvas.height=220*window.devicePixelRatio;
+      renderer.setSize(W2,220);
+      camera.aspect=W2/220; camera.updateProjectionMatrix();
+      MX=12.5*Math.tan(35*Math.PI/180)*(W2/220)*0.65;
     });
 
     document.addEventListener("visibilitychange",()=>{
