@@ -7439,7 +7439,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
   const BASE="https://danielngr.github.io/FORJA/animations/";
   const MODEL_URL="https://danielngr.github.io/FORJA/idle.glb";
 
-  const S=50, FY=-5.4, FOV=75, CZ=6, CAM_Y=-4.0;
+  // Calibrado en iPhone: scale=50, floor=-4.20
+  // Bajar más: FY=-5.8, CAM_Y=-4.4
+  const S=50, FY=-5.8, FOV=75, CZ=6, CAM_Y=-4.4;
 
   function getMood(){
     try{
@@ -7464,10 +7466,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
   }
 
   const ANIMS={
-    idle:BASE+"bot_idle.glb",walk:BASE+"bot_walk.glb",look:BASE+"bot_look.glb",
-    rumba:BASE+"bot_rumba.glb",defeated:BASE+"bot_defeated.glb",
-    victory:BASE+"bot_victory.glb",clap:BASE+"bot_clap.glb",
-    shake:BASE+"bot_shake.glb",sitting:BASE+"bot_sitting.glb",taunt:BASE+"bot_taunt.glb",
+    idle:BASE+"bot_idle.glb", walk:BASE+"bot_walk.glb", look:BASE+"bot_look.glb",
+    rumba:BASE+"bot_rumba.glb", defeated:BASE+"bot_defeated.glb",
+    victory:BASE+"bot_victory.glb", clap:BASE+"bot_clap.glb",
+    shake:BASE+"bot_shake.glb", sitting:BASE+"bot_sitting.glb", taunt:BASE+"bot_taunt.glb",
   };
 
   const SEQS={
@@ -7481,17 +7483,21 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
   let ren,scene,cam,mixer,clock,model,aid;
   let ready=false, clips={}, curAct=null;
-  let cx=2, tx=2, facing=0;
+  let cx=2, tx=-2, facing=0;
   let si=0, st=1, mood="normal", wm=true;
   const MX=5;
-  // Estado de caminata: idle/walking/arrived
-  let walkPhase="idle"; // "idle" | "walking"
 
   function stripRM(clip){
     if(!clip) return null;
-    clip.tracks=clip.tracks.filter(t=>
-      !(t.name.toLowerCase().includes("hips")&&t.name.includes(".position"))
-    );
+    // Track name en Three.js puede ser .position o .translation
+    // El bone se llama mixamorigHips (sin los dos puntos)
+    const before = clip.tracks.length;
+    clip.tracks = clip.tracks.filter(t => {
+      const n = t.name.toLowerCase();
+      // Remover traslación del Hips (root motion)
+      return !(n.includes('hips') && (n.includes('.position') || n.includes('.translation')));
+    });
+    console.log('BOT stripRM:', before, '->', clip.tracks.length, 'tracks');
     return clip;
   }
 
@@ -7502,54 +7508,48 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       fetch(ANIMS[key])
         .then(r=>r.arrayBuffer())
         .then(buf=>new THREE.GLTFLoader().parse(buf,"",(g)=>{
-          clips[key]=stripRM(g.animations&&g.animations[0]||null);
+          const raw = g.animations&&g.animations[0]||null;
+          if(raw) console.log('BOT loaded',key,'tracks:',raw.tracks.map(t=>t.name).join(',').slice(0,100));
+          clips[key]=stripRM(raw);
           res(clips[key]);
-        },()=>{res(null);}))
-        .catch(()=>res(null));
+        },e=>{console.warn('BOT parse',key,e);res(null);}))
+        .catch(e=>{console.warn('BOT fetch',key,e);res(null);});
     });
   }
 
   function play(key,loop=true){
     const clip=clips[key];
-    if(!clip||!mixer) return;
+    if(!clip||!mixer){console.warn('BOT play fail',key,!!clip,!!mixer);return;}
     const a=mixer.clipAction(clip);
     a.setLoop(loop?THREE.LoopRepeat:THREE.LoopOnce);
     a.clampWhenFinished=!loop;
     a.reset().play();
     if(curAct&&curAct!==a) curAct.crossFadeTo(a,0.35,false);
     curAct=a;
+    console.log('BOT playing',key);
   }
 
   function newTarget(){
-    // Alternar entre derecha e izquierda
     if(cx>=0) tx=-MX*(0.3+Math.random()*0.6);
     else       tx= MX*(0.3+Math.random()*0.7);
+    console.log('BOT newTarget',cx.toFixed(2),'->',tx.toFixed(2));
   }
-
-  function startWalk(){
-    wm=true; newTarget();
-    if(clips.walk) play("walk",true);
-    else loadClip("walk").then(()=>{if(wm) play("walk",true);});
-  }
-
-  function startIdle(key="idle"){
-    wm=false; tx=cx;
-    if(clips[key]) play(key,true);
-    else loadClip(key).then(()=>{if(!wm) play(key,true);});
-  }
-
-  // Secuencia simple: alterna entre walk y animaciones idle
-  let seqPhase=0;
-  const IDLE_ANIMS=["idle","look","idle","shake"]; // ciclo de anims idle
-  let idleAnimIdx=0;
 
   function nextSeq(){
     const seq=SEQS[mood]||SEQS.normal;
     si=(si+1)%seq.length;
     const[key,dur,walk]=seq[si];
-    st=dur;
-    if(walk) startWalk();
-    else startIdle(key);
+    st=dur; wm=walk;
+    console.log('BOT seq:',key,'walk:',walk,'dur:',dur);
+    if(walk){
+      newTarget();
+      if(clips[key]) play(key,true);
+      else loadClip(key).then(()=>{if(wm) play(key,true);});
+    } else {
+      tx=cx;
+      if(clips[key]) play(key,true);
+      else loadClip(key).then(()=>{if(!wm) play(key,true);});
+    }
   }
 
   function tryInit(){
@@ -7572,7 +7572,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     const kl=new THREE.DirectionalLight(0xfff0dd,1.5); kl.position.set(2,5,6); scene.add(kl);
     const fl=new THREE.DirectionalLight(0x8899bb,0.6); fl.position.set(-3,2,4); scene.add(fl);
     clock=new THREE.Clock();
-    mood=getMood(); cx=2; tx=-2; wm=true;
+    mood=getMood();
 
     fetch(MODEL_URL).then(r=>r.arrayBuffer()).then(buf=>{
       new THREE.GLTFLoader().parse(buf,"",(gltf)=>{
@@ -7589,7 +7589,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
             }
             let mat;
             if(n==="Cabeza") mat=new THREE.MeshStandardMaterial({color:0xeae6e0,roughness:0.35,metalness:0.05});
-            else if(n==="Brazo"||n==="Brazo1"||n==="Dedos1"||n==="Dedos_Fin") mat=new THREE.MeshStandardMaterial({color:0xe4e0da,roughness:0.4,metalness:0.0});
+            else if(n==="Brazo"||n==="Brazo1"||n==="Dedos1"||n==="Dedos_Fin") mat=new THREE.MeshStandardMaterial({color:0xe4e0da,roughness:0.4});
             else if(n==="Cuerpo"||n==="Pierna"||n==="Pierna1") mat=new THREE.MeshStandardMaterial({color:0x3a3e4a,roughness:0.6,metalness:0.2});
             else if(n==="Cuello"||n==="pCube3") mat=new THREE.MeshStandardMaterial({color:0x666878,roughness:0.5,metalness:0.2});
             else mat=new THREE.MeshStandardMaterial({color:0x888898,roughness:0.5,metalness:0.2});
@@ -7602,16 +7602,20 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
         scene.add(model);
         mixer=new THREE.AnimationMixer(model);
         ready=true;
+        console.log('BOT model ready');
 
-        // Cargar idle y walk primero
+        // Cargar idle primero
         loadClip("idle").then(c=>{if(c) play("idle",true);});
-        loadClip("walk").then(c=>{if(c&&wm) play("walk",true);});
+        // Walk inmediatamente después
+        loadClip("walk").then(c=>{
+          if(c&&wm) play("walk",true);
+        });
         // Resto en background
         ["look","shake","rumba","taunt","victory","clap","defeated","sitting"].forEach(k=>loadClip(k));
 
         animate();
-      },e=>console.warn("BOT:",e));
-    }).catch(e=>console.warn("BOT:",e));
+      },e=>console.warn("BOT model error:",e));
+    }).catch(e=>console.warn("BOT fetch error:",e));
 
     function animate(){
       aid=requestAnimationFrame(animate);
@@ -7619,20 +7623,17 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       const dt=Math.min(clock.getDelta(),0.05);
       if(mixer) mixer.update(dt);
 
-      // Timer de secuencia
       st-=dt;
       if(st<=0) nextSeq();
 
       if(wm){
         const dx=tx-cx;
-        const dist=Math.abs(dx);
-        if(dist<0.08){
-          // Llegó — elegir nuevo destino y seguir caminando
+        if(Math.abs(dx)<0.08){
+          // Llegó: elegir nuevo destino inmediatamente
           newTarget();
         } else {
-          cx+=Math.sign(dx)*Math.min(2.0*dt,dist);
-          const tf=Math.sign(dx)*0.5;
-          facing+=(tf-facing)*0.12;
+          cx+=Math.sign(dx)*Math.min(2.0*dt,Math.abs(dx));
+          facing+=(Math.sign(dx)*0.5-facing)*0.12;
         }
       } else {
         facing*=0.85;
