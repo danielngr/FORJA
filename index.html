@@ -7437,14 +7437,36 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 <script>
 (function initBot(){
   const BASE="https://danielngr.github.io/FORJA/";
-  const MODEL_URL=BASE+"idle.glb";
-  const WALK_URL=BASE+"bot_walk.glb";
+  // walking_skin.glb = modelo completo de Mixamo con animación walk
+  // idle.glb = modelo de Sketchfab para el idle
+  const WALK_MODEL_URL=BASE+"walking_skin.glb";
+  const IDLE_URL=BASE+"idle.glb";
 
-  const S=50, FY=-5.8, FOV=75, CZ=6, CAM_Y=-4.4, MX=5;
+  const S=1, FY=-5.8, FOV=75, CZ=6, CAM_Y=-4.4, MX=5;
+
+  function getMood(){
+    try{
+      const done=JSON.parse(localStorage.getItem("fv8_done")||"{}");
+      const hist=JSON.parse(localStorage.getItem("fv8_hist")||"[]");
+      const today=new Date().toISOString().slice(0,10);
+      const DAY=86400000, days=new Set();
+      Object.keys(done).forEach(k=>{const p=k.split("-");if(p.length>=3)days.add(p.slice(0,3).join("-"));});
+      hist.forEach(h=>{if(h.date)days.add(h.date.slice(0,10));});
+      const sorted=[...days].sort().reverse();
+      if(!sorted.length) return"normal";
+      const daysSince=Math.floor((Date.now()-new Date(sorted[0]))/DAY);
+      let streak=0,prev=null;
+      for(const d of sorted){const dt=new Date(d);if(!prev){streak=1;prev=dt;continue;}if(Math.floor((prev-dt)/DAY)<=1){streak++;prev=dt;}else break;}
+      if(sorted[0]===today) return"victory";
+      if(streak>=3) return"active";
+      if(daysSince>=7) return"low";
+    }catch(e){}
+    return"normal";
+  }
 
   let ren,scene,cam,mixer,clock,model,aid;
-  let ready=false, actIdle=null, actWalk=null;
-  let cx=2, tx=-2, facing=0, wm=false, st=3;
+  let ready=false, actWalk=null, actIdle=null;
+  let cx=2, tx=-2, facing=0, wm=true, st=2;
 
   function newTarget(){
     if(cx>=0) tx=-MX*(0.3+Math.random()*0.6);
@@ -7471,72 +7493,42 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     clock=new THREE.Clock();
     newTarget();
 
-    function initModel(modelBuf, walkClip){
-      new THREE.GLTFLoader().parse(modelBuf,"",(gltf)=>{
+    fetch(WALK_MODEL_URL).then(r=>r.arrayBuffer()).then(buf=>{
+      new THREE.GLTFLoader().parse(buf,"",(gltf)=>{
         model=gltf.scene;
-        model.traverse(child=>{
-          if(child.isMesh||child.isSkinnedMesh){
-            const n=child.name||"";
-            if(n==="Mascara"||n==="polySurface3"){
-              if(child.isSkinnedMesh&&child.material){
-                if(Array.isArray(child.material)) child.material.forEach(m=>m.skinning=true);
-                else child.material.skinning=true;
-              }
-              return;
-            }
-            let mat;
-            if(n==="Cabeza") mat=new THREE.MeshStandardMaterial({color:0xeae6e0,roughness:0.35,metalness:0.05});
-            else if(n==="Brazo"||n==="Brazo1"||n==="Dedos1"||n==="Dedos_Fin") mat=new THREE.MeshStandardMaterial({color:0xe4e0da,roughness:0.4});
-            else if(n==="Cuerpo"||n==="Pierna"||n==="Pierna1") mat=new THREE.MeshStandardMaterial({color:0x3a3e4a,roughness:0.6,metalness:0.2});
-            else if(n==="Cuello"||n==="pCube3") mat=new THREE.MeshStandardMaterial({color:0x666878,roughness:0.5,metalness:0.2});
-            else mat=new THREE.MeshStandardMaterial({color:0x888898,roughness:0.5,metalness:0.2});
-            if(child.isSkinnedMesh) mat.skinning=true;
-            child.material=mat;
-          }
-        });
-        model.scale.setScalar(S);
-        model.position.set(cx,FY,0);
+
+        // Calcular escala automática basada en bounding box
+        const box=new THREE.Box3().setFromObject(model);
+        const size=box.getSize(new THREE.Vector3());
+        const targetH=1.5; // altura deseada en units
+        const autoScale=targetH/size.y;
+        model.scale.setScalar(autoScale);
+
+        // Reposicionar al piso
+        const box2=new THREE.Box3().setFromObject(model);
+        const minY=box2.min.y;
+        model.position.set(cx, FY-minY, 0);
+
         scene.add(model);
         mixer=new THREE.AnimationMixer(model);
-        actIdle=mixer.clipAction(gltf.animations[0]);
-        actIdle.setLoop(THREE.LoopRepeat);
-        actIdle.play();
 
-        if(walkClip){
-          actWalk=mixer.clipAction(walkClip);
+        // Strip root motion del clip walk
+        const clip=gltf.animations[0];
+        if(clip){
+          clip.tracks=clip.tracks.filter(t=>{
+            const n=t.name.toLowerCase();
+            return !(n.includes('hip')&&n.includes('position'));
+          });
+          actWalk=mixer.clipAction(clip);
           actWalk.setLoop(THREE.LoopRepeat);
-          wm=true; st=6;
           actWalk.play();
-          actIdle.crossFadeTo(actWalk,0.5,false);
         }
 
         ready=true;
+        console.log('BOT ready, scale:', autoScale.toFixed(3), 'walk tracks:', clip?clip.tracks.length:0);
         animate();
-      },e=>console.warn("BOT model:",e));
-    }
-
-    // Cargar modelo primero — siempre
-    fetch(MODEL_URL).then(r=>r.arrayBuffer()).then(modelBuf=>{
-      // Intentar cargar walk — si falla, iniciar sin él
-      fetch(WALK_URL).then(r=>r.arrayBuffer()).then(walkBuf=>{
-        new THREE.GLTFLoader().parse(walkBuf,"",(walkGltf)=>{
-          const clip=walkGltf.animations&&walkGltf.animations[0]||null;
-          if(clip){
-            // Remover root motion — buscar el track de Hips position
-            clip.tracks=clip.tracks.filter(t=>{
-              const n=t.name.toLowerCase();
-              return !(n.includes('hip')&&n.includes('position'));
-            });
-            console.log('BOT walk OK, tracks:',clip.tracks.length);
-            console.log('BOT sample track:',clip.tracks[0]&&clip.tracks[0].name);
-          }
-          initModel(modelBuf, clip);
-        },e=>{
-          console.warn('BOT walk parse fail:',e.message);
-          initModel(modelBuf, null);
-        });
-      }).catch(()=>initModel(modelBuf, null));
-    }).catch(e=>console.warn("BOT model fetch:",e));
+      },e=>console.warn("BOT:",e));
+    }).catch(e=>console.warn("BOT fetch:",e));
 
     function animate(){
       aid=requestAnimationFrame(animate);
@@ -7546,18 +7538,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
       st-=dt;
       if(st<=0){
-        if(wm&&actIdle&&actWalk){
-          wm=false; st=3; tx=cx;
-          actIdle.reset().play();
-          actWalk.crossFadeTo(actIdle,0.4,false);
-        } else if(!wm&&actWalk){
-          wm=true; st=6; newTarget();
-          actWalk.reset().play();
-          if(actIdle) actIdle.crossFadeTo(actWalk,0.4,false);
-        } else {
-          // sin walk — solo idle
-          wm=false; st=4;
-        }
+        if(wm){ wm=false; st=3; tx=cx; }
+        else  { wm=true;  st=6; newTarget(); }
       }
 
       if(wm){
@@ -7571,7 +7553,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
         facing*=0.85;
       }
 
-      model.position.set(cx,FY,0);
+      model.position.x=cx;
       model.rotation.y=facing;
       cam.position.x=cx;
       cam.lookAt(cx,CAM_Y,0);
@@ -7588,7 +7570,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       else{ clock=new THREE.Clock(); animate(); }
     });
     window.FORJA_BOT={
-      trigger(){ if(actWalk){ wm=true; st=6; newTarget(); actWalk.reset().play(); if(actIdle) actIdle.crossFadeTo(actWalk,0.4,false); } },
+      trigger(){ wm=true; st=6; newTarget(); },
       refreshMood(){},
     };
   }
