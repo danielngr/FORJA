@@ -7436,177 +7436,96 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
 <script>
 (function initBot(){
-  const BASE="https://danielngr.github.io/FORJA/";
-  // walking_skin.glb = modelo completo de Mixamo con animación walk
-  // idle.glb = modelo de Sketchfab para el idle
-  const WALK_MODEL_URL=BASE+"walking_skin.glb";
-  const IDLE_URL=BASE+"idle.glb";
-
-  const S=1, FY=-9.5, FOV=75, CZ=6, CAM_Y=-4.4, MX=5;
-
-  function getMood(){
-    try{
-      const done=JSON.parse(localStorage.getItem("fv8_done")||"{}");
-      const hist=JSON.parse(localStorage.getItem("fv8_hist")||"[]");
-      const today=new Date().toISOString().slice(0,10);
-      const DAY=86400000, days=new Set();
-      Object.keys(done).forEach(k=>{const p=k.split("-");if(p.length>=3)days.add(p.slice(0,3).join("-"));});
-      hist.forEach(h=>{if(h.date)days.add(h.date.slice(0,10));});
-      const sorted=[...days].sort().reverse();
-      if(!sorted.length) return"normal";
-      const daysSince=Math.floor((Date.now()-new Date(sorted[0]))/DAY);
-      let streak=0,prev=null;
-      for(const d of sorted){const dt=new Date(d);if(!prev){streak=1;prev=dt;continue;}if(Math.floor((prev-dt)/DAY)<=1){streak++;prev=dt;}else break;}
-      if(sorted[0]===today) return"victory";
-      if(streak>=3) return"active";
-      if(daysSince>=7) return"low";
-    }catch(e){}
-    return"normal";
-  }
+  const WALK_URL="https://danielngr.github.io/FORJA/walking_skin.glb";
+  const FY=-9.5, FOV=75, CZ=6, CAM_Y=-4.4, MX=5;
 
   let ren,scene,cam,mixer,clock,model,aid;
-  let ready=false, actWalk=null, actIdle=null;
-  let cx=-MX, tx=MX*0.7, facing=0, wm=true, st=0.1;
+  let ready=false;
+  let cx=-4, tx=3, facing=0, wm=true, st=0.1;
 
   function newTarget(){
-    if(cx>=0) tx=-MX*(0.3+Math.random()*0.6);
-    else       tx= MX*(0.3+Math.random()*0.7);
+    cx>=0 ? tx=-(1.5+Math.random()*2.5) : tx=(1.5+Math.random()*2.5);
   }
 
   function tryInit(){
     const canvas=document.getElementById("forja-bot-canvas");
-    if(!canvas) return;
-    if(canvas.dataset.bi) return;
+    if(!canvas||canvas.dataset.bi) return;
     if(!window.THREE||!window.THREE.GLTFLoader) return;
     canvas.dataset.bi="1";
-    const W=window.innerWidth||390;
-    const H=200;
+    const W=window.innerWidth||390, H=200;
     canvas.width=W*devicePixelRatio; canvas.height=H*devicePixelRatio;
     ren=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
     ren.setSize(W,H); ren.setPixelRatio(Math.min(devicePixelRatio,2));
     ren.setClearColor(0,0);
     scene=new THREE.Scene();
     cam=new THREE.PerspectiveCamera(FOV,W/H,0.1,200);
-    cam.position.set(0,CAM_Y,CZ); cam.lookAt(0,CAM_Y,0);
-    scene.add(new THREE.AmbientLight(0xffffff,1.8));
-    const kl=new THREE.DirectionalLight(0xfff0dd,1.5); kl.position.set(2,5,6); scene.add(kl);
-    const fl=new THREE.DirectionalLight(0x8899bb,0.6); fl.position.set(-3,2,4); scene.add(fl);
+    cam.position.set(cx,CAM_Y,CZ); cam.lookAt(cx,CAM_Y,0);
+    scene.add(new THREE.AmbientLight(0xffffff,2));
+    const dl=new THREE.DirectionalLight(0xffffff,1.5); dl.position.set(2,5,4); scene.add(dl);
     clock=new THREE.Clock();
-    newTarget();
 
-    console.log('BOT: iniciando fetch', WALK_MODEL_URL);
-    fetch(WALK_MODEL_URL).then(r=>{
-      console.log('BOT: fetch status', r.status, r.ok);
-      return r.arrayBuffer();
-    }).then(buf=>{
-      console.log('BOT: buf size', buf.byteLength);
+    fetch(WALK_URL).then(r=>r.arrayBuffer()).then(buf=>{
       new THREE.GLTFLoader().parse(buf,"",(gltf)=>{
         model=gltf.scene;
-
-        // 1. Remover Cube y default de Blender, ocultar malla entre pies
-        const toRemove=[];
+        // Remover artefactos de Blender
+        const rm=[];
         model.traverse(c=>{
-          if(c.name==="Cube"||c.name==="default") toRemove.push(c);
-          // Ocultar malla entre pies - puede ser pCube6, pCube7 u otro nombre
-          if(c.isMesh||c.isSkinnedMesh){
-            console.log('BOT mesh:',c.name, c.visible);
-          }
+          if(c.name==="Cube"||c.name==="default") rm.push(c);
         });
-        toRemove.forEach(c=>c.parent&&c.parent.remove(c));
-
-        // 2. Materiales
-        model.traverse(child=>{
-          if(child.isMesh||child.isSkinnedMesh){
-            const n=child.name||"";
-            if(n==="Mascara"||n==="polySurface3"){
-              if(child.isSkinnedMesh&&child.material){
-                if(Array.isArray(child.material)) child.material.forEach(m=>m.skinning=true);
-                else child.material.skinning=true;
-              }
-              return;
-            }
-            let mat;
-            if(n==="Cabeza") mat=new THREE.MeshStandardMaterial({color:0xeae6e0,roughness:0.35,metalness:0.05});
-            else if(n==="Brazo"||n==="Brazo1"||n==="Dedos1"||n==="Dedos_Fin") mat=new THREE.MeshStandardMaterial({color:0xe4e0da,roughness:0.4});
-            else if(n==="Cuerpo"||n==="Pierna"||n==="Pierna1") mat=new THREE.MeshStandardMaterial({color:0x3a3e4a,roughness:0.6,metalness:0.2});
-            else if(n==="Cuello"||n==="pCube3") mat=new THREE.MeshStandardMaterial({color:0x666878,roughness:0.5,metalness:0.2});
-            else mat=new THREE.MeshStandardMaterial({color:0x888898,roughness:0.5,metalness:0.2});
-            if(child.isSkinnedMesh) mat.skinning=true;
-            child.material=mat;
-          }
+        rm.forEach(c=>c.parent&&c.parent.remove(c));
+        // Materiales
+        model.traverse(c=>{
+          if(!(c.isMesh||c.isSkinnedMesh)) return;
+          const n=c.name||"";
+          if(n==="Mascara"||n==="polySurface3"){if(c.material) c.material.skinning=true; return;}
+          const col=n==="Cabeza"?0xeae6e0:n==="Cuerpo"||n==="Pierna"||n==="Pierna1"?0x3a3e4a:n==="Brazo"||n==="Brazo1"||n==="Dedos1"||n==="Dedos_Fin"?0xe4e0da:0x888898;
+          const mat=new THREE.MeshStandardMaterial({color:col,roughness:0.5,metalness:0.1});
+          if(c.isSkinnedMesh) mat.skinning=true;
+          c.material=mat;
         });
-
-        // 3. Escala: robot mide 0.102u → scale=36 para 40% del canvas (FOV=75 camZ=6)
-        model.scale.setScalar(36);
-        // 4. Rotación: Mixamo camina en -Z, rotar para caminar en X
-        model.rotation.y=Math.PI/2; // base
-        // 5. Posición
-        model.position.set(cx, FY, 0);
-
+        model.scale.setScalar(14);
+        model.position.set(cx,FY,0);
         scene.add(model);
         mixer=new THREE.AnimationMixer(model);
-
-        // Strip root motion del clip walk
         const clip=gltf.animations[0];
         if(clip){
-          clip.tracks=clip.tracks.filter(t=>{
-            const n=t.name.toLowerCase();
-            return !(n.includes('hip')&&n.includes('position'));
-          });
-          actWalk=mixer.clipAction(clip);
-          actWalk.setLoop(THREE.LoopRepeat);
-          actWalk.play();
+          clip.tracks=clip.tracks.filter(t=>!(t.name.toLowerCase().includes('hip')&&t.name.toLowerCase().includes('position')));
+          const a=mixer.clipAction(clip);
+          a.setLoop(THREE.LoopRepeat); a.play();
         }
-
         ready=true;
-        console.log('BOT ready! walk tracks:', clip?clip.tracks.length:0);
         animate();
-      },e=>console.warn("BOT:",e));
-    }).catch(e=>console.warn("BOT fetch:",e));
+      },e=>console.warn("BOT GLB error:",e));
+    }).catch(e=>console.warn("BOT fetch error:",e));
 
     function animate(){
       aid=requestAnimationFrame(animate);
       if(!ready||!model) return;
       const dt=Math.min(clock.getDelta(),0.05);
-      if(mixer) mixer.update(dt);
-
+      mixer&&mixer.update(dt);
       st-=dt;
-      if(st<=0){
-        if(wm){ wm=false; st=3; tx=cx; }
-        else  { wm=true;  st=6; newTarget(); }
-      }
-
+      if(st<=0){ wm=!wm; st=wm?5:2.5; if(wm) newTarget(); }
       if(wm){
         const dx=tx-cx;
-        if(Math.abs(dx)<0.08) newTarget();
-        else{
-          cx+=Math.sign(dx)*Math.min(2.0*dt,Math.abs(dx));
-          facing+=(Math.sign(dx)*0.5-facing)*0.12;
-        }
-      } else {
-        facing*=0.85;
-      }
-
+        if(Math.abs(dx)<0.1) newTarget();
+        else{ cx+=Math.sign(dx)*Math.min(1.8*dt,Math.abs(dx)); facing+=(Math.sign(dx)*0.4-facing)*0.1; }
+      } else { facing*=0.9; }
       model.position.x=cx;
       model.rotation.y=Math.PI/2+facing;
-      cam.position.x=cx;
-      cam.lookAt(cx,CAM_Y,0);
+      cam.position.x=cx; cam.lookAt(cx,CAM_Y,0);
       ren.render(scene,cam);
     }
 
-    window.addEventListener("resize",()=>{
-      const W2=canvas.offsetWidth||390;
-      canvas.width=W2*devicePixelRatio; canvas.height=200*devicePixelRatio;
-      ren.setSize(W2,200); cam.aspect=W2/200; cam.updateProjectionMatrix();
-    });
     document.addEventListener("visibilitychange",()=>{
       if(document.hidden) cancelAnimationFrame(aid);
-      else{ clock=new THREE.Clock(); animate(); }
+      else{ clock=new THREE.Clock(); if(ready) animate(); }
     });
-    window.FORJA_BOT={
-      trigger(){ wm=true; st=6; newTarget(); },
-      refreshMood(){},
-    };
+    window.addEventListener("resize",()=>{
+      const W2=window.innerWidth||390;
+      canvas.width=W2*devicePixelRatio; canvas.height=H*devicePixelRatio;
+      ren.setSize(W2,H); cam.aspect=W2/H; cam.updateProjectionMatrix();
+    });
+    window.FORJA_BOT={ trigger(){ wm=true; st=5; newTarget(); } };
   }
 
   window.addEventListener("load",tryInit);
