@@ -7439,43 +7439,45 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
   const BASE="https://danielngr.github.io/FORJA/animations/";
   const MODEL_URL="https://danielngr.github.io/FORJA/idle.glb";
 
-  function getUserPerf(){
-    try{
-      const done=JSON.parse(localStorage.getItem("fv8_done")||"{}");
-      const hist=JSON.parse(localStorage.getItem("fv8_hist")||"[]");
-      const now=Date.now(),DAY=86400000;
-      const daySet=new Set();
-      Object.keys(done).forEach(k=>{const p=k.split("-");if(p.length>=3)daySet.add(p.slice(0,3).join("-"));});
-      hist.forEach(h=>{if(h.date)daySet.add(h.date.slice(0,10));});
-      const sorted=Array.from(daySet).sort().reverse();
-      if(!sorted.length) return{streak:0,daysSinceLast:999,completedToday:false};
-      const today=new Date().toISOString().slice(0,10);
-      const daysSinceLast=Math.floor((now-new Date(sorted[0]).getTime())/DAY);
-      let streak=0,prev=null;
-      for(const d of sorted){const dt=new Date(d);if(!prev){streak=1;prev=dt;continue;}if(Math.floor((prev-dt)/DAY)<=1){streak++;prev=dt;}else break;}
-      return{streak,daysSinceLast,completedToday:sorted[0]===today};
-    }catch(e){return{streak:0,daysSinceLast:999,completedToday:false};}
-  }
+  // Valores calibrados en iPhone: scale=50, floor=-4.20, fov=75, camZ=6
+  const S=50, FY=-4.20, FOV=75, CZ=6;
+  // CamY = misma Y que el robot para vista frontal perfecta (pies planos)
+  const CAM_Y=FY+1.2; // un poco arriba del piso para ver todo el robot
 
   function getMood(){
-    const p=getUserPerf();
-    if(p.completedToday) return"victory";
-    if(p.streak>=7) return"hype";
-    if(p.streak>=3) return"active";
-    if(p.daysSinceLast>=7) return"depressed";
-    if(p.daysSinceLast>=3) return"sad";
+    try{
+      const hist=JSON.parse(localStorage.getItem("fv8_hist")||"[]");
+      const done=JSON.parse(localStorage.getItem("fv8_done")||"{}");
+      const today=new Date().toISOString().slice(0,10);
+      const DAY=86400000;
+      const days=new Set();
+      Object.keys(done).forEach(k=>{const p=k.split("-");if(p.length>=3)days.add(p.slice(0,3).join("-"));});
+      hist.forEach(h=>{if(h.date)days.add(h.date.slice(0,10));});
+      const sorted=[...days].sort().reverse();
+      if(!sorted.length) return"normal";
+      const completedToday=sorted[0]===today;
+      const daysSince=Math.floor((Date.now()-new Date(sorted[0]))/DAY);
+      let streak=0,prev=null;
+      for(const d of sorted){const dt=new Date(d);if(!prev){streak=1;prev=dt;continue;}if(Math.floor((prev-dt)/DAY)<=1){streak++;prev=dt;}else break;}
+      if(completedToday) return"victory";
+      if(streak>=7) return"hype";
+      if(streak>=3) return"active";
+      if(daysSince>=7) return"depressed";
+      if(daysSince>=3) return"sad";
+    }catch(e){}
     return"normal";
   }
 
-  const ANIM_FILES={
+  const ANIMS={
     idle:BASE+"bot_idle.glb",walk:BASE+"bot_walk.glb",look:BASE+"bot_look.glb",
-    rumba:BASE+"bot_rumba.glb",defeated:BASE+"bot_defeated.glb",victory:BASE+"bot_victory.glb",
-    clap:BASE+"bot_clap.glb",shake:BASE+"bot_shake.glb",sitting:BASE+"bot_sitting.glb",
-    taunt:BASE+"bot_taunt.glb",strafe:BASE+"bot_strafe.glb",
+    rumba:BASE+"bot_rumba.glb",defeated:BASE+"bot_defeated.glb",
+    victory:BASE+"bot_victory.glb",clap:BASE+"bot_clap.glb",
+    shake:BASE+"bot_shake.glb",sitting:BASE+"bot_sitting.glb",
+    taunt:BASE+"bot_taunt.glb",
   };
 
-  const MOOD_SEQ={
-    victory:[["victory",5,false],["clap",4,false],["idle",3,false],["walk",4,true]],
+  const SEQS={
+    victory:[["victory",5,false],["clap",4,false],["idle",2,false],["walk",4,true]],
     hype:   [["taunt",4,false],["rumba",5,false],["walk",4,true],["idle",2,false]],
     active: [["walk",4,true],["look",3,false],["walk",4,true],["idle",2,false]],
     sad:    [["shake",4,false],["idle",3,false],["walk",4,true],["look",3,false]],
@@ -7483,91 +7485,100 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     normal: [["idle",2,false],["walk",4,true],["look",3,false],["walk",4,true]],
   };
 
-  // Valores calibrados en iPhone:
-  // scale=50, floor=-4.20, fov=75, camZ=6
-  // camY=-4.20 (misma Y que el robot para vista frontal → pies planos)
-  const SCALE=50, FLOOR_Y=-4.20, CAM_Y=-4.20, FOV=75, CAM_Z=6;
+  let ren,scene,cam,mixer,clock,model,aid;
+  let ready=false, clips={}, curAct=null;
+  let cx=0, tx=0, facing=0;
+  let si=0, st=1.5, mood="normal", wm=false;
+  let MX=6;
 
-  let renderer,scene,camera,mixer,clock,model,animId;
-  let ready=false, loadedClips={}, currentAction=null;
-  let charX=0, targetX=0, charFacing=0;
-  let seqIdx=0, seqTimer=2, mood="normal", walkMode=false;
-  let MX=8; // límite horizontal
-
-  function stripRootMotion(clip){
+  function stripRM(clip){
     if(!clip) return null;
-    clip.tracks=clip.tracks.filter(t=>!t.name.match(/Hips.*position|Hip.*\.position/i));
+    // Eliminar traslación de Hips (root motion) — nombre exacto de Three.js
+    clip.tracks=clip.tracks.filter(t=>
+      !t.name.includes("Hips.position")&&
+      !t.name.includes("hips.position")&&
+      !t.name.match(/[Hh]ip.*position/)
+    );
     return clip;
   }
 
   function loadClip(key){
     return new Promise(res=>{
-      if(loadedClips[key]){res(loadedClips[key]);return;}
-      fetch(ANIM_FILES[key])
+      if(clips[key]){res(clips[key]);return;}
+      fetch(ANIMS[key])
         .then(r=>r.arrayBuffer())
         .then(buf=>new THREE.GLTFLoader().parse(buf,"",(g)=>{
-          loadedClips[key]=stripRootMotion(g.animations&&g.animations[0]||null);
-          res(loadedClips[key]);
+          clips[key]=stripRM(g.animations&&g.animations[0]||null);
+          res(clips[key]);
         },()=>res(null)))
         .catch(()=>res(null));
     });
   }
 
-  function playClip(key,loop=true){
-    const clip=loadedClips[key]; if(!clip||!mixer) return;
+  function play(key,loop=true){
+    const clip=clips[key]; if(!clip||!mixer) return;
     const a=mixer.clipAction(clip);
     a.setLoop(loop?THREE.LoopRepeat:THREE.LoopOnce);
     a.clampWhenFinished=!loop;
     a.reset().play();
-    if(currentAction&&currentAction!==a) currentAction.crossFadeTo(a,0.35,false);
-    currentAction=a;
+    if(curAct&&curAct!==a) curAct.crossFadeTo(a,0.35,false);
+    curAct=a;
   }
 
-  function pickTarget(){
-    const goRight=Math.random()>0.3;
-    targetX=goRight?MX*(0.2+Math.random()*0.75):-MX*(0.05+Math.random()*0.3);
-    targetX=Math.max(-MX,Math.min(MX,targetX));
+  function pickTX(){
+    const r=Math.random()>0.3;
+    tx=r?MX*(0.15+Math.random()*0.80):-MX*(0.05+Math.random()*0.35);
+    tx=Math.max(-MX,Math.min(MX,tx));
   }
 
-  function advanceSeq(dt){
-    seqTimer-=dt;
-    if(seqTimer>0) return;
-    const seq=MOOD_SEQ[mood]||MOOD_SEQ.normal;
-    seqIdx=(seqIdx+1)%seq.length;
-    const[key,dur,walk]=seq[seqIdx];
-    seqTimer=dur; walkMode=walk;
-    if(walk) pickTarget(); else targetX=charX;
-    if(loadedClips[key]) playClip(key,true);
-    else{ if(loadedClips.idle) playClip("idle",true); loadClip(key).then(()=>playClip(key,true)); }
+  function tick(dt){
+    st-=dt; if(st>0) return;
+    const seq=SEQS[mood]||SEQS.normal;
+    si=(si+1)%seq.length;
+    const[key,dur,walk]=seq[si];
+    st=dur; wm=walk;
+    if(walk) pickTX(); else tx=cx;
+    if(clips[key]) play(key,true);
+    else{ if(clips.idle) play("idle",true); loadClip(key).then(()=>play(key,true)); }
   }
 
   function tryInit(){
     const canvas=document.getElementById("forja-bot-canvas");
     if(!canvas||!window.THREE||!window.THREE.GLTFLoader) return;
-    if(canvas.dataset.botInit) return;
-    canvas.dataset.botInit="1";
+    if(canvas.dataset.bi) return;
+    canvas.dataset.bi="1";
 
     const W=canvas.offsetWidth||390, H=200;
     canvas.width=W*devicePixelRatio; canvas.height=H*devicePixelRatio;
-
-    renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
-    renderer.setSize(W,H);
-    renderer.setPixelRatio(Math.min(devicePixelRatio,2));
-    renderer.setClearColor(0,0);
+    ren=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+    ren.setSize(W,H);
+    ren.setPixelRatio(Math.min(devicePixelRatio,2));
+    ren.setClearColor(0,0);
 
     scene=new THREE.Scene();
-    // Cámara en CAM_Y (misma altura que el robot) → pies se ven planos
-    camera=new THREE.PerspectiveCamera(FOV,W/H,0.1,200);
-    camera.position.set(0,CAM_Y,CAM_Z);
-    camera.lookAt(0,CAM_Y,0);
 
-    scene.add(new THREE.AmbientLight(0xffffff,1.6));
-    const kl=new THREE.DirectionalLight(0xffeedd,1.4); kl.position.set(3,6,8); scene.add(kl);
-    const fl=new THREE.DirectionalLight(0x8899bb,0.5); fl.position.set(-4,2,4); scene.add(fl);
+    // Cámara: a la altura del centro del robot, vista completamente frontal
+    cam=new THREE.PerspectiveCamera(FOV,W/H,0.1,200);
+    cam.position.set(0,CAM_Y,CZ);
+    cam.lookAt(0,CAM_Y,0);
+
+    scene.add(new THREE.AmbientLight(0xffffff,1.8));
+    const kl=new THREE.DirectionalLight(0xfff0dd,1.5); kl.position.set(2,5,6); scene.add(kl);
+    const fl=new THREE.DirectionalLight(0x8899bb,0.6); fl.position.set(-3,2,4); scene.add(fl);
+
+    // Plano del piso — sutil, mismo color que el banner
+    const floorGeo=new THREE.PlaneGeometry(MX*2.5,4);
+    const floorMat=new THREE.MeshStandardMaterial({
+      color:0x1a1e28, transparent:true, opacity:0.5, roughness:0.9
+    });
+    const floor=new THREE.Mesh(floorGeo,floorMat);
+    floor.rotation.x=-Math.PI/2;
+    floor.position.y=FY-0.01;
+    scene.add(floor);
 
     clock=new THREE.Clock();
-    mood=getMood(); seqIdx=0; seqTimer=1; walkMode=true;
-    charX=MX*0.6; pickTarget();
+    mood=getMood(); si=0; st=1; wm=true;
+    cx=MX*0.6; pickTX();
 
     fetch(MODEL_URL).then(r=>r.arrayBuffer()).then(buf=>{
       new THREE.GLTFLoader().parse(buf,"",(gltf)=>{
@@ -7575,15 +7586,17 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
         model.traverse(child=>{
           if(child.isMesh||child.isSkinnedMesh){
             const n=child.name||"";
+            // Mascara: respetar material ORIGINAL — tiene los ojos en la textura
+            if(n==="Mascara"||n==="polySurface3"){
+              // No tocar — los ojos ya están en el material original
+              if(child.isSkinnedMesh&&child.material) child.material.skinning=true;
+              return;
+            }
             let mat;
-            if(n==="Mascara"){
-              mat=new THREE.MeshStandardMaterial({color:0x44ccff,emissive:new THREE.Color(0x0088ff),emissiveIntensity:2.5,roughness:0,metalness:0});
-            } else if(n==="Cabeza"){
-              mat=new THREE.MeshStandardMaterial({color:0xf0ece6,roughness:0.35,metalness:0});
-            } else if(n==="Brazo"||n==="Brazo1"){
-              mat=new THREE.MeshStandardMaterial({color:0xe8e4de,roughness:0.4,metalness:0});
-            } else if(n==="Dedos1"||n==="Dedos_Fin"){
-              mat=new THREE.MeshStandardMaterial({color:0xe0dcd6,roughness:0.4,metalness:0});
+            if(n==="Cabeza"){
+              mat=new THREE.MeshStandardMaterial({color:0xeae6e0,roughness:0.35,metalness:0.05});
+            } else if(n==="Brazo"||n==="Brazo1"||n==="Dedos1"||n==="Dedos_Fin"){
+              mat=new THREE.MeshStandardMaterial({color:0xe4e0da,roughness:0.4,metalness:0.0});
             } else if(n==="Cuerpo"||n==="Pierna"||n==="Pierna1"){
               mat=new THREE.MeshStandardMaterial({color:0x3a3e4a,roughness:0.6,metalness:0.2});
             } else if(n==="Cuello"||n==="pCube3"){
@@ -7595,56 +7608,64 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
             child.material=mat;
           }
         });
-        model.scale.setScalar(SCALE);
-        model.position.set(charX,FLOOR_Y,0);
+
+        model.scale.setScalar(S);
+        model.position.set(cx,FY,0);
         scene.add(model);
         mixer=new THREE.AnimationMixer(model);
         ready=true;
-        // Cargar idle primero, luego el resto
-        loadClip("idle").then(()=>playClip("idle",true));
-        const seq=MOOD_SEQ[mood];
+
+        // Cargar idle inmediatamente, luego el resto
+        loadClip("idle").then(c=>{ if(c) play("idle",true); });
+        const seq=SEQS[mood];
         [...new Set(seq.map(s=>s[0])),"walk"].forEach(k=>loadClip(k));
-      },e=>console.warn("BOT:",e));
-    }).catch(e=>console.warn("BOT:",e));
+
+      },e=>console.warn("BOT parse:",e));
+    }).catch(e=>console.warn("BOT fetch:",e));
 
     function animate(){
-      animId=requestAnimationFrame(animate);
+      aid=requestAnimationFrame(animate);
       if(!ready||!model) return;
       const dt=Math.min(clock.getDelta(),0.05);
       if(mixer) mixer.update(dt);
-      advanceSeq(dt);
-      if(walkMode){
-        const dx=targetX-charX;
-        if(Math.abs(dx)<0.08){ charX=targetX; }
+      tick(dt);
+
+      if(wm){
+        const dx=tx-cx, dist=Math.abs(dx);
+        if(dist<0.05){ cx=tx; }
         else{
-          charX+=Math.sign(dx)*Math.min(2.0*dt,Math.abs(dx));
-          const tf=Math.sign(dx)*0.45;
-          charFacing+=(tf-charFacing)*0.1;
+          cx+=Math.sign(dx)*Math.min(1.8*dt,dist);
+          const tf=Math.sign(dx)*0.5;
+          facing+=(tf-facing)*0.12;
         }
       } else {
-        charFacing*=0.88;
+        facing*=0.85;
       }
-      model.position.set(charX,FLOOR_Y,0);
-      model.rotation.y=charFacing;
-      // Cámara sigue al robot en X, Y fijo = vista frontal
-      camera.position.x=charX;
-      camera.lookAt(charX,CAM_Y,0);
-      renderer.render(scene,camera);
+
+      // Posición Y siempre anclada al piso — animación no puede moverlo
+      model.position.set(cx,FY,0);
+      model.rotation.y=facing;
+
+      // Cámara sigue en X, Y y Z fijos → siempre vista frontal
+      cam.position.x=cx;
+      cam.lookAt(cx,CAM_Y,0);
+
+      ren.render(scene,cam);
     }
     animate();
 
     window.addEventListener("resize",()=>{
       const W2=canvas.offsetWidth||390;
       canvas.width=W2*devicePixelRatio; canvas.height=200*devicePixelRatio;
-      renderer.setSize(W2,200); camera.aspect=W2/200; camera.updateProjectionMatrix();
+      ren.setSize(W2,200); cam.aspect=W2/200; cam.updateProjectionMatrix();
     });
     document.addEventListener("visibilitychange",()=>{
-      if(document.hidden) cancelAnimationFrame(animId);
+      if(document.hidden) cancelAnimationFrame(aid);
       else{ clock=new THREE.Clock(); animate(); }
     });
     window.FORJA_BOT={
-      trigger(m){mood=m;seqIdx=0;seqTimer=0.01;},
-      refreshMood(){mood=getMood();seqIdx=0;seqTimer=0.01;},
+      trigger(m){mood=m;si=0;st=0.01;},
+      refreshMood(){mood=getMood();si=0;st=0.01;},
     };
   }
 
