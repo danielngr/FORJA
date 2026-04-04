@@ -49,6 +49,9 @@ button {
   <button onclick="adj('camZ',0)" style="background:#333">CamZ: <span id='czv'>6</span></button>
   <button onclick="adj('camZ',0.5)">CamZ +</button>
 
+  <button onclick="adj('rotY',-Math.PI/4)">Rot -45°</button>
+  <button onclick="adj('rotY',0)" style="background:#333">RotY: <span id='ryv'>0</span></button>
+  <button onclick="adj('rotY',Math.PI/4)">Rot +45°</button>
   <button onclick="walk()" style="background:#1a3a1a">TEST WALK</button>
   <button onclick="stopWalk()" style="background:#3a1a1a">STOP</button>
   <button onclick="copyVals()" style="background:#1a1a3a">COPY</button>
@@ -62,7 +65,7 @@ button {
 const MODEL='https://danielngr.github.io/FORJA/walking_skin.glb';
 const WALK_URL='https://danielngr.github.io/FORJA/animations/bot_walk.glb';
 
-let V={scale:14,floor:-1.5,camY:0,fov:60,camZ:6};
+let V={scale:14,floor:-1.5,camY:0,fov:75,camZ:6,rotY:0};
 let renderer,scene,camera,model,mixer,clock,walkAction,idleAction;
 let walkX=0, walkDir=1, walking=false;
 
@@ -72,9 +75,11 @@ function upd(){
   document.getElementById('cyv').textContent=V.camY.toFixed(2);
   document.getElementById('fovv').textContent=V.fov;
   document.getElementById('czv').textContent=V.camZ.toFixed(1);
+  document.getElementById('ryv').textContent=(V.rotY/Math.PI*180).toFixed(0)+'°';
   if(!model||!camera) return;
   model.scale.setScalar(V.scale);
   model.position.y=V.floor;
+  model.rotation.y=V.rotY;
   camera.position.set(walkX,V.camY,V.camZ);
   camera.fov=V.fov;
   camera.lookAt(walkX,V.camY,0);
@@ -87,6 +92,7 @@ function upd(){
 }
 
 function adj(k,d){
+  if(typeof d === 'string') d = eval(d);
   if(d===0) return;
   V[k]=Math.round((V[k]+d)*100)/100;
   upd();
@@ -172,6 +178,7 @@ function animate(){
     camera.lookAt(walkX,V.camY,0);
   } else if(model){
     model.position.y=V.floor;
+  model.rotation.y=V.rotY;
   }
   renderer.render(scene,camera);
 }
