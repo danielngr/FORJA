@@ -7439,10 +7439,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
   const BASE="https://danielngr.github.io/FORJA/animations/";
   const MODEL_URL="https://danielngr.github.io/FORJA/idle.glb";
 
-  // Valores calibrados en iPhone: scale=50, floor=-4.20, fov=75, camZ=6
-  const S=50, FY=-4.20, FOV=75, CZ=6;
-  // CamY = misma Y que el robot para vista frontal perfecta (pies planos)
-  const CAM_Y=FY+1.2; // un poco arriba del piso para ver todo el robot
+  // Valores calibrados iPhone + bajar conjunto 0.8 unidades más
+  const S=50, FY=-5.0, FOV=75, CZ=6, CAM_Y=-3.8;
 
   function getMood(){
     try{
@@ -7455,11 +7453,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       hist.forEach(h=>{if(h.date)days.add(h.date.slice(0,10));});
       const sorted=[...days].sort().reverse();
       if(!sorted.length) return"normal";
-      const completedToday=sorted[0]===today;
       const daysSince=Math.floor((Date.now()-new Date(sorted[0]))/DAY);
       let streak=0,prev=null;
       for(const d of sorted){const dt=new Date(d);if(!prev){streak=1;prev=dt;continue;}if(Math.floor((prev-dt)/DAY)<=1){streak++;prev=dt;}else break;}
-      if(completedToday) return"victory";
+      if(sorted[0]===today) return"victory";
       if(streak>=7) return"hype";
       if(streak>=3) return"active";
       if(daysSince>=7) return"depressed";
@@ -7472,8 +7469,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     idle:BASE+"bot_idle.glb",walk:BASE+"bot_walk.glb",look:BASE+"bot_look.glb",
     rumba:BASE+"bot_rumba.glb",defeated:BASE+"bot_defeated.glb",
     victory:BASE+"bot_victory.glb",clap:BASE+"bot_clap.glb",
-    shake:BASE+"bot_shake.glb",sitting:BASE+"bot_sitting.glb",
-    taunt:BASE+"bot_taunt.glb",
+    shake:BASE+"bot_shake.glb",sitting:BASE+"bot_sitting.glb",taunt:BASE+"bot_taunt.glb",
   };
 
   const SEQS={
@@ -7487,36 +7483,37 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
   let ren,scene,cam,mixer,clock,model,aid;
   let ready=false, clips={}, curAct=null;
-  let cx=0, tx=0, facing=0;
+  let cx=0, tx=2, facing=0;
   let si=0, st=1.5, mood="normal", wm=false;
-  let MX=6;
+  const MX=5;
 
   function stripRM(clip){
     if(!clip) return null;
-    // Eliminar traslación de Hips (root motion) — nombre exacto de Three.js
-    clip.tracks=clip.tracks.filter(t=>
-      !t.name.includes("Hips.position")&&
-      !t.name.includes("hips.position")&&
-      !t.name.match(/[Hh]ip.*position/)
-    );
+    // Filtrar TODOS los tracks de posición del root — el robot se moverá con código
+    clip.tracks=clip.tracks.filter(t=>{
+      const isRoot=t.name.toLowerCase().includes("hips")&&t.name.includes(".position");
+      return !isRoot;
+    });
     return clip;
   }
 
   function loadClip(key){
     return new Promise(res=>{
-      if(clips[key]){res(clips[key]);return;}
+      if(clips[key]!==undefined){res(clips[key]);return;}
+      clips[key]=null; // marcar como en proceso
       fetch(ANIMS[key])
         .then(r=>r.arrayBuffer())
         .then(buf=>new THREE.GLTFLoader().parse(buf,"",(g)=>{
           clips[key]=stripRM(g.animations&&g.animations[0]||null);
           res(clips[key]);
-        },()=>res(null)))
-        .catch(()=>res(null));
+        },()=>{clips[key]=null;res(null);}))
+        .catch(()=>{clips[key]=null;res(null);});
     });
   }
 
   function play(key,loop=true){
-    const clip=clips[key]; if(!clip||!mixer) return;
+    const clip=clips[key];
+    if(!clip||!mixer) return;
     const a=mixer.clipAction(clip);
     a.setLoop(loop?THREE.LoopRepeat:THREE.LoopOnce);
     a.clampWhenFinished=!loop;
@@ -7526,20 +7523,25 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
   }
 
   function pickTX(){
-    const r=Math.random()>0.3;
-    tx=r?MX*(0.15+Math.random()*0.80):-MX*(0.05+Math.random()*0.35);
-    tx=Math.max(-MX,Math.min(MX,tx));
+    // Alterna entre lado derecho e izquierdo
+    if(cx>0) tx=-MX*(0.3+Math.random()*0.5);
+    else      tx= MX*(0.3+Math.random()*0.7);
   }
 
   function tick(dt){
-    st-=dt; if(st>0) return;
+    st-=dt;
+    if(st>0) return;
     const seq=SEQS[mood]||SEQS.normal;
     si=(si+1)%seq.length;
     const[key,dur,walk]=seq[si];
     st=dur; wm=walk;
     if(walk) pickTX(); else tx=cx;
+    // Tocar animación
     if(clips[key]) play(key,true);
-    else{ if(clips.idle) play("idle",true); loadClip(key).then(()=>play(key,true)); }
+    else if(clips[key]!==null){ // no está en proceso de carga
+      if(clips.idle) play("idle",true);
+      loadClip(key).then(()=>{ if(seq[si][0]===key) play(key,true); });
+    }
   }
 
   function tryInit(){
@@ -7556,29 +7558,19 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     ren.setClearColor(0,0);
 
     scene=new THREE.Scene();
-
-    // Cámara: a la altura del centro del robot, vista completamente frontal
     cam=new THREE.PerspectiveCamera(FOV,W/H,0.1,200);
     cam.position.set(0,CAM_Y,CZ);
     cam.lookAt(0,CAM_Y,0);
 
     scene.add(new THREE.AmbientLight(0xffffff,1.8));
-    const kl=new THREE.DirectionalLight(0xfff0dd,1.5); kl.position.set(2,5,6); scene.add(kl);
-    const fl=new THREE.DirectionalLight(0x8899bb,0.6); fl.position.set(-3,2,4); scene.add(fl);
-
-    // Plano del piso — sutil, mismo color que el banner
-    const floorGeo=new THREE.PlaneGeometry(MX*2.5,4);
-    const floorMat=new THREE.MeshStandardMaterial({
-      color:0x1a1e28, transparent:true, opacity:0.5, roughness:0.9
-    });
-    const floor=new THREE.Mesh(floorGeo,floorMat);
-    floor.rotation.x=-Math.PI/2;
-    floor.position.y=FY-0.01;
-    scene.add(floor);
+    const kl=new THREE.DirectionalLight(0xfff0dd,1.5);
+    kl.position.set(2,5,6); scene.add(kl);
+    const fl=new THREE.DirectionalLight(0x8899bb,0.6);
+    fl.position.set(-3,2,4); scene.add(fl);
 
     clock=new THREE.Clock();
     mood=getMood(); si=0; st=1; wm=true;
-    cx=MX*0.6; pickTX();
+    cx=MX*0.5; pickTX();
 
     fetch(MODEL_URL).then(r=>r.arrayBuffer()).then(buf=>{
       new THREE.GLTFLoader().parse(buf,"",(gltf)=>{
@@ -7586,10 +7578,12 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
         model.traverse(child=>{
           if(child.isMesh||child.isSkinnedMesh){
             const n=child.name||"";
-            // Mascara: respetar material ORIGINAL — tiene los ojos en la textura
+            // Mascara y polySurface3: material ORIGINAL (ojos en la textura)
             if(n==="Mascara"||n==="polySurface3"){
-              // No tocar — los ojos ya están en el material original
-              if(child.isSkinnedMesh&&child.material) child.material.skinning=true;
+              if(child.isSkinnedMesh&&child.material){
+                if(Array.isArray(child.material)) child.material.forEach(m=>m.skinning=true);
+                else child.material.skinning=true;
+              }
               return;
             }
             let mat;
@@ -7615,10 +7609,13 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
         mixer=new THREE.AnimationMixer(model);
         ready=true;
 
-        // Cargar idle inmediatamente, luego el resto
-        loadClip("idle").then(c=>{ if(c) play("idle",true); });
+        // Cargar idle primero
+        loadClip("idle").then(c=>{ if(c){ play("idle",true); }});
+        // Cargar walk inmediatamente después — es crítico
+        loadClip("walk").then(c=>{ if(c) console.log("BOT walk ready, tracks:",c.tracks.length); });
+        // Resto en background
         const seq=SEQS[mood];
-        [...new Set(seq.map(s=>s[0])),"walk"].forEach(k=>loadClip(k));
+        [...new Set(seq.map(s=>s[0]))].forEach(k=>{ if(k!=="idle"&&k!=="walk") loadClip(k); });
 
       },e=>console.warn("BOT parse:",e));
     }).catch(e=>console.warn("BOT fetch:",e));
@@ -7632,9 +7629,11 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
       if(wm){
         const dx=tx-cx, dist=Math.abs(dx);
-        if(dist<0.05){ cx=tx; }
-        else{
-          cx+=Math.sign(dx)*Math.min(1.8*dt,dist);
+        if(dist<0.05){
+          cx=tx;
+          // llegó al destino — dejar que tick() cambie de estado
+        } else {
+          cx+=Math.sign(dx)*Math.min(2.0*dt,dist);
           const tf=Math.sign(dx)*0.5;
           facing+=(tf-facing)*0.12;
         }
@@ -7642,14 +7641,11 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
         facing*=0.85;
       }
 
-      // Posición Y siempre anclada al piso — animación no puede moverlo
+      // Y siempre anclado — animación no puede flotarlo
       model.position.set(cx,FY,0);
       model.rotation.y=facing;
-
-      // Cámara sigue en X, Y y Z fijos → siempre vista frontal
       cam.position.x=cx;
       cam.lookAt(cx,CAM_Y,0);
-
       ren.render(scene,cam);
     }
     animate();
