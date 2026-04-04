@@ -7452,7 +7452,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     if(!canvas||canvas.dataset.bi) return;
     if(!window.THREE||!window.THREE.GLTFLoader) return;
     canvas.dataset.bi="1";
-    const W=window.innerWidth||390, H=200;
+    const W=canvas.offsetWidth||window.innerWidth||390, H=200;
     canvas.width=W*devicePixelRatio; canvas.height=H*devicePixelRatio;
     ren=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
     ren.setSize(W,H); ren.setPixelRatio(Math.min(devicePixelRatio,2));
@@ -7528,8 +7528,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     window.FORJA_BOT={ trigger(){ wm=true; st=5; newTarget(); } };
   }
 
-  window.addEventListener("load",tryInit);
-  setInterval(()=>{if(!ready)tryInit();},300);
+  // Igual que bot_test3: load + retry
+  window.addEventListener("load",()=>setTimeout(tryInit,100));
+  document.addEventListener("DOMContentLoaded",()=>setTimeout(tryInit,500));
+  setInterval(()=>{if(!ready)tryInit();},500);
 })();
 </script>
 <script>
