@@ -3726,6 +3726,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   const[addF,setAddF]=useState(false);
   const[fd,setFd]=useState({n:"",cal:"",prot:"",carbs:"",fat:"",m:"mid"});
   const[showSet,setShowSet]=useState(false);
+  const[showBotChat,setShowBotChat]=useState(false);
   const[confirmR,setConfirmR]=useState(false);
   const[weekOff,setWeekOff]=useState(0);
   const[tourStep,setTourStep]=useState(null);    // null=ask, 0-N=active, -1=done
@@ -4048,7 +4049,9 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   return(<>
       <div style={{position:"relative",background:"#08090e",borderBottom:"0.5px solid rgba(255,255,255,0.06)",height:220,overflow:"hidden"}}>
 
-        <canvas id="forja-bot-canvas" style={{position:"absolute",inset:0,width:"100%",height:"100%",zIndex:1,display:"block"}}/>
+        <canvas id="forja-bot-canvas" onClick={()=>setShowBotChat(true)} style={{position:"absolute",inset:0,width:"100%",height:"100%",zIndex:1,display:"block",cursor:"pointer"}}/>
+        {/* Tap hint */}
+        {!showBotChat&&<div style={{position:"absolute",bottom:72,left:"50%",transform:"translateX(-50%)",zIndex:10,pointerEvents:"none",opacity:0.35,fontSize:7,fontFamily:mono,letterSpacing:2,color:"#fff",whiteSpace:"nowrap"}}>TAP TO TALK</div>}
 
         {/* Vignette suave en lados */}
         <div style={{position:"absolute",inset:0,zIndex:2,pointerEvents:"none",
@@ -8076,6 +8079,151 @@ function _foIsOnboarded() {
 function _foMarkOnboarded() {
   try { localStorage.setItem('forja_onboarded', '1'); } catch(e) {}
 }
+
+function BotChat({profile,routine,done,lang,mono}){
+  const[msgs,setMsgs]=React.useState([]);
+  const[input,setInput]=React.useState("");
+  const[loading,setLoading]=React.useState(false);
+  const bottomRef=React.useRef(null);
+  const inputRef=React.useRef(null);
+
+  React.useEffect(()=>{
+    // Mensaje inicial del bot
+    const now=new Date();
+    const dow=now.getDay();
+    const tdi=dow===0?6:dow-1;
+    const todayRoutine=routine?routine[tdi]:null;
+    const completedToday=todayRoutine?todayRoutine.ex.filter(x=>done[`${tdi}-${x.id}`]).length:0;
+    const totalToday=todayRoutine?todayRoutine.ex.length:0;
+    let greeting="";
+    if(completedToday===totalToday&&totalToday>0) greeting=lang==="es"?"Ya completaste tu entreno de hoy. Eso es lo que se hace.":"You crushed today's workout. That's what it takes.";
+    else if(completedToday>0) greeting=lang==="es"?`Llevas ${completedToday}/${totalToday} ejercicios. Sigue.`:`You're at ${completedToday}/${totalToday} exercises. Keep going.`;
+    else if(todayRoutine) greeting=lang==="es"?`Hoy toca ${todayRoutine.l}. ¿Listo para arrancar?`:`Today is ${todayRoutine.l}. Ready to go?`;
+    else greeting=lang==="es"?"Hoy es día de descanso. Aprovecha para recuperarte.":"Rest day today. Recovery is part of the game.";
+    setMsgs([{role:"assistant",content:greeting}]);
+    setTimeout(()=>inputRef.current?.focus(),300);
+  },[]);
+
+  React.useEffect(()=>{
+    bottomRef.current?.scrollIntoView({behavior:"smooth"});
+  },[msgs,loading]);
+
+  function buildSystemPrompt(){
+    const now=new Date();
+    const dow=now.getDay(),tdi=dow===0?6:dow-1;
+    const days=["Lun","Mar","Mie","Jue","Vie","Sab","Dom"];
+    const todayName=days[tdi];
+    const todayR=routine?routine[tdi]:null;
+    const weekSummary=routine?Array(7).fill(0).map((_,i)=>{
+      const r=routine[i];if(!r)return `${days[i]}: descanso`;
+      const dd=r.ex.filter(x=>done[`${i}-${x.id}`]).length;
+      return `${days[i]}: ${r.l} (${dd}/${r.ex.length} completados)`;
+    }).join(", "):"sin rutina configurada";
+    return `Eres el coach de IA de FORJA, una app de fitness premium. Eres directo, motivador y conciso — como un entrenador personal de élite. Habla en ${lang==="es"?"español":"inglés"}.
+
+DATOS DEL USUARIO HOY (${todayName}):
+- Rutina hoy: ${todayR?`${todayR.l} (${todayR.ex.map(e=>e.n).join(", ")})`:"descanso"}
+- Semana: ${weekSummary}
+- Nivel: ${profile?.level||"no especificado"}
+- Objetivo: ${profile?.goal||"no especificado"}
+- Programa: ${profile?.mode==="celebrity"?`rutina de ${profile?.celebrity}`:"personalizado"}
+
+Responde en máximo 3 oraciones. Sin formato markdown. Sin asteriscos. Solo texto directo y útil sobre fitness, la rutina, o la app FORJA.`;
+  }
+
+  async function send(){
+    if(!input.trim()||loading) return;
+    const userMsg=input.trim();
+    setInput("");
+    setMsgs(m=>[...m,{role:"user",content:userMsg}]);
+    setLoading(true);
+    try{
+      const history=msgs.map(m=>({role:m.role,content:m.content}));
+      const res=await fetch("https://api.anthropic.com/v1/messages",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          model:"claude-sonnet-4-20250514",
+          max_tokens:200,
+          system:buildSystemPrompt(),
+          messages:[...history,{role:"user",content:userMsg}]
+        })
+      });
+      const data=await res.json();
+      const reply=data.content?.[0]?.text||"...";
+      setMsgs(m=>[...m,{role:"assistant",content:reply}]);
+    }catch(e){
+      setMsgs(m=>[...m,{role:"assistant",content:"Error conectando. Intenta de nuevo."}]);
+    }
+    setLoading(false);
+  }
+
+  function handleKey(e){if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send();}}
+
+  return(
+    <>
+      {/* Messages */}
+      <div style={{flex:1,overflowY:"auto",padding:"12px 16px",display:"flex",flexDirection:"column",gap:10,minHeight:0}}>
+        {msgs.map((m,i)=>(
+          <div key={i} style={{display:"flex",justifyContent:m.role==="user"?"flex-end":"flex-start"}}>
+            <div style={{
+              maxWidth:"80%",padding:"8px 12px",borderRadius:m.role==="user"?"14px 14px 2px 14px":"14px 14px 14px 2px",
+              background:m.role==="user"?"rgba(255,255,255,0.09)":"rgba(63,207,142,0.08)",
+              border:`0.5px solid ${m.role==="user"?"rgba(255,255,255,0.08)":"rgba(63,207,142,0.15)"}`,
+              fontSize:12,color:m.role==="user"?"rgba(255,255,255,0.85)":"rgba(255,255,255,0.9)",
+              lineHeight:1.5,fontFamily:"system-ui,sans-serif"}}>
+              {m.content}
+            </div>
+          </div>
+        ))}
+        {loading&&(
+          <div style={{display:"flex",gap:4,padding:"8px 12px"}}>
+            {[0,1,2].map(i=>(
+              <div key={i} style={{width:5,height:5,borderRadius:"50%",background:"#3fcf8e",
+                animation:`botdot 1.2s ease-in-out ${i*0.2}s infinite`}}/>
+            ))}
+          </div>
+        )}
+        <div ref={bottomRef}/>
+      </div>
+
+      {/* Suggested questions */}
+      {msgs.length<=1&&(
+        <div style={{padding:"0 16px 8px",display:"flex",flexWrap:"wrap",gap:6}}>
+          {(lang==="es"?["Como mejorar mi tecnica?","Cuanto descanso necesito?","Que como hoy?","Dame un tip de motivacion"]
+                       :["How to improve my form?","How much rest do I need?","What should I eat?","Give me a motivation tip"])
+            .map(q=>(
+              <button key={q} onClick={()=>{setInput(q);setTimeout(()=>send(),10);}}
+                style={{padding:"5px 10px",borderRadius:20,border:"0.5px solid rgba(255,255,255,0.1)",
+                  background:"rgba(255,255,255,0.04)",color:"rgba(255,255,255,0.5)",
+                  fontSize:9,fontFamily:mono,cursor:"pointer",letterSpacing:0.5}}>
+                {q}
+              </button>
+            ))}
+        </div>
+      )}
+
+      {/* Input */}
+      <div style={{padding:"8px 12px 24px",borderTop:"0.5px solid rgba(255,255,255,0.06)",display:"flex",gap:8,alignItems:"center"}}>
+        <input ref={inputRef} value={input} onChange={e=>setInput(e.target.value)} onKeyDown={handleKey}
+          placeholder={lang==="es"?"Pregúntame algo...":"Ask me anything..."}
+          style={{flex:1,background:"rgba(255,255,255,0.05)",border:"0.5px solid rgba(255,255,255,0.1)",
+            borderRadius:20,padding:"8px 14px",color:"rgba(255,255,255,0.9)",fontSize:12,
+            fontFamily:"system-ui,sans-serif",outline:"none"}}/>
+        <button onClick={send} disabled={!input.trim()||loading}
+          style={{width:34,height:34,borderRadius:"50%",background:input.trim()&&!loading?"#3fcf8e":"rgba(255,255,255,0.05)",
+            border:"none",cursor:input.trim()&&!loading?"pointer":"default",
+            display:"flex",alignItems:"center",justifyContent:"center",transition:"background .2s",flexShrink:0}}>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M1 7h12M7 1l6 6-6 6" stroke={input.trim()&&!loading?"#08090e":"rgba(255,255,255,0.2)"} strokeWidth="1.5" strokeLinecap="round"/>
+          </svg>
+        </button>
+      </div>
+      <style>{`@keyframes botdot{0%,80%,100%{transform:scale(0.6);opacity:0.3}40%{transform:scale(1);opacity:1}}`}</style>
+    </>
+  );
+}
+
 
 function showForjaOnboarding() {
   localStorage.removeItem('forja_onboarded');
