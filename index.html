@@ -7436,8 +7436,11 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
 <script>
 (function initBot(){
-  const MODEL_URL="https://danielngr.github.io/FORJA/idle.glb";
-  const S=50, FY=-5.8, FOV=75, CZ=6, CAM_Y=-4.4;
+  const BASE="https://danielngr.github.io/FORJA/";
+  // model_with_walk.glb = idle.glb mesh + walk animation from Walking.fbx
+  const MODEL_URL=BASE+"model_with_walk.glb";
+
+  const S=50, FY=-5.8, FOV=75, CZ=6, CAM_Y=-4.4, MX=5;
 
   function getMood(){
     try{
@@ -7452,7 +7455,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       const daysSince=Math.floor((Date.now()-new Date(sorted[0]))/DAY);
       let streak=0,prev=null;
       for(const d of sorted){const dt=new Date(d);if(!prev){streak=1;prev=dt;continue;}if(Math.floor((prev-dt)/DAY)<=1){streak++;prev=dt;}else break;}
-      if(sorted[0]===today) return"hype";
+      if(sorted[0]===today) return"victory";
       if(streak>=3) return"active";
       if(daysSince>=7) return"low";
     }catch(e){}
@@ -7460,9 +7463,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
   }
 
   let ren,scene,cam,mixer,clock,model,aid;
-  let ready=false, act0=null, act1=null;
+  let ready=false, actIdle=null, actWalk=null, curAct=null;
   let cx=2, tx=-2, facing=0, wm=true, st=1;
-  const MX=5;
 
   function newTarget(){
     if(cx>=0) tx=-MX*(0.3+Math.random()*0.6);
@@ -7487,54 +7489,60 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     const kl=new THREE.DirectionalLight(0xfff0dd,1.5); kl.position.set(2,5,6); scene.add(kl);
     const fl=new THREE.DirectionalLight(0x8899bb,0.6); fl.position.set(-3,2,4); scene.add(fl);
     clock=new THREE.Clock();
+    newTarget();
 
-    fetch(MODEL_URL).then(r=>r.arrayBuffer()).then(buf=>{
-      new THREE.GLTFLoader().parse(buf,"",(gltf)=>{
-        model=gltf.scene;
-        model.traverse(child=>{
-          if(child.isMesh||child.isSkinnedMesh){
-            const n=child.name||"";
-            if(n==="Mascara"||n==="polySurface3"){
-              if(child.isSkinnedMesh&&child.material){
-                if(Array.isArray(child.material)) child.material.forEach(m=>m.skinning=true);
-                else child.material.skinning=true;
+    fetch(MODEL_URL)
+      .then(r=>r.arrayBuffer())
+      .then(buf=>{
+        new THREE.GLTFLoader().parse(buf,"",(gltf)=>{
+          model=gltf.scene;
+          model.traverse(child=>{
+            if(child.isMesh||child.isSkinnedMesh){
+              const n=child.name||"";
+              if(n==="Mascara"||n==="polySurface3"){
+                if(child.isSkinnedMesh&&child.material){
+                  if(Array.isArray(child.material)) child.material.forEach(m=>m.skinning=true);
+                  else child.material.skinning=true;
+                }
+                return;
               }
-              return;
+              let mat;
+              if(n==="Cabeza") mat=new THREE.MeshStandardMaterial({color:0xeae6e0,roughness:0.35,metalness:0.05});
+              else if(n==="Brazo"||n==="Brazo1"||n==="Dedos1"||n==="Dedos_Fin") mat=new THREE.MeshStandardMaterial({color:0xe4e0da,roughness:0.4});
+              else if(n==="Cuerpo"||n==="Pierna"||n==="Pierna1") mat=new THREE.MeshStandardMaterial({color:0x3a3e4a,roughness:0.6,metalness:0.2});
+              else if(n==="Cuello"||n==="pCube3") mat=new THREE.MeshStandardMaterial({color:0x666878,roughness:0.5,metalness:0.2});
+              else mat=new THREE.MeshStandardMaterial({color:0x888898,roughness:0.5,metalness:0.2});
+              if(child.isSkinnedMesh) mat.skinning=true;
+              child.material=mat;
             }
-            let mat;
-            if(n==="Cabeza") mat=new THREE.MeshStandardMaterial({color:0xeae6e0,roughness:0.35,metalness:0.05});
-            else if(n==="Brazo"||n==="Brazo1"||n==="Dedos1"||n==="Dedos_Fin") mat=new THREE.MeshStandardMaterial({color:0xe4e0da,roughness:0.4});
-            else if(n==="Cuerpo"||n==="Pierna"||n==="Pierna1") mat=new THREE.MeshStandardMaterial({color:0x3a3e4a,roughness:0.6,metalness:0.2});
-            else if(n==="Cuello"||n==="pCube3") mat=new THREE.MeshStandardMaterial({color:0x666878,roughness:0.5,metalness:0.2});
-            else mat=new THREE.MeshStandardMaterial({color:0x888898,roughness:0.5,metalness:0.2});
-            if(child.isSkinnedMesh) mat.skinning=true;
-            child.material=mat;
+          });
+
+          model.scale.setScalar(S);
+          model.position.set(cx,FY,0);
+          scene.add(model);
+          mixer=new THREE.AnimationMixer(model);
+
+          // Anims: 0=idle_a, 1=idle_b, 2=walk
+          if(gltf.animations.length>=3){
+            actIdle=mixer.clipAction(gltf.animations[0]);
+            actWalk=mixer.clipAction(gltf.animations[2]);
+            actIdle.setLoop(THREE.LoopRepeat);
+            actWalk.setLoop(THREE.LoopRepeat);
+            actWalk.play();
+            curAct=actWalk;
+          } else {
+            // fallback: use whatever is available
+            actIdle=mixer.clipAction(gltf.animations[0]);
+            actIdle.setLoop(THREE.LoopRepeat);
+            actIdle.play();
+            curAct=actIdle;
+            wm=false;
           }
-        });
-        model.scale.setScalar(S);
-        model.position.set(cx,FY,0);
-        scene.add(model);
-        mixer=new THREE.AnimationMixer(model);
 
-        // Las 2 animaciones del modelo original
-        // Ambas son válidas y fieles al rig — no hay distorsión
-        if(gltf.animations.length>=2){
-          act0=mixer.clipAction(gltf.animations[0]); // 3.2s
-          act1=mixer.clipAction(gltf.animations[1]); // 12.2s
-          act0.setLoop(THREE.LoopRepeat);
-          act1.setLoop(THREE.LoopRepeat);
-          // Empezar con act1 (más movimiento) mientras camina
-          act1.play();
-        } else if(gltf.animations.length===1){
-          act0=mixer.clipAction(gltf.animations[0]);
-          act0.setLoop(THREE.LoopRepeat);
-          act0.play();
-        }
-
-        ready=true;
-        animate();
-      },e=>console.warn("BOT:",e));
-    }).catch(e=>console.warn("BOT:",e));
+          ready=true;
+          animate();
+        },e=>console.warn("BOT parse:",e));
+      }).catch(e=>console.warn("BOT fetch:",e));
 
     function animate(){
       aid=requestAnimationFrame(animate);
@@ -7542,17 +7550,24 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       const dt=Math.min(clock.getDelta(),0.05);
       if(mixer) mixer.update(dt);
 
-      // Alternar walk(6s) / idle(3s)
       st-=dt;
       if(st<=0){
         if(wm){
-          // Cambiar a idle
+          // switch to idle
           wm=false; st=3; tx=cx;
-          if(act0&&act1){ act0.reset().play(); act1.crossFadeTo(act0,0.5,false); }
+          if(actIdle&&actWalk){
+            actIdle.reset().play();
+            actWalk.crossFadeTo(actIdle,0.4,false);
+            curAct=actIdle;
+          }
         } else {
-          // Cambiar a walk
+          // switch to walk
           wm=true; st=6; newTarget();
-          if(act0&&act1){ act1.reset().play(); act0.crossFadeTo(act1,0.5,false); }
+          if(actIdle&&actWalk){
+            actWalk.reset().play();
+            actIdle.crossFadeTo(actWalk,0.4,false);
+            curAct=actWalk;
+          }
         }
       }
 
@@ -7584,7 +7599,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       else{ clock=new THREE.Clock(); animate(); }
     });
     window.FORJA_BOT={
-      trigger(m){wm=true;st=6;newTarget();},
+      trigger(m){ if(m==="victory"&&actWalk){ wm=true; st=6; newTarget(); actWalk.reset().play(); if(curAct) curAct.crossFadeTo(actWalk,0.4,false); curAct=actWalk; } },
       refreshMood(){},
     };
   }
