@@ -7505,6 +7505,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
           const wa=mixer.clipAction(clip);
           wa.setLoop(THREE.LoopRepeat); wa.play();
         }
+        window._botCanWalk=false; // plank: estático
         ready=true;
         animate();
       },e=>console.error('BOT parse err:',e));
