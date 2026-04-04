@@ -3,193 +3,182 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-body { margin:0; background:#1a1a2e; color:#fff; font-family:monospace; }
-#banner { 
-  width:100%; height:160px; 
-  background:#2a2a3e;
+* { box-sizing: border-box; margin:0; padding:0; }
+body { background:#111; color:#fff; font-family:monospace; font-size:12px; }
+ 
+/* Este es el banner — mismo tamaño y estilo que FORJA */
+#banner {
+  width:100%;
+  height:160px;
+  background:rgba(8,10,14,0.95);
   border-bottom:3px solid #ff6600;
-  border-top:3px solid #ff6600;
-  position:relative; overflow:hidden;
+  position:relative;
+  overflow:hidden; /* igual que FORJA */
 }
-canvas { position:absolute; top:0; left:0; width:100%; height:100%; }
-#info { padding:12px; font-size:11px; line-height:1.8; }
-#controls { padding:8px 12px; display:flex; gap:8px; flex-wrap:wrap; }
-button { 
-  padding:6px 12px; background:#333; color:#fff; 
-  border:1px solid #555; border-radius:4px; cursor:pointer;
-  font-family:monospace; font-size:11px;
+#banner canvas { 
+  position:absolute; top:0; left:0; 
+  width:100%; height:100%; 
 }
-button:active { background:#555; }
-#log { padding:8px 12px; font-size:10px; color:#aaa; max-height:200px; overflow-y:auto; }
+ 
+/* Línea de referencia del "piso" */
+#floor-line {
+  position:absolute;
+  bottom:0; left:0; right:0;
+  height:2px;
+  background:rgba(255,100,0,0.5);
+  pointer-events:none;
+}
+ 
+#controls {
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr 1fr;
+  gap:6px;
+  padding:10px;
+}
+button {
+  padding:10px 4px;
+  background:#333; color:#fff;
+  border:1px solid #555; border-radius:6px;
+  font-family:monospace; font-size:12px;
+  cursor:pointer;
+}
+#info {
+  padding:10px;
+  background:#1a1a1a;
+  border-top:1px solid #333;
+  line-height:1.8;
+}
 </style>
 </head>
 <body>
  
 <div id="banner">
   <canvas id="c"></canvas>
+  <div id="floor-line"></div>
 </div>
  
 <div id="controls">
-  <button onclick="changeScale(-2000)">-2000</button>
-  <button onclick="changeScale(-500)">-500</button>
-  <button onclick="changeScale(500)">+500</button>
-  <button onclick="changeScale(2000)">+2000</button>
-  <button onclick="changeFloor(-0.1)">Floor -0.1</button>
-  <button onclick="changeFloor(0.1)">Floor +0.1</button>
-  <button onclick="changeFOV(-5)">FOV -5</button>
-  <button onclick="changeFOV(5)">FOV +5</button>
-  <button onclick="changeCamZ(-0.5)">CamZ -0.5</button>
-  <button onclick="changeCamZ(0.5)">CamZ +0.5</button>
+  <button onclick="adj(-2000)">-2000</button>
+  <button onclick="adj(-500)">-500</button>
+  <button onclick="adj(500)">+500</button>
+  <button onclick="adj(2000)">+2000</button>
+  <button onclick="adjFloor(-0.05)">Floor ↓</button>
+  <button onclick="adjFloor(0.05)">Floor ↑</button>
+  <button onclick="adjFOV(-5)">FOV -</button>
+  <button onclick="adjFOV(5)">FOV +</button>
 </div>
  
-<div id="info">Cargando...</div>
-<div id="log"></div>
+<div id="info">Cargando robot...</div>
  
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
-const GLB = 'https://danielngr.github.io/FORJA/idle.glb';
-let renderer, scene, camera, model, mixer, clock, animId;
-let currentScale = 500;
-let currentFOV = 30;
-let currentCamZ = 6;
-let FLOOR_Y = -0.545; // -halfH + robot_h/2 = -1.608 + 1.104
-let W, H, halfH, halfW, MX;
+const MODEL = 'https://danielngr.github.io/FORJA/idle.glb';
+ 
+let renderer, scene, camera, model, mixer, clock;
+let S = 3500;   // scale — empieza aquí
+let FOV = 30;
+let CAM_Z = 6;
+let FLOOR_Y = -1.0;  // ajustable
+let W, H, halfH, MX;
 let ready = false;
  
-function log(msg) {
-  const el = document.getElementById('log');
-  el.innerHTML = msg + '<br>' + el.innerHTML;
+function info(msg) {
+  document.getElementById('info').innerHTML = msg;
 }
  
-function updateInfo() {
-  const aspect = W/H;
-  halfH = currentCamZ * Math.tan(currentFOV/2 * Math.PI/180);
-  halfW = halfH * aspect;
-  MX = halfW * 0.72;
-  const robot_h = 0.028 * currentScale;
-  const pct = robot_h/(halfH*2)*100;
-  
-  document.getElementById('info').innerHTML = 
-    `scale=${currentScale} | FOV=${currentFOV} | camZ=${currentCamZ}<br>` +
-    `halfH=${halfH.toFixed(3)} | halfW=${halfW.toFixed(3)} | MX=${MX.toFixed(3)}<br>` +
-    `robot_h=${robot_h.toFixed(3)}u (${pct.toFixed(0)}% canvas) | FLOOR_Y=${FLOOR_Y.toFixed(3)}<br>` +
-    `Cabeza Y=${(FLOOR_Y+robot_h).toFixed(3)} vs halfH=${halfH.toFixed(3)} → ${FLOOR_Y+robot_h < halfH ? '✓ cabe' : '✗ SALE'}<br>` +
-    `Canvas: ${W}x${H}px`;
-}
- 
-function init() {
+function setup() {
   const canvas = document.getElementById('c');
   W = canvas.offsetWidth;
   H = 160;
   canvas.width = W * devicePixelRatio;
   canvas.height = H * devicePixelRatio;
  
-  renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:false});
+  renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
   renderer.setSize(W, H);
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-  renderer.setClearColor(0x2a2a3e, 1); // fondo visible
+  renderer.setClearColor(0x000000, 0);
  
   scene = new THREE.Scene();
-  const aspect = W/H;
-  camera = new THREE.PerspectiveCamera(currentFOV, aspect, 0.1, 200);
-  camera.position.set(0, 0, currentCamZ);
+  recalc();
+  camera = new THREE.PerspectiveCamera(FOV, W/H, 0.1, 500);
+  camera.position.set(0, 0, CAM_Z);
  
-  scene.add(new THREE.AmbientLight(0xffffff, 1.4));
-  const key = new THREE.DirectionalLight(0xffeedd, 1.2);
-  key.position.set(3,6,8); scene.add(key);
- 
-  // Grid helper para ver el "piso"
-  const grid = new THREE.GridHelper(10, 20, 0x444444, 0x222222);
-  grid.position.y = -1.558; // FLOOR_Y
-  scene.add(grid);
+  scene.add(new THREE.AmbientLight(0xffffff, 2.0));
+  const d = new THREE.DirectionalLight(0xffffff, 1.5);
+  d.position.set(2, 5, 5); scene.add(d);
  
   clock = new THREE.Clock();
-  halfH = currentCamZ * Math.tan(currentFOV/2 * Math.PI/180);
-  halfW = halfH * aspect;
-  MX = halfW * 0.72;
-  FLOOR_Y = -halfH + 0.05;
  
-  fetch(GLB)
+  fetch(MODEL)
     .then(r => r.arrayBuffer())
     .then(buf => {
-      new THREE.GLTFLoader().parse(buf, '', (gltf) => {
+      new THREE.GLTFLoader().parse(buf, '', gltf => {
         model = gltf.scene;
-        model.traverse(child => {
-          if(child.isSkinnedMesh && child.material) child.material.skinning = true;
-        });
-        // Override materiales para ver claramente
-        model.traverse(child => {
-          if(child.isMesh || child.isSkinnedMesh) {
-            child.material = new THREE.MeshStandardMaterial({color:0xccaa88, roughness:0.5, metalness:0.2});
-            if(child.isSkinnedMesh) child.material.skinning = true;
+        model.traverse(c => {
+          if(c.isMesh || c.isSkinnedMesh) {
+            c.material = new THREE.MeshStandardMaterial({
+              color: 0xddccbb, roughness:0.4, metalness:0.1
+            });
+            if(c.isSkinnedMesh) c.material.skinning = true;
           }
         });
-        model.scale.setScalar(currentScale);
+        // SIN animación para ver forma pura
+        model.scale.setScalar(S);
         model.position.set(0, FLOOR_Y, 0);
         scene.add(model);
- 
-        // Animación deshabilitada para ver forma pura
-        // if(gltf.animations && gltf.animations.length > 0) {
-        //   mixer = new THREE.AnimationMixer(model);
-        //   mixer.clipAction(gltf.animations[0]).play();
-        // }
- 
-        // Medir bounding box REAL
-        const box = new THREE.Box3().setFromObject(model);
-        const size = box.getSize(new THREE.Vector3());
-        const center = box.getCenter(new THREE.Vector3());
-        log(`BOUNDING BOX REAL: h=${size.y.toFixed(3)}u w=${size.x.toFixed(3)}u`);
-        log(`Center: ${center.x.toFixed(2)}, ${center.y.toFixed(2)}, ${center.z.toFixed(2)}`);
-        log(`Min Y=${box.min.y.toFixed(3)}, Max Y=${box.max.y.toFixed(3)}`);
- 
         ready = true;
-        updateInfo();
+        update();
         animate();
       });
     });
-  
-  updateInfo();
+ 
   animate();
 }
  
+function recalc() {
+  halfH = CAM_Z * Math.tan(FOV / 2 * Math.PI / 180);
+  MX = halfH * (W/H) * 0.72;
+}
+ 
+function update() {
+  if(!model) return;
+ 
+  recalc();
+  camera.fov = FOV;
+  camera.position.z = CAM_Z;
+  camera.updateProjectionMatrix();
+ 
+  model.scale.setScalar(S);
+  model.position.set(0, FLOOR_Y, 0);
+ 
+  // Medir bounding box real
+  const box = new THREE.Box3().setFromObject(model);
+  const sz = box.getSize(new THREE.Vector3());
+  const pct = sz.y / (halfH * 2) * 100;
+ 
+  info(
+    `<b>scale=${S} | FOV=${FOV} | camZ=${CAM_Z}</b><br>` +
+    `robot altura: ${sz.y.toFixed(3)}u = <b>${pct.toFixed(0)}% del banner</b><br>` +
+    `FLOOR_Y: ${FLOOR_Y.toFixed(3)} | halfH: ${halfH.toFixed(3)}<br>` +
+    `Pies Y: ${box.min.y.toFixed(3)} | Cabeza Y: ${box.max.y.toFixed(3)}<br>` +
+    `Borde inf frustum: ${(-halfH).toFixed(3)} | Borde sup: ${halfH.toFixed(3)}<br>` +
+    `<br>→ Ajusta Scale hasta que llene ~70% del banner<br>` +
+    `→ Ajusta Floor hasta que los pies toquen el borde naranja`
+  );
+}
+ 
 function animate() {
-  animId = requestAnimationFrame(animate);
+  requestAnimationFrame(animate);
   if(mixer) mixer.update(clock.getDelta());
-  if(model) model.position.set(0, FLOOR_Y, 0);
   renderer.render(scene, camera);
 }
  
-function applyChanges() {
-  if(!model || !camera) return;
-  const aspect = W/H;
-  camera.fov = currentFOV;
-  camera.position.z = currentCamZ;
-  camera.updateProjectionMatrix();
-  halfH = currentCamZ * Math.tan(currentFOV/2 * Math.PI/180);
-  halfW = halfH * aspect;
-  MX = halfW * 0.72;
-  model.scale.setScalar(currentScale);
-  // Recalcular FLOOR_Y con offsets reales (medidos con scale=2400)
-  const sf = currentScale / 2400;
-  const feetOff = -0.392 * sf;
-  const headOff =  0.388 * sf;
-  FLOOR_Y = -halfH - feetOff + 0.05;
-  model.position.set(0, FLOOR_Y, 0);
-  const box = new THREE.Box3().setFromObject(model);
-  const size = box.getSize(new THREE.Vector3());
-  const pct = size.y/(halfH*2)*100;
-  log(`scale=${currentScale} FOV=${currentFOV} camZ=${currentCamZ}: h=${size.y.toFixed(3)}u (${pct.toFixed(0)}%) FLOOR_Y=${FLOOR_Y.toFixed(3)}`);
-  log(`  Pies=${(FLOOR_Y+feetOff).toFixed(3)} Cabeza=${(FLOOR_Y+headOff).toFixed(3)} halfH=±${halfH.toFixed(3)}`);
-  updateInfo();
-}
+function adj(d)      { S = Math.max(100, S + d); update(); }
+function adjFloor(d) { FLOOR_Y += d; update(); }
+function adjFOV(d)   { FOV = Math.max(5, Math.min(120, FOV + d)); update(); }
  
-function changeScale(d) { currentScale += d; applyChanges(); }
-function changeFloor(d) { FLOOR_Y += d; updateInfo(); }
-function changeFOV(d) { currentFOV += d; applyChanges(); }
-function changeCamZ(d) { currentCamZ += d; applyChanges(); }
- 
-window.addEventListener('load', init);
+window.addEventListener('load', setup);
 </script>
 </body>
 </html>
