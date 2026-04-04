@@ -7504,6 +7504,13 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
           const wa=mixer.clipAction(clip);
           wa.setLoop(THREE.LoopRepeat); wa.play();
         }
+        // Plano tapador: oculta la malla entre pies con un rectángulo del color del fondo
+        const planeGeo=new THREE.PlaneGeometry(8,2);
+        const planeMat=new THREE.MeshBasicMaterial({color:0x080a0e,depthWrite:true,side:THREE.DoubleSide});
+        const plane=new THREE.Mesh(planeGeo,planeMat);
+        plane.rotation.x=-Math.PI/2;
+        plane.position.y=FY+0.3; // justo al nivel del piso del robot
+        scene.add(plane);
         ready=true;
         animate();
       },e=>console.error('BOT parse err:',e));
