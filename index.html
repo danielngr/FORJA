@@ -7442,7 +7442,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
   const WALK_MODEL_URL=BASE+"walking_skin.glb";
   const IDLE_URL=BASE+"idle.glb";
 
-  const S=1, FY=-7.5, FOV=75, CZ=6, CAM_Y=-4.4, MX=5;
+  const S=1, FY=-9.5, FOV=75, CZ=6, CAM_Y=-4.4, MX=5;
 
   function getMood(){
     try{
@@ -7506,7 +7506,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
           // Ocultar malla entre pies - puede ser pCube6, pCube7 u otro nombre
           if(c.isMesh||c.isSkinnedMesh){
             console.log('BOT mesh:',c.name);
-            if(c.name==="pCube6"||c.name==="pCube7"||c.name==="pCylinder6"||c.name==="pCylinder9") c.visible=false;
+            // Ocultar todo lo que NO sea parte conocida del cuerpo
+            const SHOW=["Cabeza","Brazo","Brazo1","Cuerpo","Cuello","Pierna","Pierna1",
+                        "Dedos1","Dedos_Fin","Mascara","polySurface3","pCube3"];
+            if(!SHOW.includes(c.name)) c.visible=false;
           }
         });
         toRemove.forEach(c=>c.parent&&c.parent.remove(c));
@@ -7606,8 +7609,17 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     };
   }
 
+  // Intentar inmediatamente y con observer cuando React monta el canvas
+  function startObserver(){
+    const obs=new MutationObserver(()=>{ if(!ready) tryInit(); });
+    obs.observe(document.body,{childList:true,subtree:true});
+  }
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",()=>{ tryInit(); startObserver(); });
+  } else {
+    tryInit(); startObserver();
+  }
   window.addEventListener("load",tryInit);
-  document.addEventListener("DOMContentLoaded",tryInit);
   setInterval(()=>{if(!ready)tryInit();},300);
 })();
 </script>
