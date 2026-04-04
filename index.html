@@ -7438,16 +7438,16 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 <script>
 (function initBot(){
   const CDN="https://pub-28277a6ce79d49479afd0cb1bba27b44.r2.dev/bot-anims/";
-  const FY=-8.5, FOV=35, CZ=14, CAM_Y=-4.4;
+  const FY=-7.8, FOV=35, CZ=14, CAM_Y=-4.4;
 
   // Una animación por estado — elegida al abrir la app
   const MOOD_ANIMS={
-    victory:  [{a:"capoeira",  walk:false}, {a:"jogging",      walk:true}],
-    active:   [{a:"jogging",   walk:true},  {a:"walking_skin", walk:true}],
-    idle:     [{a:"fishing",   walk:false}, {a:"cowmilking",   walk:false}, {a:"rifleaiming", walk:false}],
-    low:      [{a:"plank",     walk:false}, {a:"laying",       walk:false}],
-    dead:     [{a:"laying",    walk:false}],
-    normal:   [{a:"walking_skin", walk:true}, {a:"jogging",   walk:true},  {a:"climb", walk:false}],
+    victory:  [{a:"clapping",    walk:false}, {a:"twerkdance",   walk:false}, {a:"jogging",      walk:true}],
+    active:   [{a:"jogging",     walk:true},  {a:"walking_skin", walk:true},  {a:"drunkwalk",    walk:true}],
+    idle:     [{a:"fishing",     walk:false}, {a:"cowmilking",   walk:false}, {a:"rifleaiming",  walk:false}, {a:"gunplay", walk:false}],
+    low:      [{a:"plank",       walk:false}, {a:"laying",       walk:false}, {a:"situps",       walk:false}],
+    dead:     [{a:"laying",      walk:false}, {a:"jumpplank",    walk:false}],
+    normal:   [{a:"walking_skin",walk:true},  {a:"jogging",      walk:true},  {a:"drunkwalk",    walk:true}],
   };
 
   function getMood(){
