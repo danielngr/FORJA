@@ -4046,8 +4046,8 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
     </div>
   );}
   return(<>
-      <div style={{background:"rgba(8,10,14,0.92)",borderBottom:"1px solid rgba(255,255,255,0.06)",padding:"14px 18px 10px",minHeight:200,overflow:"visible"}}>
-        <canvas id="forja-bot-canvas" style={{position:"absolute",top:0,left:0,width:"100%",height:"200px",pointerEvents:"none",zIndex:5}}></canvas>
+      <div style={{background:"#08090e",borderBottom:"1px solid rgba(255,255,255,0.06)",minHeight:200,overflow:"hidden",position:"relative"}}>
+        <canvas id="forja-bot-canvas" style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",pointerEvents:"none",zIndex:2}}></canvas>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
           <div>
             {day?.isExpress&&(
@@ -4136,7 +4136,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
             </div>
           );
         })()}
-        <div style={{display:"flex",gap:4}}>
+        <div style={{display:"flex",gap:0,position:"absolute",bottom:0,left:0,right:0,zIndex:10}}>
           {(()=>{
             const isCeleb=profile?.mode==="celebrity";
             const celebId=profile?.celebrity;
@@ -4160,35 +4160,37 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
               const hasDone=dd>0;
               return(
                 <button key={i} data-tour={i===todayDayIdx?"cal-day":undefined} onClick={()=>{setSel(i);setTabR("train");setAddEx(false);setAddF(false);setInWorkout(false);}}
-                  style={{flex:1,padding:"10px 0 8px",borderRadius:10,
-                    border:`1px solid ${isSel?(cc||C.tx):"rgba(255,255,255,0.06)"}`,
-                    background:isSel?"rgba(255,255,255,0.07)":"transparent",
+                  style={{flex:1,padding:"6px 0 6px",border:"none",
+                    background:"transparent",
                     cursor:"pointer",position:"relative",transition:"all .15s",
-                    opacity:isFuture&&!isSel?0.45:isPastWeek&&!hasDone&&!isSel&&!isRest?0.5:1}}>
-                  {isToday&&!isSel&&<div style={{position:"absolute",top:3,left:"50%",
-                    transform:"translateX(-50%)",width:3,height:3,borderRadius:"50%",
-                    background:cc||C.tx,opacity:0.9}}/>}
-                  <div style={{fontSize:10,fontWeight:700,
-                    color:isSel?(cc||C.white):isToday?C.tx:C.tx3,
-                    letterSpacing:0.5,lineHeight:1,fontWeight:isSel?800:600}}>{DN[lang][i]}</div>
-                  <div style={{fontSize:9,fontWeight:600,color:isSel?"rgba(255,255,255,.8)":isToday?"#D4D9E8":"#9aa3b8",
-                    marginTop:2,letterSpacing:0,fontFamily:mono}}>
+                    opacity:isFuture&&!isSel?0.25:isPastWeek&&!hasDone&&!isSel&&!isRest?0.35:1,
+                    display:"flex",flexDirection:"column",alignItems:"center"}}>
+                  {/* Barra top - marcador seleccion */}
+                  <div style={{width:"100%",height:isSel?2:1,
+                    background:isSel?(cc||"rgba(255,255,255,0.8)"):"rgba(255,255,255,0.05)",
+                    marginBottom:5,transition:"all .15s"}}/>
+                  {/* Dot estado */}
+                  {(cp||isToday||hasDone)&&<div style={{width:4,height:4,borderRadius:"50%",
+                    marginBottom:3,
+                    background:cp?"#3fcf8e":hasDone?"#4a8fd4":(cc||"#f6ad55"),
+                    boxShadow:cp?"0 0 6px rgba(63,207,142,0.6)":isToday?"0 0 6px rgba(246,173,85,0.6)":"none"}}/>}
+                  {/* Nombre dia */}
+                  <div style={{fontSize:9,fontFamily:mono,letterSpacing:1,lineHeight:1,
+                    fontWeight:isSel?700:500,
+                    color:isSel?(cc||"rgba(255,255,255,0.9)"):isToday?"rgba(255,255,255,0.75)":"rgba(255,255,255,0.3)"}}>
+                    {DN[lang][i]}
+                  </div>
+                  {/* Numero */}
+                  <div style={{fontSize:11,fontFamily:mono,fontWeight:700,marginTop:1,lineHeight:1,
+                    color:isSel?"rgba(255,255,255,0.95)":isToday?"rgba(255,255,255,0.6)":"rgba(255,255,255,0.2)"}}>
                     {dayDate.getDate()}
                   </div>
-                  {d&&isCeleb&&cm&&!isRest&&<div style={{fontSize:6,fontFamily:mono,marginTop:2,
-                    letterSpacing:.5,color:isSel?"rgba(255,255,255,.7)":cc,
-                    fontWeight:800,opacity:isSel?0.8:.65}}>{cm.l}</div>}
-                  {d&&!isCeleb&&<div style={{fontSize:7,fontFamily:mono,marginTop:3,
-                    opacity:isSel?0.6:0.4,letterSpacing:0.5,padding:"0 2px",
-                    overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{d.l}</div>}
-                  {!d&&<div style={{fontSize:7,fontFamily:mono,marginTop:3,
-                    opacity:0.6,letterSpacing:0.5}}>{(L[lang]||L.en).rest}</div>}
-                  {cp&&!isSel&&<div style={{position:"absolute",top:4,right:4,
-                    width:4,height:4,borderRadius:"50%",background:C.green}}/>}
-                  {hasDone&&!cp&&!isSel&&isPastWeek&&<div style={{position:"absolute",top:4,right:4,
-                    width:4,height:4,borderRadius:"50%",background:C.blue,opacity:.6}}/>}
-                  {isSel&&<div style={{position:"absolute",bottom:0,left:"25%",right:"25%",
-                    height:2,background:cc||C.white,borderRadius:2}}/>}
+                  {/* Label rutina */}
+                  <div style={{fontSize:6,fontFamily:mono,letterSpacing:0.5,marginTop:3,
+                    color:isSel?(cc||"rgba(255,255,255,0.4)"):isToday?"rgba(255,255,255,0.25)":"rgba(255,255,255,0.1)",
+                    overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"100%",padding:"0 3px"}}>
+                    {d?(isCeleb&&cm?cm.l:d.l):(L[lang]||L.en).rest}
+                  </div>
                 </button>
               );
             });
