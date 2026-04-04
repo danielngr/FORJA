@@ -7607,8 +7607,26 @@ function BotChat({profile,routine,done,lang,mono}){
     scene=new THREE.Scene();
     cam=new THREE.PerspectiveCamera(FOV,W/H,0.1,200);
     cam.position.set(0,CAM_Y,CZ); cam.lookAt(0,CAM_Y,0);
-    scene.add(new THREE.AmbientLight(0xffffff,2));
-    const dl=new THREE.DirectionalLight(0xffffff,1.5); dl.position.set(2,5,4); scene.add(dl);
+    scene.add(new THREE.AmbientLight(0xffffff,1.4));
+    const dl=new THREE.DirectionalLight(0xfff8f0,2.5); dl.position.set(3,8,5); scene.add(dl);
+    const dl2=new THREE.DirectionalLight(0x8090ff,0.6); dl2.position.set(-4,2,3); scene.add(dl2);
+
+    // Piso 3D grid perspectiva
+    const floorGeo=new THREE.PlaneGeometry(40,40,20,20);
+    const floorMat=new THREE.MeshBasicMaterial({color:0x3a4f8a,wireframe:true,transparent:true,opacity:0.28});
+    const floorMesh=new THREE.Mesh(floorGeo,floorMat);
+    floorMesh.rotation.x=-Math.PI/2;
+    floorMesh.position.y=FY+0.05;
+    scene.add(floorMesh);
+
+    // Glow bajo el robot
+    const glowGeo=new THREE.CircleGeometry(2.5,32);
+    const glowMat=new THREE.MeshBasicMaterial({color:0x8878a0,transparent:true,opacity:0.1,side:THREE.DoubleSide});
+    const glowDisk=new THREE.Mesh(glowGeo,glowMat);
+    glowDisk.rotation.x=-Math.PI/2;
+    glowDisk.position.y=FY+0.06;
+    scene.add(glowDisk);
+    window._botGlow=glowDisk;
     clock=new THREE.Clock();
 
     // Elegir animación según mood
