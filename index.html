@@ -7555,16 +7555,14 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       mixer&&mixer.update(dt);
 
       if(canWalk){
-        // Nunca para — llega al borde y gira inmediatamente
-        const EDGE=7;
-        if(cx>=EDGE){ tx=-EDGE; }
-        else if(cx<=-EDGE){ tx=EDGE; }
-        const dx=tx-cx;
-        cx+=Math.sign(dx)*1.8*dt;
-        // Giro directo según dirección
-        facing=dx>0?0:Math.PI;
+        const EDGE=7, SPD=1.8;
+        // dir: 1=derecha, -1=izquierda
+        if(!window._botDir) window._botDir=1;
+        cx+=window._botDir*SPD*dt;
+        if(cx>=EDGE){ cx=EDGE; window._botDir=-1; }
+        else if(cx<=-EDGE){ cx=-EDGE; window._botDir=1; }
         model.position.x=cx;
-        model.rotation.y=Math.PI/2+facing;
+        model.rotation.y=window._botDir>0?Math.PI/2:-Math.PI/2;
       } else {
         // estático en centro, mirando de frente
         cx+=(0-cx)*0.05;
