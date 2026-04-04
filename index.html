@@ -7545,6 +7545,26 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
         }
         ready=true;
         animate();
+        // Rotar animaciones cada 20s para testing
+        const TEST_ANIMS=["walking_skin","jogging","plank","excited","capoeira","baseball","fishing","cowmilking","rifleaiming","climb","laying","falling","flyingpunch"];
+        let _testIdx=0;
+        setInterval(()=>{
+          _testIdx=(_testIdx+1)%TEST_ANIMS.length;
+          const name=TEST_ANIMS[_testIdx];
+          console.log('BOT test anim:',name);
+          fetch(CDN+name+".glb").then(r=>r.arrayBuffer()).then(buf=>{
+            new THREE.GLTFLoader().parse(buf,CDN,(g)=>{
+              if(!g.animations[0]) return;
+              const clip=g.animations[0];
+              const isWalk=name==="walking_skin"||name==="jogging";
+              canWalk=isWalk;
+              if(isWalk) clip.tracks=clip.tracks.filter(t=>!(t.name.toLowerCase().includes('hip')&&t.name.toLowerCase().includes('position')));
+              mixer.stopAllAction();
+              const a=mixer.clipAction(clip);
+              a.setLoop(THREE.LoopRepeat); a.play();
+            },e=>console.error(e));
+          });
+        },20000);
       },e=>console.error('BOT parse err:',e));
     }).catch(e=>console.error('BOT fetch err:',e));
 
