@@ -4159,7 +4159,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
             borderRight:"1px solid rgba(255,255,255,0.2)",
             boxShadow:"0 -60px 120px rgba(0,0,0,0.65),inset 0 1px 0 rgba(255,255,255,0.5)"}}>
             <div style={{position:"absolute",top:0,left:0,right:0,height:200,background:"linear-gradient(160deg,rgba(255,255,255,0.17) 0%,rgba(255,255,255,0.05) 35%,transparent 65%)",borderRadius:"42px 42px 0 0",pointerEvents:"none",zIndex:0}}/>
-            <div style={{position:"absolute",top:"-60px",left:"-40px",width:280,height:180,background:"radial-gradient(ellipse,rgba(255,255,255,0.16) 0%,rgba(255,255,255,0.05) 40%,transparent 70%)",transform:"rotate(-25deg)",filter:"blur(8px)",pointerEvents:"none",zIndex:0}}/>
+            <div style={{position:"absolute",top:-60,left:-40,width:280,height:180,background:"radial-gradient(ellipse,rgba(255,255,255,0.16) 0%,rgba(255,255,255,0.05) 40%,transparent 70%)",transform:"rotate(-25deg)",pointerEvents:"none",zIndex:0}}/>
             <div style={{display:"flex",justifyContent:"center",padding:"16px 0 4px",flexShrink:0,position:"relative",zIndex:2}}>
               <div style={{width:44,height:5,borderRadius:3,background:"rgba(255,255,255,0.28)"}}/>
             </div>
@@ -7375,7 +7375,7 @@ function BotChat({profile,routine,done,lang,mono}){
           isBot&&React.createElement("div",{style:{width:30,height:30,borderRadius:"50%",flexShrink:0,marginBottom:2,
             background:"rgba(255,255,255,0.08)",border:"0.5px solid rgba(255,255,255,0.22)",
             boxShadow:"inset 0 1px 0 rgba(255,255,255,0.3)",
-            display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}},"&#129302;"),
+            display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}},"🤖"),
           React.createElement("div",{style:Object.assign({
             maxWidth:"75%",padding:"13px 17px",fontSize:15,lineHeight:1.52,
             color:"rgba(255,255,255,0.92)",position:"relative"
@@ -7393,7 +7393,7 @@ function BotChat({profile,routine,done,lang,mono}){
         );
       }),
       loading&&React.createElement("div",{style:{display:"flex",alignItems:"flex-end",gap:9}},
-        React.createElement("div",{style:{width:30,height:30,borderRadius:"50%",background:"rgba(255,255,255,0.08)",border:"0.5px solid rgba(255,255,255,0.2)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:16}},"&#129302;"),
+        React.createElement("div",{style:{width:30,height:30,borderRadius:"50%",background:"rgba(255,255,255,0.08)",border:"0.5px solid rgba(255,255,255,0.2)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:16}},"🤖"),
         React.createElement("div",{style:{display:"flex",alignItems:"center",gap:5,padding:"14px 18px",background:"rgba(255,255,255,0.07)",border:"0.5px solid rgba(255,255,255,0.16)",borderRadius:"20px 20px 20px 5px",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.18)"}},
           [0,1,2].map(function(i){return React.createElement("div",{key:i,style:{width:7,height:7,borderRadius:"50%",background:"rgba(255,255,255,0.55)",animation:"botdot 1.4s ease-in-out "+(i*0.22)+"s infinite"}});})
         )
