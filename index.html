@@ -7561,7 +7561,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
     // Cámara: FOV=110 (el que funcionó en el test), centrada en 0,0,6
     // Pero cámara posicionada en Y=0, mirando al origen
-    camera=new THREE.PerspectiveCamera(110,aspect,0.1,200);
+    // FOV=60: natural sin distorsión. camZ ajustado para ver robot bien
+    camera=new THREE.PerspectiveCamera(60,aspect,0.1,200);
     camera.position.set(0,0,6);
     camera.lookAt(0,0,0);
 
@@ -7573,16 +7574,21 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
     clock=new THREE.Clock();
 
-    // Con FOV=110, camZ=6: halfH=6*tan(55°)=8.569
-    // Del test iPhone: pies del robot en Y=-6.5 con scale=100
-    // El robot mide ~2.07u de alto
-    // Para que pies toquen el BORDE INFERIOR del canvas: FLOOR_Y=-8.569+robot_h/2
-    // Pero del test sabemos que FLOOR_Y=-6.5 funcionó visualmente
-    // Cambiamos: posicionar robot con los pies en Y=-6.5 (medido en iPhone)
-    const halfH_cam=6*Math.tan(55*Math.PI/180); // 8.569
-    const halfW_cam=halfH_cam*aspect;
-    MX=halfW_cam*0.70;  // zona de movimiento horizontal
-    FLOOR_Y=-6.5;       // medido en iPhone — pies en el borde del banner
+    // FOV=60, camZ=6: halfH=6*tan(30°)=3.464
+    // FLOOR_Y: pies del robot en el borde inferior del canvas
+    // Con scale=75, robot mide ~0.032*75/25*... medido empíricamente
+    // Borde inferior = -halfH = -3.464
+    // Robot center offset desde pies: ~1.03u (mitad del robot)
+    // FLOOR_Y = -halfH + 1.03 = -3.464 + 1.03 = -2.434... 
+    // Pero los pies deben estar EN el borde, no el centro
+    // FLOOR_Y = posición del PIVOT del robot para que los PIES toquen -halfH
+    // Del análisis: centro del bbox está 1.062u arriba de los pies (con scale=2400)
+    // Escalando a scale=75: offset = 1.062*(75/2400) = 0.033u
+    // FLOOR_Y = -halfH + 0.033 = -3.431
+    const halfH_val=6*Math.tan(30*Math.PI/180);
+    const halfW_val=halfH_val*aspect;
+    MX=halfW_val*0.80;
+    FLOOR_Y=-halfH_val+0.033;
 
     charX=MX*0.60;
     targetX=charX;
@@ -7596,43 +7602,34 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
         new THREE.GLTFLoader().parse(buf,"",(gltf)=>{
           model=gltf.scene;
 
-          // Colores por nombre exacto de node (child.name en Three.js)
+          // Colores exactos basados en posición Y de cada mesh
           model.traverse(child=>{
             if(child.isMesh||child.isSkinnedMesh){
               const n=child.name||"";
               let mat;
-              if(n==="pCube6"||n==="pCube7"){
-                // OJOS: azul brillante emisivo
+              if(n==="Mascara"){
+                // Máscara facial (frente + ojos integrados): azul brillante
                 mat=new THREE.MeshStandardMaterial({
-                  color:0x44ccff, emissive:new THREE.Color(0x0099ff),
-                  emissiveIntensity:3.0, roughness:0.0, metalness:0.0
+                  color:0x44ccff,
+                  emissive:new THREE.Color(0x0088ff),
+                  emissiveIntensity:2.5,
+                  roughness:0.0, metalness:0.0
                 });
-              } else if(n==="Mascara"){
-                // Cara frontal: blanco cálido
-                mat=new THREE.MeshStandardMaterial({color:0xf0ece6,roughness:0.3,metalness:0.0});
-              } else if(n==="polySurface3"){
-                // Detalle cara: blanco
-                mat=new THREE.MeshStandardMaterial({color:0xe8e4de,roughness:0.3,metalness:0.0});
               } else if(n==="Cabeza"){
-                // Cráneo trasero: gris
-                mat=new THREE.MeshStandardMaterial({color:0x888898,roughness:0.5,metalness:0.1});
+                // Cráneo: blanco cálido
+                mat=new THREE.MeshStandardMaterial({color:0xf0ece6,roughness:0.35,metalness:0.0});
               } else if(n==="Brazo"||n==="Brazo1"){
-                // Brazos: blanco
                 mat=new THREE.MeshStandardMaterial({color:0xe8e4de,roughness:0.4,metalness:0.0});
               } else if(n==="Dedos1"||n==="Dedos_Fin"){
-                // Dedos: blanco
                 mat=new THREE.MeshStandardMaterial({color:0xe0dcd6,roughness:0.4,metalness:0.0});
-              } else if(n==="Pierna"||n==="Pierna1"){
-                // Piernas/pies: gris oscuro igual que torso
-                mat=new THREE.MeshStandardMaterial({color:0x3a3e4a,roughness:0.6,metalness:0.2});
               } else if(n==="Cuerpo"){
-                // Torso: gris oscuro
                 mat=new THREE.MeshStandardMaterial({color:0x3a3e4a,roughness:0.6,metalness:0.2});
-              } else if(n==="Cuello"){
-                // Cuello: gris medio
+              } else if(n==="Pierna"||n==="Pierna1"){
+                mat=new THREE.MeshStandardMaterial({color:0x3a3e4a,roughness:0.6,metalness:0.2});
+              } else if(n==="Cuello"||n==="pCube3"){
                 mat=new THREE.MeshStandardMaterial({color:0x666878,roughness:0.5,metalness:0.2});
               } else {
-                // pCube3, pCylinder6, pCylinder9: articulaciones gris
+                // pCube6,7, pCylinder6,9, polySurface3: articulaciones gris
                 mat=new THREE.MeshStandardMaterial({color:0x888898,roughness:0.5,metalness:0.2});
               }
               if(child.isSkinnedMesh) mat.skinning=true;
@@ -7678,6 +7675,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
         charFacing*=0.90;
       }
 
+      // Anclar pies al piso — las animaciones no deben desplazar Y
       model.position.set(charX,FLOOR_Y,0);
       model.rotation.y=charFacing;
       renderer.render(scene,camera);
@@ -7691,7 +7689,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       renderer.setSize(W2,200);
       camera.aspect=W2/200;
       camera.updateProjectionMatrix();
-      MX=6*Math.tan(55*Math.PI/180)*(W2/200)*0.70;
+      MX=6*Math.tan(30*Math.PI/180)*(W2/200)*0.80;
     });
 
     document.addEventListener("visibilitychange",()=>{
