@@ -7477,7 +7477,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     const canvas=document.getElementById("forja-bot-canvas");
     if(!canvas||!window.THREE||!window.THREE.GLTFLoader) return;
     if(canvas.dataset.bi) return;
-    const W=canvas.offsetWidth||canvas.parentElement&&canvas.parentElement.offsetWidth||390;
+    const W=canvas.offsetWidth||canvas.getBoundingClientRect().width||window.innerWidth||390;
     if(W<10) return; // canvas aún no tiene tamaño, esperar
     canvas.dataset.bi="1";
 
@@ -7505,11 +7505,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
           if(c.name==="Cube"||c.name==="default") toRemove.push(c);
           // Ocultar malla entre pies - puede ser pCube6, pCube7 u otro nombre
           if(c.isMesh||c.isSkinnedMesh){
-            console.log('BOT mesh:',c.name);
-            // Ocultar todo lo que NO sea parte conocida del cuerpo
-            const SHOW=["Cabeza","Brazo","Brazo1","Cuerpo","Cuello","Pierna","Pierna1",
-                        "Dedos1","Dedos_Fin","Mascara","polySurface3","pCube3"];
-            if(!SHOW.includes(c.name)) c.visible=false;
+            console.log('BOT mesh:',c.name, c.visible);
           }
         });
         toRemove.forEach(c=>c.parent&&c.parent.remove(c));
@@ -7609,16 +7605,6 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     };
   }
 
-  // Intentar inmediatamente y con observer cuando React monta el canvas
-  function startObserver(){
-    const obs=new MutationObserver(()=>{ if(!ready) tryInit(); });
-    obs.observe(document.body,{childList:true,subtree:true});
-  }
-  if(document.readyState==="loading"){
-    document.addEventListener("DOMContentLoaded",()=>{ tryInit(); startObserver(); });
-  } else {
-    tryInit(); startObserver();
-  }
   window.addEventListener("load",tryInit);
   setInterval(()=>{if(!ready)tryInit();},300);
 })();
