@@ -7466,7 +7466,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
   let ren,scene,cam,mixer,clock,model,aid;
   let ready=false, actWalk=null, actIdle=null;
-  let cx=2, tx=-2, facing=0, wm=true, st=2;
+  let cx=-MX, tx=MX*0.7, facing=0, wm=true, st=0.1;
 
   function newTarget(){
     if(cx>=0) tx=-MX*(0.3+Math.random()*0.6);
@@ -7497,17 +7497,15 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       new THREE.GLTFLoader().parse(buf,"",(gltf)=>{
         model=gltf.scene;
 
-        // Remover el Cube de Blender y el nodo default
+        // 1. Remover Cube y default de Blender, ocultar pCube6/pCube7 (malla pies)
         const toRemove=[];
-        model.traverse(child=>{
-          if(child.name==="Cube"||child.name==="default") toRemove.push(child);
+        model.traverse(c=>{
+          if(c.name==="Cube"||c.name==="default") toRemove.push(c);
+          if(c.name==="pCube6"||c.name==="pCube7") c.visible=false;
         });
         toRemove.forEach(c=>c.parent&&c.parent.remove(c));
 
-        // Rotar modelo 90° en Y — Mixamo camina en Z, necesitamos X
-        model.rotation.y=Math.PI/2;
-
-        // Aplicar materiales
+        // 2. Materiales
         model.traverse(child=>{
           if(child.isMesh||child.isSkinnedMesh){
             const n=child.name||"";
@@ -7529,16 +7527,12 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
           }
         });
 
-        // Calcular escala automática basada en bounding box
-        const box=new THREE.Box3().setFromObject(model);
-        const size=box.getSize(new THREE.Vector3());
-        const targetH=1.2; // más pequeño
-        const autoScale=targetH/Math.max(size.x,size.y,size.z);
-        model.scale.setScalar(autoScale);
-
-        // Reposicionar al piso
-        const box2=new THREE.Box3().setFromObject(model);
-        model.position.set(cx, FY-box2.min.y, 0);
+        // 3. Escala: robot mide 0.102u → scale=36 para 40% del canvas (FOV=75 camZ=6)
+        model.scale.setScalar(36);
+        // 4. Rotación: Mixamo camina en -Z, rotar para caminar en X
+        model.rotation.y=Math.PI/2; // base
+        // 5. Posición
+        model.position.set(cx, FY, 0);
 
         scene.add(model);
         mixer=new THREE.AnimationMixer(model);
@@ -7585,7 +7579,6 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       }
 
       model.position.x=cx;
-      // Rotación base 90° + facing para dirección de caminata
       model.rotation.y=Math.PI/2+facing;
       cam.position.x=cx;
       cam.lookAt(cx,CAM_Y,0);
