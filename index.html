@@ -7438,8 +7438,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 <script>
 (function initBot(){
   console.log('BOT IIFE arrancó');
-  const WALK_URL="https://danielngr.github.io/FORJA/walking_skin.glb";
-  const FY=-9.5, FOV=75, CZ=6, CAM_Y=-4.4, MX=5;
+  const BASE="https://danielngr.github.io/FORJA/";
+  const IDLE_URL=BASE+"idle.glb";
+  const WALK_URL=BASE+"walking_skin.glb";
+  const FY=-9.5, FOV=75, CZ=6, CAM_Y=-4.4;
 
   let ren,scene,cam,mixer,clock,model,aid;
   let ready=false;
@@ -7467,24 +7469,16 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     const dl=new THREE.DirectionalLight(0xffffff,1.5); dl.position.set(2,5,4); scene.add(dl);
     clock=new THREE.Clock();
 
-    console.log('BOT fetch start', WALK_URL);
-    fetch(WALK_URL)
-    .then(r=>{ console.log('BOT fetch ok',r.status); return r.arrayBuffer(); })
-    .then(buf=>{ console.log('BOT buf',buf.byteLength);
-      try{
-      new THREE.GLTFLoader().parse(buf,"",(gltf)=>{
+    console.log('BOT fetch idle');
+    fetch(IDLE_URL).then(r=>r.arrayBuffer()).then(buf=>{
+      console.log('BOT idle buf',buf.byteLength);
+      new THREE.GLTFLoader().parse(buf,BASE,(gltf)=>{
+        console.log('BOT idle parsed, anims:',gltf.animations.length);
         model=gltf.scene;
-        // Remover artefactos de Blender
-        const rm=[];
-        model.traverse(c=>{
-          if(c.name==="Cube"||c.name==="default") rm.push(c);
-        });
-        rm.forEach(c=>c.parent&&c.parent.remove(c));
-        // Materiales
         model.traverse(c=>{
           if(!(c.isMesh||c.isSkinnedMesh)) return;
           const n=c.name||"";
-          if(n==="Mascara"||n==="polySurface3"){if(c.material) c.material.skinning=true; return;}
+          if(n==="Mascara"||n==="polySurface3"){if(c.material)c.material.skinning=true;return;}
           const col=n==="Cabeza"?0xeae6e0:n==="Cuerpo"||n==="Pierna"||n==="Pierna1"?0x3a3e4a:n==="Brazo"||n==="Brazo1"||n==="Dedos1"||n==="Dedos_Fin"?0xe4e0da:0x888898;
           const mat=new THREE.MeshStandardMaterial({color:col,roughness:0.5,metalness:0.1});
           if(c.isSkinnedMesh) mat.skinning=true;
@@ -7494,17 +7488,17 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
         model.position.set(cx,FY,0);
         scene.add(model);
         mixer=new THREE.AnimationMixer(model);
-        const clip=gltf.animations[0];
-        if(clip){
-          clip.tracks=clip.tracks.filter(t=>!(t.name.toLowerCase().includes('hip')&&t.name.toLowerCase().includes('position')));
-          const a=mixer.clipAction(clip);
-          a.setLoop(THREE.LoopRepeat); a.play();
-        }
+        if(gltf.animations[0]){const a=mixer.clipAction(gltf.animations[0]);a.setLoop(THREE.LoopRepeat);a.play();}
         ready=true;
         animate();
-      },e=>console.error("BOT GLB parse error:",e));
-      }catch(ex){console.error('BOT parse CRASH:',ex.message,ex.stack);}
-    }).catch(e=>console.error("BOT fetch CATCH:",e));
+        fetch(WALK_URL).then(r=>r.arrayBuffer()).then(buf2=>{
+          console.log('BOT walk buf',buf2.byteLength);
+          new THREE.GLTFLoader().parse(buf2,BASE,(g2)=>{
+            console.log('BOT walk parsed, anims:',g2.animations.length);
+          },e=>console.error('BOT walk parse err:',e));
+        }).catch(e=>console.error('BOT walk fetch err:',e));
+      },e=>console.error('BOT idle parse err:',e));
+    }).catch(e=>console.error('BOT idle fetch err:',e));
 
     function animate(){
       aid=requestAnimationFrame(animate);
@@ -7536,7 +7530,6 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     window.FORJA_BOT={ trigger(){ wm=true; st=5; newTarget(); } };
   }
 
-  // Igual que bot_test3: load + retry
   window.addEventListener("load",()=>setTimeout(tryInit,100));
   document.addEventListener("DOMContentLoaded",()=>setTimeout(tryInit,500));
   setInterval(()=>{if(!ready)tryInit();},500);
