@@ -7473,10 +7473,17 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
   function stripRootMotion(clip){
     if(!clip) return null;
+    const before=clip.tracks.length;
     clip.tracks=clip.tracks.filter(t=>{
+      // Three.js convierte "mixamorig:Hips" -> track name con "Hips" en el nombre
+      // El path puede ser .position o .quaternion
+      // Root motion = traslación del Hips en XZ
       const n=t.name.toLowerCase();
-      return !(n.includes('hips')&&(n.includes('.position')||n.includes('.translation')));
+      const isHipsPos = (n.includes('hips')||n.includes('hip')) && 
+                        (n.includes('.position')||n.includes('.translation'));
+      return !isHipsPos;
     });
+    console.log('BOT stripRM:',before,'->',clip.tracks.length,'tracks');
     return clip;
   }
 
@@ -7500,19 +7507,21 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     clock=new THREE.Clock();
     newTarget();
 
-    // Cargar modelo e animación walk en paralelo
     Promise.all([
       fetch(MODEL_URL).then(r=>r.arrayBuffer()),
       fetch(WALK_URL).then(r=>r.arrayBuffer())
     ]).then(([modelBuf, walkBuf])=>{
 
-      // Parsear walk primero para obtener el clip
-      new THREE.GLTFLoader().parse(walkBuf,"",(walkGltf)=>{
-        const walkClip=stripRootMotion(walkGltf.animations&&walkGltf.animations[0]||null);
-        console.log("BOT walk loaded, tracks:", walkClip?walkClip.tracks.length:0);
+      const loader=new THREE.GLTFLoader();
 
-        // Parsear modelo
-        new THREE.GLTFLoader().parse(modelBuf,"",(gltf)=>{
+      loader.parse(walkBuf,"",(walkGltf)=>{
+        console.log('BOT walk GLB loaded, anims:',walkGltf.animations.length);
+        if(walkGltf.animations[0]){
+          console.log('BOT walk tracks sample:',walkGltf.animations[0].tracks.slice(0,3).map(t=>t.name));
+        }
+        const walkClip=stripRootMotion(walkGltf.animations&&walkGltf.animations[0]||null);
+
+        loader.parse(modelBuf,"",(gltf)=>{
           model=gltf.scene;
           model.traverse(child=>{
             if(child.isMesh||child.isSkinnedMesh){
@@ -7540,16 +7549,14 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
           scene.add(model);
           mixer=new THREE.AnimationMixer(model);
 
-          // Idle: anim 0 del modelo original
           actIdle=mixer.clipAction(gltf.animations[0]);
           actIdle.setLoop(THREE.LoopRepeat);
 
-          // Walk: del bot_walk.glb de Blender
           if(walkClip){
             actWalk=mixer.clipAction(walkClip);
             actWalk.setLoop(THREE.LoopRepeat);
             actWalk.play();
-            console.log("BOT walk playing");
+            console.log('BOT walk action playing');
           } else {
             actIdle.play();
             wm=false;
@@ -7558,24 +7565,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
           ready=true;
           animate();
         },e=>console.warn("BOT model:",e));
+      },e=>console.warn("BOT walk error:",e));
 
-      },e=>{
-        console.warn("BOT walk parse error:",e);
-        // Fallback: solo idle.glb
-        new THREE.GLTFLoader().parse(modelBuf,"",(gltf)=>{
-          model=gltf.scene;
-          model.scale.setScalar(S);
-          model.position.set(cx,FY,0);
-          scene.add(model);
-          mixer=new THREE.AnimationMixer(model);
-          actIdle=mixer.clipAction(gltf.animations[0]);
-          actIdle.setLoop(THREE.LoopRepeat);
-          actIdle.play();
-          wm=false; ready=true; animate();
-        });
-      });
-
-    }).catch(e=>console.warn("BOT fetch:",e));
+    }).catch(e=>console.warn("BOT:",e));
 
     function animate(){
       aid=requestAnimationFrame(animate);
@@ -7626,7 +7618,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       else{ clock=new THREE.Clock(); animate(); }
     });
     window.FORJA_BOT={
-      trigger(m){ if(actWalk){ wm=true; st=6; newTarget(); actWalk.reset().play(); if(actIdle) actIdle.crossFadeTo(actWalk,0.4,false); } },
+      trigger(){ if(actWalk){ wm=true; st=6; newTarget(); actWalk.reset().play(); if(actIdle) actIdle.crossFadeTo(actWalk,0.4,false); } },
       refreshMood(){},
     };
   }
