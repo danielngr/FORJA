@@ -7529,12 +7529,12 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
         if(instant){
           if(model) scene.remove(model);
-          model=newModel; mixer=newMixer; canWalk=walk; ready=true;
+          model=newModel; mixer=newMixer; canWalk=walk; currentAnim=name; ready=true; currentAnim=name;
         } else {
           // Fade out viejo, fade in nuevo
           let t=0;
           const oldModel=model, oldMixer=mixer;
-          model=newModel; mixer=newMixer; canWalk=walk;
+          model=newModel; mixer=newMixer; canWalk=walk; currentAnim=name;
           const doFade=()=>{
             t+=0.02;
             if(oldModel) setOpacity(oldModel, 1-t);
@@ -7606,9 +7606,13 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       }
       model.position.x=cx;
     } else {
-      cx+=(0-cx)*0.05;
       model.position.x=cx;
-      model.rotation.y=Math.PI/2;
+      // Acostado horizontal — rotar para verse de lado
+      if(currentAnim==="laying"||currentAnim==="falling"){
+        model.rotation.y=0; // pies/cabeza de lado a lado
+      } else {
+        model.rotation.y=Math.PI/2;
+      }
     }
 
     cam.lookAt(0,CAM_Y,0);
