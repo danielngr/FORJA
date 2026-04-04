@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+<body style="background:#111;color:#fff;font-family:monospace;padding:10px">
+<h3>GLB Load Test</h3>
+<div id="log"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script>
+const BASE = 'https://danielngr.github.io/FORJA/';
+const files = ['idle.glb','bot_walk.glb','bot_idle.glb','model_with_walk.glb'];
+const log = document.getElementById('log');
+
+function addLog(msg, color='#fff') {
+  const d = document.createElement('div');
+  d.style.color = color;
+  d.textContent = msg;
+  log.appendChild(d);
+}
+
+async function testFile(name) {
+  addLog('Testing: ' + name + '...');
+  try {
+    const r = await fetch(BASE + name);
+    if(!r.ok) { addLog('  404 or error: ' + r.status, '#f44'); return; }
+    const buf = await r.arrayBuffer();
+    addLog('  Fetched: ' + Math.round(buf.byteLength/1024) + 'KB', '#aaa');
+    
+    await new Promise((res, rej) => {
+      new THREE.GLTFLoader().parse(buf, '', (gltf) => {
+        addLog('  OK! Anims: ' + gltf.animations.map(a=>a.name+'('+Math.round(a.duration)+'s)').join(', '), '#4f4');
+        res();
+      }, (e) => {
+        addLog('  Parse error: ' + e, '#f44');
+        rej(e);
+      });
+    });
+  } catch(e) {
+    addLog('  Error: ' + e.message, '#f44');
+  }
+}
+
+(async() => {
+  for(const f of files) await testFile(f);
+  addLog('Done!', '#ff0');
+})();
+</script>
+</body>
+</html>
