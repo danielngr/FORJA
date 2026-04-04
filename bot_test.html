@@ -29,9 +29,9 @@ button {
 <div id="banner"><canvas id="c"></canvas></div>
  
 <div id="grid">
-  <button onclick="adj('scale',-500)">Scale -500</button>
-  <button onclick="adj('scale',0)" style="background:#333">Scale: <span id='sv'>3000</span></button>
-  <button onclick="adj('scale',500)">Scale +500</button>
+  <button onclick="adj('scale',-50)">Scale -50</button>
+  <button onclick="adj('scale',0)" style="background:#333">Scale: <span id='sv'>100</span></button>
+  <button onclick="adj('scale',50)">Scale +50</button>
  
   <button onclick="adj('floor',-0.1)">Floor ↓</button>
   <button onclick="adj('floor',0)" style="background:#333">Floor: <span id='fv'>0</span></button>
@@ -62,7 +62,7 @@ button {
 const MODEL='https://danielngr.github.io/FORJA/idle.glb';
 const WALK_URL='https://danielngr.github.io/FORJA/animations/bot_walk.glb';
  
-let V={scale:3000,floor:-1.5,camY:0,fov:60,camZ:6};
+let V={scale:100,floor:-1.5,camY:0,fov:60,camZ:6};
 let renderer,scene,camera,model,mixer,clock,walkAction,idleAction;
 let walkX=0, walkDir=1, walking=false;
  
@@ -180,3 +180,4 @@ window.addEventListener('load',setup);
 </script>
 </body>
 </html>
+ 
