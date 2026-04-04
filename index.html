@@ -7489,10 +7489,36 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     ren.setClearColor(0,0);
     scene=new THREE.Scene();
     cam=new THREE.PerspectiveCamera(FOV,W/H,0.1,200);
-    cam.position.set(0,CAM_Y,CZ); cam.lookAt(0,CAM_Y,0);
+    cam.position.set(0,CAM_Y+2,CZ); cam.lookAt(0,CAM_Y-1,0);
     scene.add(new THREE.AmbientLight(0xffffff,2));
     const dl=new THREE.DirectionalLight(0xffffff,1.5); dl.position.set(2,5,4); scene.add(dl);
     clock=new THREE.Clock();
+
+    // Piso 3D con grid perspectiva
+    const floorGeo=new THREE.PlaneGeometry(40,40,20,20);
+    const floorMat=new THREE.MeshBasicMaterial({
+      color:0x1a2040, wireframe:true, transparent:true, opacity:0.18
+    });
+    const floor=new THREE.Mesh(floorGeo,floorMat);
+    floor.rotation.x=-Math.PI/2;
+    floor.position.y=FY+0.05;
+    scene.add(floor);
+
+    // Línea de horizonte sutil
+    const horizGeo=new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(-20,FY+0.05,0),
+      new THREE.Vector3(20,FY+0.05,0)
+    ]);
+    const horizMat=new THREE.LineBasicMaterial({color:0x2a3560,transparent:true,opacity:0.4});
+    scene.add(new THREE.Line(horizGeo,horizMat));
+
+    // Glow del suelo (disco plano brillante bajo el robot)
+    const glowGeo=new THREE.CircleGeometry(2.5,32);
+    const glowMat=new THREE.MeshBasicMaterial({color:0x8878a0,transparent:true,opacity:0.08,side:THREE.DoubleSide});
+    const glowDisk=new THREE.Mesh(glowGeo,glowMat);
+    glowDisk.rotation.x=-Math.PI/2;
+    glowDisk.position.y=FY+0.06;
+    scene.add(glowDisk);
 
     // Elegir animación según mood
     const mood=getMood();
