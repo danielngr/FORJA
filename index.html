@@ -7437,15 +7437,15 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 <script>
 (function initBot(){
   const BASE="https://danielngr.github.io/FORJA/";
-  // model_with_walk.glb = idle.glb mesh + walk animation from Walking.fbx
-  const MODEL_URL=BASE+"model_with_walk.glb";
+  const MODEL_URL=BASE+"idle.glb";
+  const WALK_URL=BASE+"bot_walk.glb";
 
   const S=50, FY=-5.8, FOV=75, CZ=6, CAM_Y=-4.4, MX=5;
 
   function getMood(){
     try{
-      const hist=JSON.parse(localStorage.getItem("fv8_hist")||"[]");
       const done=JSON.parse(localStorage.getItem("fv8_done")||"{}");
+      const hist=JSON.parse(localStorage.getItem("fv8_hist")||"[]");
       const today=new Date().toISOString().slice(0,10);
       const DAY=86400000, days=new Set();
       Object.keys(done).forEach(k=>{const p=k.split("-");if(p.length>=3)days.add(p.slice(0,3).join("-"));});
@@ -7463,12 +7463,21 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
   }
 
   let ren,scene,cam,mixer,clock,model,aid;
-  let ready=false, actIdle=null, actWalk=null, curAct=null;
-  let cx=2, tx=-2, facing=0, wm=true, st=1;
+  let ready=false, actIdle=null, actWalk=null;
+  let cx=2, tx=-2, facing=0, wm=true, st=2;
 
   function newTarget(){
     if(cx>=0) tx=-MX*(0.3+Math.random()*0.6);
     else       tx= MX*(0.3+Math.random()*0.7);
+  }
+
+  function stripRootMotion(clip){
+    if(!clip) return null;
+    clip.tracks=clip.tracks.filter(t=>{
+      const n=t.name.toLowerCase();
+      return !(n.includes('hips')&&(n.includes('.position')||n.includes('.translation')));
+    });
+    return clip;
   }
 
   function tryInit(){
@@ -7491,10 +7500,19 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     clock=new THREE.Clock();
     newTarget();
 
-    fetch(MODEL_URL)
-      .then(r=>r.arrayBuffer())
-      .then(buf=>{
-        new THREE.GLTFLoader().parse(buf,"",(gltf)=>{
+    // Cargar modelo e animación walk en paralelo
+    Promise.all([
+      fetch(MODEL_URL).then(r=>r.arrayBuffer()),
+      fetch(WALK_URL).then(r=>r.arrayBuffer())
+    ]).then(([modelBuf, walkBuf])=>{
+
+      // Parsear walk primero para obtener el clip
+      new THREE.GLTFLoader().parse(walkBuf,"",(walkGltf)=>{
+        const walkClip=stripRootMotion(walkGltf.animations&&walkGltf.animations[0]||null);
+        console.log("BOT walk loaded, tracks:", walkClip?walkClip.tracks.length:0);
+
+        // Parsear modelo
+        new THREE.GLTFLoader().parse(modelBuf,"",(gltf)=>{
           model=gltf.scene;
           model.traverse(child=>{
             if(child.isMesh||child.isSkinnedMesh){
@@ -7522,27 +7540,42 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
           scene.add(model);
           mixer=new THREE.AnimationMixer(model);
 
-          // Anims: 0=idle_a, 1=idle_b, 2=walk
-          if(gltf.animations.length>=3){
-            actIdle=mixer.clipAction(gltf.animations[0]);
-            actWalk=mixer.clipAction(gltf.animations[2]);
-            actIdle.setLoop(THREE.LoopRepeat);
+          // Idle: anim 0 del modelo original
+          actIdle=mixer.clipAction(gltf.animations[0]);
+          actIdle.setLoop(THREE.LoopRepeat);
+
+          // Walk: del bot_walk.glb de Blender
+          if(walkClip){
+            actWalk=mixer.clipAction(walkClip);
             actWalk.setLoop(THREE.LoopRepeat);
             actWalk.play();
-            curAct=actWalk;
+            console.log("BOT walk playing");
           } else {
-            // fallback: use whatever is available
-            actIdle=mixer.clipAction(gltf.animations[0]);
-            actIdle.setLoop(THREE.LoopRepeat);
             actIdle.play();
-            curAct=actIdle;
             wm=false;
           }
 
           ready=true;
           animate();
-        },e=>console.warn("BOT parse:",e));
-      }).catch(e=>console.warn("BOT fetch:",e));
+        },e=>console.warn("BOT model:",e));
+
+      },e=>{
+        console.warn("BOT walk parse error:",e);
+        // Fallback: solo idle.glb
+        new THREE.GLTFLoader().parse(modelBuf,"",(gltf)=>{
+          model=gltf.scene;
+          model.scale.setScalar(S);
+          model.position.set(cx,FY,0);
+          scene.add(model);
+          mixer=new THREE.AnimationMixer(model);
+          actIdle=mixer.clipAction(gltf.animations[0]);
+          actIdle.setLoop(THREE.LoopRepeat);
+          actIdle.play();
+          wm=false; ready=true; animate();
+        });
+      });
+
+    }).catch(e=>console.warn("BOT fetch:",e));
 
     function animate(){
       aid=requestAnimationFrame(animate);
@@ -7552,22 +7585,16 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
       st-=dt;
       if(st<=0){
-        if(wm){
-          // switch to idle
+        if(wm&&actIdle&&actWalk){
           wm=false; st=3; tx=cx;
-          if(actIdle&&actWalk){
-            actIdle.reset().play();
-            actWalk.crossFadeTo(actIdle,0.4,false);
-            curAct=actIdle;
-          }
-        } else {
-          // switch to walk
+          actIdle.reset().play();
+          actWalk.crossFadeTo(actIdle,0.4,false);
+        } else if(!wm&&actWalk){
           wm=true; st=6; newTarget();
-          if(actIdle&&actWalk){
-            actWalk.reset().play();
-            actIdle.crossFadeTo(actWalk,0.4,false);
-            curAct=actWalk;
-          }
+          actWalk.reset().play();
+          if(actIdle) actIdle.crossFadeTo(actWalk,0.4,false);
+        } else {
+          st=3;
         }
       }
 
@@ -7599,7 +7626,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       else{ clock=new THREE.Clock(); animate(); }
     });
     window.FORJA_BOT={
-      trigger(m){ if(m==="victory"&&actWalk){ wm=true; st=6; newTarget(); actWalk.reset().play(); if(curAct) curAct.crossFadeTo(actWalk,0.4,false); curAct=actWalk; } },
+      trigger(m){ if(actWalk){ wm=true; st=6; newTarget(); actWalk.reset().play(); if(actIdle) actIdle.crossFadeTo(actWalk,0.4,false); } },
       refreshMood(){},
     };
   }
