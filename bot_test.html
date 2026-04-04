@@ -66,6 +66,8 @@ button {
   <button onclick="adjFloor(0.05)">Floor ↑</button>
   <button onclick="adjFOV(-5)">FOV -</button>
   <button onclick="adjFOV(5)">FOV +</button>
+  <button onclick="adjX(-0.3)">X ←</button>
+  <button onclick="adjX(0.3)">X →</button>
 </div>
  
 <div id="info">Cargando robot...</div>
@@ -77,6 +79,7 @@ const MODEL = 'https://danielngr.github.io/FORJA/idle.glb';
  
 let renderer, scene, camera, model, mixer, clock;
 let S = 3500;   // scale — empieza aquí
+let POS_X = 0;  // posición horizontal
 let FOV = 30;
 let CAM_Z = 6;
 let FLOOR_Y = -1.0;  // ajustable
@@ -150,7 +153,7 @@ function update() {
   camera.updateProjectionMatrix();
  
   model.scale.setScalar(S);
-  model.position.set(0, FLOOR_Y, 0);
+  model.position.set(POS_X, FLOOR_Y, 0);
  
   // Medir bounding box real
   const box = new THREE.Box3().setFromObject(model);
@@ -160,7 +163,7 @@ function update() {
   info(
     `<b>scale=${S} | FOV=${FOV} | camZ=${CAM_Z}</b><br>` +
     `robot altura: ${sz.y.toFixed(3)}u = <b>${pct.toFixed(0)}% del banner</b><br>` +
-    `FLOOR_Y: ${FLOOR_Y.toFixed(3)} | halfH: ${halfH.toFixed(3)}<br>` +
+    `FLOOR_Y: ${FLOOR_Y.toFixed(3)} | POS_X: ${POS_X.toFixed(2)} | halfH: ${halfH.toFixed(3)}<br>` +
     `Pies Y: ${box.min.y.toFixed(3)} | Cabeza Y: ${box.max.y.toFixed(3)}<br>` +
     `Borde inf frustum: ${(-halfH).toFixed(3)} | Borde sup: ${halfH.toFixed(3)}<br>` +
     `<br>→ Ajusta Scale hasta que llene ~70% del banner<br>` +
@@ -175,6 +178,7 @@ function animate() {
 }
  
 function adj(d)      { S = Math.max(100, S + d); update(); }
+function adjX(d)     { POS_X += d; update(); }
 function adjFloor(d) { FLOOR_Y += d; update(); }
 function adjFOV(d)   { FOV = Math.max(5, Math.min(120, FOV + d)); update(); }
  
