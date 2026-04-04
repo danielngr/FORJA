@@ -4048,7 +4048,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   );}
   return(<>
       <div style={{background:"rgba(8,10,14,0.92)",borderBottom:"1px solid rgba(255,255,255,0.06)",padding:"14px 18px 10px",minHeight:200,overflow:"visible"}}>
-        <canvas id="forja-bot-canvas" style={{position:"absolute",top:0,left:0,width:"100%",height:"200px",pointerEvents:"none",zIndex:5}}></canvas>
+        <canvas id="forja-bot-canvas" onClick={()=>setShowBotChat(true)} style={{position:"absolute",top:0,left:0,width:"100%",height:"200px",zIndex:5,cursor:"pointer"}}></canvas>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
           <div>
             {day?.isExpress&&(
@@ -4137,7 +4137,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
             </div>
           );
         })()}
-        <div style={{display:"flex",gap:4}}>
+        <div style={{display:"flex",gap:0,position:"absolute",bottom:0,left:0,right:0,zIndex:10}}>
           {(()=>{
             const isCeleb=profile?.mode==="celebrity";
             const celebId=profile?.celebrity;
@@ -4161,35 +4161,29 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
               const hasDone=dd>0;
               return(
                 <button key={i} data-tour={i===todayDayIdx?"cal-day":undefined} onClick={()=>{setSel(i);setTabR("train");setAddEx(false);setAddF(false);setInWorkout(false);}}
-                  style={{flex:1,padding:"10px 0 8px",borderRadius:10,
-                    border:`1px solid ${isSel?(cc||C.tx):"rgba(255,255,255,0.06)"}`,
-                    background:isSel?"rgba(255,255,255,0.07)":"transparent",
-                    cursor:"pointer",position:"relative",transition:"all .15s",
-                    opacity:isFuture&&!isSel?0.45:isPastWeek&&!hasDone&&!isSel&&!isRest?0.5:1}}>
-                  {isToday&&!isSel&&<div style={{position:"absolute",top:3,left:"50%",
-                    transform:"translateX(-50%)",width:3,height:3,borderRadius:"50%",
-                    background:cc||C.tx,opacity:0.9}}/>}
-                  <div style={{fontSize:10,fontWeight:700,
-                    color:isSel?(cc||C.white):isToday?C.tx:C.tx3,
-                    letterSpacing:0.5,lineHeight:1,fontWeight:isSel?800:600}}>{DN[lang][i]}</div>
-                  <div style={{fontSize:9,fontWeight:600,color:isSel?"rgba(255,255,255,.8)":isToday?"#D4D9E8":"#9aa3b8",
-                    marginTop:2,letterSpacing:0,fontFamily:mono}}>
+                  style={{flex:1,border:"none",background:"transparent",cursor:"pointer",
+                    display:"flex",flexDirection:"column",alignItems:"center",padding:"0 0 10px",
+                    opacity:isFuture&&!isSel?0.2:isPastWeek&&!hasDone&&!isSel&&!isRest?0.3:1,
+                    transition:"opacity .15s",position:"relative"}}>
+                  <div style={{width:"100%",height:isSel?2:1,marginBottom:8,transition:"all .2s",
+                    background:isSel?(cc||"rgba(255,255,255,0.8)"):cp?"#3fcf8e":isToday?(cc||"rgba(246,173,85,0.5)"):"rgba(255,255,255,0.05)",
+                    boxShadow:cp?"0 0 6px rgba(63,207,142,0.5)":isToday?"0 0 6px rgba(246,173,85,0.4)":"none"}}/>
+                  {(cp||isToday)&&<div style={{width:3,height:3,borderRadius:"50%",marginBottom:4,
+                    background:cp?"#3fcf8e":(cc||"#f6ad55"),
+                    boxShadow:cp?"0 0 5px rgba(63,207,142,0.7)":"0 0 5px rgba(246,173,85,0.6)"}}/>}
+                  <div style={{fontSize:8,fontFamily:mono,letterSpacing:1.5,lineHeight:1,fontWeight:isSel||isToday?700:400,
+                    color:isSel?(cc||"#fff"):isToday?(cc||"rgba(255,255,255,0.75)"):"rgba(255,255,255,0.25)"}}>
+                    {DN[lang][i]}
+                  </div>
+                  <div style={{fontSize:13,fontFamily:mono,fontWeight:800,marginTop:2,lineHeight:1,
+                    color:isSel?"#fff":isToday?"rgba(255,255,255,0.65)":cp?"rgba(255,255,255,0.4)":"rgba(255,255,255,0.15)"}}>
                     {dayDate.getDate()}
                   </div>
-                  {d&&isCeleb&&cm&&!isRest&&<div style={{fontSize:6,fontFamily:mono,marginTop:2,
-                    letterSpacing:.5,color:isSel?"rgba(255,255,255,.7)":cc,
-                    fontWeight:800,opacity:isSel?0.8:.65}}>{cm.l}</div>}
-                  {d&&!isCeleb&&<div style={{fontSize:7,fontFamily:mono,marginTop:3,
-                    opacity:isSel?0.6:0.4,letterSpacing:0.5,padding:"0 2px",
-                    overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{d.l}</div>}
-                  {!d&&<div style={{fontSize:7,fontFamily:mono,marginTop:3,
-                    opacity:0.6,letterSpacing:0.5}}>{(L[lang]||L.en).rest}</div>}
-                  {cp&&!isSel&&<div style={{position:"absolute",top:4,right:4,
-                    width:4,height:4,borderRadius:"50%",background:C.green}}/>}
-                  {hasDone&&!cp&&!isSel&&isPastWeek&&<div style={{position:"absolute",top:4,right:4,
-                    width:4,height:4,borderRadius:"50%",background:C.blue,opacity:.6}}/>}
-                  {isSel&&<div style={{position:"absolute",bottom:0,left:"25%",right:"25%",
-                    height:2,background:cc||C.white,borderRadius:2}}/>}
+                  <div style={{fontSize:6,fontFamily:mono,marginTop:3,letterSpacing:0.5,maxWidth:"90%",
+                    overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",padding:"0 2px",textAlign:"center",
+                    color:isSel?(cc||"rgba(255,255,255,0.4)"):isToday?"rgba(255,255,255,0.25)":"rgba(255,255,255,0.08)"}}>
+                    {d?(isCeleb&&cm?cm.l:d.l):(L[lang]||L.en).rest}
+                  </div>
                 </button>
               );
             });
