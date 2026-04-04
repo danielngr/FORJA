@@ -7440,27 +7440,42 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
   const CDN="https://pub-28277a6ce79d49479afd0cb1bba27b44.r2.dev/bot-anims/";
   const FY=-8.5, FOV=35, CZ=14, CAM_Y=-4.4;
 
-  const SEQUENCES=[
-    {anims:["walking_skin","jogging"], walk:true},
-    {anims:["jogging","baseball"],     walk:true},
-    {anims:["walking_skin","capoeira"],walk:false},
-    {anims:["plank"],                  walk:false},
-    {anims:["excited","capoeira"],     walk:false},
-    {anims:["fishing"],                walk:false},
-    {anims:["cowmilking"],             walk:false},
-    {anims:["rifleaiming"],            walk:false},
-    {anims:["climb"],                  walk:false},
-    {anims:["laying"],                 walk:false},
-    {anims:["falling"],                walk:false},
-    {anims:["flyingpunch","capoeira"], walk:false},
-  ];
+  // Una animación por estado — elegida al abrir la app
+  const MOOD_ANIMS={
+    victory:  [{a:"capoeira",  walk:false}, {a:"jogging",      walk:true}],
+    active:   [{a:"jogging",   walk:true},  {a:"walking_skin", walk:true}],
+    idle:     [{a:"fishing",   walk:false}, {a:"cowmilking",   walk:false}, {a:"rifleaiming", walk:false}],
+    low:      [{a:"plank",     walk:false}, {a:"laying",       walk:false}],
+    dead:     [{a:"laying",    walk:false}],
+    normal:   [{a:"walking_skin", walk:true}, {a:"jogging",   walk:true},  {a:"climb", walk:false}],
+  };
+
+  function getMood(){
+    try{
+      const done=JSON.parse(localStorage.getItem("fv8_done")||"{}");
+      const hist=JSON.parse(localStorage.getItem("fv8_hist")||"[]");
+      const today=new Date().toISOString().slice(0,10);
+      const DAY=86400000, days=new Set();
+      Object.keys(done).forEach(k=>{const p=k.split("-");if(p.length>=3)days.add(p.slice(0,3).join("-"));});
+      hist.forEach(h=>{if(h.date)days.add(h.date.slice(0,10));});
+      const sorted=[...days].sort().reverse();
+      if(!sorted.length) return "normal";
+      const daysSince=Math.floor((Date.now()-new Date(sorted[0]))/DAY);
+      if(sorted[0]===today) return "victory";
+      if(daysSince>=3) return "dead";
+      if(daysSince>=2) return "low";
+      let streak=0,prev=null;
+      for(const d of sorted){const dt=new Date(d);if(!prev){streak=1;prev=dt;continue;}if(Math.floor((prev-dt)/DAY)<=1){streak++;prev=dt;}else break;}
+      if(streak>=3) return "active";
+      return "idle";
+    }catch(e){}
+    return "normal";
+  }
 
   let ren, scene, cam, clock, aid;
-  let model=null, mixer=null, currentAction=null;
+  let model=null, mixer=null;
   let ready=false;
-  let cx=-4, canWalk=true;
-  let glbCache={};
-  let opacity=1, fading=false, pendingLoad=null;
+  let cx=-4, canWalk=true, currentAnim='';
 
   function tryInit(){
     const canvas=document.getElementById("forja-bot-canvas");
@@ -7479,108 +7494,44 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     const dl=new THREE.DirectionalLight(0xffffff,1.5); dl.position.set(2,5,4); scene.add(dl);
     clock=new THREE.Clock();
 
-    loadAndSwap("walking_skin", true, true);
-    startSequence();
-    animate();
-  }
+    // Elegir animación según mood
+    const mood=getMood();
+    const opts=MOOD_ANIMS[mood]||MOOD_ANIMS.normal;
+    const chosen=opts[Math.floor(Math.random()*opts.length)];
+    canWalk=chosen.walk;
+    currentAnim=chosen.a;
+    console.log('BOT mood=',mood,'anim=',chosen.a);
 
-  function applyMaterials(m, op){
-    const rm=[];
-    m.traverse(c=>{if(c.name==="Cube"||c.name==="default")rm.push(c);});
-    rm.forEach(c=>c.parent&&c.parent.remove(c));
-    m.traverse(c=>{
-      if(!(c.isMesh||c.isSkinnedMesh)) return;
-      const n=c.name||"";
-      if(n==="Mascara"||n==="polySurface3"){if(c.material){c.material.transparent=true;c.material.opacity=op;c.material.skinning=true;} return;}
-      const col=n==="Cabeza"?0xeae6e0:n==="Cuerpo"||n==="Pierna"||n==="Pierna1"?0x3a3e4a:n==="Brazo"||n==="Brazo1"||n==="Dedos1"||n==="Dedos_Fin"?0xe4e0da:0x888898;
-      const mat=new THREE.MeshStandardMaterial({color:col,roughness:0.5,metalness:0.1,transparent:true,opacity:op});
-      if(c.isSkinnedMesh) mat.skinning=true;
-      c.material=mat;
-    });
-  }
-
-  function setOpacity(m, op){
-    m.traverse(c=>{
-      if((c.isMesh||c.isSkinnedMesh)&&c.material){
-        if(Array.isArray(c.material)) c.material.forEach(mat=>{mat.opacity=op;});
-        else c.material.opacity=op;
-      }
-    });
-  }
-
-  function loadAndSwap(name, walk, instant){
-    const doSwap=(buf)=>{
+    fetch(CDN+chosen.a+".glb").then(r=>r.arrayBuffer()).then(buf=>{
       new THREE.GLTFLoader().parse(buf, CDN, (gltf)=>{
-        const newModel=gltf.scene;
-        applyMaterials(newModel, instant?1:0);
-        newModel.scale.setScalar(36);
-        newModel.rotation.x=-0.15;
-        newModel.position.set(walk?cx:0, FY, 0);
-        scene.add(newModel);
-
-        const newMixer=new THREE.AnimationMixer(newModel);
-        const clip=gltf.animations[0];
-        if(clip){
-          const c=clip.clone();
-          if(walk) c.tracks=c.tracks.filter(t=>!(t.name.toLowerCase().includes('hip')&&t.name.toLowerCase().includes('position')));
-          const a=newMixer.clipAction(c);
+        model=gltf.scene;
+        const rm=[];
+        model.traverse(c=>{if(c.name==="Cube"||c.name==="default")rm.push(c);});
+        rm.forEach(c=>c.parent&&c.parent.remove(c));
+        model.traverse(c=>{
+          if(!(c.isMesh||c.isSkinnedMesh)) return;
+          const n=c.name||"";
+          if(n==="Mascara"||n==="polySurface3"){if(c.material)c.material.skinning=true; return;}
+          const col=n==="Cabeza"?0xeae6e0:n==="Cuerpo"||n==="Pierna"||n==="Pierna1"?0x3a3e4a:n==="Brazo"||n==="Brazo1"||n==="Dedos1"||n==="Dedos_Fin"?0xe4e0da:0x888898;
+          const mat=new THREE.MeshStandardMaterial({color:col,roughness:0.5,metalness:0.1});
+          if(c.isSkinnedMesh) mat.skinning=true;
+          c.material=mat;
+        });
+        model.scale.setScalar(36);
+        model.rotation.x=-0.15;
+        model.position.set(canWalk?cx:0, FY, 0);
+        scene.add(model);
+        mixer=new THREE.AnimationMixer(model);
+        if(gltf.animations[0]){
+          const clip=gltf.animations[0].clone();
+          if(canWalk) clip.tracks=clip.tracks.filter(t=>!(t.name.toLowerCase().includes('hip')&&t.name.toLowerCase().includes('position')));
+          const a=mixer.clipAction(clip);
           a.setLoop(THREE.LoopRepeat); a.play();
         }
-
-        if(instant){
-          if(model) scene.remove(model);
-          model=newModel; mixer=newMixer; canWalk=walk; currentAnim=name; ready=true; currentAnim=name;
-        } else {
-          // Fade out viejo, fade in nuevo
-          let t=0;
-          const oldModel=model, oldMixer=mixer;
-          model=newModel; mixer=newMixer; canWalk=walk; currentAnim=name;
-          const doFade=()=>{
-            t+=0.08;
-            if(oldModel) setOpacity(oldModel, 1-t);
-            setOpacity(newModel, t);
-            if(t<1) requestAnimationFrame(doFade);
-            else{ if(oldModel) scene.remove(oldModel); setOpacity(newModel,1); }
-          };
-          doFade();
-        }
+        ready=true;
+        animate();
       }, e=>console.error('BOT parse:',e));
-    };
-
-    if(glbCache[name]) doSwap(glbCache[name]);
-    else fetch(CDN+name+".glb").then(r=>r.arrayBuffer()).then(buf=>{glbCache[name]=buf; doSwap(buf);}).catch(e=>console.error('BOT fetch:',e));
-  }
-
-  // Precargar en background
-  function preload(){
-    ["jogging","plank","excited","capoeira","baseball","fishing","cowmilking","rifleaiming","climb","laying","falling","flyingpunch"]
-    .forEach(n=>fetch(CDN+n+".glb").then(r=>r.arrayBuffer()).then(buf=>{glbCache[n]=buf;}).catch(()=>{}));
-  }
-
-  let _seqIdx=0, _animIdx=0;
-  function startSequence(){
-    setTimeout(preload, 2000);
-    _seqIdx=Math.floor(Math.random()*SEQUENCES.length);
-    _animIdx=0;
-    scheduleNext(20000);
-  }
-
-  function scheduleNext(delay){
-    setTimeout(()=>{
-      const seq=SEQUENCES[_seqIdx];
-      const name=seq.anims[_animIdx];
-      const walk=seq.walk && _animIdx===0;
-      loadAndSwap(name, walk, false);
-      console.log('BOT →', name);
-      _animIdx++;
-      if(_animIdx>=seq.anims.length){
-        _animIdx=0;
-        _seqIdx=(_seqIdx+1)%SEQUENCES.length;
-        scheduleNext(15000);
-      } else {
-        scheduleNext(8000);
-      }
-    }, delay);
+    }).catch(e=>console.error('BOT fetch:',e));
   }
 
   function animate(){
@@ -7606,13 +7557,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       }
       model.position.x=cx;
     } else {
-      model.position.x=cx;
-      // Acostado horizontal — rotar para verse de lado
-      if(currentAnim==="laying"||currentAnim==="falling"){
-        model.rotation.y=0; // pies/cabeza de lado a lado
-      } else {
-        model.rotation.y=Math.PI/2;
-      }
+      model.position.x=0;
+      model.rotation.y=(currentAnim==="laying"||currentAnim==="falling")?0:Math.PI/2;
     }
 
     cam.lookAt(0,CAM_Y,0);
@@ -7621,7 +7567,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
   document.addEventListener("visibilitychange",()=>{
     if(document.hidden) cancelAnimationFrame(aid);
-    else{ clock=new THREE.Clock(); animate(); }
+    else{ clock=new THREE.Clock(); if(ready) animate(); }
   });
   window.addEventListener("resize",()=>{
     const canvas=document.getElementById("forja-bot-canvas");
