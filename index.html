@@ -7510,10 +7510,12 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       },e=>console.error('BOT idle parse err:',e));
     }).catch(e=>console.error('BOT idle fetch err:',e));
 
+    let _dbgt=0;
     function animate(){
       aid=requestAnimationFrame(animate);
       if(!ready||!model) return;
       const dt=Math.min(clock.getDelta(),0.05);
+      _dbgt+=dt; if(_dbgt>2){_dbgt=0;console.log('BOT animate cx=',cx.toFixed(2),'wm=',wm,'st=',st.toFixed(1));}
       mixer&&mixer.update(dt);
       st-=dt;
       if(st<=0){ wm=!wm; st=wm?5:2.5; if(wm) newTarget(); }
