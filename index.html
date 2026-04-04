@@ -4193,12 +4193,24 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
       {showBotChat&&(
         <div style={{position:"fixed",inset:0,zIndex:9999,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}>
           <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.6)"}} onClick={()=>setShowBotChat(false)}/>
-          <div style={{position:"relative",background:"#0d0f16",borderRadius:"20px 20px 0 0",
-            border:"0.5px solid rgba(255,255,255,0.08)",height:"65vh",display:"flex",flexDirection:"column"}}>
+          <div style={{position:"relative",borderRadius:"28px 28px 0 0",
+            height:"65vh",display:"flex",flexDirection:"column",overflow:"hidden",
+            background:"rgba(18,20,30,0.55)",
+            backdropFilter:"blur(40px) saturate(180%)",
+            WebkitBackdropFilter:"blur(40px) saturate(180%)",
+            border:"0.5px solid rgba(255,255,255,0.18)",
+            borderBottom:"none",
+            boxShadow:"0 -20px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.12), inset 0 0 40px rgba(255,255,255,0.02)"}}>
+            {/* Glass inner highlight */}
+            <div style={{position:"absolute",top:0,left:0,right:0,height:1,
+              background:"linear-gradient(90deg,transparent,rgba(255,255,255,0.25),transparent)",
+              zIndex:0,borderRadius:"28px 28px 0 0"}}/>
             <div style={{display:"flex",justifyContent:"center",padding:"12px 0 0"}}>
               <div style={{width:36,height:3,borderRadius:2,background:"rgba(255,255,255,0.15)"}}/>
             </div>
-            <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 16px 8px",borderBottom:"0.5px solid rgba(255,255,255,0.06)"}}>
+            <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 16px 8px",
+              borderBottom:"0.5px solid rgba(255,255,255,0.08)",
+              background:"rgba(255,255,255,0.03)",position:"relative",zIndex:1}}>
               <div style={{width:32,height:32,borderRadius:"50%",background:"rgba(255,255,255,0.06)",
                 border:"0.5px solid rgba(255,255,255,0.1)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>
                 🤖
@@ -7420,8 +7432,10 @@ Responde en máximo 3 oraciones. Sin formato markdown. Sin asteriscos. Solo text
           <div key={i} style={{display:"flex",justifyContent:m.role==="user"?"flex-end":"flex-start"}}>
             <div style={{
               maxWidth:"80%",padding:"8px 12px",borderRadius:m.role==="user"?"14px 14px 2px 14px":"14px 14px 14px 2px",
-              background:m.role==="user"?"rgba(255,255,255,0.09)":"rgba(63,207,142,0.08)",
-              border:`0.5px solid ${m.role==="user"?"rgba(255,255,255,0.08)":"rgba(63,207,142,0.15)"}`,
+              background:m.role==="user"?"rgba(255,255,255,0.1)":"rgba(63,207,142,0.1)",
+              backdropFilter:"blur(10px)",WebkitBackdropFilter:"blur(10px)",
+              border:`0.5px solid ${m.role==="user"?"rgba(255,255,255,0.15)":"rgba(63,207,142,0.2)"}`,
+              boxShadow:m.role==="user"?"inset 0 1px 0 rgba(255,255,255,0.1)":"inset 0 1px 0 rgba(63,207,142,0.15)",
               fontSize:12,color:m.role==="user"?"rgba(255,255,255,0.85)":"rgba(255,255,255,0.9)",
               lineHeight:1.5,fontFamily:"system-ui,sans-serif"}}>
               {m.content}
@@ -7446,8 +7460,8 @@ Responde en máximo 3 oraciones. Sin formato markdown. Sin asteriscos. Solo text
                        :["How to improve my form?","How much rest do I need?","What should I eat?","Give me a motivation tip"])
             .map(q=>(
               <button key={q} onClick={()=>{setInput(q);setTimeout(()=>send(),10);}}
-                style={{padding:"5px 10px",borderRadius:20,border:"0.5px solid rgba(255,255,255,0.1)",
-                  background:"rgba(255,255,255,0.04)",color:"rgba(255,255,255,0.5)",
+                style={{padding:"5px 10px",borderRadius:20,border:"0.5px solid rgba(255,255,255,0.14)",
+                  background:"rgba(255,255,255,0.07)",backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)",color:"rgba(255,255,255,0.6)",
                   fontSize:9,fontFamily:mono,cursor:"pointer",letterSpacing:0.5}}>
                 {q}
               </button>
@@ -7456,11 +7470,17 @@ Responde en máximo 3 oraciones. Sin formato markdown. Sin asteriscos. Solo text
       )}
 
       {/* Input */}
-      <div style={{padding:"8px 12px 24px",borderTop:"0.5px solid rgba(255,255,255,0.06)",display:"flex",gap:8,alignItems:"center"}}>
+      <div style={{padding:"8px 12px 24px",
+        borderTop:"0.5px solid rgba(255,255,255,0.08)",
+        background:"rgba(255,255,255,0.02)",
+        display:"flex",gap:8,alignItems:"center"}}>
         <input ref={inputRef} value={input} onChange={e=>setInput(e.target.value)} onKeyDown={handleKey}
           placeholder={lang==="es"?"Pregúntame algo...":"Ask me anything..."}
-          style={{flex:1,background:"rgba(255,255,255,0.05)",border:"0.5px solid rgba(255,255,255,0.1)",
-            borderRadius:20,padding:"8px 14px",color:"rgba(255,255,255,0.9)",fontSize:12,
+          style={{flex:1,background:"rgba(255,255,255,0.07)",
+            backdropFilter:"blur(10px)",WebkitBackdropFilter:"blur(10px)",
+            border:"0.5px solid rgba(255,255,255,0.15)",
+            boxShadow:"inset 0 1px 0 rgba(255,255,255,0.08)",
+            borderRadius:24,padding:"9px 16px",color:"rgba(255,255,255,0.9)",fontSize:12,
             fontFamily:"system-ui,sans-serif",outline:"none"}}/>
         <button onClick={send} disabled={!input.trim()||loading}
           style={{width:34,height:34,borderRadius:"50%",background:input.trim()&&!loading?"#3fcf8e":"rgba(255,255,255,0.05)",
@@ -7665,7 +7685,7 @@ Responde en máximo 3 oraciones. Sin formato markdown. Sin asteriscos. Solo text
     // Piso 3D con grid perspectiva
     const floorGeo=new THREE.PlaneGeometry(40,40,20,20);
     const floorMat=new THREE.MeshBasicMaterial({
-      color:0x1a2040, wireframe:true, transparent:true, opacity:0.18
+      color:0x3a4f8a, wireframe:true, transparent:true, opacity:0.28
     });
     const floor=new THREE.Mesh(floorGeo,floorMat);
     floor.rotation.x=-Math.PI/2;
