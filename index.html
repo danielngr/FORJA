@@ -7497,17 +7497,45 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       new THREE.GLTFLoader().parse(buf,"",(gltf)=>{
         model=gltf.scene;
 
+        // Remover el Cube de Blender y el nodo default
+        const toRemove=[];
+        model.traverse(child=>{
+          if(child.name==="Cube"||child.name==="default") toRemove.push(child);
+        });
+        toRemove.forEach(c=>c.parent&&c.parent.remove(c));
+
+        // Aplicar materiales
+        model.traverse(child=>{
+          if(child.isMesh||child.isSkinnedMesh){
+            const n=child.name||"";
+            if(n==="Mascara"||n==="polySurface3"){
+              if(child.isSkinnedMesh&&child.material){
+                if(Array.isArray(child.material)) child.material.forEach(m=>m.skinning=true);
+                else child.material.skinning=true;
+              }
+              return;
+            }
+            let mat;
+            if(n==="Cabeza") mat=new THREE.MeshStandardMaterial({color:0xeae6e0,roughness:0.35,metalness:0.05});
+            else if(n==="Brazo"||n==="Brazo1"||n==="Dedos1"||n==="Dedos_Fin") mat=new THREE.MeshStandardMaterial({color:0xe4e0da,roughness:0.4});
+            else if(n==="Cuerpo"||n==="Pierna"||n==="Pierna1") mat=new THREE.MeshStandardMaterial({color:0x3a3e4a,roughness:0.6,metalness:0.2});
+            else if(n==="Cuello"||n==="pCube3") mat=new THREE.MeshStandardMaterial({color:0x666878,roughness:0.5,metalness:0.2});
+            else mat=new THREE.MeshStandardMaterial({color:0x888898,roughness:0.5,metalness:0.2});
+            if(child.isSkinnedMesh) mat.skinning=true;
+            child.material=mat;
+          }
+        });
+
         // Calcular escala automática basada en bounding box
         const box=new THREE.Box3().setFromObject(model);
         const size=box.getSize(new THREE.Vector3());
-        const targetH=1.5; // altura deseada en units
+        const targetH=1.5;
         const autoScale=targetH/size.y;
         model.scale.setScalar(autoScale);
 
         // Reposicionar al piso
         const box2=new THREE.Box3().setFromObject(model);
-        const minY=box2.min.y;
-        model.position.set(cx, FY-minY, 0);
+        model.position.set(cx, FY-box2.min.y, 0);
 
         scene.add(model);
         mixer=new THREE.AnimationMixer(model);
