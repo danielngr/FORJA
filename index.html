@@ -7504,6 +7504,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
         });
         toRemove.forEach(c=>c.parent&&c.parent.remove(c));
 
+        // Rotar modelo 90° en Y — Mixamo camina en Z, necesitamos X
+        model.rotation.y=Math.PI/2;
+
         // Aplicar materiales
         model.traverse(child=>{
           if(child.isMesh||child.isSkinnedMesh){
@@ -7529,8 +7532,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
         // Calcular escala automática basada en bounding box
         const box=new THREE.Box3().setFromObject(model);
         const size=box.getSize(new THREE.Vector3());
-        const targetH=1.5;
-        const autoScale=targetH/size.y;
+        const targetH=1.2; // más pequeño
+        const autoScale=targetH/Math.max(size.x,size.y,size.z);
         model.scale.setScalar(autoScale);
 
         // Reposicionar al piso
@@ -7582,7 +7585,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       }
 
       model.position.x=cx;
-      model.rotation.y=facing;
+      // Rotación base 90° + facing para dirección de caminata
+      model.rotation.y=Math.PI/2+facing;
       cam.position.x=cx;
       cam.lookAt(cx,CAM_Y,0);
       ren.render(scene,cam);
