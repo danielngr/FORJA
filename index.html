@@ -4148,10 +4148,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
 
       {showBotChat&&(
         <div style={{position:"fixed",inset:0,zIndex:9999,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}>
-          {/* Backdrop blur */}
           <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.3)",backdropFilter:"blur(4px)",WebkitBackdropFilter:"blur(4px)"}} onClick={()=>setShowBotChat(false)}/>
-
-          {/* Liquid Glass Sheet */}
           <div style={{position:"relative",borderRadius:"42px 42px 0 0",height:"78vh",
             display:"flex",flexDirection:"column",overflow:"hidden",
             background:"linear-gradient(180deg,rgba(255,255,255,0.13) 0%,rgba(255,255,255,0.06) 30%,rgba(255,255,255,0.04) 100%)",
@@ -4160,54 +4157,26 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
             borderTop:"1px solid rgba(255,255,255,0.55)",
             borderLeft:"1px solid rgba(255,255,255,0.2)",
             borderRight:"1px solid rgba(255,255,255,0.2)",
-            boxShadow:"0 -60px 120px rgba(0,0,0,0.65),inset 0 1px 0 rgba(255,255,255,0.5),inset 0 0 80px rgba(255,255,255,0.02)"}}>
-
-            {/* Glare superior */}
-            <div style={{position:"absolute",top:0,left:0,right:0,height:200,
-              background:"linear-gradient(160deg,rgba(255,255,255,0.17) 0%,rgba(255,255,255,0.05) 35%,transparent 65%)",
-              borderRadius:"42px 42px 0 0",pointerEvents:"none",zIndex:0}}/>
-            {/* Glare esquina */}
-            <div style={{position:"absolute",top:-60,left:-40,width:280,height:180,
-              background:"radial-gradient(ellipse,rgba(255,255,255,0.16) 0%,rgba(255,255,255,0.05) 40%,transparent 70%)",
-              transform:"rotate(-25deg)",filter:"blur(8px)",pointerEvents:"none",zIndex:0}}/>
-
-            {/* Handle */}
+            boxShadow:"0 -60px 120px rgba(0,0,0,0.65),inset 0 1px 0 rgba(255,255,255,0.5)"}}>
+            <div style={{position:"absolute",top:0,left:0,right:0,height:200,background:"linear-gradient(160deg,rgba(255,255,255,0.17) 0%,rgba(255,255,255,0.05) 35%,transparent 65%)",borderRadius:"42px 42px 0 0",pointerEvents:"none",zIndex:0}}/>
+            <div style={{position:"absolute",top:"-60px",left:"-40px",width:280,height:180,background:"radial-gradient(ellipse,rgba(255,255,255,0.16) 0%,rgba(255,255,255,0.05) 40%,transparent 70%)",transform:"rotate(-25deg)",filter:"blur(8px)",pointerEvents:"none",zIndex:0}}/>
             <div style={{display:"flex",justifyContent:"center",padding:"16px 0 4px",flexShrink:0,position:"relative",zIndex:2}}>
-              <div style={{width:44,height:5,borderRadius:3,background:"rgba(255,255,255,0.28)",boxShadow:"0 0 10px rgba(255,255,255,0.1)"}}/>
+              <div style={{width:44,height:5,borderRadius:3,background:"rgba(255,255,255,0.28)"}}/>
             </div>
-
-            {/* Header */}
             <div style={{display:"flex",alignItems:"center",gap:14,padding:"6px 22px 16px",flexShrink:0,position:"relative",zIndex:2}}>
-              {/* Avatar glass con robot 3D */}
               <div style={{position:"relative",flexShrink:0}}>
-                <div style={{width:52,height:52,borderRadius:"50%",overflow:"hidden",
-                  background:"rgba(255,255,255,0.1)",
-                  backdropFilter:"blur(20px) saturate(400%)",WebkitBackdropFilter:"blur(20px) saturate(400%)",
-                  border:"1px solid rgba(255,255,255,0.45)",
-                  boxShadow:"inset 0 1.5px 0 rgba(255,255,255,0.55),inset 0 -1px 0 rgba(0,0,0,0.2),0 6px 24px rgba(0,0,0,0.45)"}}>
-                  <canvas id="forja-bot-avatar" width="104" height="104" style={{width:"52px",height:"52px",display:"block"}}/>
+                <div style={{width:52,height:52,borderRadius:"50%",background:"rgba(255,255,255,0.1)",backdropFilter:"blur(20px) saturate(400%)",WebkitBackdropFilter:"blur(20px) saturate(400%)",border:"1px solid rgba(255,255,255,0.45)",boxShadow:"inset 0 1.5px 0 rgba(255,255,255,0.55),0 6px 24px rgba(0,0,0,0.45)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:26}}>
+                  &#129302;
                 </div>
-                <div style={{position:"absolute",bottom:2,right:2,width:13,height:13,borderRadius:"50%",
-                  background:"#3fcf8e",border:"2px solid rgba(6,7,10,0.7)",
-                  boxShadow:"0 0 12px rgba(63,207,142,1),0 0 24px rgba(63,207,142,0.4)"}}/>
+                <div style={{position:"absolute",bottom:2,right:2,width:13,height:13,borderRadius:"50%",background:"#3fcf8e",border:"2px solid rgba(6,7,10,0.7)",boxShadow:"0 0 12px rgba(63,207,142,1),0 0 24px rgba(63,207,142,0.4)"}}/>
               </div>
               <div style={{flex:1}}>
-                <div style={{fontSize:14,fontFamily:mono,fontWeight:700,color:"rgba(255,255,255,0.97)",letterSpacing:"2.5px",textShadow:"0 1px 12px rgba(255,255,255,0.2)"}}>FORJA BOT</div>
+                <div style={{fontSize:14,fontFamily:mono,fontWeight:700,color:"rgba(255,255,255,0.97)",letterSpacing:"2.5px"}}>FORJA BOT</div>
                 <div style={{fontSize:9,color:"rgba(255,255,255,0.38)",letterSpacing:"1.2px",fontFamily:mono,marginTop:4}}>IA · COACH PERSONAL</div>
               </div>
-              <button onClick={()=>setShowBotChat(false)}
-                style={{width:32,height:32,borderRadius:"50%",cursor:"pointer",
-                  background:"rgba(255,255,255,0.1)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",
-                  border:"0.5px solid rgba(255,255,255,0.25)",
-                  boxShadow:"inset 0 1px 0 rgba(255,255,255,0.35),0 2px 8px rgba(0,0,0,0.3)",
-                  color:"rgba(255,255,255,0.6)",fontSize:14,
-                  display:"flex",alignItems:"center",justifyContent:"center"}}>
-                &#10005;
-              </button>
-              <div style={{position:"absolute",bottom:0,left:16,right:16,height:"0.5px",
-                background:"linear-gradient(90deg,transparent,rgba(255,255,255,0.2) 30%,rgba(255,255,255,0.2) 70%,transparent)"}}/>
+              <button onClick={()=>setShowBotChat(false)} style={{width:32,height:32,borderRadius:"50%",cursor:"pointer",background:"rgba(255,255,255,0.1)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",border:"0.5px solid rgba(255,255,255,0.25)",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.35)",color:"rgba(255,255,255,0.6)",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center"}}>&#10005;</button>
+              <div style={{position:"absolute",bottom:0,left:16,right:16,height:"0.5px",background:"linear-gradient(90deg,transparent,rgba(255,255,255,0.2) 30%,rgba(255,255,255,0.2) 70%,transparent)"}}/>
             </div>
-
             <BotChat profile={profile} routine={routine} done={done} lang={lang} mono={mono}/>
           </div>
         </div>
@@ -7330,13 +7299,13 @@ function App(){
 }
 ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
+
 function BotChat({profile,routine,done,lang,mono}){
   const[msgs,setMsgs]=React.useState([]);
   const[input,setInput]=React.useState("");
   const[loading,setLoading]=React.useState(false);
   const bottomRef=React.useRef(null);
   const inputRef=React.useRef(null);
-  const avatarRef=React.useRef(null);
 
   React.useEffect(()=>{
     const now=new Date(),dow=now.getDay(),tdi=dow===0?6:dow-1;
@@ -7344,10 +7313,10 @@ function BotChat({profile,routine,done,lang,mono}){
     const dd=todayR?todayR.ex.filter(function(x){return done[tdi+"-"+x.id];}).length:0;
     const tot=todayR?todayR.ex.length:0;
     var g="";var iso=lang==="es";
-    if(dd===tot&&tot>0) g=iso?"Completaste el entreno de hoy. Eso es mentalidad.":"You crushed today workout. Thats the mindset.";
-    else if(dd>0){ g=iso?("Llevas "+dd+"/"+tot+". Sigue, no pares ahora."):("You are at "+dd+"/"+tot+". Dont stop now."); }
-    else if(todayR){ g=iso?("Hoy toca "+todayR.l+". Arrancamos?"):("Today is "+todayR.l+". Lets go?"); }
-    else{ g=iso?"Dia de descanso. El cuerpo tambien crece descansando.":"Rest day. Recovery is where growth happens."; }
+    if(dd===tot&&tot>0) g=iso?"Completaste el entreno de hoy. Eso es mentalidad.":"You crushed today workout.";
+    else if(dd>0) g=iso?("Llevas "+dd+"/"+tot+". Sigue."):("At "+dd+"/"+tot+". Keep going.");
+    else if(todayR) g=iso?("Hoy toca "+todayR.l+". Arrancamos?"):("Today is "+todayR.l+". Lets go?");
+    else g=iso?"Dia de descanso. El cuerpo crece descansando.":"Rest day. Recovery is growth.";
     setMsgs([{role:"assistant",content:g}]);
     setTimeout(function(){if(inputRef.current)inputRef.current.focus();},400);
   },[]);
@@ -7356,15 +7325,6 @@ function BotChat({profile,routine,done,lang,mono}){
     if(bottomRef.current) bottomRef.current.scrollIntoView({behavior:"smooth"});
   },[msgs,loading]);
 
-  React.useEffect(function(){
-    // Renderizar cabeza del robot en el avatar del header
-    var mainCanvas=document.getElementById("forja-bot-avatar");
-    if(mainCanvas&&window.THREE&&window.THREE.GLTFLoader&&!mainCanvas.dataset.init){
-      mainCanvas.dataset.init="1";
-      initRobotAvatar(mainCanvas,52);
-    }
-  },[]);
-
   function buildSys(){
     var now=new Date(),dow=now.getDay(),tdi=dow===0?6:dow-1;
     var days=["Lun","Mar","Mie","Jue","Vie","Sab","Dom"];
@@ -7372,30 +7332,26 @@ function BotChat({profile,routine,done,lang,mono}){
     var week="sin rutina";
     if(routine){
       week=Array(7).fill(0).map(function(_,i){
-        var r=routine[i];
-        if(!r) return days[i]+":descanso";
+        var r=routine[i];if(!r)return days[i]+":descanso";
         var dd=r.ex.filter(function(x){return done[i+"-"+x.id];}).length;
         return days[i]+":"+r.l+"("+dd+"/"+r.ex.length+")";
       }).join("|");
     }
     var iso=lang==="es";
     var hoy=todayR?(todayR.l+" - "+todayR.ex.map(function(e){return e.n;}).join(",")):"descanso";
-    var modo=profile&&profile.mode==="celebrity"?("rutina "+profile.celebrity):"personalizado";
-    return "Eres FORJA BOT, coach de IA de elite. Directo, motivador, maximo 2 oraciones. Habla en "+(iso?"espanol":"ingles")+". Sin markdown.\n\nHOY("+days[tdi]+"): "+hoy+"\nSEMANA: "+week+"\nNIVEL: "+(profile&&profile.level||"?")+"\nOBJETIVO: "+(profile&&profile.goal||"?")+"\nMODO: "+modo;
+    return "Eres FORJA BOT, coach de IA. Directo, max 2 oraciones. Habla en "+(iso?"espanol":"ingles")+". Sin markdown.\n\nHOY("+days[tdi]+"): "+hoy+"\nSEMANA: "+week+"\nNIVEL: "+(profile&&profile.level||"?");
   }
 
   function send(){
-    if(!input.trim()||loading) return;
-    var txt=input.trim(); setInput("");
+    if(!input.trim()||loading)return;
+    var txt=input.trim();setInput("");
     var newMsgs=msgs.concat([{role:"user",content:txt}]);
-    setMsgs(newMsgs); setLoading(true);
-    fetch("https://api.anthropic.com/v1/messages",{
-      method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:180,system:buildSys(),
-        messages:newMsgs.map(function(m){return {role:m.role,content:m.content};})})
+    setMsgs(newMsgs);setLoading(true);
+    fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:150,system:buildSys(),
+        messages:newMsgs.map(function(m){return{role:m.role,content:m.content};})})
     }).then(function(r){return r.json();}).then(function(data){
-      var reply=(data.content&&data.content[0]&&data.content[0].text)||"...";
-      setMsgs(function(m){return m.concat([{role:"assistant",content:reply}]);});
+      setMsgs(function(m){return m.concat([{role:"assistant",content:(data.content&&data.content[0]&&data.content[0].text)||"..."}]);});
       setLoading(false);
     }).catch(function(){
       setMsgs(function(m){return m.concat([{role:"assistant",content:"Error de conexion."}]);});
@@ -7403,29 +7359,23 @@ function BotChat({profile,routine,done,lang,mono}){
     });
   }
 
-  function handleKey(e){ if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send();} }
+  function handleKey(e){if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send();}}
 
   var SUGG=lang==="es"
     ?["Como mejorar mi tecnica","Cuanto descanso necesito","Que como hoy","Tip de motivacion"]
     :["How to improve form","How much rest","What to eat","Motivation tip"];
 
-  var glassMsg={
-    backdropFilter:"blur(40px) saturate(300%) brightness(1.1)",
-    WebkitBackdropFilter:"blur(40px) saturate(300%) brightness(1.1)"
-  };
+  var glassStyle={backdropFilter:"blur(40px) saturate(300%) brightness(1.1)",WebkitBackdropFilter:"blur(40px) saturate(300%) brightness(1.1)"};
 
   return React.createElement("div",{style:{flex:1,display:"flex",flexDirection:"column",minHeight:0,position:"relative",zIndex:2}},
-    // Messages
     React.createElement("div",{style:{flex:1,overflowY:"auto",padding:"18px 18px 10px",display:"flex",flexDirection:"column",gap:14,minHeight:0}},
       msgs.map(function(m,i){
         var isBot=m.role==="assistant";
         return React.createElement("div",{key:i,style:{display:"flex",justifyContent:isBot?"flex-start":"flex-end",alignItems:"flex-end",gap:9}},
-          isBot&&React.createElement("div",{style:{width:30,height:30,borderRadius:"50%",overflow:"hidden",flexShrink:0,marginBottom:2,
+          isBot&&React.createElement("div",{style:{width:30,height:30,borderRadius:"50%",flexShrink:0,marginBottom:2,
             background:"rgba(255,255,255,0.08)",border:"0.5px solid rgba(255,255,255,0.22)",
-            boxShadow:"inset 0 1px 0 rgba(255,255,255,0.3)"}},
-            React.createElement("canvas",{width:60,height:60,ref:function(el){if(el&&!el.dataset.init){el.dataset.init="1";initRobotAvatar(el,30);}},
-              style:{width:"30px",height:"30px",display:"block"}})
-          ),
+            boxShadow:"inset 0 1px 0 rgba(255,255,255,0.3)",
+            display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}},"&#129302;"),
           React.createElement("div",{style:Object.assign({
             maxWidth:"75%",padding:"13px 17px",fontSize:15,lineHeight:1.52,
             color:"rgba(255,255,255,0.92)",position:"relative"
@@ -7439,52 +7389,34 @@ function BotChat({profile,routine,done,lang,mono}){
             background:"rgba(63,207,142,0.15)",
             border:"0.5px solid rgba(63,207,142,0.35)",
             boxShadow:"inset 0 1px 0 rgba(63,207,142,0.32),0 4px 20px rgba(63,207,142,0.12)"
-          },glassMsg)},m.content)
+          },glassStyle)},m.content)
         );
       }),
       loading&&React.createElement("div",{style:{display:"flex",alignItems:"flex-end",gap:9}},
-        React.createElement("div",{style:{width:30,height:30,borderRadius:"50%",background:"rgba(255,255,255,0.08)",border:"0.5px solid rgba(255,255,255,0.2)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}),
-        React.createElement("div",{style:{display:"flex",alignItems:"center",gap:5,padding:"14px 18px",
-          background:"rgba(255,255,255,0.07)",border:"0.5px solid rgba(255,255,255,0.16)",
-          borderRadius:"20px 20px 20px 5px",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.18)"}},
-          [0,1,2].map(function(i){
-            return React.createElement("div",{key:i,style:{width:7,height:7,borderRadius:"50%",
-              background:"rgba(255,255,255,0.55)",
-              animation:"botdot 1.4s ease-in-out "+(i*0.22)+"s infinite"}});
-          })
+        React.createElement("div",{style:{width:30,height:30,borderRadius:"50%",background:"rgba(255,255,255,0.08)",border:"0.5px solid rgba(255,255,255,0.2)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:16}},"&#129302;"),
+        React.createElement("div",{style:{display:"flex",alignItems:"center",gap:5,padding:"14px 18px",background:"rgba(255,255,255,0.07)",border:"0.5px solid rgba(255,255,255,0.16)",borderRadius:"20px 20px 20px 5px",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.18)"}},
+          [0,1,2].map(function(i){return React.createElement("div",{key:i,style:{width:7,height:7,borderRadius:"50%",background:"rgba(255,255,255,0.55)",animation:"botdot 1.4s ease-in-out "+(i*0.22)+"s infinite"}});})
         )
       ),
       React.createElement("div",{ref:bottomRef})
     ),
-    // Suggestions
     msgs.length<=1&&React.createElement("div",{style:{padding:"6px 18px 10px",display:"flex",flexWrap:"wrap",gap:8}},
       SUGG.map(function(q){
-        return React.createElement("button",{key:q,
-          onClick:function(){setInput(q);setTimeout(send,50);},
-          style:{padding:"9px 15px",borderRadius:22,cursor:"pointer",
-            background:"rgba(255,255,255,0.08)",
-            backdropFilter:"blur(30px) saturate(300%) brightness(1.1)",WebkitBackdropFilter:"blur(30px) saturate(300%) brightness(1.1)",
-            border:"0.5px solid rgba(255,255,255,0.2)",
+        return React.createElement("button",{key:q,onClick:function(){setInput(q);setTimeout(send,50);},
+          style:Object.assign({padding:"9px 15px",borderRadius:22,cursor:"pointer",
+            background:"rgba(255,255,255,0.08)",border:"0.5px solid rgba(255,255,255,0.2)",
             boxShadow:"inset 0 1px 0 rgba(255,255,255,0.22),0 2px 10px rgba(0,0,0,0.18)",
-            color:"rgba(255,255,255,0.65)",fontSize:12,fontFamily:mono,letterSpacing:"0.5px"}},q);
+            color:"rgba(255,255,255,0.65)",fontSize:12,fontFamily:mono,letterSpacing:"0.5px"},glassStyle)},q);
       })
     ),
-    // Input
-    React.createElement("div",{style:{padding:"12px 18px 42px",borderTop:"0.5px solid rgba(255,255,255,0.1)",
-      background:"rgba(0,0,0,0.04)",display:"flex",gap:10,alignItems:"center"}},
-      React.createElement("div",{style:{flex:1,position:"relative",
-        background:"rgba(255,255,255,0.08)",
-        backdropFilter:"blur(50px) saturate(400%) brightness(1.15)",WebkitBackdropFilter:"blur(50px) saturate(400%) brightness(1.15)",
-        border:"0.5px solid rgba(255,255,255,0.25)",
-        boxShadow:"inset 0 1.5px 0 rgba(255,255,255,0.28),inset 0 -1px 0 rgba(0,0,0,0.1),0 4px 20px rgba(0,0,0,0.2)",
-        borderRadius:28,overflow:"hidden"}},
-        React.createElement("input",{ref:inputRef,value:input,
-          onChange:function(e){setInput(e.target.value);},
-          onKeyDown:handleKey,
+    React.createElement("div",{style:{padding:"12px 18px 42px",borderTop:"0.5px solid rgba(255,255,255,0.1)",background:"rgba(0,0,0,0.04)",display:"flex",gap:10,alignItems:"center"}},
+      React.createElement("div",{style:Object.assign({flex:1,position:"relative",
+        background:"rgba(255,255,255,0.08)",border:"0.5px solid rgba(255,255,255,0.25)",
+        boxShadow:"inset 0 1.5px 0 rgba(255,255,255,0.28),0 4px 20px rgba(0,0,0,0.2)",
+        borderRadius:28,overflow:"hidden"},glassStyle)},
+        React.createElement("input",{ref:inputRef,value:input,onChange:function(e){setInput(e.target.value);},onKeyDown:handleKey,
           placeholder:lang==="es"?"Preguntame algo...":"Ask me anything...",
-          style:{width:"100%",padding:"15px 55px 15px 22px",background:"transparent",border:"none",
-            color:"rgba(255,255,255,0.9)",fontSize:15,
-            fontFamily:"-apple-system,system-ui,sans-serif",outline:"none"}}),
+          style:{width:"100%",padding:"15px 55px 15px 22px",background:"transparent",border:"none",color:"rgba(255,255,255,0.9)",fontSize:15,fontFamily:"-apple-system,system-ui,sans-serif",outline:"none"}}),
         React.createElement("button",{onClick:send,disabled:!input.trim()||loading,
           style:{position:"absolute",right:8,top:"50%",transform:"translateY(-50%)",
             width:37,height:37,borderRadius:"50%",cursor:input.trim()&&!loading?"pointer":"default",
@@ -7493,9 +7425,7 @@ function BotChat({profile,routine,done,lang,mono}){
             boxShadow:input.trim()&&!loading?"0 3px 16px rgba(63,207,142,0.55),inset 0 1.5px 0 rgba(255,255,255,0.4)":"none",
             display:"flex",alignItems:"center",justifyContent:"center",transition:"all .15s"}},
           React.createElement("svg",{width:15,height:15,viewBox:"0 0 15 15",fill:"none"},
-            React.createElement("path",{d:"M1 7.5h13M7.5 1l6.5 6.5-6.5 6.5",
-              stroke:input.trim()&&!loading?"#06070a":"rgba(255,255,255,0.15)",
-              strokeWidth:"2",strokeLinecap:"round",strokeLinejoin:"round"})
+            React.createElement("path",{d:"M1 7.5h13M7.5 1l6.5 6.5-6.5 6.5",stroke:input.trim()&&!loading?"#06070a":"rgba(255,255,255,0.15)",strokeWidth:"2",strokeLinecap:"round",strokeLinejoin:"round"})
           )
         )
       )
@@ -7503,42 +7433,6 @@ function BotChat({profile,routine,done,lang,mono}){
   );
 }
 
-function initRobotAvatar(canvas, size){
-  if(!canvas||!window.THREE||!window.THREE.GLTFLoader) return;
-  const S=size||50;
-  canvas.width=S*2; canvas.height=S*2;
-  const ren=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
-  ren.setSize(S,S); ren.setPixelRatio(2); ren.setClearColor(0,0);
-  const scene=new THREE.Scene();
-  const cam=new THREE.PerspectiveCamera(26,1,0.1,100);
-  cam.position.set(0,1.9,4.8); cam.lookAt(0,1.9,0);
-  scene.add(new THREE.AmbientLight(0xffffff,1.8));
-  const dl=new THREE.DirectionalLight(0xfff8f0,2.8); dl.position.set(3,5,5); scene.add(dl);
-  const dl2=new THREE.DirectionalLight(0x8090cc,0.7); dl2.position.set(-3,0,3); scene.add(dl2);
-  const clock=new THREE.Clock(); let mixer=null,t=0;
-  fetch("https://danielngr.github.io/FORJA/idle.glb").then(function(r){return r.arrayBuffer();}).then(function(buf){
-    new THREE.GLTFLoader().parse(buf,"",function(gltf){
-      var m=gltf.scene;
-      m.traverse(function(c){
-        if(!(c.isMesh||c.isSkinnedMesh))return;
-        var n=c.name||"";
-        if(n==="Mascara"||n==="polySurface3"){if(c.material)c.material.skinning=true;return;}
-        var col=n==="Cabeza"?0xeae6e0:n==="Cuerpo"||n==="Pierna"||n==="Pierna1"?0x3a3e4a:n==="Brazo"||n==="Brazo1"||n==="Dedos1"||n==="Dedos_Fin"?0xe4e0da:0x888898;
-        var mat=new THREE.MeshStandardMaterial({color:col,roughness:0.35,metalness:0.08});
-        if(c.isSkinnedMesh)mat.skinning=true;
-        c.material=mat;
-      });
-      m.scale.setScalar(50); m.position.set(0,-3.5,0); scene.add(m);
-      if(gltf.animations[0]){mixer=new THREE.AnimationMixer(m);var a=mixer.clipAction(gltf.animations[0]);a.setLoop(THREE.LoopRepeat);a.play();}
-    },function(){});
-  }).catch(function(){});
-  (function anim(){
-    requestAnimationFrame(anim);
-    var dt=clock.getDelta(); if(mixer)mixer.update(dt);
-    t+=0.008; cam.position.x=Math.sin(t)*0.2; cam.lookAt(0,1.9,0);
-    ren.render(scene,cam);
-  })();
-}
 
 </script>
 
@@ -7662,7 +7556,6 @@ function initRobotAvatar(canvas, size){
   window.addEventListener("load", tryInit);
   setInterval(tryInit, 200);
 })();
-
 
 function showForjaOnboarding() {
   localStorage.removeItem('forja_onboarded');
