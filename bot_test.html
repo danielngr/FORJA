@@ -3,186 +3,180 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-* { box-sizing: border-box; margin:0; padding:0; }
-body { background:#111; color:#fff; font-family:monospace; font-size:12px; }
- 
-/* Este es el banner — mismo tamaño y estilo que FORJA */
+* { box-sizing:border-box; margin:0; padding:0; }
+body { background:#111; color:#fff; font-family:monospace; font-size:11px; }
 #banner {
-  width:100%;
-  height:160px;
+  width:100%; height:200px;
   background:rgba(8,10,14,0.95);
   border-bottom:3px solid #ff6600;
-  position:relative;
-  overflow:hidden; /* igual que FORJA */
+  position:relative; overflow:hidden;
 }
-#banner canvas { 
-  position:absolute; top:0; left:0; 
-  width:100%; height:100%; 
-}
- 
-/* Línea de referencia del "piso" */
-#floor-line {
-  position:absolute;
-  bottom:0; left:0; right:0;
-  height:2px;
-  background:rgba(255,100,0,0.5);
-  pointer-events:none;
-}
- 
-#controls {
-  display:grid;
-  grid-template-columns:1fr 1fr 1fr 1fr;
-  gap:6px;
-  padding:10px;
+#banner canvas { position:absolute; top:0; left:0; width:100%; height:100%; }
+#grid {
+  display:grid; grid-template-columns:1fr 1fr 1fr;
+  gap:5px; padding:8px;
 }
 button {
-  padding:10px 4px;
-  background:#333; color:#fff;
-  border:1px solid #555; border-radius:6px;
-  font-family:monospace; font-size:12px;
-  cursor:pointer;
+  padding:10px 4px; background:#2a2a2a; color:#fff;
+  border:1px solid #444; border-radius:6px;
+  font-family:monospace; font-size:11px; cursor:pointer;
 }
-#info {
-  padding:10px;
-  background:#1a1a1a;
-  border-top:1px solid #333;
-  line-height:1.8;
-}
+#info { padding:8px; background:#1a1a1a; border-top:1px solid #333; line-height:1.9; }
 </style>
 </head>
 <body>
  
-<div id="banner">
-  <canvas id="c"></canvas>
-  <div id="floor-line"></div>
+<div id="banner"><canvas id="c"></canvas></div>
+ 
+<div id="grid">
+  <button onclick="adj('scale',-500)">Scale -500</button>
+  <button onclick="adj('scale',0)" style="background:#333">Scale: <span id='sv'>3000</span></button>
+  <button onclick="adj('scale',500)">Scale +500</button>
+ 
+  <button onclick="adj('floor',-0.1)">Floor ↓</button>
+  <button onclick="adj('floor',0)" style="background:#333">Floor: <span id='fv'>0</span></button>
+  <button onclick="adj('floor',0.1)">Floor ↑</button>
+ 
+  <button onclick="adj('camY',-0.2)">CamY ↓</button>
+  <button onclick="adj('camY',0)" style="background:#333">CamY: <span id='cyv'>0</span></button>
+  <button onclick="adj('camY',0.2)">CamY ↑</button>
+ 
+  <button onclick="adj('fov',-5)">FOV -</button>
+  <button onclick="adj('fov',0)" style="background:#333">FOV: <span id='fovv'>60</span></button>
+  <button onclick="adj('fov',5)">FOV +</button>
+ 
+  <button onclick="adj('camZ',-0.5)">CamZ -</button>
+  <button onclick="adj('camZ',0)" style="background:#333">CamZ: <span id='czv'>6</span></button>
+  <button onclick="adj('camZ',0.5)">CamZ +</button>
+ 
+  <button onclick="walk()" style="background:#1a3a1a">TEST WALK</button>
+  <button onclick="stopWalk()" style="background:#3a1a1a">STOP</button>
+  <button onclick="copyVals()" style="background:#1a1a3a">COPY</button>
 </div>
  
-<div id="controls">
-  <button onclick="adj(-2000)">-2000</button>
-  <button onclick="adj(-500)">-500</button>
-  <button onclick="adj(500)">+500</button>
-  <button onclick="adj(2000)">+2000</button>
-  <button onclick="adjFloor(-0.05)">Floor ↓</button>
-  <button onclick="adjFloor(0.05)">Floor ↑</button>
-  <button onclick="adjFOV(-5)">FOV -</button>
-  <button onclick="adjFOV(5)">FOV +</button>
-  <button onclick="adjX(-0.3)">X ←</button>
-  <button onclick="adjX(0.3)">X →</button>
-</div>
- 
-<div id="info">Cargando robot...</div>
+<div id="info">Cargando...</div>
  
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
-const MODEL = 'https://danielngr.github.io/FORJA/idle.glb';
+const MODEL='https://danielngr.github.io/FORJA/idle.glb';
+const WALK_URL='https://danielngr.github.io/FORJA/animations/bot_walk.glb';
  
-let renderer, scene, camera, model, mixer, clock;
-let S = 3500;   // scale — empieza aquí
-let POS_X = 0;  // posición horizontal
-let FOV = 30;
-let CAM_Z = 6;
-let FLOOR_Y = -1.0;  // ajustable
-let W, H, halfH, MX;
-let ready = false;
+let V={scale:3000,floor:-1.5,camY:0,fov:60,camZ:6};
+let renderer,scene,camera,model,mixer,clock,walkAction,idleAction;
+let walkX=0, walkDir=1, walking=false;
  
-function info(msg) {
-  document.getElementById('info').innerHTML = msg;
-}
- 
-function setup() {
-  const canvas = document.getElementById('c');
-  W = canvas.offsetWidth;
-  H = 160;
-  canvas.width = W * devicePixelRatio;
-  canvas.height = H * devicePixelRatio;
- 
-  renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
-  renderer.setSize(W, H);
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-  renderer.setClearColor(0x000000, 0);
- 
-  scene = new THREE.Scene();
-  recalc();
-  camera = new THREE.PerspectiveCamera(FOV, W/H, 0.1, 500);
-  camera.position.set(0, 0, CAM_Z);
- 
-  scene.add(new THREE.AmbientLight(0xffffff, 2.0));
-  const d = new THREE.DirectionalLight(0xffffff, 1.5);
-  d.position.set(2, 5, 5); scene.add(d);
- 
-  clock = new THREE.Clock();
- 
-  fetch(MODEL)
-    .then(r => r.arrayBuffer())
-    .then(buf => {
-      new THREE.GLTFLoader().parse(buf, '', gltf => {
-        model = gltf.scene;
-        model.traverse(c => {
-          if(c.isMesh || c.isSkinnedMesh) {
-            c.material = new THREE.MeshStandardMaterial({
-              color: 0xddccbb, roughness:0.4, metalness:0.1
-            });
-            if(c.isSkinnedMesh) c.material.skinning = true;
-          }
-        });
-        // SIN animación para ver forma pura
-        model.scale.setScalar(S);
-        model.position.set(0, FLOOR_Y, 0);
-        scene.add(model);
-        ready = true;
-        update();
-        animate();
-      });
-    });
- 
-  animate();
-}
- 
-function recalc() {
-  halfH = CAM_Z * Math.tan(FOV / 2 * Math.PI / 180);
-  MX = halfH * (W/H) * 0.72;
-}
- 
-function update() {
-  if(!model) return;
- 
-  recalc();
-  camera.fov = FOV;
-  camera.position.z = CAM_Z;
+function upd(){
+  document.getElementById('sv').textContent=V.scale;
+  document.getElementById('fv').textContent=V.floor.toFixed(2);
+  document.getElementById('cyv').textContent=V.camY.toFixed(2);
+  document.getElementById('fovv').textContent=V.fov;
+  document.getElementById('czv').textContent=V.camZ.toFixed(1);
+  if(!model||!camera) return;
+  model.scale.setScalar(V.scale);
+  model.position.y=V.floor;
+  camera.position.set(walkX,V.camY,V.camZ);
+  camera.fov=V.fov;
+  camera.lookAt(walkX,V.camY,0);
   camera.updateProjectionMatrix();
- 
-  model.scale.setScalar(S);
-  model.position.set(POS_X, FLOOR_Y, 0);
- 
-  // Medir bounding box real
-  const box = new THREE.Box3().setFromObject(model);
-  const sz = box.getSize(new THREE.Vector3());
-  const pct = sz.y / (halfH * 2) * 100;
- 
-  info(
-    `<b>scale=${S} | FOV=${FOV} | camZ=${CAM_Z}</b><br>` +
-    `robot altura: ${sz.y.toFixed(3)}u = <b>${pct.toFixed(0)}% del banner</b><br>` +
-    `FLOOR_Y: ${FLOOR_Y.toFixed(3)} | POS_X: ${POS_X.toFixed(2)} | halfH: ${halfH.toFixed(3)}<br>` +
-    `Pies Y: ${box.min.y.toFixed(3)} | Cabeza Y: ${box.max.y.toFixed(3)}<br>` +
-    `Borde inf frustum: ${(-halfH).toFixed(3)} | Borde sup: ${halfH.toFixed(3)}<br>` +
-    `<br>→ Ajusta Scale hasta que llene ~70% del banner<br>` +
-    `→ Ajusta Floor hasta que los pies toquen el borde naranja`
-  );
+  document.getElementById('info').innerHTML=
+    `scale=${V.scale} | floor=${V.floor.toFixed(2)} | camY=${V.camY.toFixed(2)}<br>`+
+    `fov=${V.fov} | camZ=${V.camZ.toFixed(1)}<br>`+
+    `→ Ajusta hasta que el robot pise la línea naranja<br>`+
+    `→ TEST WALK para ver caminar | COPY para copiar valores`;
 }
  
-function animate() {
+function adj(k,d){
+  if(d===0) return;
+  V[k]=Math.round((V[k]+d)*100)/100;
+  upd();
+}
+ 
+function walk(){
+  walking=true;
+  if(walkAction){ walkAction.reset().play(); }
+  if(idleAction) idleAction.stop();
+}
+function stopWalk(){
+  walking=false;
+  if(walkAction) walkAction.stop();
+  if(idleAction){ idleAction.reset().play(); }
+}
+ 
+function copyVals(){
+  const txt=`scale=${V.scale} floor=${V.floor.toFixed(2)} camY=${V.camY.toFixed(2)} fov=${V.fov} camZ=${V.camZ.toFixed(1)}`;
+  navigator.clipboard&&navigator.clipboard.writeText(txt);
+  document.getElementById('info').innerHTML='COPIADO: '+txt;
+}
+ 
+function setup(){
+  const canvas=document.getElementById('c');
+  const W=canvas.offsetWidth, H=200;
+  canvas.width=W*devicePixelRatio; canvas.height=H*devicePixelRatio;
+  renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+  renderer.setSize(W,H);
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.setClearColor(0x000000,0);
+  scene=new THREE.Scene();
+  camera=new THREE.PerspectiveCamera(V.fov,W/H,0.1,500);
+  camera.position.set(0,V.camY,V.camZ);
+  camera.lookAt(0,V.camY,0);
+  scene.add(new THREE.AmbientLight(0xffffff,2));
+  const d=new THREE.DirectionalLight(0xffffff,1.5);
+  d.position.set(3,5,5); scene.add(d);
+  clock=new THREE.Clock();
+ 
+  fetch(MODEL).then(r=>r.arrayBuffer()).then(buf=>{
+    new THREE.GLTFLoader().parse(buf,'',(gltf)=>{
+      model=gltf.scene;
+      model.traverse(c=>{
+        if(c.isMesh||c.isSkinnedMesh){
+          c.material=new THREE.MeshStandardMaterial({color:0xccbbaa,roughness:0.4,metalness:0.1});
+          if(c.isSkinnedMesh) c.material.skinning=true;
+        }
+      });
+      model.scale.setScalar(V.scale);
+      model.position.set(0,V.floor,0);
+      scene.add(model);
+      mixer=new THREE.AnimationMixer(model);
+      if(gltf.animations[0]){
+        idleAction=mixer.clipAction(gltf.animations[0]);
+        idleAction.play();
+      }
+      // Load walk
+      fetch(WALK_URL).then(r=>r.arrayBuffer()).then(buf2=>{
+        new THREE.GLTFLoader().parse(buf2,'',(g2)=>{
+          if(g2.animations[0]){
+            const clip=g2.animations[0];
+            // Remove root motion
+            clip.tracks=clip.tracks.filter(t=>!t.name.includes('Hips.position'));
+            walkAction=mixer.clipAction(clip);
+          }
+          document.getElementById('info').innerHTML='✓ Listo. Ajusta los controles.';
+        });
+      });
+      animate();
+    });
+  });
+}
+ 
+function animate(){
   requestAnimationFrame(animate);
-  if(mixer) mixer.update(clock.getDelta());
-  renderer.render(scene, camera);
+  const dt=Math.min(clock.getDelta(),0.05);
+  if(mixer) mixer.update(dt);
+  if(walking&&model){
+    walkX+=walkDir*1.5*dt;
+    if(Math.abs(walkX)>4){ walkDir*=-1; model.rotation.y=walkDir>0?0:Math.PI; }
+    model.position.set(walkX,V.floor,0);
+    camera.position.x=walkX;
+    camera.lookAt(walkX,V.camY,0);
+  } else if(model){
+    model.position.y=V.floor;
+  }
+  renderer.render(scene,camera);
 }
  
-function adj(d)      { S = Math.max(100, S + d); update(); }
-function adjX(d)     { POS_X += d; update(); }
-function adjFloor(d) { FLOOR_Y += d; update(); }
-function adjFOV(d)   { FOV = Math.max(5, Math.min(120, FOV + d)); update(); }
- 
-window.addEventListener('load', setup);
+window.addEventListener('load',setup);
 </script>
 </body>
 </html>
