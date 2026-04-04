@@ -7469,12 +7469,18 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     const dl=new THREE.DirectionalLight(0xffffff,1.5); dl.position.set(2,5,4); scene.add(dl);
     clock=new THREE.Clock();
 
-    console.log('BOT fetch idle');
-    fetch(IDLE_URL).then(r=>r.arrayBuffer()).then(buf=>{
-      console.log('BOT idle buf',buf.byteLength);
+    // Cargar walking_skin.glb directamente — tiene modelo + animación walk
+    console.log('BOT fetch walk model');
+    fetch(WALK_URL).then(r=>r.arrayBuffer()).then(buf=>{
+      console.log('BOT walk buf',buf.byteLength);
       new THREE.GLTFLoader().parse(buf,BASE,(gltf)=>{
-        console.log('BOT idle parsed, anims:',gltf.animations.length);
+        console.log('BOT walk parsed, anims:',gltf.animations.length);
         model=gltf.scene;
+        // Remover artefactos Blender
+        const rm=[];
+        model.traverse(c=>{if(c.name==="Cube"||c.name==="default")rm.push(c);});
+        rm.forEach(c=>c.parent&&c.parent.remove(c));
+        // Materiales
         model.traverse(c=>{
           if(!(c.isMesh||c.isSkinnedMesh)) return;
           const n=c.name||"";
@@ -7484,31 +7490,21 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
           if(c.isSkinnedMesh) mat.skinning=true;
           c.material=mat;
         });
-        model.scale.setScalar(50);
+        model.scale.setScalar(14);
         model.position.set(cx,FY,0);
         scene.add(model);
         mixer=new THREE.AnimationMixer(model);
-        if(gltf.animations[0]){const a=mixer.clipAction(gltf.animations[0]);a.setLoop(THREE.LoopRepeat);a.play();}
+        if(gltf.animations[0]){
+          const clip=gltf.animations[0];
+          clip.tracks=clip.tracks.filter(t=>!(t.name.toLowerCase().includes('hip')&&t.name.toLowerCase().includes('position')));
+          console.log('BOT walk tracks:',clip.tracks.length);
+          const wa=mixer.clipAction(clip);
+          wa.setLoop(THREE.LoopRepeat); wa.play();
+        }
         ready=true;
         animate();
-        fetch(WALK_URL).then(r=>r.arrayBuffer()).then(buf2=>{
-          console.log('BOT walk buf',buf2.byteLength);
-          new THREE.GLTFLoader().parse(buf2,BASE,(g2)=>{
-            console.log('BOT walk parsed, anims:',g2.animations.length);
-            if(g2.animations[0]){
-              const clip=g2.animations[0];
-              clip.tracks=clip.tracks.filter(t=>!(t.name.toLowerCase().includes('hip')&&t.name.toLowerCase().includes('position')));
-              console.log('BOT walk tracks después de filter:',clip.tracks.length);
-              // Detener idle, iniciar walk
-              mixer.stopAllAction();
-              const wa=mixer.clipAction(clip);
-              wa.setLoop(THREE.LoopRepeat); wa.play();
-              wm=true; st=5; newTarget();
-            }
-          },e=>console.error('BOT walk parse err:',e));
-        }).catch(e=>console.error('BOT walk fetch err:',e));
-      },e=>console.error('BOT idle parse err:',e));
-    }).catch(e=>console.error('BOT idle fetch err:',e));
+      },e=>console.error('BOT parse err:',e));
+    }).catch(e=>console.error('BOT fetch err:',e));
 
     let _dbgt=0;
     function animate(){
