@@ -7439,16 +7439,14 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
   const BASE="https://danielngr.github.io/FORJA/animations/";
   const MODEL_URL="https://danielngr.github.io/FORJA/idle.glb";
 
-  // Valores calibrados iPhone + bajar conjunto 0.8 unidades más
-  const S=50, FY=-5.0, FOV=75, CZ=6, CAM_Y=-3.8;
+  const S=50, FY=-5.4, FOV=75, CZ=6, CAM_Y=-4.0;
 
   function getMood(){
     try{
       const hist=JSON.parse(localStorage.getItem("fv8_hist")||"[]");
       const done=JSON.parse(localStorage.getItem("fv8_done")||"{}");
       const today=new Date().toISOString().slice(0,10);
-      const DAY=86400000;
-      const days=new Set();
+      const DAY=86400000, days=new Set();
       Object.keys(done).forEach(k=>{const p=k.split("-");if(p.length>=3)days.add(p.slice(0,3).join("-"));});
       hist.forEach(h=>{if(h.date)days.add(h.date.slice(0,10));});
       const sorted=[...days].sort().reverse();
@@ -7473,41 +7471,41 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
   };
 
   const SEQS={
-    victory:[["victory",5,false],["clap",4,false],["idle",2,false],["walk",4,true]],
-    hype:   [["taunt",4,false],["rumba",5,false],["walk",4,true],["idle",2,false]],
-    active: [["walk",4,true],["look",3,false],["walk",4,true],["idle",2,false]],
-    sad:    [["shake",4,false],["idle",3,false],["walk",4,true],["look",3,false]],
-    depressed:[["defeated",5,false],["sitting",6,false],["idle",3,false],["walk",4,true]],
-    normal: [["idle",2,false],["walk",4,true],["look",3,false],["walk",4,true]],
+    victory:[["victory",5,false],["clap",4,false],["idle",2,false],["walk",6,true]],
+    hype:   [["taunt",4,false],["rumba",5,false],["walk",6,true],["idle",2,false]],
+    active: [["walk",6,true],["look",3,false],["walk",6,true],["idle",2,false]],
+    sad:    [["shake",4,false],["idle",3,false],["walk",6,true],["look",3,false]],
+    depressed:[["defeated",5,false],["sitting",6,false],["idle",3,false],["walk",6,true]],
+    normal: [["idle",2,false],["walk",6,true],["look",3,false],["walk",6,true]],
   };
 
   let ren,scene,cam,mixer,clock,model,aid;
   let ready=false, clips={}, curAct=null;
-  let cx=0, tx=2, facing=0;
-  let si=0, st=1.5, mood="normal", wm=false;
+  let cx=2, tx=2, facing=0;
+  let si=0, st=1, mood="normal", wm=true;
   const MX=5;
+  // Estado de caminata: idle/walking/arrived
+  let walkPhase="idle"; // "idle" | "walking"
 
   function stripRM(clip){
     if(!clip) return null;
-    // Filtrar TODOS los tracks de posición del root — el robot se moverá con código
-    clip.tracks=clip.tracks.filter(t=>{
-      const isRoot=t.name.toLowerCase().includes("hips")&&t.name.includes(".position");
-      return !isRoot;
-    });
+    clip.tracks=clip.tracks.filter(t=>
+      !(t.name.toLowerCase().includes("hips")&&t.name.includes(".position"))
+    );
     return clip;
   }
 
   function loadClip(key){
     return new Promise(res=>{
-      if(clips[key]!==undefined){res(clips[key]);return;}
-      clips[key]=null; // marcar como en proceso
+      if(key in clips){res(clips[key]);return;}
+      clips[key]=null;
       fetch(ANIMS[key])
         .then(r=>r.arrayBuffer())
         .then(buf=>new THREE.GLTFLoader().parse(buf,"",(g)=>{
           clips[key]=stripRM(g.animations&&g.animations[0]||null);
           res(clips[key]);
-        },()=>{clips[key]=null;res(null);}))
-        .catch(()=>{clips[key]=null;res(null);});
+        },()=>{res(null);}))
+        .catch(()=>res(null));
     });
   }
 
@@ -7522,26 +7520,36 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     curAct=a;
   }
 
-  function pickTX(){
-    // Alterna entre lado derecho e izquierdo
-    if(cx>0) tx=-MX*(0.3+Math.random()*0.5);
-    else      tx= MX*(0.3+Math.random()*0.7);
+  function newTarget(){
+    // Alternar entre derecha e izquierda
+    if(cx>=0) tx=-MX*(0.3+Math.random()*0.6);
+    else       tx= MX*(0.3+Math.random()*0.7);
   }
 
-  function tick(dt){
-    st-=dt;
-    if(st>0) return;
+  function startWalk(){
+    wm=true; newTarget();
+    if(clips.walk) play("walk",true);
+    else loadClip("walk").then(()=>{if(wm) play("walk",true);});
+  }
+
+  function startIdle(key="idle"){
+    wm=false; tx=cx;
+    if(clips[key]) play(key,true);
+    else loadClip(key).then(()=>{if(!wm) play(key,true);});
+  }
+
+  // Secuencia simple: alterna entre walk y animaciones idle
+  let seqPhase=0;
+  const IDLE_ANIMS=["idle","look","idle","shake"]; // ciclo de anims idle
+  let idleAnimIdx=0;
+
+  function nextSeq(){
     const seq=SEQS[mood]||SEQS.normal;
     si=(si+1)%seq.length;
     const[key,dur,walk]=seq[si];
-    st=dur; wm=walk;
-    if(walk) pickTX(); else tx=cx;
-    // Tocar animación
-    if(clips[key]) play(key,true);
-    else if(clips[key]!==null){ // no está en proceso de carga
-      if(clips.idle) play("idle",true);
-      loadClip(key).then(()=>{ if(seq[si][0]===key) play(key,true); });
-    }
+    st=dur;
+    if(walk) startWalk();
+    else startIdle(key);
   }
 
   function tryInit(){
@@ -7556,21 +7564,15 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     ren.setSize(W,H);
     ren.setPixelRatio(Math.min(devicePixelRatio,2));
     ren.setClearColor(0,0);
-
     scene=new THREE.Scene();
     cam=new THREE.PerspectiveCamera(FOV,W/H,0.1,200);
     cam.position.set(0,CAM_Y,CZ);
     cam.lookAt(0,CAM_Y,0);
-
     scene.add(new THREE.AmbientLight(0xffffff,1.8));
-    const kl=new THREE.DirectionalLight(0xfff0dd,1.5);
-    kl.position.set(2,5,6); scene.add(kl);
-    const fl=new THREE.DirectionalLight(0x8899bb,0.6);
-    fl.position.set(-3,2,4); scene.add(fl);
-
+    const kl=new THREE.DirectionalLight(0xfff0dd,1.5); kl.position.set(2,5,6); scene.add(kl);
+    const fl=new THREE.DirectionalLight(0x8899bb,0.6); fl.position.set(-3,2,4); scene.add(fl);
     clock=new THREE.Clock();
-    mood=getMood(); si=0; st=1; wm=true;
-    cx=MX*0.5; pickTX();
+    mood=getMood(); cx=2; tx=-2; wm=true;
 
     fetch(MODEL_URL).then(r=>r.arrayBuffer()).then(buf=>{
       new THREE.GLTFLoader().parse(buf,"",(gltf)=>{
@@ -7578,7 +7580,6 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
         model.traverse(child=>{
           if(child.isMesh||child.isSkinnedMesh){
             const n=child.name||"";
-            // Mascara y polySurface3: material ORIGINAL (ojos en la textura)
             if(n==="Mascara"||n==="polySurface3"){
               if(child.isSkinnedMesh&&child.material){
                 if(Array.isArray(child.material)) child.material.forEach(m=>m.skinning=true);
@@ -7587,51 +7588,47 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
               return;
             }
             let mat;
-            if(n==="Cabeza"){
-              mat=new THREE.MeshStandardMaterial({color:0xeae6e0,roughness:0.35,metalness:0.05});
-            } else if(n==="Brazo"||n==="Brazo1"||n==="Dedos1"||n==="Dedos_Fin"){
-              mat=new THREE.MeshStandardMaterial({color:0xe4e0da,roughness:0.4,metalness:0.0});
-            } else if(n==="Cuerpo"||n==="Pierna"||n==="Pierna1"){
-              mat=new THREE.MeshStandardMaterial({color:0x3a3e4a,roughness:0.6,metalness:0.2});
-            } else if(n==="Cuello"||n==="pCube3"){
-              mat=new THREE.MeshStandardMaterial({color:0x666878,roughness:0.5,metalness:0.2});
-            } else {
-              mat=new THREE.MeshStandardMaterial({color:0x888898,roughness:0.5,metalness:0.2});
-            }
+            if(n==="Cabeza") mat=new THREE.MeshStandardMaterial({color:0xeae6e0,roughness:0.35,metalness:0.05});
+            else if(n==="Brazo"||n==="Brazo1"||n==="Dedos1"||n==="Dedos_Fin") mat=new THREE.MeshStandardMaterial({color:0xe4e0da,roughness:0.4,metalness:0.0});
+            else if(n==="Cuerpo"||n==="Pierna"||n==="Pierna1") mat=new THREE.MeshStandardMaterial({color:0x3a3e4a,roughness:0.6,metalness:0.2});
+            else if(n==="Cuello"||n==="pCube3") mat=new THREE.MeshStandardMaterial({color:0x666878,roughness:0.5,metalness:0.2});
+            else mat=new THREE.MeshStandardMaterial({color:0x888898,roughness:0.5,metalness:0.2});
             if(child.isSkinnedMesh) mat.skinning=true;
             child.material=mat;
           }
         });
-
         model.scale.setScalar(S);
         model.position.set(cx,FY,0);
         scene.add(model);
         mixer=new THREE.AnimationMixer(model);
         ready=true;
 
-        // Cargar idle primero
-        loadClip("idle").then(c=>{ if(c){ play("idle",true); }});
-        // Cargar walk inmediatamente después — es crítico
-        loadClip("walk").then(c=>{ if(c) console.log("BOT walk ready, tracks:",c.tracks.length); });
+        // Cargar idle y walk primero
+        loadClip("idle").then(c=>{if(c) play("idle",true);});
+        loadClip("walk").then(c=>{if(c&&wm) play("walk",true);});
         // Resto en background
-        const seq=SEQS[mood];
-        [...new Set(seq.map(s=>s[0]))].forEach(k=>{ if(k!=="idle"&&k!=="walk") loadClip(k); });
+        ["look","shake","rumba","taunt","victory","clap","defeated","sitting"].forEach(k=>loadClip(k));
 
-      },e=>console.warn("BOT parse:",e));
-    }).catch(e=>console.warn("BOT fetch:",e));
+        animate();
+      },e=>console.warn("BOT:",e));
+    }).catch(e=>console.warn("BOT:",e));
 
     function animate(){
       aid=requestAnimationFrame(animate);
       if(!ready||!model) return;
       const dt=Math.min(clock.getDelta(),0.05);
       if(mixer) mixer.update(dt);
-      tick(dt);
+
+      // Timer de secuencia
+      st-=dt;
+      if(st<=0) nextSeq();
 
       if(wm){
-        const dx=tx-cx, dist=Math.abs(dx);
-        if(dist<0.05){
-          cx=tx;
-          // llegó al destino — dejar que tick() cambie de estado
+        const dx=tx-cx;
+        const dist=Math.abs(dx);
+        if(dist<0.08){
+          // Llegó — elegir nuevo destino y seguir caminando
+          newTarget();
         } else {
           cx+=Math.sign(dx)*Math.min(2.0*dt,dist);
           const tf=Math.sign(dx)*0.5;
@@ -7641,14 +7638,12 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
         facing*=0.85;
       }
 
-      // Y siempre anclado — animación no puede flotarlo
       model.position.set(cx,FY,0);
       model.rotation.y=facing;
       cam.position.x=cx;
       cam.lookAt(cx,CAM_Y,0);
       ren.render(scene,cam);
     }
-    animate();
 
     window.addEventListener("resize",()=>{
       const W2=canvas.offsetWidth||390;
