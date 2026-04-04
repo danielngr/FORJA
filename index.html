@@ -7442,7 +7442,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
   const WALK_MODEL_URL=BASE+"walking_skin.glb";
   const IDLE_URL=BASE+"idle.glb";
 
-  const S=1, FY=-5.8, FOV=75, CZ=6, CAM_Y=-4.4, MX=5;
+  const S=1, FY=-7.5, FOV=75, CZ=6, CAM_Y=-4.4, MX=5;
 
   function getMood(){
     try{
@@ -7477,9 +7477,11 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     const canvas=document.getElementById("forja-bot-canvas");
     if(!canvas||!window.THREE||!window.THREE.GLTFLoader) return;
     if(canvas.dataset.bi) return;
+    const W=canvas.offsetWidth||canvas.parentElement&&canvas.parentElement.offsetWidth||390;
+    if(W<10) return; // canvas aún no tiene tamaño, esperar
     canvas.dataset.bi="1";
 
-    const W=canvas.offsetWidth||390, H=200;
+    const H=200;
     canvas.width=W*devicePixelRatio; canvas.height=H*devicePixelRatio;
     ren=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
     ren.setSize(W,H); ren.setPixelRatio(Math.min(devicePixelRatio,2));
@@ -7497,11 +7499,15 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       new THREE.GLTFLoader().parse(buf,"",(gltf)=>{
         model=gltf.scene;
 
-        // 1. Remover Cube y default de Blender, ocultar pCube6/pCube7 (malla pies)
+        // 1. Remover Cube y default de Blender, ocultar malla entre pies
         const toRemove=[];
         model.traverse(c=>{
           if(c.name==="Cube"||c.name==="default") toRemove.push(c);
-          if(c.name==="pCube6"||c.name==="pCube7") c.visible=false;
+          // Ocultar malla entre pies - puede ser pCube6, pCube7 u otro nombre
+          if(c.isMesh||c.isSkinnedMesh){
+            console.log('BOT mesh:',c.name);
+            if(c.name==="pCube6"||c.name==="pCube7"||c.name==="pCylinder6"||c.name==="pCylinder9") c.visible=false;
+          }
         });
         toRemove.forEach(c=>c.parent&&c.parent.remove(c));
 
@@ -7602,7 +7608,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
   window.addEventListener("load",tryInit);
   document.addEventListener("DOMContentLoaded",tryInit);
-  setInterval(()=>{if(!ready)tryInit();},400);
+  setInterval(()=>{if(!ready)tryInit();},300);
 })();
 </script>
 <script>
