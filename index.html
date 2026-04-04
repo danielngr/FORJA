@@ -7626,7 +7626,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     const halfH=12.5*Math.tan(35*Math.PI/180); // FOV=70, camZ=12.5 → halfH=8.753
     const halfW=halfH*aspect;
     MX=halfW*0.65;
-    const FLOOR_Y=-6.639; // proporcional al medido en iPhone
+    const FLOOR_Y=-6.684; // pies en borde inferior del banner
 
     charX=MX*0.55; charY=FLOOR_Y;
     targetX=charX; targetY=FLOOR_Y;
@@ -7647,25 +7647,40 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
           // Colores del robot — ojos azul brillante, partes blancas
           model.traverse(child=>{
             if(child.isMesh||child.isSkinnedMesh){
-              const n=(child.name||"").toLowerCase();
+              const n=(child.name||"");
               let mat;
-              if(n.includes("mascara")){
+              if(n==="Mascara"||n.includes("Mascara")){
                 // Ojos: azul brillante emisivo
                 mat=new THREE.MeshStandardMaterial({
-                  color:0x00aaff, emissive:new THREE.Color(0x0066ff),
-                  emissiveIntensity:1.5, roughness:0.1, metalness:0.0
+                  color:0x44bbff,
+                  emissive:new THREE.Color(0x0088ff),
+                  emissiveIntensity:2.0,
+                  roughness:0.0, metalness:0.0
                 });
-              } else if(n.includes("cabeza")||n.includes("brazo")||n.includes("dedos")||n.includes("pierna")){
-                // Extremidades y cabeza: blanco cálido
-                mat=new THREE.MeshStandardMaterial({color:0xf0ede8,roughness:0.4,metalness:0.1});
-              } else if(n.includes("cuerpo")){
-                // Torso: gris oscuro
-                mat=new THREE.MeshStandardMaterial({color:0x2a2e38,roughness:0.5,metalness:0.3});
-              } else if(n.includes("cuello")||n.includes("pcube")||n.includes("pcylinder")){
-                // Articulaciones: gris medio
-                mat=new THREE.MeshStandardMaterial({color:0x555870,roughness:0.6,metalness:0.4});
+              } else if(n==="polySurface3"||n.includes("polySurface")){
+                // Cara frontal: blanco
+                mat=new THREE.MeshStandardMaterial({color:0xf2eeea,roughness:0.35,metalness:0.05});
+              } else if(n==="Cabeza"||n.includes("Cabeza")){
+                // Parte trasera de la cabeza: gris
+                mat=new THREE.MeshStandardMaterial({color:0x888898,roughness:0.5,metalness:0.1});
+              } else if(n==="Brazo"||n==="Brazo1"||n.includes("Brazo")){
+                // Brazos: blanco
+                mat=new THREE.MeshStandardMaterial({color:0xe8e4de,roughness:0.4,metalness:0.05});
+              } else if(n==="Dedos1"||n==="Dedos_Fin"||n.includes("Dedos")){
+                // Dedos: blanco
+                mat=new THREE.MeshStandardMaterial({color:0xe0dcd6,roughness:0.4,metalness:0.05});
+              } else if(n==="Pierna"||n==="Pierna1"||n.includes("Pierna")){
+                // Pies/piernas: gris como la panza
+                mat=new THREE.MeshStandardMaterial({color:0x3a3e4a,roughness:0.6,metalness:0.2});
+              } else if(n==="Cuerpo"||n.includes("Cuerpo")){
+                // Torso/panza: gris oscuro
+                mat=new THREE.MeshStandardMaterial({color:0x3a3e4a,roughness:0.6,metalness:0.2});
+              } else if(n==="Cuello"||n.includes("Cuello")){
+                // Cuello: gris medio
+                mat=new THREE.MeshStandardMaterial({color:0x666878,roughness:0.5,metalness:0.2});
               } else {
-                mat=new THREE.MeshStandardMaterial({color:0xd0ccc8,roughness:0.4,metalness:0.1});
+                // pCube, pCylinder — articulaciones: gris
+                mat=new THREE.MeshStandardMaterial({color:0x888898,roughness:0.5,metalness:0.2});
               }
               if(child.isSkinnedMesh) mat.skinning=true;
               child.material=mat;
@@ -7684,11 +7699,12 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
           // Precargar animaciones del mood actual en paralelo
           const seq=MOOD_SEQUENCES[currentMood];
           const keysToLoad=[...new Set(seq.map(s=>s[0]))];
-          keysToLoad.push("walk","idle"); // siempre tener estos
+          keysToLoad.push("walk","idle");
+          // Modelo listo — empieza a moverse inmediatamente
+          ready=true;
+          // Animaciones cargan en background
           Promise.all(keysToLoad.map(k=>loadClip(k))).then(()=>{
-            // Empezar con la primera anim del mood
             playClip(seq[0][0],true);
-            ready=true;
           });
         },e=>console.warn("BOT model:",e));
       }).catch(e=>console.warn("BOT fetch:",e));
