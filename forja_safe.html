@@ -2792,7 +2792,11 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
       startRest(ei,si);
     }
     const allDone=ns.every(e=>e.every(s=>s.done));
-    if(allDone) setTimeout(()=>{setFinalSecs(sessSecs);setAllDone(true);FStore.saveSession(day&&day.l,exs,sessSecs);},700);
+    if(allDone) setTimeout(()=>{
+      setFinalSecs(sessSecs);setAllDone(true);FStore.saveSession(day&&day.l,exs,sessSecs);
+      // Trigger bot celebración
+      if(window.FORJA_BOT) window.FORJA_BOT.trigger("victory");
+    },700);
   }
   function addSet(ei){
     const last=sets[ei][sets[ei].length-1];
@@ -4041,7 +4045,8 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
     </div>
   );}
   return(<>
-      <div style={{background:"rgba(8,10,14,0.92)",backdropFilter:"blur(24px)",WebkitBackdropFilter:"blur(24px)",borderBottom:"1px solid rgba(255,255,255,0.06)",padding:"14px 18px 10px",position:"sticky",top:0,zIndex:10}}>
+      <div style={{background:"rgba(8,10,14,0.92)",backdropFilter:"blur(24px)",WebkitBackdropFilter:"blur(24px)",borderBottom:"1px solid rgba(255,255,255,0.06)",padding:"14px 18px 10px",position:"sticky",top:0,zIndex:10,minHeight:200,overflow:"visible"}}>
+        <canvas id="forja-bot-canvas" style={{position:"absolute",top:0,left:0,width:"100%",height:"200px",pointerEvents:"none",zIndex:5}}></canvas>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
           <div>
             {day?.isExpress&&(
@@ -4052,10 +4057,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                 ⚡ EXPRESS
               </div>
             )}
-            <div style={{fontSize:8,fontFamily:mono,color:"rgba(255,255,255,.35)",letterSpacing:4,marginBottom:3,fontWeight:700}}>FORJA</div>
-            <div style={{fontSize:26,fontWeight:900,letterSpacing:-1.2,lineHeight:.9}}>{DF[lang][sel].toUpperCase()}</div>
-            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:1,marginTop:3}}>{day?translateDayLabel(day.l,lang):t.rest}{day?`. ${day.ex.length} ${lang==="es"||lang==="pt"?"ejercicios":lang==="fr"?"exercices":lang==="it"?"esercizi":lang==="de"?"Übungen":"exercises"}`:""}
-            </div>
+            <div style={{fontSize:8,fontFamily:mono,color:"rgba(255,255,255,.35)",letterSpacing:4,marginBottom:3,fontWeight:700}}></div>
           </div>
             <div style={{display:"flex",alignItems:"flex-start",gap:10,paddingTop:2}}>
             {day&&exs.length>0&&(
@@ -4237,67 +4239,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
               </div>
             ):(
               <>
-                <div style={{
-                  width:"100%",borderRadius:22,background:"linear-gradient(135deg,#1A2540 0%,#0D1520 100%)",cursor:"default",
-                  marginBottom:16,padding:"26px 22px 22px",
-                  boxShadow:"0 16px 56px rgba(0,0,0,0.22)",
-                  position:"relative",overflow:"hidden",userSelect:"none"}}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:18}}>
-                    <div>
-                      <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,0.7)",letterSpacing:3,marginBottom:7,textTransform:"uppercase"}}>
-                        {DF[lang][sel]}
-                      </div>
-                      <div style={{fontSize:32,fontWeight:900,color:C.white,letterSpacing:-1.5,lineHeight:1,textTransform:"uppercase"}}>
-                        {translateDayLabel(day.l,lang)}
-                      </div>
-                      <div style={{fontSize:10,fontFamily:mono,color:"rgba(255,255,255,0.7)",marginTop:6,letterSpacing:1}}>
-                        {exs.length} {lang==="es"||lang==="pt"?"ejercicios":lang==="fr"?"exercices":lang==="it"?"esercizi":lang==="de"?"Übungen":"exercises"}
-                      </div>
-                    </div>
-                    <div style={{textAlign:"right",paddingTop:2}}>
-                      <div style={{fontSize:36,fontWeight:900,lineHeight:1,
-                        color:pct===1?"#4ade80":pct>0?"rgba(255,255,255,0.9)":"rgba(255,255,255,0.2)"}}>
-                        {dc}
-                      </div>
-                      <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,0.65)",letterSpacing:1}}>
-                        / {exs.length}
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{display:"flex",gap:3,marginBottom:22}}>
-                    {exs.map((ex,i)=>{
-                      const isDone=done[`${sel}-${ex.id}`];
-                      return <div key={i} style={{height:3,flex:1,borderRadius:2,
-                        background:isDone?"rgba(255,255,255,0.85)":"rgba(255,255,255,0.12)",
-                        transition:"background 0.3s"}}/>;
-                    })}
-                  </div>
-                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:4}}>
-                    <div style={{display:"flex",alignItems:"center",gap:6}}>
-                      <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,0.7)",letterSpacing:2}}>
-                        {pct===1?(lang==="es"||lang==="pt"?"COMPLETADO":lang==="fr"?"TERMINÉ":lang==="it"?"COMPLETATO":lang==="de"?"ABGESCHLOSSEN":"COMPLETED"):(lang==="es"||lang==="pt"?"SEMANA EN CURSO":lang==="fr"?"SEMAINE EN COURS":lang==="it"?"SETTIMANA IN CORSO":lang==="de"?"WOCHE LÄUFT":"WEEK IN PROGRESS")}
-                      </div>
-                      {profile?.mode!=="celebrity"&&(()=>{
-                        const wNum=getWeekNum();
-                        const isB=wNum%2===0;
-                        return <span style={{fontSize:7,fontFamily:mono,padding:"1px 6px",borderRadius:10,
-                          background:isB?"rgba(106,143,192,0.15)":"rgba(63,207,142,0.12)",
-                          color:isB?"#4898e8":"#3fcf8e",border:`1px solid ${isB?"rgba(106,143,192,.3)":"rgba(63,207,142,.25)"}`,
-                          letterSpacing:1.5,fontWeight:700}}>
-                          {lang==="es"||lang==="pt"?`SEMANA ${isB?"B":"A"}`:
-                           lang==="fr"?`SEMAINE ${isB?"B":"A"}`:
-                           lang==="it"?`SETTIMANA ${isB?"B":"A"}`:
-                           lang==="de"?`WOCHE ${isB?"B":"A"}`:
-                           `WEEK ${isB?"B":"A"}`}
-                        </span>;
-                      })()}
-                    </div>
-                    <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,0.7)",letterSpacing:1}}>
-                      {Math.round(pct*100)}%
-                    </div>
-                  </div>
-                </div>
-                <div id="forja-dumbbell-wrap" data-tour="start-workout" style={{width:"100%",height:260,marginTop:16,borderRadius:16,overflow:"hidden",position:"relative",background:C.bg,cursor:"pointer"}}
+                <div id="forja-dumbbell-wrap" data-tour="start-workout" style={{width:"100%",height:180,borderRadius:16,overflow:"hidden",position:"relative",background:C.bg,cursor:"pointer"}}
                   onClick={()=>{if(day&&day.ex&&day.ex.length)setInWorkout(true);}}
                 >
                   <canvas id="forja-dumbbell-canvas" style={{width:"100%",height:"100%",display:"block"}}></canvas>
@@ -7389,11 +7331,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     renderer.setSize(W,H);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
     renderer.setClearColor(0x000000,0);
-    renderer.outputEncoding=THREE.sRGBEncoding;
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(46,W/H,0.1,100);
-    camera.position.set(0,0,9.5);
+    camera.position.set(0,0,14);
 
     const parts = [
       {xC:0,     r:0.12, th:1.44, type:"cyl"},
@@ -7471,96 +7412,19 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     const pts=new THREE.Points(geo,mat);
     scene.add(pts);
 
-    // — Robot integration —
-    let robotMixer=null, robotClock=new THREE.Clock();
-    let robotRoot=null, robotReady=false;
-
-    // Lights for robot (particles ignore lights, so these only affect the robot mesh)
-    const rAmbient=new THREE.AmbientLight(0xffffff,0.9);
-    scene.add(rAmbient);
-    const rKey=new THREE.DirectionalLight(0xfff8e7,2.0);
-    rKey.position.set(6,8,6);
-    scene.add(rKey);
-    const rFill=new THREE.DirectionalLight(0x8ab4ff,0.7);
-    rFill.position.set(-4,2,4);
-    scene.add(rFill);
-
-    function loadRobot(){
-      const GLB_URL="https://danielngr.github.io/FORJA/idle.glb";
-      fetch(GLB_URL)
-        .then(r=>r.arrayBuffer())
-        .then(buf=>{
-          const loader=new THREE.GLTFLoader();
-          loader.parse(buf,"",(gltf)=>{
-            const model=gltf.scene;
-            // Measure raw size before transforms
-            const rawBox=new THREE.Box3().setFromObject(model);
-            const rawSize=rawBox.getSize(new THREE.Vector3());
-            const rawCenter=rawBox.getCenter(new THREE.Vector3());
-            console.log("FORJA BOT raw size:",rawSize);
-            console.log("FORJA BOT raw center:",rawCenter);
-            console.log("FORJA BOT animations:",gltf.animations.length);
-
-            // Fix orientation — Sketchfab inverted axes
-            model.rotation.x=-Math.PI/2;
-            // Scale to ~2.5 units tall in scene
-            const targetH=2.5;
-            const autoScale=targetH/Math.max(rawSize.x,rawSize.y,rawSize.z);
-            model.scale.setScalar(autoScale);
-            // Center at origin first, then offset right
-            model.position.set(3.5,-1.2,0);
-            scene.add(model);
-            robotRoot=model;
-
-            // Post-add bounding box
-            const finalBox=new THREE.Box3().setFromObject(model);
-            const finalSize=finalBox.getSize(new THREE.Vector3());
-            console.log("FORJA BOT final size:",finalSize);
-            console.log("FORJA BOT final pos:",model.position);
-            console.log("FORJA BOT camera at Z:",camera.position.z,"frustum X: ±",( camera.position.z*Math.tan(46*Math.PI/360)*(W/H)).toFixed(2));
-
-            // Animations
-            if(gltf.animations&&gltf.animations.length>0){
-              robotMixer=new THREE.AnimationMixer(model);
-              const idleClip=gltf.animations[0];
-              const action=robotMixer.clipAction(idleClip);
-              action.play();
-              console.log("FORJA BOT animation playing:",idleClip.name);
-            }
-            robotReady=true;
-          },err=>console.warn("FORJA Robot load error:",err));
-        })
-        .catch(e=>console.warn("FORJA Robot fetch error:",e));
-    }
-    loadRobot();
-
     let t=0, animId;
     function animate(){
       animId=requestAnimationFrame(animate);
       t+=0.006;
       pts.rotation.y=Math.sin(t*0.45)*0.50;
       pts.rotation.x=Math.sin(t*0.28)*0.05;
-      // Tick robot animations
-      if(robotMixer&&robotReady){
-        const delta=robotClock.getDelta();
-        robotMixer.update(delta);
-        // Subtle idle bob
-        if(robotRoot) robotRoot.position.y=-1.6+Math.sin(t*0.9)*0.08;
-      }
       renderer.render(scene,camera);
     }
     animate();
 
     document.addEventListener("visibilitychange",()=>{
-      if(document.hidden){ cancelAnimationFrame(animId); } else { robotClock=new THREE.Clock(); animate(); }
+      if(document.hidden){ cancelAnimationFrame(animId); } else { animate(); }
     });
-
-    // Expose for external control (future animations)
-    window.FORJA_BOT={
-      get mixer(){ return robotMixer; },
-      get model(){ return robotRoot; },
-      get scene(){ return scene; },
-    };
   }
 
   window.addEventListener("forja:mount", tryInit);
@@ -7570,14 +7434,321 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 })();
 </script>
 
+<script>
+(function initBot(){
+  const BASE="https://danielngr.github.io/FORJA/animations/";
+  const MODEL_URL="https://danielngr.github.io/FORJA/idle.glb";
 
+  // ── Leer desempeño del usuario desde localStorage ──────────────────
+  function getUserPerf(){
+    try{
+      const profile=JSON.parse(localStorage.getItem("fv8_profile")||"{}");
+      const done=JSON.parse(localStorage.getItem("fv8_done")||"{}");
+      // Contar días entrenados en los últimos 30 días
+      const now=Date.now();
+      const DAY=86400000;
+      let streak=0, daysSinceLast=999, totalRecent=0;
+      // Buscar sesiones completadas
+      const keys=Object.keys(done);
+      const daySet=new Set();
+      keys.forEach(k=>{
+        // key format: "YYYY-MM-DD-exId" o similar
+        const parts=k.split("-");
+        if(parts.length>=3){
+          const dateStr=parts.slice(0,3).join("-");
+          daySet.add(dateStr);
+        }
+      });
+      // También revisar historial de workouts
+      const hist=JSON.parse(localStorage.getItem("fv8_hist")||"[]");
+      hist.forEach(h=>{
+        if(h.date) daySet.add(h.date.slice(0,10));
+      });
+      const sortedDays=Array.from(daySet).sort().reverse();
+      if(sortedDays.length>0){
+        const lastDate=new Date(sortedDays[0]);
+        daysSinceLast=Math.floor((now-lastDate.getTime())/DAY);
+        // Calcular racha
+        let s=0, prev=null;
+        for(const d of sortedDays){
+          const dt=new Date(d);
+          if(!prev){ s=1; prev=dt; continue; }
+          const diff=Math.floor((prev.getTime()-dt.getTime())/DAY);
+          if(diff<=1){ s++; prev=dt; }
+          else break;
+        }
+        streak=s;
+        totalRecent=sortedDays.filter(d=>now-new Date(d).getTime()<30*DAY).length;
+      }
+      // Detectar si completó entreno HOY
+      const today=new Date().toISOString().slice(0,10);
+      const completedToday=sortedDays[0]===today;
+      return{streak,daysSinceLast,totalRecent,completedToday};
+    }catch(e){ return{streak:0,daysSinceLast:999,totalRecent:0,completedToday:false}; }
+  }
 
+  // ── Estado emocional según desempeño ───────────────────────────────
+  function getMood(){
+    const p=getUserPerf();
+    if(p.completedToday) return "victory";     // completó hoy → celebra
+    if(p.streak>=7)      return "hype";        // racha 7+ → taunt/rumba
+    if(p.streak>=3)      return "active";      // racha 3+ → activo, walk
+    if(p.daysSinceLast>=7) return "depressed"; // 7+ días → sitting/defeated
+    if(p.daysSinceLast>=3) return "sad";       // 3-6 días → shake/look
+    return "normal";                           // default → idle/walk/look
+  }
 
+  // ── Animaciones por mood ────────────────────────────────────────────
+  // Cada entrada: [archivo, duración loop s, es one-shot]
+  const ANIM_FILES={
+    idle:     BASE+"bot_idle.glb",
+    walk:     BASE+"bot_walk.glb",
+    look:     BASE+"bot_look.glb",
+    rumba:    BASE+"bot_rumba.glb",
+    defeated: BASE+"bot_defeated.glb",
+    victory:  BASE+"bot_victory.glb",
+    clap:     BASE+"bot_clap.glb",
+    shake:    BASE+"bot_shake.glb",
+    sitting:  BASE+"bot_sitting.glb",
+    taunt:    BASE+"bot_taunt.glb",
+    strafe:   BASE+"bot_strafe.glb",
+  };
 
+  // Secuencias por mood: [animKey, duración override en s (0=full loop), walkAfter]
+  const MOOD_SEQUENCES={
+    victory:  [["victory",6,false],["clap",4,false],["idle",3,true]],
+    hype:     [["taunt",4,false],["rumba",5,false],["walk",0,true],["strafe",3,false]],
+    active:   [["walk",0,true],["look",4,false],["walk",0,true],["strafe",3,false]],
+    sad:      [["shake",4,false],["look",5,false],["idle",4,false],["walk",0,true]],
+    depressed:[["defeated",6,false],["sitting",8,false],["idle",3,false]],
+    normal:   [["idle",3,false],["walk",0,true],["look",4,false],["idle",3,false]],
+  };
 
+  let renderer,scene,camera,mixer,clock,model,animId;
+  let ready=false, loadedClips={};
+  let charX=0,charY=0,targetX=0,targetY=0,charFacing=0;
+  let seqIdx=0, seqTimer=0, currentMood="normal";
+  let walkMode=false;
+  let MX=4, MY=0.5; // frustum bounds
 
+  // ── Cargar un GLB y extraer su AnimationClip ───────────────────────
+  function loadClip(key){
+    return new Promise((resolve)=>{
+      if(loadedClips[key]){ resolve(loadedClips[key]); return; }
+      fetch(ANIM_FILES[key])
+        .then(r=>r.arrayBuffer())
+        .then(buf=>{
+          new THREE.GLTFLoader().parse(buf,"",(gltf)=>{
+            const clip=gltf.animations&&gltf.animations[0]||null;
+            loadedClips[key]=clip;
+            resolve(clip);
+          },()=>resolve(null));
+        }).catch(()=>resolve(null));
+    });
+  }
 
+  // ── Reproducir animación con crossfade ────────────────────────────
+  let currentAction=null;
+  function playClip(key, loop=true){
+    const clip=loadedClips[key];
+    if(!clip||!mixer) return;
+    const next=mixer.clipAction(clip);
+    next.setLoop(loop?THREE.LoopRepeat:THREE.LoopOnce,Infinity);
+    next.clampWhenFinished=!loop;
+    next.reset().play();
+    if(currentAction&&currentAction!==next){
+      currentAction.crossFadeTo(next,0.35,false);
+    }
+    currentAction=next;
+  }
 
+  // ── Lógica de secuencias ──────────────────────────────────────────
+  function advanceSequence(dt,FLOOR_Y){
+    const seq=MOOD_SEQUENCES[currentMood]||MOOD_SEQUENCES.normal;
+    seqTimer-=dt;
+    if(seqTimer<=0){
+      seqIdx=(seqIdx+1)%seq.length;
+      const[nextKey,nextDur,nextWalk]=seq[seqIdx];
+      seqTimer=nextDur>0?nextDur:3.5;
+      walkMode=nextWalk;
+      // Si ya cargó: tocar inmediato. Si no: cargar y tocar cuando esté listo
+      if(loadedClips[nextKey]){
+        playClip(nextKey,true);
+      } else {
+        if(loadedClips.idle) playClip("idle",true); // fallback mientras carga
+        loadClip(nextKey).then(()=>playClip(nextKey,true));
+      }
+      if(nextWalk){
+        // 70% del tiempo en el lado derecho (izquierda tiene el texto Esta Semana)
+        const goRight=Math.random()>0.3;
+        targetX=goRight
+          ? MX*(0.25+Math.random()*0.70)
+          : -MX*(0.05+Math.random()*0.25);
+        targetX=Math.max(-MX,Math.min(MX,targetX));
+      } else {
+        targetX=charX;
+      }
+    }
+  }
+
+  function tryInit(){
+    const canvas=document.getElementById("forja-bot-canvas");
+    if(!canvas||!window.THREE||!window.THREE.GLTFLoader) return;
+    if(canvas.dataset.botInit) return;
+    canvas.dataset.botInit="1";
+
+    const W=canvas.offsetWidth||360;
+    const H=200;
+    canvas.width=W*window.devicePixelRatio;
+    canvas.height=H*window.devicePixelRatio;
+
+    renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+    renderer.setSize(W,H);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+    renderer.setClearColor(0x000000,0);
+
+    scene=new THREE.Scene();
+    const aspect=W/H;
+    // FOV=30 angosto, camZ=6 → halfH=1.608
+    // Robot base=0.028u, scale=70 → height=1.96u = 61% del canvas
+    camera=new THREE.PerspectiveCamera(70,aspect,0.1,200);
+    camera.position.set(0,0,12.5);
+
+    scene.add(new THREE.AmbientLight(0xffffff,1.4));
+    const key=new THREE.DirectionalLight(0xffeedd,1.2);
+    key.position.set(3,6,8); scene.add(key);
+    const fill=new THREE.DirectionalLight(0x8899bb,0.4);
+    fill.position.set(-4,1,3); scene.add(fill);
+
+    clock=new THREE.Clock();
+
+    // halfH=6*tan(15°)=1.608, halfW=halfH*aspect
+    const halfH=12.5*Math.tan(35*Math.PI/180); // FOV=70, camZ=12.5 → halfH=8.753
+    const halfW=halfH*aspect;
+    MX=halfW*0.65;
+    const FLOOR_Y=-6.639; // proporcional al medido en iPhone
+
+    charX=MX*0.55; charY=FLOOR_Y;
+    targetX=charX; targetY=FLOOR_Y;
+
+    // Determinar mood inicial
+    currentMood=getMood();
+    const seq=MOOD_SEQUENCES[currentMood];
+    seqIdx=0; seqTimer=1.0; // timer corto para que empiece a moverse rápido
+    walkMode=true; // empieza caminando
+
+    // Cargar modelo base (idle.glb tiene el mesh + skin)
+    fetch(MODEL_URL)
+      .then(r=>r.arrayBuffer())
+      .then(buf=>{
+        new THREE.GLTFLoader().parse(buf,"",(gltf)=>{
+          model=gltf.scene;
+
+          // Colores del robot — ojos azul brillante, partes blancas
+          model.traverse(child=>{
+            if(child.isMesh||child.isSkinnedMesh){
+              const n=(child.name||"").toLowerCase();
+              let mat;
+              if(n.includes("mascara")){
+                // Ojos: azul brillante emisivo
+                mat=new THREE.MeshStandardMaterial({
+                  color:0x00aaff, emissive:new THREE.Color(0x0066ff),
+                  emissiveIntensity:1.5, roughness:0.1, metalness:0.0
+                });
+              } else if(n.includes("cabeza")||n.includes("brazo")||n.includes("dedos")||n.includes("pierna")){
+                // Extremidades y cabeza: blanco cálido
+                mat=new THREE.MeshStandardMaterial({color:0xf0ede8,roughness:0.4,metalness:0.1});
+              } else if(n.includes("cuerpo")){
+                // Torso: gris oscuro
+                mat=new THREE.MeshStandardMaterial({color:0x2a2e38,roughness:0.5,metalness:0.3});
+              } else if(n.includes("cuello")||n.includes("pcube")||n.includes("pcylinder")){
+                // Articulaciones: gris medio
+                mat=new THREE.MeshStandardMaterial({color:0x555870,roughness:0.6,metalness:0.4});
+              } else {
+                mat=new THREE.MeshStandardMaterial({color:0xd0ccc8,roughness:0.4,metalness:0.1});
+              }
+              if(child.isSkinnedMesh) mat.skinning=true;
+              child.material=mat;
+            }
+          });
+
+          // Escala medida en iPhone: scale=100, FOV=70, camZ=12.5
+          model.scale.setScalar(75);
+          // Ajustar rotación para que pies queden planos
+          model.rotation.y=0;
+          model.position.set(charX,FLOOR_Y,0);
+          scene.add(model);
+
+          mixer=new THREE.AnimationMixer(model);
+
+          // Precargar animaciones del mood actual en paralelo
+          const seq=MOOD_SEQUENCES[currentMood];
+          const keysToLoad=[...new Set(seq.map(s=>s[0]))];
+          keysToLoad.push("walk","idle"); // siempre tener estos
+          Promise.all(keysToLoad.map(k=>loadClip(k))).then(()=>{
+            // Empezar con la primera anim del mood
+            playClip(seq[0][0],true);
+            ready=true;
+          });
+        },e=>console.warn("BOT model:",e));
+      }).catch(e=>console.warn("BOT fetch:",e));
+
+    function animate(){
+      animId=requestAnimationFrame(animate);
+      if(!ready||!model) return;
+      const dt=Math.min(clock.getDelta(),0.05);
+      if(mixer) mixer.update(dt);
+
+      advanceSequence(dt,FLOOR_Y);
+
+      if(walkMode){
+        const dx=targetX-charX;
+        const dist=Math.abs(dx);
+        if(dist<0.08){
+          charX=targetX;
+        } else {
+          const step=Math.min(1.8*dt,dist);
+          charX+=Math.sign(dx)*step;
+          const tf=dx>0?0.3:-0.3;
+          charFacing+=(tf-charFacing)*0.12;
+        }
+      } else {
+        charFacing*=0.92;
+      }
+
+      model.position.set(charX,FLOOR_Y,0);
+      model.rotation.y=charFacing;
+      renderer.render(scene,camera);
+    }
+    animate();
+
+    window.addEventListener("resize",()=>{
+      const W2=canvas.offsetWidth||360;
+      canvas.width=W2*window.devicePixelRatio; canvas.height=200*window.devicePixelRatio;
+      renderer.setSize(W2,200);
+      camera.aspect=W2/200; camera.updateProjectionMatrix();
+      MX=12.5*Math.tan(35*Math.PI/180)*(W2/200)*0.65;
+    });
+
+    document.addEventListener("visibilitychange",()=>{
+      if(document.hidden) cancelAnimationFrame(animId);
+      else{ clock=new THREE.Clock(); animate(); }
+    });
+
+    // API pública — permite triggers externos (ej: completar entreno)
+    window.FORJA_BOT={
+      get model(){ return model; },
+      get mood(){ return currentMood; },
+      trigger(mood){ currentMood=mood; seqIdx=0; seqTimer=0.01; },
+      refreshMood(){ currentMood=getMood(); seqIdx=0; seqTimer=0.01; },
+    };
+  }
+
+  window.addEventListener("load",tryInit);
+  document.addEventListener("DOMContentLoaded",tryInit);
+  setInterval(()=>{ if(!ready) tryInit(); },400);
+})();
+</script>
 <script>
 (function initMeditation(){
   const BASE="https://forjavideos.b-cdn.net/";
