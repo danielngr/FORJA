@@ -7440,23 +7440,22 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
   const CDN="https://pub-28277a6ce79d49479afd0cb1bba27b44.r2.dev/bot-anims/";
   const FY=-8.5, FOV=35, CZ=14, CAM_Y=-4.4;
 
-  // Animaciones disponibles por estado
-  // canWalk=true → robot camina de lado a lado
-  // canWalk=false → robot estático en centro
-  const STATES = {
-    // Sin datos / primer uso
-    normal:   { anims:["walking_skin","jogging"],          canWalk:true  },
-    // Entrenaste hoy
-    victory:  { anims:["excited","capoeira","baseball"],   canWalk:false },
-    // Streak 3+ días
-    active:   { anims:["jogging","capoeira","plank"],      canWalk:true  },
-    // Sin entrenar hoy
-    idle:     { anims:["fishing","cowmilking","rifleaiming","climb"], canWalk:false },
-    // 2 días sin entrenar
-    low:      { anims:["laying","plank"],                  canWalk:false },
-    // 3+ días sin entrenar
-    dead:     { anims:["falling","laying"],                canWalk:false },
-  };
+  // Secuencias temáticas — nombres de GLBs en R2
+  const SEQUENCES=[
+    {anims:["walking_skin","jogging"], walk:true},
+    {anims:["jogging","baseball"],     walk:true},
+    {anims:["walking_skin","capoeira"],walk:true},
+    {anims:["plank"],                  walk:false},
+    {anims:["excited","capoeira"],     walk:false},
+    {anims:["fishing"],                walk:false},
+    {anims:["cowmilking"],             walk:false},
+    {anims:["rifleaiming"],            walk:false},
+    {anims:["climb"],                  walk:false},
+    {anims:["laying"],                 walk:false},
+    {anims:["falling"],                walk:false},
+    {anims:["flyingpunch","capoeira"], walk:false},
+    {anims:["jogging","excited","baseball"], walk:true},
+  ];
 
   function getMood(){
     try{
@@ -7480,14 +7479,12 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     return "normal";
   }
 
-  let ren,scene,cam,mixer,clock,model,aid;
+  let ren,scene,cam,clock,aid;
+  let model=null, mixer=null;
   let ready=false;
-  let cx=-4, tx=3, facing=0, wm=true, st=0.1;
-  let canWalk=true;
-
-  function newTarget(){
-    cx>=0 ? tx=-(1.5+Math.random()*2.5) : tx=(1.5+Math.random()*2.5);
-  }
+  let cx=-4, canWalk=true;
+  let clipCache={};
+  let currentAction=null;
 
   function tryInit(){
     const canvas=document.getElementById("forja-bot-canvas");
@@ -7499,29 +7496,21 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     ren=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
     ren.setSize(W,H); ren.setPixelRatio(Math.min(devicePixelRatio,2));
     ren.setClearColor(0,0);
-    scene=new THREE.Scene();
+    const scene=new THREE.Scene();
     cam=new THREE.PerspectiveCamera(FOV,W/H,0.1,200);
     cam.position.set(0,CAM_Y,CZ); cam.lookAt(0,CAM_Y,0);
     scene.add(new THREE.AmbientLight(0xffffff,2));
     const dl=new THREE.DirectionalLight(0xffffff,1.5); dl.position.set(2,5,4); scene.add(dl);
     clock=new THREE.Clock();
 
-    // Elegir animación según mood
-    const mood=getMood();
-    const state=STATES[mood]||STATES.normal;
-    canWalk=state.canWalk;
-    const anim=state.anims[Math.floor(Math.random()*state.anims.length)];
-    const url=CDN+anim+".glb";
-    console.log('BOT mood=',mood,'anim=',anim,'canWalk=',canWalk);
-
-    fetch(url).then(r=>r.arrayBuffer()).then(buf=>{
-      new THREE.GLTFLoader().parse(buf,CDN,(gltf)=>{
+    // Cargar modelo base (walking_skin) y luego precargar todos los clips
+    loadGLB("walking_skin.glb", buf=>{
+      new THREE.GLTFLoader().parse(buf, CDN, (gltf)=>{
         model=gltf.scene;
-        // Remover artefactos Blender
+        // Limpiar y aplicar materiales
         const rm=[];
         model.traverse(c=>{if(c.name==="Cube"||c.name==="default")rm.push(c);});
         rm.forEach(c=>c.parent&&c.parent.remove(c));
-        // Materiales
         model.traverse(c=>{
           if(!(c.isMesh||c.isSkinnedMesh)) return;
           const n=c.name||"";
@@ -7533,144 +7522,129 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
         });
         model.scale.setScalar(36);
         model.rotation.x=-0.15;
-        model.position.set(canWalk?cx:0, FY, 0);
+        model.position.set(cx, FY, 0);
         scene.add(model);
         mixer=new THREE.AnimationMixer(model);
-        if(gltf.animations[0]){
-          const clip=gltf.animations[0];
-          if(canWalk) clip.tracks=clip.tracks.filter(t=>!(t.name.toLowerCase().includes('hip')&&t.name.toLowerCase().includes('position')));
-          const a=mixer.clipAction(clip);
-          a.setLoop(THREE.LoopRepeat);
-          a.play();
+
+        // Clip inicial = walking_skin
+        const clip0=gltf.animations[0];
+        if(clip0){
+          const c0=clip0.clone();
+          c0.tracks=c0.tracks.filter(t=>!(t.name.toLowerCase().includes('hip')&&t.name.toLowerCase().includes('position')));
+          clipCache["walking_skin"]=c0;
+          currentAction=mixer.clipAction(c0);
+          currentAction.setLoop(THREE.LoopRepeat).play();
         }
         ready=true;
-        animate();
-        // Cache de clips ya cargados
-        window._botClipCache={};
-        window._botCurrentAction=null;
+        animate(scene);
 
-        function playAnim(name, fadeTime=0.5){
-          const isWalk=name==="walking_skin"||name==="jogging";
-          canWalk=isWalk;
-          if(!canWalk){ window._botDir=1; window._botTurn=0; }
-
-          function applyClip(clip){
-            const newClip=clip.clone();
-            if(isWalk) newClip.tracks=newClip.tracks.filter(t=>!(t.name.toLowerCase().includes('hip')&&t.name.toLowerCase().includes('position')));
-            const newAction=mixer.clipAction(newClip);
-            newAction.setLoop(THREE.LoopRepeat);
-            newAction.clampWhenFinished=false;
-            if(window._botCurrentAction && window._botCurrentAction!==newAction){
-              newAction.reset();
-              newAction.play();
-              window._botCurrentAction.crossFadeTo(newAction, fadeTime, true);
-            } else {
-              newAction.reset().play();
-            }
-            window._botCurrentAction=newAction;
-          }
-
-          if(window._botClipCache[name]){
-            applyClip(window._botClipCache[name]);
-          } else {
-            fetch(CDN+name+".glb").then(r=>r.arrayBuffer()).then(buf=>{
-              new THREE.GLTFLoader().parse(buf,CDN,(g)=>{
-                if(!g.animations[0]) return;
-                window._botClipCache[name]=g.animations[0];
-                applyClip(g.animations[0]);
-              },e=>console.error('BOT parse:',e));
-            }).catch(e=>console.error('BOT fetch:',e));
-          }
-        }
-
-        // Secuencias — grupos de animaciones que se encadenan temáticamente
-        const SEQUENCES=[
-          ["walking_skin","jogging"],           // correr
-          ["jogging","baseball"],               // correr → batear
-          ["walking_skin","capoeira"],          // caminar → capoeira
-          ["plank"],                            // plancha
-          ["excited","capoeira"],               // emocionado → capoeira
-          ["fishing"],                          // pescar
-          ["cowmilking"],                       // vaquero
-          ["rifleaiming"],                      // rifle
-          ["climb"],                            // escalar
-          ["laying"],                           // acostado
-          ["falling"],                          // cayendo
-          ["flyingpunch","capoeira"],           // puñetazo → capoeira
-          ["jogging","excited","baseball"],     // correr → emocionado → batear
-        ];
-
-        let _seqIdx=0, _animInSeq=0;
-        function nextInSequence(){
-          const seq=SEQUENCES[_seqIdx];
-          playAnim(seq[_animInSeq], 0.6);
-          _animInSeq++;
-          if(_animInSeq>=seq.length){
-            _animInSeq=0;
-            _seqIdx=(_seqIdx+1)%SEQUENCES.length;
-            setTimeout(nextInSequence, 20000);
-          } else {
-            // Dentro de una secuencia, cambiar más rápido
-            setTimeout(nextInSequence, 8000);
-          }
-        }
-        // Precarga todas las animaciones en background
-        ["walking_skin","jogging","plank","excited","capoeira","baseball","fishing","cowmilking","rifleaiming","climb","laying","falling","flyingpunch"].forEach(n=>{
-          fetch(CDN+n+".glb").then(r=>r.arrayBuffer()).then(buf=>{
-            new THREE.GLTFLoader().parse(buf,CDN,(g)=>{
-              if(g.animations[0]) window._botClipCache[n]=g.animations[0];
-            });
-          }).catch(()=>{});
+        // Precargar todos los demás clips en background
+        const ALL=["jogging","plank","excited","capoeira","baseball","fishing","cowmilking","rifleaiming","climb","laying","falling","flyingpunch"];
+        ALL.forEach(name=>{
+          loadGLB(name+".glb", buf2=>{
+            new THREE.GLTFLoader().parse(buf2,CDN,(g)=>{
+              if(!g.animations[0]) return;
+              // Retarget clip al skeleton del modelo base
+              const clip=THREE.AnimationClip.parse(THREE.AnimationClip.toJSON(g.animations[0]));
+              clipCache[name]=clip;
+            },()=>{});
+          });
         });
-        setTimeout(nextInSequence, 20000);
-      },e=>console.error('BOT parse err:',e));
-    }).catch(e=>console.error('BOT fetch err:',e));
 
-    function animate(){
-      aid=requestAnimationFrame(animate);
-      if(!ready||!model) return;
-      const dt=Math.min(clock.getDelta(),0.05);
-      mixer&&mixer.update(dt);
+        // Iniciar secuencia de testing cada 20s
+        startSequence();
+      },e=>console.error('BOT parse:',e));
+    });
+  }
 
-      if(canWalk){
-        const EDGE=7, SPD=1.8;
-        if(!window._botDir){ window._botDir=1; window._botTurn=0; }
-        if(window._botTurn>0){
-          // Girando: interpolación suave de rotación
-          window._botTurn-=dt;
-          const t=1-Math.max(0,window._botTurn)/0.3;
-          const fromY=window._botDir>0?-Math.PI/2:Math.PI/2;
-          const toY=window._botDir>0?Math.PI/2:-Math.PI/2;
-          model.rotation.y=fromY+(toY-fromY)*t;
-        } else {
-          cx+=window._botDir*SPD*dt;
-          model.rotation.y=window._botDir>0?Math.PI/2:-Math.PI/2;
-          if(cx>=EDGE){ cx=EDGE; window._botDir=-1; window._botTurn=0.3; }
-          else if(cx<=-EDGE){ cx=-EDGE; window._botDir=1; window._botTurn=0.3; }
-        }
-        model.position.x=cx;
-      } else {
-        // estático en centro, mirando de frente
-        cx+=(0-cx)*0.05;
-        model.position.x=cx;
-        model.rotation.y=Math.PI/2;
+  function loadGLB(name, cb){
+    fetch(CDN+name).then(r=>r.arrayBuffer()).then(cb).catch(e=>console.error('BOT fetch',name,e));
+  }
+
+  function playClip(name, fade=0.5){
+    if(!mixer||!clipCache[name]) return;
+    const newAction=mixer.clipAction(clipCache[name]);
+    newAction.setLoop(THREE.LoopRepeat);
+    if(currentAction && currentAction!==newAction){
+      newAction.reset().play();
+      currentAction.crossFadeTo(newAction, fade, true);
+    } else {
+      newAction.reset().play();
+    }
+    currentAction=newAction;
+  }
+
+  let _seqIdx=0, _animIdx=0;
+  function startSequence(){
+    _seqIdx=Math.floor(Math.random()*SEQUENCES.length);
+    _animIdx=0;
+    scheduleNext(20000);
+  }
+
+  function scheduleNext(delay){
+    setTimeout(()=>{
+      const seq=SEQUENCES[_seqIdx];
+      const name=seq.anims[_animIdx];
+      canWalk=seq.walk && (_animIdx===0); // solo camina en primera anim de secuencias walk
+      if(clipCache[name]){
+        playClip(name, 0.6);
+        console.log('BOT →',name,'canWalk=',canWalk);
       }
+      _animIdx++;
+      if(_animIdx>=seq.anims.length){
+        _animIdx=0;
+        _seqIdx=(_seqIdx+1)%SEQUENCES.length;
+        scheduleNext(15000);
+      } else {
+        scheduleNext(8000);
+      }
+    }, delay);
+  }
 
-      cam.lookAt(0,CAM_Y,0);
-      ren.render(scene,cam);
+  function animate(scene){
+    aid=requestAnimationFrame(()=>animate(scene));
+    if(!ready||!model) return;
+    const dt=Math.min(clock.getDelta(),0.05);
+    mixer&&mixer.update(dt);
+
+    if(canWalk){
+      const EDGE=7, SPD=1.8;
+      if(!window._botDir){ window._botDir=1; window._botTurn=0; }
+      if(window._botTurn>0){
+        window._botTurn-=dt;
+        const t=1-Math.max(0,window._botTurn)/0.3;
+        const fromY=window._botDir>0?-Math.PI/2:Math.PI/2;
+        const toY=window._botDir>0?Math.PI/2:-Math.PI/2;
+        model.rotation.y=fromY+(toY-fromY)*t;
+      } else {
+        cx+=window._botDir*SPD*dt;
+        model.rotation.y=window._botDir>0?Math.PI/2:-Math.PI/2;
+        if(cx>=EDGE){ cx=EDGE; window._botDir=-1; window._botTurn=0.3; }
+        else if(cx<=-EDGE){ cx=-EDGE; window._botDir=1; window._botTurn=0.3; }
+      }
+      model.position.x=cx;
+    } else {
+      cx+=(0-cx)*0.05;
+      model.position.x=cx;
+      model.rotation.y=Math.PI/2;
     }
 
-    document.addEventListener("visibilitychange",()=>{
-      if(document.hidden) cancelAnimationFrame(aid);
-      else{ clock=new THREE.Clock(); if(ready) animate(); }
-    });
-    window.addEventListener("resize",()=>{
-      const W2=window.innerWidth||390;
-      canvas.width=W2*devicePixelRatio; canvas.height=H*devicePixelRatio;
-      ren.setSize(W2,H); cam.aspect=W2/H; cam.updateProjectionMatrix();
-    });
-    window.FORJA_BOT={ trigger(){ /* victory handled by mood */ } };
+    cam.lookAt(0,CAM_Y,0);
+    ren.render(scene,cam);
   }
+
+  document.addEventListener("visibilitychange",()=>{
+    if(document.hidden) cancelAnimationFrame(aid);
+    else{ clock=new THREE.Clock(); if(ready) animate(); }
+  });
+  window.addEventListener("resize",()=>{
+    const canvas=document.getElementById("forja-bot-canvas");
+    if(!canvas||!ren) return;
+    const W2=window.innerWidth||390;
+    canvas.width=W2*devicePixelRatio; canvas.height=200*devicePixelRatio;
+    ren.setSize(W2,200); cam.aspect=W2/200; cam.updateProjectionMatrix();
+  });
+  window.FORJA_BOT={ trigger(){} };
 
   window.addEventListener("load",()=>setTimeout(tryInit,100));
   setInterval(()=>{if(!ready)tryInit();},500);
