@@ -29,8 +29,10 @@ button:active { background:#555; }
 </div>
  
 <div id="controls">
-  <button onclick="changeScale(-100)">Scale -100</button>
-  <button onclick="changeScale(100)">Scale +100</button>
+  <button onclick="changeScale(-2000)">-2000</button>
+  <button onclick="changeScale(-500)">-500</button>
+  <button onclick="changeScale(500)">+500</button>
+  <button onclick="changeScale(2000)">+2000</button>
   <button onclick="changeFloor(-0.1)">Floor -0.1</button>
   <button onclick="changeFloor(0.1)">Floor +0.1</button>
   <button onclick="changeFOV(-5)">FOV -5</button>
@@ -47,7 +49,7 @@ button:active { background:#555; }
 <script>
 const GLB = 'https://danielngr.github.io/FORJA/idle.glb';
 let renderer, scene, camera, model, mixer, clock, animId;
-let currentScale = 6200;
+let currentScale = 500;
 let currentFOV = 30;
 let currentCamZ = 6;
 let FLOOR_Y = -0.545; // -halfH + robot_h/2 = -1.608 + 1.104
@@ -182,3 +184,4 @@ window.addEventListener('load', init);
 </script>
 </body>
 </html>
+ 
