@@ -4046,158 +4046,162 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
     </div>
   );}
   return(<>
-      <div style={{background:"#08090e",borderBottom:"1px solid rgba(255,255,255,0.06)",minHeight:200,overflow:"hidden",position:"relative"}}>
-        <canvas id="forja-bot-canvas" style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",pointerEvents:"none",zIndex:2}}></canvas>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-          <div>
-            {day?.isExpress&&(
-              <div style={{display:"inline-flex",alignItems:"center",gap:5,
-                background:"rgba(63,207,142,0.12)",border:"1px solid rgba(63,207,142,0.3)",
-                borderRadius:20,padding:"3px 10px",marginBottom:6,
-                fontFamily:mono,fontSize:8,color:"#3fcf8e",letterSpacing:2}}>
-                ⚡ EXPRESS
+      <div style={{position:"relative",background:"#08090e",borderBottom:"0.5px solid rgba(255,255,255,0.06)",height:210,overflow:"hidden"}}>
+
+        {/* ── Canvas 3D (robot + piso) ── */}
+        <canvas id="forja-bot-canvas" style={{position:"absolute",inset:0,width:"100%",height:"100%",zIndex:1}}/>
+
+        {/* ── Vignette lateral */}
+        <div style={{position:"absolute",inset:0,zIndex:2,pointerEvents:"none",
+          background:"linear-gradient(90deg,rgba(8,9,14,.8) 0%,transparent 18%,transparent 82%,rgba(8,9,14,.8) 100%)"}}/>
+
+        {/* ── Settings + progress (top right) */}
+        <div style={{position:"absolute",top:10,right:10,zIndex:10,display:"flex",alignItems:"center",gap:8}}>
+          {day&&exs.length>0&&(
+            <div style={{display:"flex",alignItems:"center",gap:5}}>
+              <span style={{fontSize:8,fontFamily:mono,color:"rgba(255,255,255,0.2)",letterSpacing:1}}>{dc}/{exs.length}</span>
+              <div style={{width:32,height:1.5,background:"rgba(255,255,255,0.06)",borderRadius:1}}>
+                <div style={{height:"100%",width:`${pct*100}%`,background:pct===1?"#3fcf8e":"rgba(255,255,255,0.35)",borderRadius:1,transition:"width .4s"}}/>
               </div>
-            )}
-            <div style={{fontSize:8,fontFamily:mono,color:"rgba(255,255,255,.35)",letterSpacing:4,marginBottom:3,fontWeight:700}}></div>
-          </div>
-            <div style={{display:"flex",alignItems:"flex-start",gap:10,paddingTop:2}}>
-            {day&&exs.length>0&&(
-              <div style={{textAlign:"right"}}>
-                <div data-tour="day-progress" style={{fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:1,marginBottom:4}}>{dc}/{exs.length}</div>
-                <div style={{width:52,height:2,background:C.borderL,borderRadius:1,overflow:"hidden"}}>
-                  <div style={{height:"100%",background:`linear-gradient(90deg,${pct===1?"#3fcf8e":"rgba(255,255,255,.7)"},${pct===1?"#2ea878":"rgba(255,255,255,.4)"})`,width:`${pct*100}%`,transition:"width 0.4s"}}/>
-                </div>
-              </div>
-            )}
-            <button onClick={()=>setShowSet(!showSet)} style={{width:30,height:30,borderRadius:8,border:`1.5px solid ${C.borderL}`,background:C.card,cursor:"pointer",color:C.tx3,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center"}}>⚙</button>
-          </div>
+            </div>
+          )}
+          <button onClick={()=>setShowSet(!showSet)}
+            style={{width:24,height:24,borderRadius:6,border:"0.5px solid rgba(255,255,255,0.08)",
+              background:"rgba(255,255,255,0.03)",cursor:"pointer",color:"rgba(255,255,255,0.3)",fontSize:11,
+              display:"flex",alignItems:"center",justifyContent:"center"}}>
+            &#9881;
+          </button>
         </div>
+
+        {/* ── Settings panel */}
         {showSet&&(
-          <div style={{display:"flex",gap:8,marginTop:10,paddingTop:10,borderTop:`1px solid ${C.borderL}`}}>
-            <button onClick={()=>{const langs=["es","en","fr","it","de","pt"];const nl=langs[(langs.indexOf(lang)+1)%langs.length];setLang(nl);sp({...profile,lang:nl});}}
-              style={{padding:"7px 12px",borderRadius:7,border:`1.5px solid ${C.borderL}`,background:C.card,color:C.tx2,fontSize:10,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>
-              {lang.toUpperCase()}
-            </button>
-            <button onClick={()=>{showForjaOnboarding();setShowSet(false);}}
-              style={{padding:"7px 12px",borderRadius:7,border:`1.5px solid ${C.borderL}`,background:C.card,color:C.tx2,fontSize:10,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>
-              {t.reconfig.toUpperCase()}
-            </button>
-            <button onClick={()=>{
-              try{localStorage.removeItem('fv8_toured');}catch{}
-              setTourAskVisible(true);
-              setTourStep(null);
-              setShowSet(false);
-            }} style={{padding:"7px 12px",borderRadius:7,border:`1.5px solid ${C.borderL}`,background:C.card,color:C.tx2,fontSize:10,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>
-              {"TUTORIAL"}
-            </button>
-            {isUserAnonymous()&&<button onClick={doGoogleSignIn} style={{padding:"7px 12px",borderRadius:7,border:"1.5px solid rgba(66,133,244,.4)",background:"rgba(66,133,244,.1)",color:"rgba(66,133,244,.9)",fontSize:10,fontFamily:mono,letterSpacing:1,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>{lang==="es"?"GUARDAR CON GOOGLE":"SAVE WITH GOOGLE"}</button>}
-            {!isUserAnonymous()&&<button onClick={doSignOut} style={{padding:"7px 12px",borderRadius:7,border:`1.5px solid ${C.borderL}`,background:C.card,color:"rgba(95,210,136,.7)",fontSize:10,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>✓ {getUserEmail()?.split('@')[0]||"Google"}</button>}
+          <div style={{position:"absolute",top:38,right:10,zIndex:20,
+            background:"rgba(10,12,18,0.97)",border:"0.5px solid rgba(255,255,255,0.08)",
+            borderRadius:10,padding:"8px 10px",display:"flex",flexWrap:"wrap",gap:6,maxWidth:260}}>
+            {[
+              {label:lang.toUpperCase(),fn:()=>{const ls=["es","en","fr","it","de","pt"];const nl=ls[(ls.indexOf(lang)+1)%ls.length];setLang(nl);sp({...profile,lang:nl});}},
+              {label:t.reconfig.toUpperCase(),fn:()=>{showForjaOnboarding();setShowSet(false);}},
+              {label:"TUTORIAL",fn:()=>{try{localStorage.removeItem("fv8_toured");}catch{}setTourAskVisible(true);setTourStep(null);setShowSet(false);}},
+            ].map(({label,fn})=>(
+              <button key={label} onClick={fn}
+                style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(255,255,255,0.08)",
+                  background:"transparent",color:"rgba(255,255,255,0.5)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>
+                {label}
+              </button>
+            ))}
+            {isUserAnonymous()
+              ? <button onClick={doGoogleSignIn} style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(66,133,244,0.25)",background:"rgba(66,133,244,0.06)",color:"rgba(66,133,244,0.8)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>GOOGLE</button>
+              : <button onClick={doSignOut} style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(63,207,142,0.2)",background:"transparent",color:"rgba(63,207,142,0.6)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>&#10003; {getUserEmail()?.split("@")[0]||"Google"}</button>
+            }
           </div>
         )}
+
+        {/* ── Week nav (top center) */}
         {(()=>{
-          const now = new Date();
-          const dow = now.getDay(); // 0=Sun
-          const mondayOff = dow===0?-6:1-dow;
-          const monDate = new Date(now);
-          monDate.setDate(now.getDate() + mondayOff + weekOff*7);
-          const sunDate = new Date(monDate);
-          sunDate.setDate(monDate.getDate() + 6);
-          const fmt = d => `${d.getDate()} ${['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][d.getMonth()]}`;
-          const weekLabel = weekOff===0
-            ? (lang==="es"||lang==="pt"?"Esta semana":lang==="fr"?"Cette semaine":lang==="it"?"Questa settimana":lang==="de"?"Diese Woche":"This week")
-            : weekOff===-1
-              ? (lang==="es"||lang==="pt"?"Semana pasada":lang==="fr"?"Semaine dernière":lang==="it"?"Settimana scorsa":lang==="de"?"Letzte Woche":"Last week")
-              : `${fmt(monDate)} – ${fmt(sunDate)}`;
-          return (
-            <div data-tour="cal-nav" style={{display:"flex",alignItems:"center",gap:8,marginTop:12,marginBottom:6}}>
+          const now=new Date(),dow=now.getDay(),mo=dow===0?-6:1-dow;
+          const mon=new Date(now); mon.setDate(now.getDate()+mo+weekOff*7);
+          const sun=new Date(mon); sun.setDate(mon.getDate()+6);
+          const fmt=d=>`${d.getDate()} ${["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"][d.getMonth()]}`;
+          const lbl=weekOff===0?(lang==="es"||lang==="pt"?"ESTA SEMANA":lang==="fr"?"CETTE SEMAINE":lang==="it"?"QUESTA SETTIMANA":lang==="de"?"DIESE WOCHE":"THIS WEEK")
+            :weekOff===-1?(lang==="es"||lang==="pt"?"SEMANA PASADA":lang==="fr"?"SEMAINE PRECEDENTE":lang==="it"?"SETTIMANA SCORSA":lang==="de"?"LETZTE WOCHE":"LAST WEEK")
+            :`${fmt(mon)} - ${fmt(sun)}`;
+          return(
+            <div style={{position:"absolute",top:10,left:0,right:0,zIndex:10,
+              display:"flex",alignItems:"center",justifyContent:"center",gap:8,pointerEvents:"none"}}>
               <button onClick={()=>setWeekOff(p=>Math.max(-12,p-1))}
-                style={{width:28,height:28,borderRadius:8,flexShrink:0,
-                  border:`1px solid ${C.borderL}`,background:"transparent",
-                  color:weekOff<=-12?"rgba(255,255,255,.5)":C.tx3,
-                  fontSize:16,cursor:weekOff<=-12?"default":"pointer",
-                  display:"flex",alignItems:"center",justifyContent:"center"}}>‹</button>
-              <div style={{flex:1,textAlign:"center"}}>
-                <div style={{fontSize:9,fontWeight:700,fontFamily:mono,color:weekOff===0?"#EEEAE3":"#c0c8dc",
-                  letterSpacing:1.5,textTransform:"uppercase"}}>
-                  {weekLabel}
-                </div>
-                {weekOff!==0&&<div style={{fontSize:7,fontFamily:mono,color:C.tx3,
-                  opacity:.4,letterSpacing:1,marginTop:2}}>
-                  {lang==="es"||lang==="pt"?"toca día para ver detalle":lang==="fr"?"touchez un jour":lang==="it"?"tocca un giorno":lang==="de"?"Tag antippen":"tap day to see detail"}
-                </div>}
-              </div>
+                style={{pointerEvents:"all",width:20,height:20,borderRadius:"50%",
+                  border:"0.5px solid rgba(255,255,255,0.08)",background:"rgba(255,255,255,0.03)",
+                  color:"rgba(255,255,255,0.25)",fontSize:13,cursor:"pointer",
+                  display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>
+                &#8249;
+              </button>
+              <span style={{fontSize:7,fontFamily:mono,letterSpacing:3,
+                color:weekOff===0?"rgba(255,255,255,0.4)":"rgba(255,255,255,0.25)"}}>
+                {lbl}
+              </span>
               <button onClick={()=>setWeekOff(p=>Math.min(0,p+1))}
-                style={{width:28,height:28,borderRadius:8,flexShrink:0,
-                  border:`1px solid ${weekOff===0?"rgba(255,255,255,.06)":C.borderL}`,
-                  background:"transparent",
-                  color:weekOff===0?"rgba(255,255,255,.12)":C.tx3,
-                  fontSize:16,cursor:weekOff===0?"default":"pointer",
-                  display:"flex",alignItems:"center",justifyContent:"center"}}>›</button>
+                style={{pointerEvents:"all",width:20,height:20,borderRadius:"50%",
+                  border:"0.5px solid rgba(255,255,255,0.08)",background:"rgba(255,255,255,0.03)",
+                  color:weekOff===0?"rgba(255,255,255,0.06)":"rgba(255,255,255,0.25)",
+                  fontSize:13,cursor:weekOff===0?"default":"pointer",
+                  display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>
+                &#8250;
+              </button>
             </div>
           );
         })()}
-        <div style={{display:"flex",gap:0,position:"absolute",bottom:0,left:0,right:0,zIndex:10}}>
-          {(()=>{
-            const isCeleb=profile?.mode==="celebrity";
-            const celebId=profile?.celebrity;
-            const CMETA_={arnold:{l:"PUMP⚡",c:"#f0a830"},hemsworth:{l:"ODIN🪓",c:"#4898e8"},rock:{l:"4AM🪨",c:"#30c870"},goggins:{l:"CANT💀",c:"#e09020"},cavill:{l:"KRYPT💪",c:"#8868d8"},ronaldo:{l:"SIUUU⚽",c:"#e83030"},stallone:{l:"YO!🥊",c:"#e88020"},lebron:{l:"KING👑",c:"#f0a818"},zyzz:{l:"WGMM✨",c:"#e050a8"},serena:{l:"ACE🎾",c:"#e84393"},galgadot:{l:"ALMA⚔️",c:"#c0a870"},jlo:{l:"JLO💃",c:"#f0b429"},margot:{l:"WILD🃏",c:"#4898e8"},brie:{l:"CAPT⭐",c:"#e05555"},rihanna:{l:"RIH🌊",c:"#e91e63"}};
-            const cm=celebId?CMETA_[celebId]:null;
-            const now=new Date();
-            const dow=now.getDay();
-            const mondayOffset=dow===0?-6:1-dow;
-            const todayDayIdx = dow===0?6:dow-1; // Mon=0 ... Sun=6
-            return Array(7).fill(0).map((_,i)=>{
-              const d=routine?routine[i]:null,de=d?d.ex:[],dd=de.filter(x=>done[`${i}-${x.id}`]).length;
-              const cp=de.length>0&&dd===de.length;
-              const isSel=sel===i;
-              const isRest=!d;
-              const cc=cm?.c;
-              const dayDate=new Date(now);
-              dayDate.setDate(now.getDate()+mondayOffset+i+weekOff*7);
-              const isToday=weekOff===0&&i===todayDayIdx;
-              const isFuture=weekOff===0&&i>todayDayIdx;
-              const isPastWeek=weekOff<0;
-              const hasDone=dd>0;
-              return(
-                <button key={i} data-tour={i===todayDayIdx?"cal-day":undefined} onClick={()=>{setSel(i);setTabR("train");setAddEx(false);setAddF(false);setInWorkout(false);}}
-                  style={{flex:1,padding:"6px 0 6px",border:"none",
-                    background:"transparent",
-                    cursor:"pointer",position:"relative",transition:"all .15s",
-                    opacity:isFuture&&!isSel?0.25:isPastWeek&&!hasDone&&!isSel&&!isRest?0.35:1,
-                    display:"flex",flexDirection:"column",alignItems:"center"}}>
-                  {/* Barra top - marcador seleccion */}
-                  <div style={{width:"100%",height:isSel?2:1,
-                    background:isSel?(cc||"rgba(255,255,255,0.8)"):"rgba(255,255,255,0.05)",
-                    marginBottom:5,transition:"all .15s"}}/>
-                  {/* Dot estado */}
-                  {(cp||isToday||hasDone)&&<div style={{width:4,height:4,borderRadius:"50%",
-                    marginBottom:3,
-                    background:cp?"#3fcf8e":hasDone?"#4a8fd4":(cc||"#f6ad55"),
-                    boxShadow:cp?"0 0 6px rgba(63,207,142,0.6)":isToday?"0 0 6px rgba(246,173,85,0.6)":"none"}}/>}
-                  {/* Nombre dia */}
-                  <div style={{fontSize:9,fontFamily:mono,letterSpacing:1,lineHeight:1,
-                    fontWeight:isSel?700:500,
-                    color:isSel?(cc||"rgba(255,255,255,0.9)"):isToday?"rgba(255,255,255,0.75)":"rgba(255,255,255,0.3)"}}>
-                    {DN[lang][i]}
-                  </div>
-                  {/* Numero */}
-                  <div style={{fontSize:11,fontFamily:mono,fontWeight:700,marginTop:1,lineHeight:1,
-                    color:isSel?"rgba(255,255,255,0.95)":isToday?"rgba(255,255,255,0.6)":"rgba(255,255,255,0.2)"}}>
-                    {dayDate.getDate()}
-                  </div>
-                  {/* Label rutina */}
-                  <div style={{fontSize:6,fontFamily:mono,letterSpacing:0.5,marginTop:3,
-                    color:isSel?(cc||"rgba(255,255,255,0.4)"):isToday?"rgba(255,255,255,0.25)":"rgba(255,255,255,0.1)",
-                    overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"100%",padding:"0 3px"}}>
-                    {d?(isCeleb&&cm?cm.l:d.l):(L[lang]||L.en).rest}
-                  </div>
-                </button>
-              );
-            });
-          })()}
-        </div>
-      </div>
-      <div style={{padding:"10px 20px 0",background:"rgba(8,10,14,0.95)",
+
+        {/* ── Express badge */}
+        {day?.isExpress&&(
+          <div style={{position:"absolute",top:32,left:14,zIndex:10,
+            display:"inline-flex",alignItems:"center",gap:4,
+            background:"rgba(63,207,142,0.1)",border:"0.5px solid rgba(63,207,142,0.25)",
+            borderRadius:20,padding:"3px 8px",
+            fontFamily:mono,fontSize:7,color:"#3fcf8e",letterSpacing:2}}>
+            &#9889; EXPRESS
+          </div>
+        )}
+
+        {/* ── DAYS — bottom strip */}
+        {(()=>{
+          const isCeleb=profile?.mode==="celebrity";
+          const celebId=profile?.celebrity;
+          const CMETA={arnold:{l:"PUMP",c:"#f0a830"},hemsworth:{l:"ODIN",c:"#4898e8"},rock:{l:"4AM",c:"#30c870"},goggins:{l:"CANT",c:"#e09020"},cavill:{l:"KRYPT",c:"#8868d8"},ronaldo:{l:"SIUUU",c:"#e83030"},stallone:{l:"YO",c:"#e88020"},lebron:{l:"KING",c:"#f0a818"},zyzz:{l:"WGMM",c:"#e050a8"},serena:{l:"ACE",c:"#e84393"},galgadot:{l:"ALMA",c:"#c0a870"},jlo:{l:"JLO",c:"#f0b429"},margot:{l:"WILD",c:"#4898e8"},brie:{l:"CAPT",c:"#e05555"},rihanna:{l:"RIH",c:"#e91e63"}};
+          const cm=celebId?CMETA[celebId]:null;
+          const now=new Date(),dow=now.getDay(),mo=dow===0?-6:1-dow,tdi=dow===0?6:dow-1;
+          return(
+            <div style={{position:"absolute",bottom:0,left:0,right:0,zIndex:10,
+              display:"flex",
+              background:"linear-gradient(0deg,rgba(8,9,14,0.92) 0%,rgba(8,9,14,0.6) 60%,transparent 100%)",
+              paddingTop:20}}>
+              {Array(7).fill(0).map((_,i)=>{
+                const d=routine?routine[i]:null,de=d?d.ex:[],dd=de.filter(x=>done[`${i}-${x.id}`]).length;
+                const cp=de.length>0&&dd===de.length;
+                const isSel=sel===i,isRest=!d,cc=cm?.c;
+                const dayDate=new Date(now); dayDate.setDate(now.getDate()+mo+i+weekOff*7);
+                const isToday=weekOff===0&&i===tdi;
+                const isFuture=weekOff===0&&i>tdi;
+                const isPastWeek=weekOff<0,hasDone=dd>0;
+                const accentColor=isSel?(cc||"rgba(255,255,255,0.9)"):isToday?(cc||"#f6ad55"):cp?"#3fcf8e":hasDone?"#4a8fd4":"rgba(255,255,255,0.2)";
+                return(
+                  <button key={i} data-tour={i===tdi?"cal-day":undefined}
+                    onClick={()=>{setSel(i);setTabR("train");setAddEx(false);setAddF(false);setInWorkout(false);}}
+                    style={{flex:1,border:"none",background:"transparent",cursor:"pointer",
+                      display:"flex",flexDirection:"column",alignItems:"center",padding:"0 0 8px",
+                      opacity:isFuture&&!isSel?0.25:isPastWeek&&!hasDone&&!isSel&&!isRest?0.3:1,
+                      position:"relative",transition:"opacity .15s"}}>
+                    {/* Top accent line */}
+                    <div style={{width:"100%",height:isSel?2:cp||isToday?1:1,
+                      background:isSel?(cc||"rgba(255,255,255,0.7)"):cp?"#3fcf8e":isToday?(cc||"rgba(246,173,85,0.5)"):"rgba(255,255,255,0.05)",
+                      marginBottom:6,transition:"all .2s"}}/>
+                    {/* Status dot */}
+                    {(cp||isToday)&&<div style={{width:3,height:3,borderRadius:"50%",marginBottom:4,
+                      background:cp?"#3fcf8e":(cc||"#f6ad55"),
+                      boxShadow:cp?"0 0 5px rgba(63,207,142,0.7)":"0 0 5px rgba(246,173,85,0.6)"}}/>}
+                    {/* Day name */}
+                    <div style={{fontSize:9,fontFamily:mono,letterSpacing:1,lineHeight:1,
+                      fontWeight:isSel||isToday?700:400,
+                      color:isSel?(cc||"rgba(255,255,255,0.9)"):isToday?(cc||"rgba(255,255,255,0.7)"):"rgba(255,255,255,0.25)"}}>
+                      {DN[lang][i]}
+                    </div>
+                    {/* Date number */}
+                    <div style={{fontSize:12,fontFamily:mono,fontWeight:700,marginTop:1,
+                      color:isSel?"rgba(255,255,255,0.9)":isToday?"rgba(255,255,255,0.6)":"rgba(255,255,255,0.18)"}}>
+                      {dayDate.getDate()}
+                    </div>
+                    {/* Routine label */}
+                    <div style={{fontSize:6,fontFamily:mono,marginTop:2,letterSpacing:0.5,
+                      color:isSel?(cc||"rgba(255,255,255,0.35)"):isToday?"rgba(255,255,255,0.2)":"rgba(255,255,255,0.08)",
+                      overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"100%",padding:"0 2px"}}>
+                      {d?(isCeleb&&cm?cm.l:d.l):(L[lang]||L.en).rest}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })()}
+      </div>      <div style={{padding:"10px 20px 0",background:"rgba(8,10,14,0.95)",
         borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
         <div style={{display:"flex",background:"rgba(255,255,255,0.05)",
           borderRadius:12,padding:3,gap:0}}>
