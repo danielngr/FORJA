@@ -7440,11 +7440,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
   const CDN="https://pub-28277a6ce79d49479afd0cb1bba27b44.r2.dev/bot-anims/";
   const FY=-8.5, FOV=35, CZ=14, CAM_Y=-4.4;
 
-  // Secuencias temáticas — nombres de GLBs en R2
   const SEQUENCES=[
     {anims:["walking_skin","jogging"], walk:true},
     {anims:["jogging","baseball"],     walk:true},
-    {anims:["walking_skin","capoeira"],walk:true},
+    {anims:["walking_skin","capoeira"],walk:false},
     {anims:["plank"],                  walk:false},
     {anims:["excited","capoeira"],     walk:false},
     {anims:["fishing"],                walk:false},
@@ -7454,37 +7453,14 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     {anims:["laying"],                 walk:false},
     {anims:["falling"],                walk:false},
     {anims:["flyingpunch","capoeira"], walk:false},
-    {anims:["jogging","excited","baseball"], walk:true},
   ];
 
-  function getMood(){
-    try{
-      const done=JSON.parse(localStorage.getItem("fv8_done")||"{}");
-      const hist=JSON.parse(localStorage.getItem("fv8_hist")||"[]");
-      const today=new Date().toISOString().slice(0,10);
-      const DAY=86400000, days=new Set();
-      Object.keys(done).forEach(k=>{const p=k.split("-");if(p.length>=3)days.add(p.slice(0,3).join("-"));});
-      hist.forEach(h=>{if(h.date)days.add(h.date.slice(0,10));});
-      const sorted=[...days].sort().reverse();
-      if(!sorted.length) return "normal";
-      const daysSince=Math.floor((Date.now()-new Date(sorted[0]))/DAY);
-      if(sorted[0]===today) return "victory";
-      if(daysSince>=3) return "dead";
-      if(daysSince>=2) return "low";
-      let streak=0,prev=null;
-      for(const d of sorted){const dt=new Date(d);if(!prev){streak=1;prev=dt;continue;}if(Math.floor((prev-dt)/DAY)<=1){streak++;prev=dt;}else break;}
-      if(streak>=3) return "active";
-      return "idle";
-    }catch(e){}
-    return "normal";
-  }
-
-  let ren,scene,cam,clock,aid;
-  let model=null, mixer=null;
+  let ren, scene, cam, clock, aid;
+  let model=null, mixer=null, currentAction=null;
   let ready=false;
   let cx=-4, canWalk=true;
-  let clipCache={};
-  let currentAction=null;
+  let glbCache={};
+  let opacity=1, fading=false, pendingLoad=null;
 
   function tryInit(){
     const canvas=document.getElementById("forja-bot-canvas");
@@ -7496,86 +7472,94 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     ren=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
     ren.setSize(W,H); ren.setPixelRatio(Math.min(devicePixelRatio,2));
     ren.setClearColor(0,0);
-    const scene=new THREE.Scene();
+    scene=new THREE.Scene();
     cam=new THREE.PerspectiveCamera(FOV,W/H,0.1,200);
     cam.position.set(0,CAM_Y,CZ); cam.lookAt(0,CAM_Y,0);
     scene.add(new THREE.AmbientLight(0xffffff,2));
     const dl=new THREE.DirectionalLight(0xffffff,1.5); dl.position.set(2,5,4); scene.add(dl);
     clock=new THREE.Clock();
 
-    // Cargar modelo base (walking_skin) y luego precargar todos los clips
-    loadGLB("walking_skin.glb", buf=>{
-      new THREE.GLTFLoader().parse(buf, CDN, (gltf)=>{
-        model=gltf.scene;
-        // Limpiar y aplicar materiales
-        const rm=[];
-        model.traverse(c=>{if(c.name==="Cube"||c.name==="default")rm.push(c);});
-        rm.forEach(c=>c.parent&&c.parent.remove(c));
-        model.traverse(c=>{
-          if(!(c.isMesh||c.isSkinnedMesh)) return;
-          const n=c.name||"";
-          if(n==="Mascara"||n==="polySurface3"){if(c.material)c.material.skinning=true;return;}
-          const col=n==="Cabeza"?0xeae6e0:n==="Cuerpo"||n==="Pierna"||n==="Pierna1"?0x3a3e4a:n==="Brazo"||n==="Brazo1"||n==="Dedos1"||n==="Dedos_Fin"?0xe4e0da:0x888898;
-          const mat=new THREE.MeshStandardMaterial({color:col,roughness:0.5,metalness:0.1});
-          if(c.isSkinnedMesh) mat.skinning=true;
-          c.material=mat;
-        });
-        model.scale.setScalar(36);
-        model.rotation.x=-0.15;
-        model.position.set(cx, FY, 0);
-        scene.add(model);
-        mixer=new THREE.AnimationMixer(model);
+    loadAndSwap("walking_skin", true, true);
+    startSequence();
+    animate();
+  }
 
-        // Clip inicial = walking_skin
-        const clip0=gltf.animations[0];
-        if(clip0){
-          const c0=clip0.clone();
-          c0.tracks=c0.tracks.filter(t=>!(t.name.toLowerCase().includes('hip')&&t.name.toLowerCase().includes('position')));
-          clipCache["walking_skin"]=c0;
-          currentAction=mixer.clipAction(c0);
-          currentAction.setLoop(THREE.LoopRepeat).play();
-        }
-        ready=true;
-        animate(scene);
-
-        // Precargar todos los demás clips en background
-        const ALL=["jogging","plank","excited","capoeira","baseball","fishing","cowmilking","rifleaiming","climb","laying","falling","flyingpunch"];
-        ALL.forEach(name=>{
-          loadGLB(name+".glb", buf2=>{
-            new THREE.GLTFLoader().parse(buf2,CDN,(g)=>{
-              if(!g.animations[0]) return;
-              // Retarget clip al skeleton del modelo base
-              const clip=THREE.AnimationClip.parse(THREE.AnimationClip.toJSON(g.animations[0]));
-              clipCache[name]=clip;
-            },()=>{});
-          });
-        });
-
-        // Iniciar secuencia de testing cada 20s
-        startSequence();
-      },e=>console.error('BOT parse:',e));
+  function applyMaterials(m, op){
+    const rm=[];
+    m.traverse(c=>{if(c.name==="Cube"||c.name==="default")rm.push(c);});
+    rm.forEach(c=>c.parent&&c.parent.remove(c));
+    m.traverse(c=>{
+      if(!(c.isMesh||c.isSkinnedMesh)) return;
+      const n=c.name||"";
+      if(n==="Mascara"||n==="polySurface3"){if(c.material){c.material.transparent=true;c.material.opacity=op;c.material.skinning=true;} return;}
+      const col=n==="Cabeza"?0xeae6e0:n==="Cuerpo"||n==="Pierna"||n==="Pierna1"?0x3a3e4a:n==="Brazo"||n==="Brazo1"||n==="Dedos1"||n==="Dedos_Fin"?0xe4e0da:0x888898;
+      const mat=new THREE.MeshStandardMaterial({color:col,roughness:0.5,metalness:0.1,transparent:true,opacity:op});
+      if(c.isSkinnedMesh) mat.skinning=true;
+      c.material=mat;
     });
   }
 
-  function loadGLB(name, cb){
-    fetch(CDN+name).then(r=>r.arrayBuffer()).then(cb).catch(e=>console.error('BOT fetch',name,e));
+  function setOpacity(m, op){
+    m.traverse(c=>{
+      if((c.isMesh||c.isSkinnedMesh)&&c.material){
+        if(Array.isArray(c.material)) c.material.forEach(mat=>{mat.opacity=op;});
+        else c.material.opacity=op;
+      }
+    });
   }
 
-  function playClip(name, fade=0.5){
-    if(!mixer||!clipCache[name]) return;
-    const newAction=mixer.clipAction(clipCache[name]);
-    newAction.setLoop(THREE.LoopRepeat);
-    if(currentAction && currentAction!==newAction){
-      newAction.reset().play();
-      currentAction.crossFadeTo(newAction, fade, true);
-    } else {
-      newAction.reset().play();
-    }
-    currentAction=newAction;
+  function loadAndSwap(name, walk, instant){
+    const doSwap=(buf)=>{
+      new THREE.GLTFLoader().parse(buf, CDN, (gltf)=>{
+        const newModel=gltf.scene;
+        applyMaterials(newModel, instant?1:0);
+        newModel.scale.setScalar(36);
+        newModel.rotation.x=-0.15;
+        newModel.position.set(walk?cx:0, FY, 0);
+        scene.add(newModel);
+
+        const newMixer=new THREE.AnimationMixer(newModel);
+        const clip=gltf.animations[0];
+        if(clip){
+          const c=clip.clone();
+          if(walk) c.tracks=c.tracks.filter(t=>!(t.name.toLowerCase().includes('hip')&&t.name.toLowerCase().includes('position')));
+          const a=newMixer.clipAction(c);
+          a.setLoop(THREE.LoopRepeat); a.play();
+        }
+
+        if(instant){
+          if(model) scene.remove(model);
+          model=newModel; mixer=newMixer; canWalk=walk; ready=true;
+        } else {
+          // Fade out viejo, fade in nuevo
+          let t=0;
+          const oldModel=model, oldMixer=mixer;
+          model=newModel; mixer=newMixer; canWalk=walk;
+          const doFade=()=>{
+            t+=0.02;
+            if(oldModel) setOpacity(oldModel, 1-t);
+            setOpacity(newModel, t);
+            if(t<1) requestAnimationFrame(doFade);
+            else if(oldModel) scene.remove(oldModel);
+          };
+          doFade();
+        }
+      }, e=>console.error('BOT parse:',e));
+    };
+
+    if(glbCache[name]) doSwap(glbCache[name]);
+    else fetch(CDN+name+".glb").then(r=>r.arrayBuffer()).then(buf=>{glbCache[name]=buf; doSwap(buf);}).catch(e=>console.error('BOT fetch:',e));
+  }
+
+  // Precargar en background
+  function preload(){
+    ["jogging","plank","excited","capoeira","baseball","fishing","cowmilking","rifleaiming","climb","laying","falling","flyingpunch"]
+    .forEach(n=>fetch(CDN+n+".glb").then(r=>r.arrayBuffer()).then(buf=>{glbCache[n]=buf;}).catch(()=>{}));
   }
 
   let _seqIdx=0, _animIdx=0;
   function startSequence(){
+    setTimeout(preload, 2000);
     _seqIdx=Math.floor(Math.random()*SEQUENCES.length);
     _animIdx=0;
     scheduleNext(20000);
@@ -7585,11 +7569,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     setTimeout(()=>{
       const seq=SEQUENCES[_seqIdx];
       const name=seq.anims[_animIdx];
-      canWalk=seq.walk && (_animIdx===0); // solo camina en primera anim de secuencias walk
-      if(clipCache[name]){
-        playClip(name, 0.6);
-        console.log('BOT →',name,'canWalk=',canWalk);
-      }
+      const walk=seq.walk && _animIdx===0;
+      loadAndSwap(name, walk, false);
+      console.log('BOT →', name);
       _animIdx++;
       if(_animIdx>=seq.anims.length){
         _animIdx=0;
@@ -7601,8 +7583,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     }, delay);
   }
 
-  function animate(scene){
-    aid=requestAnimationFrame(()=>animate(scene));
+  function animate(){
+    aid=requestAnimationFrame(animate);
     if(!ready||!model) return;
     const dt=Math.min(clock.getDelta(),0.05);
     mixer&&mixer.update(dt);
@@ -7635,7 +7617,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
   document.addEventListener("visibilitychange",()=>{
     if(document.hidden) cancelAnimationFrame(aid);
-    else{ clock=new THREE.Clock(); if(ready) animate(); }
+    else{ clock=new THREE.Clock(); animate(); }
   });
   window.addEventListener("resize",()=>{
     const canvas=document.getElementById("forja-bot-canvas");
