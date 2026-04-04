@@ -7441,7 +7441,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
   const BASE="https://danielngr.github.io/FORJA/";
   const IDLE_URL=BASE+"idle.glb";
   const WALK_URL=BASE+"walking_skin.glb";
-  const FY=-7.5, FOV=75, CZ=6, CAM_Y=-4.4;
+  const FY=-8.5, FOV=75, CZ=6, CAM_Y=-4.4;
 
   let ren,scene,cam,mixer,clock,model,aid;
   let ready=false;
@@ -7497,7 +7497,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
             console.log('BOT walk parsed, anims:',g2.animations.length);
             if(g2.animations[0]){
               const clip=g2.animations[0];
-              clip.tracks=clip.tracks.filter(t=>!t.name.includes('Hips.position'));
+              clip.tracks=clip.tracks.filter(t=>!(t.name.toLowerCase().includes('hip')&&t.name.toLowerCase().includes('position')));
+              console.log('BOT walk tracks después de filter:',clip.tracks.length);
               // Detener idle, iniciar walk
               mixer.stopAllAction();
               const wa=mixer.clipAction(clip);
