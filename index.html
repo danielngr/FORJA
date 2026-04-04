@@ -4045,8 +4045,8 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
     </div>
   );}
   return(<>
-      <div style={{background:"rgba(8,10,14,0.92)",backdropFilter:"blur(24px)",WebkitBackdropFilter:"blur(24px)",borderBottom:"1px solid rgba(255,255,255,0.06)",padding:"14px 18px 10px",position:"sticky",top:0,zIndex:10,minHeight:220,overflow:"visible"}}>
-        <canvas id="forja-bot-canvas" style={{position:"absolute",top:0,left:0,width:"100%",height:"220px",pointerEvents:"none",zIndex:5}}></canvas>
+      <div style={{background:"rgba(8,10,14,0.92)",backdropFilter:"blur(24px)",WebkitBackdropFilter:"blur(24px)",borderBottom:"1px solid rgba(255,255,255,0.06)",padding:"14px 18px 10px",position:"sticky",top:0,zIndex:10,minHeight:200,overflow:"visible"}}>
+        <canvas id="forja-bot-canvas" style={{position:"absolute",top:0,left:0,width:"100%",height:"200px",pointerEvents:"none",zIndex:5}}></canvas>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
           <div>
             {day?.isExpress&&(
@@ -7579,8 +7579,11 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
         loadClip(nextKey).then(()=>playClip(nextKey,true));
       }
       if(nextWalk){
-        const side=charX>0?-1:1;
-        targetX=side*(MX*0.4+Math.random()*MX*0.5);
+        // 70% del tiempo en el lado derecho (izquierda tiene el texto Esta Semana)
+        const goRight=Math.random()>0.3;
+        targetX=goRight
+          ? MX*(0.25+Math.random()*0.70)
+          : -MX*(0.05+Math.random()*0.25);
         targetX=Math.max(-MX,Math.min(MX,targetX));
       } else {
         targetX=charX;
@@ -7595,7 +7598,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     canvas.dataset.botInit="1";
 
     const W=canvas.offsetWidth||360;
-    const H=220;
+    const H=200;
     canvas.width=W*window.devicePixelRatio;
     canvas.height=H*window.devicePixelRatio;
 
@@ -7625,7 +7628,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     MX=halfW*0.65;
     const FLOOR_Y=-6.639; // proporcional al medido en iPhone
 
-    charX=MX*0.6; charY=FLOOR_Y;
+    charX=MX*0.55; charY=FLOOR_Y;
     targetX=charX; targetY=FLOOR_Y;
 
     // Determinar mood inicial
@@ -7640,14 +7643,39 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       .then(buf=>{
         new THREE.GLTFLoader().parse(buf,"",(gltf)=>{
           model=gltf.scene;
+
+          // Colores del robot — ojos azul brillante, partes blancas
           model.traverse(child=>{
-            if(child.isSkinnedMesh&&child.material){
-              if(Array.isArray(child.material)) child.material.forEach(m=>m.skinning=true);
-              else child.material.skinning=true;
+            if(child.isMesh||child.isSkinnedMesh){
+              const n=(child.name||"").toLowerCase();
+              let mat;
+              if(n.includes("mascara")){
+                // Ojos: azul brillante emisivo
+                mat=new THREE.MeshStandardMaterial({
+                  color:0x00aaff, emissive:new THREE.Color(0x0066ff),
+                  emissiveIntensity:1.5, roughness:0.1, metalness:0.0
+                });
+              } else if(n.includes("cabeza")||n.includes("brazo")||n.includes("dedos")||n.includes("pierna")){
+                // Extremidades y cabeza: blanco cálido
+                mat=new THREE.MeshStandardMaterial({color:0xf0ede8,roughness:0.4,metalness:0.1});
+              } else if(n.includes("cuerpo")){
+                // Torso: gris oscuro
+                mat=new THREE.MeshStandardMaterial({color:0x2a2e38,roughness:0.5,metalness:0.3});
+              } else if(n.includes("cuello")||n.includes("pcube")||n.includes("pcylinder")){
+                // Articulaciones: gris medio
+                mat=new THREE.MeshStandardMaterial({color:0x555870,roughness:0.6,metalness:0.4});
+              } else {
+                mat=new THREE.MeshStandardMaterial({color:0xd0ccc8,roughness:0.4,metalness:0.1});
+              }
+              if(child.isSkinnedMesh) mat.skinning=true;
+              child.material=mat;
             }
           });
-          // scale=100, FOV=110, camZ=6 — medido en iPhone
-          model.scale.setScalar(100);
+
+          // Escala medida en iPhone: scale=100, FOV=70, camZ=12.5
+          model.scale.setScalar(75);
+          // Ajustar rotación para que pies queden planos
+          model.rotation.y=0;
           model.position.set(charX,FLOOR_Y,0);
           scene.add(model);
 
@@ -7696,10 +7724,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
     window.addEventListener("resize",()=>{
       const W2=canvas.offsetWidth||360;
-      canvas.width=W2*window.devicePixelRatio; canvas.height=220*window.devicePixelRatio;
-      renderer.setSize(W2,220);
-      camera.aspect=W2/220; camera.updateProjectionMatrix();
-      MX=12.5*Math.tan(35*Math.PI/180)*(W2/220)*0.65;
+      canvas.width=W2*window.devicePixelRatio; canvas.height=200*window.devicePixelRatio;
+      renderer.setSize(W2,200);
+      camera.aspect=W2/200; camera.updateProjectionMatrix();
+      MX=12.5*Math.tan(35*Math.PI/180)*(W2/200)*0.65;
     });
 
     document.addEventListener("visibilitychange",()=>{
