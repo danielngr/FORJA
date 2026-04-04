@@ -7442,49 +7442,13 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
   const S=50, FY=-5.8, FOV=75, CZ=6, CAM_Y=-4.4, MX=5;
 
-  function getMood(){
-    try{
-      const done=JSON.parse(localStorage.getItem("fv8_done")||"{}");
-      const hist=JSON.parse(localStorage.getItem("fv8_hist")||"[]");
-      const today=new Date().toISOString().slice(0,10);
-      const DAY=86400000, days=new Set();
-      Object.keys(done).forEach(k=>{const p=k.split("-");if(p.length>=3)days.add(p.slice(0,3).join("-"));});
-      hist.forEach(h=>{if(h.date)days.add(h.date.slice(0,10));});
-      const sorted=[...days].sort().reverse();
-      if(!sorted.length) return"normal";
-      const daysSince=Math.floor((Date.now()-new Date(sorted[0]))/DAY);
-      let streak=0,prev=null;
-      for(const d of sorted){const dt=new Date(d);if(!prev){streak=1;prev=dt;continue;}if(Math.floor((prev-dt)/DAY)<=1){streak++;prev=dt;}else break;}
-      if(sorted[0]===today) return"victory";
-      if(streak>=3) return"active";
-      if(daysSince>=7) return"low";
-    }catch(e){}
-    return"normal";
-  }
-
   let ren,scene,cam,mixer,clock,model,aid;
   let ready=false, actIdle=null, actWalk=null;
-  let cx=2, tx=-2, facing=0, wm=true, st=2;
+  let cx=2, tx=-2, facing=0, wm=false, st=3;
 
   function newTarget(){
     if(cx>=0) tx=-MX*(0.3+Math.random()*0.6);
     else       tx= MX*(0.3+Math.random()*0.7);
-  }
-
-  function stripRootMotion(clip){
-    if(!clip) return null;
-    const before=clip.tracks.length;
-    clip.tracks=clip.tracks.filter(t=>{
-      // Three.js convierte "mixamorig:Hips" -> track name con "Hips" en el nombre
-      // El path puede ser .position o .quaternion
-      // Root motion = traslación del Hips en XZ
-      const n=t.name.toLowerCase();
-      const isHipsPos = (n.includes('hips')||n.includes('hip')) && 
-                        (n.includes('.position')||n.includes('.translation'));
-      return !isHipsPos;
-    });
-    console.log('BOT stripRM:',before,'->',clip.tracks.length,'tracks');
-    return clip;
   }
 
   function tryInit(){
@@ -7507,67 +7471,72 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     clock=new THREE.Clock();
     newTarget();
 
-    Promise.all([
-      fetch(MODEL_URL).then(r=>r.arrayBuffer()),
-      fetch(WALK_URL).then(r=>r.arrayBuffer())
-    ]).then(([modelBuf, walkBuf])=>{
-
-      const loader=new THREE.GLTFLoader();
-
-      loader.parse(walkBuf,"",(walkGltf)=>{
-        console.log('BOT walk GLB loaded, anims:',walkGltf.animations.length);
-        if(walkGltf.animations[0]){
-          console.log('BOT walk tracks sample:',walkGltf.animations[0].tracks.slice(0,3).map(t=>t.name));
-        }
-        const walkClip=stripRootMotion(walkGltf.animations&&walkGltf.animations[0]||null);
-
-        loader.parse(modelBuf,"",(gltf)=>{
-          model=gltf.scene;
-          model.traverse(child=>{
-            if(child.isMesh||child.isSkinnedMesh){
-              const n=child.name||"";
-              if(n==="Mascara"||n==="polySurface3"){
-                if(child.isSkinnedMesh&&child.material){
-                  if(Array.isArray(child.material)) child.material.forEach(m=>m.skinning=true);
-                  else child.material.skinning=true;
-                }
-                return;
+    function initModel(modelBuf, walkClip){
+      new THREE.GLTFLoader().parse(modelBuf,"",(gltf)=>{
+        model=gltf.scene;
+        model.traverse(child=>{
+          if(child.isMesh||child.isSkinnedMesh){
+            const n=child.name||"";
+            if(n==="Mascara"||n==="polySurface3"){
+              if(child.isSkinnedMesh&&child.material){
+                if(Array.isArray(child.material)) child.material.forEach(m=>m.skinning=true);
+                else child.material.skinning=true;
               }
-              let mat;
-              if(n==="Cabeza") mat=new THREE.MeshStandardMaterial({color:0xeae6e0,roughness:0.35,metalness:0.05});
-              else if(n==="Brazo"||n==="Brazo1"||n==="Dedos1"||n==="Dedos_Fin") mat=new THREE.MeshStandardMaterial({color:0xe4e0da,roughness:0.4});
-              else if(n==="Cuerpo"||n==="Pierna"||n==="Pierna1") mat=new THREE.MeshStandardMaterial({color:0x3a3e4a,roughness:0.6,metalness:0.2});
-              else if(n==="Cuello"||n==="pCube3") mat=new THREE.MeshStandardMaterial({color:0x666878,roughness:0.5,metalness:0.2});
-              else mat=new THREE.MeshStandardMaterial({color:0x888898,roughness:0.5,metalness:0.2});
-              if(child.isSkinnedMesh) mat.skinning=true;
-              child.material=mat;
+              return;
             }
-          });
-
-          model.scale.setScalar(S);
-          model.position.set(cx,FY,0);
-          scene.add(model);
-          mixer=new THREE.AnimationMixer(model);
-
-          actIdle=mixer.clipAction(gltf.animations[0]);
-          actIdle.setLoop(THREE.LoopRepeat);
-
-          if(walkClip){
-            actWalk=mixer.clipAction(walkClip);
-            actWalk.setLoop(THREE.LoopRepeat);
-            actWalk.play();
-            console.log('BOT walk action playing');
-          } else {
-            actIdle.play();
-            wm=false;
+            let mat;
+            if(n==="Cabeza") mat=new THREE.MeshStandardMaterial({color:0xeae6e0,roughness:0.35,metalness:0.05});
+            else if(n==="Brazo"||n==="Brazo1"||n==="Dedos1"||n==="Dedos_Fin") mat=new THREE.MeshStandardMaterial({color:0xe4e0da,roughness:0.4});
+            else if(n==="Cuerpo"||n==="Pierna"||n==="Pierna1") mat=new THREE.MeshStandardMaterial({color:0x3a3e4a,roughness:0.6,metalness:0.2});
+            else if(n==="Cuello"||n==="pCube3") mat=new THREE.MeshStandardMaterial({color:0x666878,roughness:0.5,metalness:0.2});
+            else mat=new THREE.MeshStandardMaterial({color:0x888898,roughness:0.5,metalness:0.2});
+            if(child.isSkinnedMesh) mat.skinning=true;
+            child.material=mat;
           }
+        });
+        model.scale.setScalar(S);
+        model.position.set(cx,FY,0);
+        scene.add(model);
+        mixer=new THREE.AnimationMixer(model);
+        actIdle=mixer.clipAction(gltf.animations[0]);
+        actIdle.setLoop(THREE.LoopRepeat);
+        actIdle.play();
 
-          ready=true;
-          animate();
-        },e=>console.warn("BOT model:",e));
-      },e=>console.warn("BOT walk error:",e));
+        if(walkClip){
+          actWalk=mixer.clipAction(walkClip);
+          actWalk.setLoop(THREE.LoopRepeat);
+          wm=true; st=6;
+          actWalk.play();
+          actIdle.crossFadeTo(actWalk,0.5,false);
+        }
 
-    }).catch(e=>console.warn("BOT:",e));
+        ready=true;
+        animate();
+      },e=>console.warn("BOT model:",e));
+    }
+
+    // Cargar modelo primero — siempre
+    fetch(MODEL_URL).then(r=>r.arrayBuffer()).then(modelBuf=>{
+      // Intentar cargar walk — si falla, iniciar sin él
+      fetch(WALK_URL).then(r=>r.arrayBuffer()).then(walkBuf=>{
+        new THREE.GLTFLoader().parse(walkBuf,"",(walkGltf)=>{
+          const clip=walkGltf.animations&&walkGltf.animations[0]||null;
+          if(clip){
+            // Remover root motion — buscar el track de Hips position
+            clip.tracks=clip.tracks.filter(t=>{
+              const n=t.name.toLowerCase();
+              return !(n.includes('hip')&&n.includes('position'));
+            });
+            console.log('BOT walk OK, tracks:',clip.tracks.length);
+            console.log('BOT sample track:',clip.tracks[0]&&clip.tracks[0].name);
+          }
+          initModel(modelBuf, clip);
+        },e=>{
+          console.warn('BOT walk parse fail:',e.message);
+          initModel(modelBuf, null);
+        });
+      }).catch(()=>initModel(modelBuf, null));
+    }).catch(e=>console.warn("BOT model fetch:",e));
 
     function animate(){
       aid=requestAnimationFrame(animate);
@@ -7586,7 +7555,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
           actWalk.reset().play();
           if(actIdle) actIdle.crossFadeTo(actWalk,0.4,false);
         } else {
-          st=3;
+          // sin walk — solo idle
+          wm=false; st=4;
         }
       }
 
