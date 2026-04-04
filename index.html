@@ -7480,8 +7480,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
         const rm=[];
         model.traverse(c=>{
           if(c.name==="Cube"||c.name==="default")rm.push(c);
-          const HIDE=["pCube3","pCube6","pCube7","pCylinder6","pCylinder9","polySurface3"];
-          if(HIDE.includes(c.name)) c.visible=false;
+          if(c.name==="Pierna"||c.name==="Pierna1") c.visible=false;
         });
         rm.forEach(c=>c.parent&&c.parent.remove(c));
         // Materiales
