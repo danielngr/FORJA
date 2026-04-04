@@ -7478,7 +7478,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
         model=gltf.scene;
         // Remover artefactos Blender
         const rm=[];
-        model.traverse(c=>{if(c.name==="Cube"||c.name==="default")rm.push(c);});
+        model.traverse(c=>{
+          if(c.name==="Cube"||c.name==="default")rm.push(c);
+          if(c.isMesh||c.isSkinnedMesh) console.log('MESH:',c.name);
+        });
         rm.forEach(c=>c.parent&&c.parent.remove(c));
         // Materiales
         model.traverse(c=>{
