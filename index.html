@@ -7477,6 +7477,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     const canvas=document.getElementById("forja-bot-canvas");
     if(!canvas||!window.THREE||!window.THREE.GLTFLoader) return;
     if(canvas.dataset.bi) return;
+    canvas.dataset.bi="1";
+    const W=canvas.getBoundingClientRect().width||window.innerWidth||390;
     const H=200;
     canvas.width=W*devicePixelRatio; canvas.height=H*devicePixelRatio;
     ren=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
