@@ -7517,9 +7517,14 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       if(st<=0){ wm=!wm; st=wm?5:2.5; if(wm) newTarget(); }
       if(wm){
         const dx=tx-cx;
-        if(Math.abs(dx)<0.1) newTarget();
-        else{ cx+=Math.sign(dx)*Math.min(1.8*dt,Math.abs(dx)); facing+=(Math.sign(dx)*0.4-facing)*0.1; }
-      } else { facing*=0.9; }
+        if(Math.abs(dx)<0.1){ wm=false; st=1.5; }
+        else{
+          cx+=Math.sign(dx)*Math.min(1.8*dt,Math.abs(dx));
+          // facing: 0=derecha, Math.PI=izquierda — giro instantáneo al cambiar dirección
+          const targetFacing=Math.sign(dx)>0?0:Math.PI;
+          facing+=(targetFacing-facing)*0.15;
+        }
+      } else { /* parado */ }
       model.position.x=cx;
       model.rotation.y=Math.PI/2+facing;
       // camara fija, solo modelo se mueve
