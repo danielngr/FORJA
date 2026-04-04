@@ -7436,6 +7436,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
 <script>
 (function initBot(){
+  console.log('BOT IIFE arrancó');
   const WALK_URL="https://danielngr.github.io/FORJA/walking_skin.glb";
   const FY=-9.5, FOV=75, CZ=6, CAM_Y=-4.4, MX=5;
 
@@ -7449,6 +7450,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
   function tryInit(){
     const canvas=document.getElementById("forja-bot-canvas");
+    console.log('BOT tryInit canvas=',!!canvas,'THREE=',!!window.THREE,'GLTFLoader=',!!(window.THREE&&window.THREE.GLTFLoader),'bi=',canvas&&canvas.dataset.bi);
     if(!canvas||canvas.dataset.bi) return;
     if(!window.THREE||!window.THREE.GLTFLoader) return;
     canvas.dataset.bi="1";
