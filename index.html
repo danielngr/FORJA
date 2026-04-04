@@ -7608,7 +7608,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     const aspect=W/H;
     // FOV=30 angosto, camZ=6 → halfH=1.608
     // Robot base=0.028u, scale=70 → height=1.96u = 61% del canvas
-    camera=new THREE.PerspectiveCamera(30,aspect,0.1,200);
+    camera=new THREE.PerspectiveCamera(110,aspect,0.1,200);
     camera.position.set(0,0,6);
 
     scene.add(new THREE.AmbientLight(0xffffff,1.4));
@@ -7620,14 +7620,12 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     clock=new THREE.Clock();
 
     // halfH=6*tan(15°)=1.608, halfW=halfH*aspect
-    const halfH=6*Math.tan(15*Math.PI/180);
+    const halfH=6*Math.tan(55*Math.PI/180); // FOV=110, camZ=6 → halfH=8.569
     const halfW=halfH*aspect;
-    MX=halfW*0.72;
-    // scale=6500: robot 66% del canvas, pies en -halfH+0.05
-    // FLOOR_Y calculado con center_offset=1.062 (medido empíricamente)
-    const FLOOR_Y=-0.496;
+    MX=halfW*0.65;
+    const FLOOR_Y=-6.500; // medido directamente en iPhone
 
-    charX=MX*0.78; charY=FLOOR_Y;
+    charX=MX*0.6; charY=FLOOR_Y;
     targetX=charX; targetY=FLOOR_Y;
 
     // Determinar mood inicial
@@ -7648,8 +7646,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
               else child.material.skinning=true;
             }
           });
-          // scale=6500: 66% del canvas 160px, FOV=30, camZ=6
-          model.scale.setScalar(6500);
+          // scale=100, FOV=110, camZ=6 — medido en iPhone
+          model.scale.setScalar(100);
           model.position.set(charX,FLOOR_Y,0);
           scene.add(model);
 
@@ -7701,7 +7699,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       canvas.width=W2*window.devicePixelRatio; canvas.height=160*window.devicePixelRatio;
       renderer.setSize(W2,160);
       camera.aspect=W2/160; camera.updateProjectionMatrix();
-      MX=6*Math.tan(15*Math.PI/180)*(W2/160)*0.72;
+      MX=6*Math.tan(55*Math.PI/180)*(W2/160)*0.65;
     });
 
     document.addEventListener("visibilitychange",()=>{
