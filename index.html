@@ -7561,15 +7561,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
         else if(cx<=-EDGE){ tx=EDGE; }
         const dx=tx-cx;
         cx+=Math.sign(dx)*1.8*dt;
-        // PI/2 = derecha, -PI/2 = izquierda (perfil lateral siempre)
-        const targetFacing=dx>0?Math.PI/2:-Math.PI/2;
-        // Interpolación corta — elige el camino más corto
-        let diff=targetFacing-facing;
-        if(diff>Math.PI) diff-=Math.PI*2;
-        if(diff<-Math.PI) diff+=Math.PI*2;
-        facing+=diff*0.12;
+        const targetFacing=dx>0?0:Math.PI;
+        facing+=(targetFacing-facing)*0.12;
         model.position.x=cx;
-        model.rotation.y=facing;
+        model.rotation.y=Math.PI/2+facing;
       } else {
         // estático en centro, mirando de frente
         cx+=(0-cx)*0.05;
