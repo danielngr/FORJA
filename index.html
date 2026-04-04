@@ -4046,7 +4046,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   );}
   return(<>
       <div style={{background:"rgba(8,10,14,0.92)",backdropFilter:"blur(24px)",WebkitBackdropFilter:"blur(24px)",borderBottom:"1px solid rgba(255,255,255,0.06)",padding:"14px 18px 10px",position:"sticky",top:0,zIndex:10,minHeight:200,overflow:"visible"}}>
-        <canvas id="forja-bot-canvas" style={{position:"absolute",top:0,left:0,width:"100%",height:"200px",pointerEvents:"none",zIndex:5}}></canvas>
+        <canvas id="forja-bot-canvas" ref={el=>{if(el&&!el.dataset.bi&&window.__initForjaBot)window.__initForjaBot(el);}} style={{position:"absolute",top:0,left:0,width:"100%",height:"200px",pointerEvents:"none",zIndex:5}}></canvas>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
           <div>
             {day?.isExpress&&(
@@ -7477,10 +7477,6 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     const canvas=document.getElementById("forja-bot-canvas");
     if(!canvas||!window.THREE||!window.THREE.GLTFLoader) return;
     if(canvas.dataset.bi) return;
-    const W=canvas.offsetWidth||canvas.getBoundingClientRect().width||window.innerWidth||390;
-    if(W<10) return; // canvas aún no tiene tamaño, esperar
-    canvas.dataset.bi="1";
-
     const H=200;
     canvas.width=W*devicePixelRatio; canvas.height=H*devicePixelRatio;
     ren=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
