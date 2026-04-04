@@ -7555,22 +7555,14 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       mixer&&mixer.update(dt);
 
       if(canWalk){
-        st-=dt;
-        if(st<=0){ wm=!wm; st=wm?5:2.5; if(wm) newTarget(); }
-        if(wm){
-          const dx=tx-cx;
-          if(Math.abs(dx)<0.1){ wm=false; st=1.5; }
-          else{
-            cx+=Math.sign(dx)*Math.min(1.8*dt,Math.abs(dx));
-            const targetFacing=Math.sign(dx)>0?0:Math.PI;
-            facing+=(targetFacing-facing)*0.15;
-          }
-        }
-        // Pausar animación cuando está parado, reanudar al caminar
-        if(mixer._actions&&mixer._actions[0]){
-          const spd=wm?1:0;
-          mixer._actions[0].timeScale=spd;
-        }
+        // Nunca para — llega al borde y gira inmediatamente
+        const EDGE=4.5;
+        if(cx>=EDGE){ tx=-EDGE; }
+        else if(cx<=-EDGE){ tx=EDGE; }
+        const dx=tx-cx;
+        cx+=Math.sign(dx)*1.8*dt;
+        const targetFacing=dx>0?0:Math.PI;
+        facing+=(targetFacing-facing)*0.12;
         model.position.x=cx;
         model.rotation.y=Math.PI/2+facing;
       } else {
