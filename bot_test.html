@@ -3,11 +3,12 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-body { margin:0; background:#0a0a0d; color:#fff; font-family:monospace; }
+body { margin:0; background:#1a1a2e; color:#fff; font-family:monospace; }
 #banner { 
   width:100%; height:160px; 
-  background:rgba(8,10,14,0.95);
-  border-bottom:2px solid #ff6600;
+  background:#2a2a3e;
+  border-bottom:3px solid #ff6600;
+  border-top:3px solid #ff6600;
   position:relative; overflow:hidden;
 }
 canvas { position:absolute; top:0; left:0; width:100%; height:100%; }
@@ -84,10 +85,10 @@ function init() {
   canvas.width = W * devicePixelRatio;
   canvas.height = H * devicePixelRatio;
  
-  renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+  renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:false});
   renderer.setSize(W, H);
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-  renderer.setClearColor(0x000000, 0);
+  renderer.setClearColor(0x2a2a3e, 1); // fondo visible
  
   scene = new THREE.Scene();
   const aspect = W/H;
@@ -117,14 +118,22 @@ function init() {
         model.traverse(child => {
           if(child.isSkinnedMesh && child.material) child.material.skinning = true;
         });
+        // Override materiales para ver claramente
+        model.traverse(child => {
+          if(child.isMesh || child.isSkinnedMesh) {
+            child.material = new THREE.MeshStandardMaterial({color:0xccaa88, roughness:0.5, metalness:0.2});
+            if(child.isSkinnedMesh) child.material.skinning = true;
+          }
+        });
         model.scale.setScalar(currentScale);
         model.position.set(0, FLOOR_Y, 0);
         scene.add(model);
  
-        if(gltf.animations && gltf.animations.length > 0) {
-          mixer = new THREE.AnimationMixer(model);
-          mixer.clipAction(gltf.animations[0]).play();
-        }
+        // Animación deshabilitada para ver forma pura
+        // if(gltf.animations && gltf.animations.length > 0) {
+        //   mixer = new THREE.AnimationMixer(model);
+        //   mixer.clipAction(gltf.animations[0]).play();
+        // }
  
         // Medir bounding box REAL
         const box = new THREE.Box3().setFromObject(model);
@@ -184,4 +193,3 @@ window.addEventListener('load', init);
 </script>
 </body>
 </html>
- 
