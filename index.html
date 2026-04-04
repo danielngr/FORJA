@@ -7436,9 +7436,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 
 <script>
 (function initBot(){
-  const BASE="https://danielngr.github.io/FORJA/";
-  const MODEL_URL=BASE+"idle.glb";
-
+  const MODEL_URL="https://danielngr.github.io/FORJA/idle.glb";
   const S=50, FY=-5.8, FOV=75, CZ=6, CAM_Y=-4.4;
 
   function getMood(){
@@ -7454,54 +7452,21 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       const daysSince=Math.floor((Date.now()-new Date(sorted[0]))/DAY);
       let streak=0,prev=null;
       for(const d of sorted){const dt=new Date(d);if(!prev){streak=1;prev=dt;continue;}if(Math.floor((prev-dt)/DAY)<=1){streak++;prev=dt;}else break;}
-      if(sorted[0]===today) return"victory";
+      if(sorted[0]===today) return"hype";
       if(streak>=3) return"active";
-      if(daysSince>=7) return"depressed";
-      if(daysSince>=3) return"sad";
+      if(daysSince>=7) return"low";
     }catch(e){}
     return"normal";
   }
 
   let ren,scene,cam,mixer,clock,model,aid;
-  let ready=false, actIdle=null, actWalk=null, curAct=null;
+  let ready=false, act0=null, act1=null;
   let cx=2, tx=-2, facing=0, wm=true, st=1;
   const MX=5;
 
-  function stripHips(clip){
-    if(!clip) return clip;
-    // Track name exacto del GLB convertido: "mixamorigHips.translation"
-    clip.tracks=clip.tracks.filter(t=>
-      !(t.name.toLowerCase().includes('hips') &&
-        (t.name.includes('.position')||t.name.includes('.translation')))
-    );
-    return clip;
-  }
-
-  function loadGLB(url){
-    return new Promise(res=>
-      fetch(url).then(r=>r.arrayBuffer()).then(buf=>
-        new THREE.GLTFLoader().parse(buf,"",(g)=>res(g),()=>res(null))
-      ).catch(()=>res(null))
-    );
-  }
-
-  function crossfade(from,to,dur=0.4){
-    if(!to||!mixer) return;
-    to.reset().play();
-    if(from&&from!==to) from.crossFadeTo(to,dur,false);
-    curAct=to;
-  }
-
-  function setWalk(){
-    wm=true; st=6;
+  function newTarget(){
     if(cx>=0) tx=-MX*(0.3+Math.random()*0.6);
     else       tx= MX*(0.3+Math.random()*0.7);
-    if(actWalk) crossfade(curAct,actWalk);
-  }
-
-  function setIdle(){
-    wm=false; st=3; tx=cx;
-    if(actIdle) crossfade(curAct,actIdle);
   }
 
   function tryInit(){
@@ -7517,20 +7482,14 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     ren.setClearColor(0,0);
     scene=new THREE.Scene();
     cam=new THREE.PerspectiveCamera(FOV,W/H,0.1,200);
-    cam.position.set(0,CAM_Y,CZ);
-    cam.lookAt(0,CAM_Y,0);
+    cam.position.set(0,CAM_Y,CZ); cam.lookAt(0,CAM_Y,0);
     scene.add(new THREE.AmbientLight(0xffffff,1.8));
     const kl=new THREE.DirectionalLight(0xfff0dd,1.5); kl.position.set(2,5,6); scene.add(kl);
     const fl=new THREE.DirectionalLight(0x8899bb,0.6); fl.position.set(-3,2,4); scene.add(fl);
     clock=new THREE.Clock();
 
-    // Cargar modelo + walk en paralelo
-    Promise.all([
-      fetch(MODEL_URL).then(r=>r.arrayBuffer()),
-      loadGLB(BASE+"bot_walk.glb"),
-      loadGLB(BASE+"bot_idle.glb"),
-    ]).then(([modelBuf, walkGLB, idleGLB])=>{
-      new THREE.GLTFLoader().parse(modelBuf,"",(gltf)=>{
+    fetch(MODEL_URL).then(r=>r.arrayBuffer()).then(buf=>{
+      new THREE.GLTFLoader().parse(buf,"",(gltf)=>{
         model=gltf.scene;
         model.traverse(child=>{
           if(child.isMesh||child.isSkinnedMesh){
@@ -7557,29 +7516,25 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
         scene.add(model);
         mixer=new THREE.AnimationMixer(model);
 
-        // Clip de idle: del bot_idle.glb o anim[0] del modelo
-        const idleClip = (idleGLB&&idleGLB.animations[0]) || gltf.animations[0];
-        // Clip de walk: del bot_walk.glb con root motion removido
-        const walkRaw = (walkGLB&&walkGLB.animations[0]) || gltf.animations[1];
-        const walkClip = stripHips(walkRaw);
-
-        if(idleClip){
-          actIdle=mixer.clipAction(idleClip);
-          actIdle.setLoop(THREE.LoopRepeat);
+        // Las 2 animaciones del modelo original
+        // Ambas son válidas y fieles al rig — no hay distorsión
+        if(gltf.animations.length>=2){
+          act0=mixer.clipAction(gltf.animations[0]); // 3.2s
+          act1=mixer.clipAction(gltf.animations[1]); // 12.2s
+          act0.setLoop(THREE.LoopRepeat);
+          act1.setLoop(THREE.LoopRepeat);
+          // Empezar con act1 (más movimiento) mientras camina
+          act1.play();
+        } else if(gltf.animations.length===1){
+          act0=mixer.clipAction(gltf.animations[0]);
+          act0.setLoop(THREE.LoopRepeat);
+          act0.play();
         }
-        if(walkClip){
-          actWalk=mixer.clipAction(walkClip);
-          actWalk.setLoop(THREE.LoopRepeat);
-        }
-
-        // Empezar con walk
-        if(actWalk){ actWalk.play(); curAct=actWalk; wm=true; }
-        else if(actIdle){ actIdle.play(); curAct=actIdle; wm=false; }
 
         ready=true;
         animate();
-      });
-    });
+      },e=>console.warn("BOT:",e));
+    }).catch(e=>console.warn("BOT:",e));
 
     function animate(){
       aid=requestAnimationFrame(animate);
@@ -7587,19 +7542,24 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       const dt=Math.min(clock.getDelta(),0.05);
       if(mixer) mixer.update(dt);
 
+      // Alternar walk(6s) / idle(3s)
       st-=dt;
       if(st<=0){
-        if(wm) setIdle();
-        else setWalk();
+        if(wm){
+          // Cambiar a idle
+          wm=false; st=3; tx=cx;
+          if(act0&&act1){ act0.reset().play(); act1.crossFadeTo(act0,0.5,false); }
+        } else {
+          // Cambiar a walk
+          wm=true; st=6; newTarget();
+          if(act0&&act1){ act1.reset().play(); act0.crossFadeTo(act1,0.5,false); }
+        }
       }
 
       if(wm){
         const dx=tx-cx;
-        if(Math.abs(dx)<0.08){
-          // nuevo destino
-          if(cx>=0) tx=-MX*(0.3+Math.random()*0.6);
-          else       tx= MX*(0.3+Math.random()*0.7);
-        } else {
+        if(Math.abs(dx)<0.08) newTarget();
+        else{
           cx+=Math.sign(dx)*Math.min(2.0*dt,Math.abs(dx));
           facing+=(Math.sign(dx)*0.5-facing)*0.12;
         }
@@ -7624,7 +7584,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       else{ clock=new THREE.Clock(); animate(); }
     });
     window.FORJA_BOT={
-      trigger(m){ if(m==="victory") setWalk(); },
+      trigger(m){wm=true;st=6;newTarget();},
       refreshMood(){},
     };
   }
