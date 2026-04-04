@@ -7566,6 +7566,11 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
             facing+=(targetFacing-facing)*0.15;
           }
         }
+        // Pausar animación cuando está parado, reanudar al caminar
+        if(mixer._actions&&mixer._actions[0]){
+          const spd=wm?1:0;
+          mixer._actions[0].timeScale=spd;
+        }
         model.position.x=cx;
         model.rotation.y=Math.PI/2+facing;
       } else {
