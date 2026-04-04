@@ -7495,13 +7495,29 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
   let seqIdx=0, seqTimer=0, currentMood="normal", walkMode=false;
   let MX=5, FLOOR_Y=0;
 
+  function removeRootMotion(clip){
+    // Eliminar tracks de traslación del Hips (root bone) para evitar flotación
+    if(!clip) return clip;
+    clip.tracks=clip.tracks.filter(track=>{
+      // Remover traslación del Hips — mantener solo rotaciones y escalas
+      const isHipTranslation=track.name&&(
+        track.name.includes("Hips.position")||
+        track.name.includes("Hips.translation")||
+        track.name.includes("hips.position")
+      );
+      return !isHipTranslation;
+    });
+    return clip;
+  }
+
   function loadClip(key){
     return new Promise(resolve=>{
       if(loadedClips[key]){resolve(loadedClips[key]);return;}
       fetch(ANIM_FILES[key]).then(r=>r.arrayBuffer()).then(buf=>{
         new THREE.GLTFLoader().parse(buf,"",(gltf)=>{
           const clip=gltf.animations&&gltf.animations[0]||null;
-          loadedClips[key]=clip; resolve(clip);
+          const fixed=removeRootMotion(clip);
+          loadedClips[key]=fixed; resolve(fixed);
         },()=>resolve(null));
       }).catch(()=>resolve(null));
     });
@@ -7563,8 +7579,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     // Pero cámara posicionada en Y=0, mirando al origen
     // FOV=60: natural sin distorsión. camZ ajustado para ver robot bien
     camera=new THREE.PerspectiveCamera(60,aspect,0.1,200);
-    camera.position.set(0,0,6);
-    camera.lookAt(0,0,0);
+    // Cámara a la misma altura que el centro del robot → pies se ven planos
+    // Robot pies en Y≈-3.4, centro en Y≈-2.4
+    camera.position.set(0,-2.4,6);
+    camera.lookAt(0,-2.4,0);
 
     scene.add(new THREE.AmbientLight(0xffffff,1.6));
     const key=new THREE.DirectionalLight(0xffeedd,1.4);
@@ -7678,6 +7696,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
       // Anclar pies al piso — las animaciones no deben desplazar Y
       model.position.set(charX,FLOOR_Y,0);
       model.rotation.y=charFacing;
+      // Cámara sigue al robot en X, mantiene Y y Z fijos
+      camera.position.x=charX;
+      camera.lookAt(charX,-2.4,0);
       renderer.render(scene,camera);
     }
     animate();
