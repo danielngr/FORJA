@@ -4046,48 +4046,48 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
     </div>
   );}
   return(<>
-      <div style={{position:"relative",background:"#08090e",borderBottom:"0.5px solid rgba(255,255,255,0.06)",height:210,overflow:"hidden"}}>
+      <div style={{position:"relative",background:"#08090e",borderBottom:"0.5px solid rgba(255,255,255,0.06)",height:220,overflow:"hidden"}}>
 
-        {/* ── Canvas 3D (robot + piso) ── */}
-        <canvas id="forja-bot-canvas" style={{position:"absolute",inset:0,width:"100%",height:"100%",zIndex:1}}/>
+        <canvas id="forja-bot-canvas" style={{position:"absolute",inset:0,width:"100%",height:"100%",zIndex:1,display:"block"}}/>
 
-        {/* ── Vignette lateral */}
+        {/* Vignette suave en lados */}
         <div style={{position:"absolute",inset:0,zIndex:2,pointerEvents:"none",
-          background:"linear-gradient(90deg,rgba(8,9,14,.8) 0%,transparent 18%,transparent 82%,rgba(8,9,14,.8) 100%)"}}/>
+          background:"linear-gradient(90deg,rgba(8,9,14,.65) 0%,transparent 20%,transparent 80%,rgba(8,9,14,.65) 100%)"}}/>
 
-        {/* ── Settings + progress (top right) */}
-        <div style={{position:"absolute",top:10,right:10,zIndex:10,display:"flex",alignItems:"center",gap:8}}>
-          {day&&exs.length>0&&(
-            <div style={{display:"flex",alignItems:"center",gap:5}}>
-              <span style={{fontSize:8,fontFamily:mono,color:"rgba(255,255,255,0.2)",letterSpacing:1}}>{dc}/{exs.length}</span>
-              <div style={{width:32,height:1.5,background:"rgba(255,255,255,0.06)",borderRadius:1}}>
-                <div style={{height:"100%",width:`${pct*100}%`,background:pct===1?"#3fcf8e":"rgba(255,255,255,0.35)",borderRadius:1,transition:"width .4s"}}/>
-              </div>
+        {/* Fade top */}
+        <div style={{position:"absolute",top:0,left:0,right:0,height:50,zIndex:2,pointerEvents:"none",
+          background:"linear-gradient(180deg,rgba(8,9,14,0.7) 0%,transparent 100%)"}}/>
+
+        {/* Settings */}
+        <button onClick={()=>setShowSet(!showSet)}
+          style={{position:"absolute",top:10,right:10,zIndex:10,width:24,height:24,borderRadius:6,
+            border:"0.5px solid rgba(255,255,255,0.08)",background:"rgba(255,255,255,0.03)",
+            cursor:"pointer",color:"rgba(255,255,255,0.3)",fontSize:11,
+            display:"flex",alignItems:"center",justifyContent:"center"}}>
+          &#9881;
+        </button>
+
+        {/* Progress */}
+        {day&&exs.length>0&&(
+          <div style={{position:"absolute",top:13,right:40,zIndex:10,display:"flex",alignItems:"center",gap:5}}>
+            <span style={{fontSize:7,fontFamily:mono,color:"rgba(255,255,255,0.18)",letterSpacing:1}}>{dc}/{exs.length}</span>
+            <div style={{width:28,height:1,background:"rgba(255,255,255,0.06)",borderRadius:1}}>
+              <div style={{height:"100%",width:`${pct*100}%`,background:pct===1?"#3fcf8e":"rgba(255,255,255,0.3)",borderRadius:1,transition:"width .4s"}}/>
             </div>
-          )}
-          <button onClick={()=>setShowSet(!showSet)}
-            style={{width:24,height:24,borderRadius:6,border:"0.5px solid rgba(255,255,255,0.08)",
-              background:"rgba(255,255,255,0.03)",cursor:"pointer",color:"rgba(255,255,255,0.3)",fontSize:11,
-              display:"flex",alignItems:"center",justifyContent:"center"}}>
-            &#9881;
-          </button>
-        </div>
+          </div>
+        )}
 
-        {/* ── Settings panel */}
+        {/* Settings panel */}
         {showSet&&(
           <div style={{position:"absolute",top:38,right:10,zIndex:20,
-            background:"rgba(10,12,18,0.97)",border:"0.5px solid rgba(255,255,255,0.08)",
-            borderRadius:10,padding:"8px 10px",display:"flex",flexWrap:"wrap",gap:6,maxWidth:260}}>
+            background:"rgba(8,10,16,0.98)",border:"0.5px solid rgba(255,255,255,0.08)",
+            borderRadius:10,padding:"8px 10px",display:"flex",flexWrap:"wrap",gap:6,maxWidth:240}}>
             {[
-              {label:lang.toUpperCase(),fn:()=>{const ls=["es","en","fr","it","de","pt"];const nl=ls[(ls.indexOf(lang)+1)%ls.length];setLang(nl);sp({...profile,lang:nl});}},
-              {label:t.reconfig.toUpperCase(),fn:()=>{showForjaOnboarding();setShowSet(false);}},
-              {label:"TUTORIAL",fn:()=>{try{localStorage.removeItem("fv8_toured");}catch{}setTourAskVisible(true);setTourStep(null);setShowSet(false);}},
-            ].map(({label,fn})=>(
-              <button key={label} onClick={fn}
-                style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(255,255,255,0.08)",
-                  background:"transparent",color:"rgba(255,255,255,0.5)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>
-                {label}
-              </button>
+              {l:lang.toUpperCase(),f:()=>{const ls=["es","en","fr","it","de","pt"];const nl=ls[(ls.indexOf(lang)+1)%ls.length];setLang(nl);sp({...profile,lang:nl});}},
+              {l:t.reconfig.toUpperCase(),f:()=>{showForjaOnboarding();setShowSet(false);}},
+              {l:"TUTORIAL",f:()=>{try{localStorage.removeItem("fv8_toured");}catch{}setTourAskVisible(true);setTourStep(null);setShowSet(false);}},
+            ].map(({l,f})=>(
+              <button key={l} onClick={f} style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(255,255,255,0.08)",background:"transparent",color:"rgba(255,255,255,0.5)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>{l}</button>
             ))}
             {isUserAnonymous()
               ? <button onClick={doGoogleSignIn} style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(66,133,244,0.25)",background:"rgba(66,133,244,0.06)",color:"rgba(66,133,244,0.8)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>GOOGLE</button>
@@ -4096,53 +4096,32 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
           </div>
         )}
 
-        {/* ── Week nav (top center) */}
+        {/* Week nav — muy sutil, arriba centro */}
         {(()=>{
           const now=new Date(),dow=now.getDay(),mo=dow===0?-6:1-dow;
           const mon=new Date(now); mon.setDate(now.getDate()+mo+weekOff*7);
           const sun=new Date(mon); sun.setDate(mon.getDate()+6);
           const fmt=d=>`${d.getDate()} ${["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"][d.getMonth()]}`;
           const lbl=weekOff===0?(lang==="es"||lang==="pt"?"ESTA SEMANA":lang==="fr"?"CETTE SEMAINE":lang==="it"?"QUESTA SETTIMANA":lang==="de"?"DIESE WOCHE":"THIS WEEK")
-            :weekOff===-1?(lang==="es"||lang==="pt"?"SEMANA PASADA":lang==="fr"?"SEMAINE PRECEDENTE":lang==="it"?"SETTIMANA SCORSA":lang==="de"?"LETZTE WOCHE":"LAST WEEK")
+            :weekOff===-1?(lang==="es"||lang==="pt"?"SEMANA PASADA":"LAST WEEK")
             :`${fmt(mon)} - ${fmt(sun)}`;
           return(
-            <div style={{position:"absolute",top:10,left:0,right:0,zIndex:10,
-              display:"flex",alignItems:"center",justifyContent:"center",gap:8,pointerEvents:"none"}}>
+            <div style={{position:"absolute",top:12,left:0,right:0,zIndex:10,
+              display:"flex",alignItems:"center",justifyContent:"center",gap:10,pointerEvents:"none"}}>
               <button onClick={()=>setWeekOff(p=>Math.max(-12,p-1))}
-                style={{pointerEvents:"all",width:20,height:20,borderRadius:"50%",
-                  border:"0.5px solid rgba(255,255,255,0.08)",background:"rgba(255,255,255,0.03)",
-                  color:"rgba(255,255,255,0.25)",fontSize:13,cursor:"pointer",
-                  display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>
-                &#8249;
-              </button>
+                style={{pointerEvents:"all",background:"none",border:"none",color:"rgba(255,255,255,0.2)",
+                  fontSize:16,cursor:"pointer",lineHeight:1,padding:"0 4px"}}>&#8249;</button>
               <span style={{fontSize:7,fontFamily:mono,letterSpacing:3,
-                color:weekOff===0?"rgba(255,255,255,0.4)":"rgba(255,255,255,0.25)"}}>
-                {lbl}
-              </span>
+                color:"rgba(255,255,255,0.3)",textTransform:"uppercase"}}>{lbl}</span>
               <button onClick={()=>setWeekOff(p=>Math.min(0,p+1))}
-                style={{pointerEvents:"all",width:20,height:20,borderRadius:"50%",
-                  border:"0.5px solid rgba(255,255,255,0.08)",background:"rgba(255,255,255,0.03)",
-                  color:weekOff===0?"rgba(255,255,255,0.06)":"rgba(255,255,255,0.25)",
-                  fontSize:13,cursor:weekOff===0?"default":"pointer",
-                  display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>
-                &#8250;
-              </button>
+                style={{pointerEvents:"all",background:"none",border:"none",
+                  color:weekOff===0?"rgba(255,255,255,0.06)":"rgba(255,255,255,0.2)",
+                  fontSize:16,cursor:weekOff===0?"default":"pointer",lineHeight:1,padding:"0 4px"}}>&#8250;</button>
             </div>
           );
         })()}
 
-        {/* ── Express badge */}
-        {day?.isExpress&&(
-          <div style={{position:"absolute",top:32,left:14,zIndex:10,
-            display:"inline-flex",alignItems:"center",gap:4,
-            background:"rgba(63,207,142,0.1)",border:"0.5px solid rgba(63,207,142,0.25)",
-            borderRadius:20,padding:"3px 8px",
-            fontFamily:mono,fontSize:7,color:"#3fcf8e",letterSpacing:2}}>
-            &#9889; EXPRESS
-          </div>
-        )}
-
-        {/* ── DAYS — bottom strip */}
+        {/* ── DÍAS — franja inferior integrada al piso 3D */}
         {(()=>{
           const isCeleb=profile?.mode==="celebrity";
           const celebId=profile?.celebrity;
@@ -4151,9 +4130,10 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
           const now=new Date(),dow=now.getDay(),mo=dow===0?-6:1-dow,tdi=dow===0?6:dow-1;
           return(
             <div style={{position:"absolute",bottom:0,left:0,right:0,zIndex:10,
-              display:"flex",
-              background:"linear-gradient(0deg,rgba(8,9,14,0.92) 0%,rgba(8,9,14,0.6) 60%,transparent 100%)",
-              paddingTop:20}}>
+              display:"flex",alignItems:"flex-end",
+              padding:"0",
+              background:"linear-gradient(0deg,rgba(8,9,14,0.95) 0%,rgba(8,9,14,0.7) 50%,transparent 100%)",
+              paddingTop:32}}>
               {Array(7).fill(0).map((_,i)=>{
                 const d=routine?routine[i]:null,de=d?d.ex:[],dd=de.filter(x=>done[`${i}-${x.id}`]).length;
                 const cp=de.length>0&&dd===de.length;
@@ -4162,37 +4142,41 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                 const isToday=weekOff===0&&i===tdi;
                 const isFuture=weekOff===0&&i>tdi;
                 const isPastWeek=weekOff<0,hasDone=dd>0;
-                const accentColor=isSel?(cc||"rgba(255,255,255,0.9)"):isToday?(cc||"#f6ad55"):cp?"#3fcf8e":hasDone?"#4a8fd4":"rgba(255,255,255,0.2)";
                 return(
                   <button key={i} data-tour={i===tdi?"cal-day":undefined}
                     onClick={()=>{setSel(i);setTabR("train");setAddEx(false);setAddF(false);setInWorkout(false);}}
                     style={{flex:1,border:"none",background:"transparent",cursor:"pointer",
-                      display:"flex",flexDirection:"column",alignItems:"center",padding:"0 0 8px",
-                      opacity:isFuture&&!isSel?0.25:isPastWeek&&!hasDone&&!isSel&&!isRest?0.3:1,
-                      position:"relative",transition:"opacity .15s"}}>
-                    {/* Top accent line */}
-                    <div style={{width:"100%",height:isSel?2:cp||isToday?1:1,
-                      background:isSel?(cc||"rgba(255,255,255,0.7)"):cp?"#3fcf8e":isToday?(cc||"rgba(246,173,85,0.5)"):"rgba(255,255,255,0.05)",
-                      marginBottom:6,transition:"all .2s"}}/>
-                    {/* Status dot */}
-                    {(cp||isToday)&&<div style={{width:3,height:3,borderRadius:"50%",marginBottom:4,
-                      background:cp?"#3fcf8e":(cc||"#f6ad55"),
-                      boxShadow:cp?"0 0 5px rgba(63,207,142,0.7)":"0 0 5px rgba(246,173,85,0.6)"}}/>}
+                      display:"flex",flexDirection:"column",alignItems:"center",
+                      padding:"0 0 10px",gap:0,
+                      opacity:isFuture&&!isSel?0.2:isPastWeek&&!hasDone&&!isSel&&!isRest?0.3:1,
+                      transition:"opacity .15s"}}>
+
+                    {/* Accent line top */}
+                    <div style={{
+                      width:isSel?"60%":cp||isToday?"40%":"20%",
+                      height:isSel?2:1,
+                      background:isSel?(cc||"rgba(255,255,255,0.8)"):cp?"#3fcf8e":isToday?(cc||"rgba(246,173,85,0.6)"):"rgba(255,255,255,0.08)",
+                      borderRadius:2,marginBottom:8,transition:"all .2s",
+                      boxShadow:isSel?"0 0 8px rgba(255,255,255,0.3)":cp?"0 0 6px rgba(63,207,142,0.4)":isToday?"0 0 6px rgba(246,173,85,0.3)":"none"}}/>
+
                     {/* Day name */}
-                    <div style={{fontSize:9,fontFamily:mono,letterSpacing:1,lineHeight:1,
+                    <div style={{fontSize:8,fontFamily:mono,letterSpacing:1.5,lineHeight:1,
                       fontWeight:isSel||isToday?700:400,
-                      color:isSel?(cc||"rgba(255,255,255,0.9)"):isToday?(cc||"rgba(255,255,255,0.7)"):"rgba(255,255,255,0.25)"}}>
+                      color:isSel?(cc||"#fff"):isToday?(cc||"rgba(255,255,255,0.8)"):cp?"rgba(255,255,255,0.5)":"rgba(255,255,255,0.2)"}}>
                       {DN[lang][i]}
                     </div>
-                    {/* Date number */}
-                    <div style={{fontSize:12,fontFamily:mono,fontWeight:700,marginTop:1,
-                      color:isSel?"rgba(255,255,255,0.9)":isToday?"rgba(255,255,255,0.6)":"rgba(255,255,255,0.18)"}}>
+
+                    {/* Date */}
+                    <div style={{fontSize:13,fontFamily:mono,fontWeight:800,marginTop:2,lineHeight:1,
+                      color:isSel?"#fff":isToday?"rgba(255,255,255,0.7)":cp?"rgba(255,255,255,0.4)":"rgba(255,255,255,0.15)"}}>
                       {dayDate.getDate()}
                     </div>
+
                     {/* Routine label */}
-                    <div style={{fontSize:6,fontFamily:mono,marginTop:2,letterSpacing:0.5,
-                      color:isSel?(cc||"rgba(255,255,255,0.35)"):isToday?"rgba(255,255,255,0.2)":"rgba(255,255,255,0.08)",
-                      overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"100%",padding:"0 2px"}}>
+                    <div style={{fontSize:6,fontFamily:mono,marginTop:3,letterSpacing:0.5,
+                      color:isSel?(cc||"rgba(255,255,255,0.4)"):isToday?"rgba(255,255,255,0.25)":"rgba(255,255,255,0.08)",
+                      overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",
+                      maxWidth:"90%",padding:"0 2px",textAlign:"center"}}>
                       {d?(isCeleb&&cm?cm.l:d.l):(L[lang]||L.en).rest}
                     </div>
                   </button>
@@ -7495,9 +7479,11 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
     ren.setClearColor(0,0);
     scene=new THREE.Scene();
     cam=new THREE.PerspectiveCamera(FOV,W/H,0.1,200);
-    cam.position.set(0,CAM_Y+2,CZ); cam.lookAt(0,CAM_Y-1,0);
-    scene.add(new THREE.AmbientLight(0xffffff,2));
-    const dl=new THREE.DirectionalLight(0xffffff,1.5); dl.position.set(2,5,4); scene.add(dl);
+    cam.position.set(0,CAM_Y+1.5,CZ); cam.lookAt(0,CAM_Y-0.5,0);
+    scene.add(new THREE.AmbientLight(0xffffff,1.2));
+    const dl=new THREE.DirectionalLight(0xfff8f0,2.5); dl.position.set(3,8,5); scene.add(dl);
+    const dl2=new THREE.DirectionalLight(0x8090ff,0.8); dl2.position.set(-4,2,3); scene.add(dl2);
+    const dl3=new THREE.DirectionalLight(0xffffff,0.5); dl3.position.set(0,-2,6); scene.add(dl3);
     clock=new THREE.Clock();
 
     // Piso 3D con grid perspectiva
@@ -7549,7 +7535,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
           if(c.isSkinnedMesh) mat.skinning=true;
           c.material=mat;
         });
-        model.scale.setScalar(36);
+        model.scale.setScalar(44);
         model.rotation.x=-0.15;
         model.position.set(canWalk?cx:0, FY, 0);
         scene.add(model);
