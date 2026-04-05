@@ -4039,177 +4039,154 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   return(<>
       <div style={{background:"#08090e",borderBottom:"0.5px solid rgba(255,255,255,0.06)",position:"relative",overflow:"hidden"}}>
 
-        {/* Glow de fondo sutil */}
-        <div style={{position:"absolute",top:"-40px",right:"-20px",width:200,height:160,
-          background:"radial-gradient(ellipse,rgba(63,207,142,0.07) 0%,transparent 70%)",
-          pointerEvents:"none"}}/>
-        <div style={{position:"absolute",bottom:0,left:"-20px",width:160,height:120,
-          background:"radial-gradient(ellipse,rgba(100,100,255,0.05) 0%,transparent 70%)",
-          pointerEvents:"none"}}/>
-
-        {/* Settings top right */}
-        <div style={{position:"absolute",top:14,right:14,zIndex:10,display:"flex",alignItems:"center",gap:8}}>
-          <button onClick={()=>setShowSet(!showSet)} style={{width:28,height:28,borderRadius:8,
-            border:"0.5px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.05)",
-            cursor:"pointer",color:"rgba(255,255,255,0.35)",fontSize:13,
-            display:"flex",alignItems:"center",justifyContent:"center"}}>&#9881;</button>
-        </div>
+        <div style={{position:"absolute",top:-40,right:-20,width:200,height:160,background:"radial-gradient(ellipse,rgba(63,207,142,0.06) 0%,transparent 70%)",pointerEvents:"none"}}/>
+        <div style={{position:"absolute",bottom:0,left:-20,width:160,height:100,background:"radial-gradient(ellipse,rgba(100,100,255,0.04) 0%,transparent 70%)",pointerEvents:"none"}}/>
 
         {/* Settings panel */}
         {showSet&&(
-          <div style={{position:"absolute",top:46,right:10,zIndex:20,
+          <div style={{position:"absolute",top:40,right:14,zIndex:20,
             background:"rgba(10,12,18,0.97)",border:"0.5px solid rgba(255,255,255,0.08)",
             borderRadius:12,padding:"8px 10px",display:"flex",flexWrap:"wrap",gap:6,maxWidth:260,
             backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)"}}>
             <button onClick={()=>{const ls=["es","en","fr","it","de","pt"];const nl=ls[(ls.indexOf(lang)+1)%ls.length];setLang(nl);sp({...profile,lang:nl});}}
-              style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(255,255,255,0.08)",background:"transparent",color:"rgba(255,255,255,0.5)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>
-              {lang.toUpperCase()}
-            </button>
+              style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(255,255,255,0.08)",background:"transparent",color:"rgba(255,255,255,0.5)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>{lang.toUpperCase()}</button>
             <button onClick={()=>{showForjaOnboarding();setShowSet(false);}}
-              style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(255,255,255,0.08)",background:"transparent",color:"rgba(255,255,255,0.5)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>
-              {t.reconfig.toUpperCase()}
-            </button>
+              style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(255,255,255,0.08)",background:"transparent",color:"rgba(255,255,255,0.5)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>{t.reconfig.toUpperCase()}</button>
             <button onClick={()=>{try{localStorage.removeItem("fv8_toured");}catch{}setTourAskVisible(true);setTourStep(null);setShowSet(false);}}
-              style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(255,255,255,0.08)",background:"transparent",color:"rgba(255,255,255,0.5)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>
-              TUTORIAL
-            </button>
+              style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(255,255,255,0.08)",background:"transparent",color:"rgba(255,255,255,0.5)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>TUTORIAL</button>
             {isUserAnonymous()&&<button onClick={doGoogleSignIn} style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(66,133,244,0.3)",background:"rgba(66,133,244,0.08)",color:"rgba(66,133,244,0.8)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>GOOGLE</button>}
             {!isUserAnonymous()&&<button onClick={doSignOut} style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(63,207,142,0.2)",background:"transparent",color:"rgba(63,207,142,0.6)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>&#10003; {getUserEmail()?.split("@")[0]||"Google"}</button>}
           </div>
         )}
 
-        {/* Main content — Athlete Dashboard */}
         {(()=>{
           const now=new Date(),dow=now.getDay(),tdi=dow===0?6:dow-1;
           const todayR=routine?routine[tdi]:null;
           const dc2=todayR?todayR.ex.filter(function(x){return done[tdi+"-"+x.id];}).length:0;
           const tot2=todayR?todayR.ex.length:0;
 
-          // Racha
           let streak=0;
-          const sc=new Date(today);
+          const allDayKeys=Object.keys(FStore.loadDone?FStore.loadDone(""):done||{});
+          const checkDate=new Date(today);
           while(streak<365){
-            const ds=new Date(sc);ds.setDate(sc.getDate()-streak);
-            const key=ds.toISOString().slice(0,10);
-            const wkk=wk(Math.floor((new Date(today)-ds)/(7*24*3600*1000))*-1);
-            const dayIdx=ds.getDay()===0?6:ds.getDay()-1;
-            const rr=routine?routine[dayIdx]:null;
+            const ds=new Date(checkDate);ds.setDate(checkDate.getDate()-streak);
+            const dayIdx2=ds.getDay()===0?6:ds.getDay()-1;
+            const rr=routine?routine[dayIdx2]:null;
             if(!rr){streak++;continue;}
-            const hasDone=rr.ex.some(function(x){return done[dayIdx+"-"+x.id]||FStore.loadDone(wkk)[dayIdx+"-"+x.id];});
-            if(!hasDone&&key!==today)break;
+            const wkOff=Math.round((new Date(today)-ds)/(7*24*3600*1000))*-1;
+            const wkKey=wk(wkOff);
+            const savedDone=FStore.loadDone(wkKey);
+            const hasDone2=rr.ex.some(function(x){return savedDone[dayIdx2+"-"+x.id]||done[dayIdx2+"-"+x.id];});
+            if(!hasDone2&&ds.toISOString().slice(0,10)!==today)break;
             streak++;
           }
 
-          // XP total y nivel
           const totalXP=muscleXP?Object.values(muscleXP).reduce(function(a,v){return a+(v.xp||0);},0):0;
           const currentLevel=xpToLevel(totalXP);
           const nextThresh=xpForNextLevel(currentLevel);
           const prevThresh=XP_THRESHOLDS[currentLevel-1]||0;
           const xpPct=nextThresh===Infinity?1:Math.min(1,(totalXP-prevThresh)/(nextThresh-prevThresh));
-          const LEVEL_NAMES=["IRON","BRONZE","SILVER","GOLD","PLATINUM","DIAMOND","ELITE","MASTER","LEGEND","APEX"];
-          const LEVEL_COLORS=["#888","#cd7f32","#c0c0c0","#ffd700","#e5e4e2","#b9f2ff","#ff6b35","#9b59b6","#e74c3c","#00ff88"];
-          const lvlName=(LEVEL_NAMES[Math.min(9,currentLevel-1)]||"IRON")+" "+(["I","II","III"][((currentLevel-1)%3)]||"I");
-          const lvlColor=LEVEL_COLORS[Math.min(9,currentLevel-1)]||"#888";
+          const LNAMES=["IRON","BRONZE","SILVER","GOLD","PLATINUM","DIAMOND","ELITE","MASTER","LEGEND","APEX"];
+          const LCOLORS=["#888888","#cd7f32","#c0c0c0","#ffd700","#e5e4e2","#b9f2ff","#ff6b35","#9b59b6","#e74c3c","#00ff88"];
+          const LROMAN=["I","II","III"];
+          const lvlName=LNAMES[Math.min(9,currentLevel-1)]+" "+LROMAN[(currentLevel-1)%3];
+          const lvlColor=LCOLORS[Math.min(9,currentLevel-1)];
+          const nextLvlName=LNAMES[Math.min(9,currentLevel)]+" "+LROMAN[currentLevel%3];
 
-          // Días esta semana completados
           const now2=new Date(),dow2=now2.getDay(),mo2=dow2===0?-6:1-dow2;
           const mon2=new Date(now2); mon2.setDate(now2.getDate()+mo2+weekOff*7);
           const weekDays=Array(7).fill(0).map(function(_,i){return new Date(mon2.getTime()+i*86400000);});
           const doneThisWeek=weekDays.filter(function(d,i){
-            const r=routine?routine[i]:null;
-            if(!r)return false;
-            return r.ex.some(function(x){return done[i+"-"+x.id];});
+            const r=routine?routine[i]:null; if(!r)return false;
+            const wkOff2=Math.round((new Date(today)-d)/(7*24*3600*1000))*-1;
+            const sd=FStore.loadDone(wk(wkOff2));
+            return r.ex.some(function(x){return sd[i+"-"+x.id]||done[i+"-"+x.id];});
           }).length;
           const trainingDays=weekDays.filter(function(_,i){return routine&&routine[i];}).length;
 
-          // Semana nav label
-          const fmt=d=>d.getDate()+" "+["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"][d.getMonth()];
           const sun2=new Date(mon2); sun2.setDate(mon2.getDate()+6);
-          const weekLabel=weekOff===0
-            ?(lang==="es"||lang==="pt"?"ESTA SEMANA":lang==="fr"?"CETTE SEMAINE":lang==="it"?"QUESTA SETTIMANA":lang==="de"?"DIESE WOCHE":"THIS WEEK")
-            :weekOff===-1?(lang==="es"||lang==="pt"?"SEMANA PASADA":"LAST WEEK")
+          const fmt=d=>d.getDate()+" "+["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"][d.getMonth()];
+          const weekLabel=weekOff===0?(lang==="es"||lang==="pt"?"ESTA SEMANA":lang==="it"?"QUESTA SETTIMANA":lang==="de"?"DIESE WOCHE":"THIS WEEK")
+            :weekOff===-1?(lang==="es"?"SEMANA PASADA":lang==="it"?"SETTIMANA SCORSA":"LAST WEEK")
             :fmt(mon2)+" – "+fmt(sun2);
 
           return(
-            <div style={{padding:"16px 18px 0"}}>
+            <div style={{padding:"12px 20px 0"}}>
 
-              {/* Top row — semana nav + nivel */}
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
-                <div style={{display:"flex",alignItems:"center",gap:6}}>
+              {/* Row 1: semana nav + settings */}
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+                <div style={{display:"flex",alignItems:"center",gap:4}}>
                   <button onClick={()=>setWeekOff(p=>Math.max(-12,p-1))}
-                    style={{background:"none",border:"none",color:"rgba(255,255,255,0.2)",fontSize:16,cursor:"pointer",padding:"0 4px",lineHeight:1}}>&#8249;</button>
-                  <span style={{fontSize:7,fontFamily:mono,letterSpacing:3,color:"rgba(255,255,255,0.3)"}}>{weekLabel}</span>
+                    style={{background:"none",border:"none",color:"rgba(255,255,255,0.2)",fontSize:18,cursor:"pointer",padding:"0 2px",lineHeight:1}}>&#8249;</button>
+                  <span style={{fontSize:7,fontFamily:mono,letterSpacing:2.5,color:"rgba(255,255,255,0.28)"}}>{weekLabel}</span>
                   <button onClick={()=>setWeekOff(p=>Math.min(0,p+1))}
-                    style={{background:"none",border:"none",color:weekOff===0?"rgba(255,255,255,0.08)":"rgba(255,255,255,0.2)",fontSize:16,cursor:weekOff===0?"default":"pointer",padding:"0 4px",lineHeight:1}}>&#8250;</button>
+                    style={{background:"none",border:"none",color:weekOff===0?"rgba(255,255,255,0.07)":"rgba(255,255,255,0.2)",fontSize:18,cursor:weekOff===0?"default":"pointer",padding:"0 2px",lineHeight:1}}>&#8250;</button>
                 </div>
-                <div style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer"}} onClick={()=>setShowBotChat(true)}>
-                  <div style={{fontSize:7,fontFamily:mono,letterSpacing:1.5,color:lvlColor,opacity:0.8}}>{lvlName}</div>
-                  <div style={{width:6,height:6,borderRadius:"50%",background:lvlColor,boxShadow:"0 0 8px "+lvlColor}}/>
-                </div>
+                <button onClick={()=>setShowSet(!showSet)} style={{width:26,height:26,borderRadius:8,
+                  border:"0.5px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",
+                  cursor:"pointer",color:"rgba(255,255,255,0.3)",fontSize:13,
+                  display:"flex",alignItems:"center",justifyContent:"center"}}>&#9881;</button>
               </div>
 
-              {/* Main stats row */}
+              {/* Row 2: racha grande + side stats */}
               <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",marginBottom:14}}>
-                {/* Racha — número grande */}
-                <div style={{display:"flex",flexDirection:"column",gap:2}}>
-                  <div style={{fontSize:64,fontWeight:900,lineHeight:1,letterSpacing:"-3px",
-                    color:"#fff",textShadow:"0 0 40px rgba(255,255,255,0.1)"}}>
+                <div>
+                  <div style={{fontSize:58,fontWeight:900,lineHeight:1,letterSpacing:"-2px",color:"#fff"}}>
                     {streak}
                   </div>
-                  <div style={{fontSize:8,fontFamily:mono,letterSpacing:3,color:"rgba(255,255,255,0.25)"}}>
-                    {lang==="es"||lang==="pt"?"DÍAS DE RACHA":lang==="it"?"GIORNI":lang==="de"?"TAGE SERIE":"DAY STREAK"}
+                  <div style={{fontSize:7,fontFamily:mono,letterSpacing:3,color:"rgba(255,255,255,0.22)",marginTop:3}}>
+                    {lang==="es"||lang==="pt"?"DÍAS DE RACHA":lang==="it"?"GIORNI SERIE":lang==="de"?"TAGE SERIE":"DAY STREAK"}
                   </div>
                 </div>
 
-                {/* Side stats */}
-                <div style={{display:"flex",flexDirection:"column",gap:10,alignItems:"flex-end"}}>
+                <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:8,paddingBottom:4}}>
                   <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:1}}>
-                    <div style={{fontSize:22,fontWeight:800,color:doneThisWeek===trainingDays&&trainingDays>0?"#3fcf8e":"#fff",lineHeight:1}}>
+                    <div style={{fontSize:20,fontWeight:800,lineHeight:1,
+                      color:doneThisWeek===trainingDays&&trainingDays>0?"#3fcf8e":"#fff"}}>
                       {doneThisWeek}/{trainingDays}
                     </div>
-                    <div style={{fontSize:7,fontFamily:mono,letterSpacing:2,color:"rgba(255,255,255,0.25)"}}>
+                    <div style={{fontSize:7,fontFamily:mono,letterSpacing:2,color:"rgba(255,255,255,0.22)"}}>
                       {lang==="es"?"SEMANA":lang==="it"?"SETTIMANA":lang==="de"?"WOCHE":"WEEK"}
                     </div>
                   </div>
                   <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:1}}>
-                    <div style={{fontSize:todayR?14:11,fontWeight:800,color:todayR?"#fff":"rgba(255,255,255,0.25)",lineHeight:1,letterSpacing:todayR?0.5:1}}>
+                    <div style={{fontSize:todayR?13:10,fontWeight:800,lineHeight:1,letterSpacing:0.5,
+                      color:todayR?"rgba(255,255,255,0.9)":"rgba(255,255,255,0.2)"}}>
                       {todayR?todayR.l:(lang==="es"?"DESCANSO":lang==="it"?"RIPOSO":lang==="de"?"PAUSE":"REST")}
                     </div>
-                    {todayR&&tot2>0&&<div style={{fontSize:7,fontFamily:mono,letterSpacing:2,color:dc2===tot2?"#3fcf8e":"rgba(255,255,255,0.25)"}}>
-                      {dc2}/{tot2} {lang==="es"?"EJERC":"EX"}
-                    </div>}
-                    {!todayR&&<div style={{fontSize:7,fontFamily:mono,letterSpacing:2,color:"rgba(255,255,255,0.2)"}}>
-                      {lang==="es"?"HOY":lang==="it"?"OGGI":lang==="de"?"HEUTE":"TODAY"}
-                    </div>}
+                    <div style={{fontSize:7,fontFamily:mono,letterSpacing:2,
+                      color:dc2===tot2&&tot2>0?"#3fcf8e":"rgba(255,255,255,0.2)"}}>
+                      {todayR&&tot2>0?(dc2+"/"+tot2+" "+(lang==="es"?"EJERC":"EX")):(lang==="es"?"HOY":lang==="it"?"OGGI":"TODAY")}
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* XP Bar */}
-              {nextThresh!==Infinity&&(
-                <div style={{marginBottom:14}}>
-                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-                    <div style={{fontSize:7,fontFamily:mono,letterSpacing:2,color:"rgba(255,255,255,0.2)"}}>
-                      {lang==="es"?"NIVEL — "+Math.round(xpPct*100)+"% → ":"LEVEL — "+Math.round(xpPct*100)+"% → "}
-                      <span style={{color:lvlColor}}>{(LEVEL_NAMES[Math.min(9,currentLevel)]||"APEX")+" "+(["I","II","III"][(currentLevel%3)]||"I")}</span>
-                    </div>
-                    <div style={{fontSize:7,fontFamily:mono,letterSpacing:1,color:"rgba(255,255,255,0.15)"}}>
-                      {totalXP} / {nextThresh} XP
-                    </div>
+              {/* Row 3: XP bar + nivel */}
+              <div style={{marginBottom:0}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}>
+                  <div style={{fontSize:7,fontFamily:mono,letterSpacing:1.5,color:"rgba(255,255,255,0.18)"}}>
+                    <span style={{color:lvlColor,letterSpacing:2}}>{lvlName}</span>
+                    <span style={{margin:"0 4px",opacity:0.5}}>→</span>
+                    <span>{nextLvlName}</span>
                   </div>
-                  <div style={{height:2,background:"rgba(255,255,255,0.06)",borderRadius:1,overflow:"hidden"}}>
-                    <div style={{height:"100%",width:(xpPct*100)+"%",
-                      background:"linear-gradient(90deg,"+lvlColor+"88,"+lvlColor+")",
-                      borderRadius:1,transition:"width 1s ease"}}/>
+                  <div style={{fontSize:7,fontFamily:mono,letterSpacing:1,color:"rgba(255,255,255,0.15)"}}>
+                    {Math.round(xpPct*100)}%
                   </div>
                 </div>
-              )}
+                <div style={{height:1.5,background:"rgba(255,255,255,0.06)",borderRadius:1,overflow:"hidden"}}>
+                  <div style={{height:"100%",width:(Math.round(xpPct*100))+"%",
+                    background:"linear-gradient(90deg,"+lvlColor+"66,"+lvlColor+")",
+                    borderRadius:1}}/>
+                </div>
+              </div>
+
             </div>
           );
         })()}
 
         {/* Days strip */}
-        <div style={{display:"flex",gap:0,borderTop:"0.5px solid rgba(255,255,255,0.04)"}}>
+        <div style={{display:"flex",gap:0,marginTop:14,borderTop:"0.5px solid rgba(255,255,255,0.04)"}}>
           {(()=>{
             const isCeleb=profile?.mode==="celebrity";
             const celebId=profile?.celebrity;
@@ -4258,6 +4235,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                 </button>
               );
             });
+          })()}
           })()}
           })()}
           })()}
@@ -6179,7 +6157,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               const DAY_FULL=lang==="es"?["LUNES","MARTES","MIÉRCOLES","JUEVES","VIERNES","SÁBADO","DOMINGO"]:["MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY","SUNDAY"];
               const cnt=(manualRoutine[catalogDay]||[]).length;
               return(
-                <div style={{marginBottom:14}}>
+                <div style={{marginBottom:12}}>
                   <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:44,letterSpacing:2,lineHeight:.9,color:"#EEEAE3"}}>{DAY_FULL[dayIdx]}</div>
                   <div style={{fontFamily:mono,fontSize:9,color:"rgba(255,255,255,.25)",letterSpacing:2,marginTop:5,display:"flex",alignItems:"center",gap:8}}>
                     <span>{lang==="es"||lang==="pt"?"ELIGE TUS EJERCICIOS":lang==="fr"?"CHOISIS TES EXERCICES":lang==="it"?"SCEGLI I TUOI ESERCIZI":lang==="de"?"WÄHLE DEINE ÜBUNGEN":"CHOOSE YOUR EXERCISES"}</span>
