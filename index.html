@@ -4037,36 +4037,44 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
     </div>
   );}
   return(<>
-      <div style={{background:"#08090e",borderBottom:"0.5px solid rgba(255,255,255,0.06)",position:"relative",height:220,overflow:"hidden"}}>
+      <div style={{background:"#08090e",borderBottom:"0.5px solid rgba(255,255,255,0.06)",position:"relative",overflow:"hidden"}}>
 
-        <canvas id="forja-bot-canvas" style={{position:"absolute",inset:0,width:"100%",height:"100%",zIndex:1,display:"block"}}/>
-        <div onClick={()=>setShowBotChat(true)} style={{position:"absolute",inset:0,zIndex:9,cursor:"pointer"}}/>
+        {/* Fondo ambient */}
+        <div style={{position:"absolute",inset:0,pointerEvents:"none",
+          background:"radial-gradient(ellipse 70% 80% at 85% 40%, rgba(63,207,142,0.06) 0%, transparent 65%), radial-gradient(ellipse 50% 60% at 15% 60%, rgba(100,100,255,0.04) 0%, transparent 60%)"}}/>
 
-        <div style={{position:"absolute",inset:0,zIndex:2,pointerEvents:"none",background:"linear-gradient(90deg,rgba(8,9,14,.6) 0%,transparent 18%,transparent 82%,rgba(8,9,14,.6) 100%)"}}/>
-        <div style={{position:"absolute",top:0,left:0,right:0,height:60,zIndex:2,pointerEvents:"none",background:"linear-gradient(180deg,rgba(8,9,14,.55) 0%,transparent 100%)"}}/>
-
-        <div style={{position:"absolute",top:10,right:10,zIndex:10,display:"flex",alignItems:"center",gap:8}}>
-          {day&&exs.length>0&&(
-            <div style={{display:"flex",alignItems:"center",gap:5}}>
-              <span style={{fontSize:8,fontFamily:mono,color:"rgba(255,255,255,0.2)",letterSpacing:1}}>{dc}/{exs.length}</span>
-              <div style={{width:28,height:1.5,background:"rgba(255,255,255,0.06)",borderRadius:1}}>
-                <div style={{height:"100%",width:`${pct*100}%`,background:pct===1?"#3fcf8e":"rgba(255,255,255,0.3)",borderRadius:1,transition:"width .4s"}}/>
-              </div>
-            </div>
-          )}
-          <button onClick={()=>setShowSet(!showSet)} style={{width:26,height:26,borderRadius:8,border:"0.5px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.05)",cursor:"pointer",color:"rgba(255,255,255,0.4)",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center"}}>&#9881;</button>
+        {/* Settings */}
+        <div style={{position:"absolute",top:14,right:14,zIndex:10}}>
+          <button onClick={()=>setShowSet(!showSet)} style={{width:28,height:28,borderRadius:8,
+            border:"0.5px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.04)",
+            cursor:"pointer",color:"rgba(255,255,255,0.35)",fontSize:13,
+            display:"flex",alignItems:"center",justifyContent:"center"}}>&#9881;</button>
         </div>
 
+        {/* Settings panel */}
         {showSet&&(
-          <div style={{position:"absolute",top:40,right:10,zIndex:20,background:"rgba(10,12,18,0.97)",border:"0.5px solid rgba(255,255,255,0.08)",borderRadius:12,padding:"8px 10px",display:"flex",flexWrap:"wrap",gap:6,maxWidth:260}}>
-            <button onClick={()=>{const ls=["es","en","fr","it","de","pt"];const nl=ls[(ls.indexOf(lang)+1)%ls.length];setLang(nl);sp({...profile,lang:nl});}} style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(255,255,255,0.08)",background:"transparent",color:"rgba(255,255,255,0.5)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>{lang.toUpperCase()}</button>
-            <button onClick={()=>{showForjaOnboarding();setShowSet(false);}} style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(255,255,255,0.08)",background:"transparent",color:"rgba(255,255,255,0.5)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>{t.reconfig.toUpperCase()}</button>
-            <button onClick={()=>{try{localStorage.removeItem("fv8_toured");}catch{}setTourAskVisible(true);setTourStep(null);setShowSet(false);}} style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(255,255,255,0.08)",background:"transparent",color:"rgba(255,255,255,0.5)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>TUTORIAL</button>
+          <div style={{position:"absolute",top:46,right:14,zIndex:20,
+            background:"rgba(10,12,18,0.97)",border:"0.5px solid rgba(255,255,255,0.08)",
+            borderRadius:12,padding:"8px 10px",display:"flex",flexWrap:"wrap",gap:6,maxWidth:260,
+            backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)"}}>
+            <button onClick={()=>{const ls=["es","en","fr","it","de","pt"];const nl=ls[(ls.indexOf(lang)+1)%ls.length];setLang(nl);sp({...profile,lang:nl});}}
+              style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(255,255,255,0.08)",background:"transparent",color:"rgba(255,255,255,0.5)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>
+              {lang.toUpperCase()}
+            </button>
+            <button onClick={()=>{showForjaOnboarding();setShowSet(false);}}
+              style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(255,255,255,0.08)",background:"transparent",color:"rgba(255,255,255,0.5)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>
+              {t.reconfig.toUpperCase()}
+            </button>
+            <button onClick={()=>{try{localStorage.removeItem("fv8_toured");}catch{}setTourAskVisible(true);setTourStep(null);setShowSet(false);}}
+              style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(255,255,255,0.08)",background:"transparent",color:"rgba(255,255,255,0.5)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>
+              TUTORIAL
+            </button>
             {isUserAnonymous()&&<button onClick={doGoogleSignIn} style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(66,133,244,0.3)",background:"rgba(66,133,244,0.08)",color:"rgba(66,133,244,0.8)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>GOOGLE</button>}
             {!isUserAnonymous()&&<button onClick={doSignOut} style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(63,207,142,0.2)",background:"transparent",color:"rgba(63,207,142,0.6)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>&#10003; {getUserEmail()?.split("@")[0]||"Google"}</button>}
           </div>
         )}
 
+        {/* Week nav */}
         {(()=>{
           const now=new Date(),dow=now.getDay(),mo=dow===0?-6:1-dow;
           const mon=new Date(now); mon.setDate(now.getDate()+mo+weekOff*7);
@@ -4074,15 +4082,121 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
           const fmt=d=>d.getDate()+" "+["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"][d.getMonth()];
           const lbl=weekOff===0?(lang==="es"||lang==="pt"?"ESTA SEMANA":lang==="fr"?"CETTE SEMAINE":lang==="it"?"QUESTA SETTIMANA":lang==="de"?"DIESE WOCHE":"THIS WEEK"):weekOff===-1?(lang==="es"||lang==="pt"?"SEMANA PASADA":"LAST WEEK"):fmt(mon)+" - "+fmt(sun);
           return(
-            <div data-tour="cal-nav" style={{position:"absolute",top:12,left:0,right:0,zIndex:10,display:"flex",alignItems:"center",justifyContent:"center",gap:8,pointerEvents:"none"}}>
-              <button onClick={()=>setWeekOff(p=>Math.max(-12,p-1))} style={{pointerEvents:"all",background:"none",border:"none",color:"rgba(255,255,255,0.25)",fontSize:18,cursor:"pointer",lineHeight:1,padding:"0 6px"}}>&#8249;</button>
-              <span style={{fontSize:7,fontFamily:mono,letterSpacing:3,color:"rgba(255,255,255,0.35)"}}>{lbl}</span>
-              <button onClick={()=>setWeekOff(p=>Math.min(0,p+1))} style={{pointerEvents:"all",background:"none",border:"none",color:weekOff===0?"rgba(255,255,255,0.08)":"rgba(255,255,255,0.25)",fontSize:18,cursor:weekOff===0?"default":"pointer",lineHeight:1,padding:"0 6px"}}>&#8250;</button>
+            <div data-tour="cal-nav" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:"14px 0 4px",position:"relative",zIndex:2}}>
+              <button onClick={()=>setWeekOff(p=>Math.max(-12,p-1))} style={{background:"none",border:"none",color:"rgba(255,255,255,0.2)",fontSize:16,cursor:"pointer",padding:"0 6px",lineHeight:1}}>&#8249;</button>
+              <span style={{fontSize:7,fontFamily:mono,letterSpacing:3,color:"rgba(255,255,255,0.3)"}}>{lbl}</span>
+              <button onClick={()=>setWeekOff(p=>Math.min(0,p+1))} style={{background:"none",border:"none",color:weekOff===0?"rgba(255,255,255,0.06)":"rgba(255,255,255,0.2)",fontSize:16,cursor:weekOff===0?"default":"pointer",padding:"0 6px",lineHeight:1}}>&#8250;</button>
             </div>
           );
         })()}
 
-        <div style={{position:"absolute",bottom:0,left:0,right:0,zIndex:10,display:"flex",background:"linear-gradient(0deg,rgba(8,9,14,0.95) 0%,rgba(8,9,14,0.5) 55%,transparent 100%)",paddingTop:28}}>
+        {/* Athlete Dashboard */}
+        {(()=>{
+          const now=new Date(),dow=now.getDay(),tdi=dow===0?6:dow-1;
+          const todayR=routine?routine[tdi]:null;
+          const dc2=todayR?todayR.ex.filter(function(x){return done[tdi+"-"+x.id];}).length:0;
+          const tot2=todayR?todayR.ex.length:0;
+
+          // Streak simple basado en logs
+          let streak=0;
+          try{
+            const allDays=new Set();
+            Object.keys(logs).forEach(function(id){
+              const entries=logs[id];
+              if(entries&&entries.length>0) entries.forEach(function(e){if(e.d)allDays.add(e.d.slice(0,10));});
+            });
+            const sc2=new Date(now);
+            while(streak<365){
+              const ds=sc2.toISOString().slice(0,10);
+              if(!allDays.has(ds)&&ds!==now.toISOString().slice(0,10))break;
+              streak++;sc2.setDate(sc2.getDate()-1);
+            }
+          }catch(e){}
+
+          // XP total
+          const totalXP=muscleXP?Object.values(muscleXP).reduce(function(a,v){return a+(v&&v.xp?v.xp:0);},0):0;
+          const userLevel=xpToLevel(totalXP);
+          const nextXP=xpForNextLevel(userLevel);
+          const prevXP=XP_THRESHOLDS[Math.max(0,userLevel-1)];
+          const xpPct=nextXP===Infinity?1:Math.min(1,(totalXP-prevXP)/(nextXP-prevXP));
+          const LEVEL_NAMES=["IRON","IRON II","BRONZE","BRONZE II","SILVER","SILVER II","GOLD","GOLD II","PLATINUM","DIAMOND"];
+          const levelName=LEVEL_NAMES[Math.min(9,Math.max(0,userLevel-1))];
+          const levelColor=xpLevelColor(userLevel);
+
+          // Semana actual
+          const weekDays=Array(7).fill(0).map(function(_,i){
+            const r=routine?routine[i]:null;
+            if(!r)return{done:false,rest:true};
+            const d=r.ex.filter(function(e){return done[i+"-"+e.id];}).length;
+            return{done:d===r.ex.length&&r.ex.length>0,partial:d>0,rest:false};
+          });
+          const weekDone=weekDays.filter(function(d){return d.done;}).length;
+          const weekTotal=weekDays.filter(function(d){return !d.rest;}).length;
+
+          return(
+            <div style={{padding:"4px 18px 14px",position:"relative",zIndex:2}}>
+              {/* Main row */}
+              <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",marginBottom:14}}>
+                {/* Racha — protagonista */}
+                <div style={{display:"flex",flexDirection:"column",gap:0}}>
+                  <div style={{fontSize:72,fontWeight:900,lineHeight:1,letterSpacing:"-3px",
+                    background:"linear-gradient(135deg,#fff 0%,rgba(255,255,255,0.55) 100%)",
+                    WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>
+                    {streak}
+                  </div>
+                  <div style={{fontSize:8,letterSpacing:"3px",color:"rgba(255,255,255,0.3)",fontFamily:mono,marginTop:2}}>
+                    {lang==="es"||lang==="pt"?"DÍAS DE RACHA":lang==="fr"?"JOURS DE SÉRIE":lang==="it"?"GIORNI DI SERIE":lang==="de"?"TAGE STREAK":"DAY STREAK"}
+                  </div>
+                </div>
+
+                {/* Side stats */}
+                <div style={{display:"flex",flexDirection:"column",gap:10,alignItems:"flex-end"}}>
+                  <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:1}}>
+                    <div style={{fontSize:22,fontWeight:700,color:"#3fcf8e",lineHeight:1,fontFamily:mono}}>{weekDone}/{weekTotal}</div>
+                    <div style={{fontSize:7,letterSpacing:"2px",color:"rgba(255,255,255,0.3)",fontFamily:mono}}>
+                      {lang==="es"||lang==="pt"?"ESTA SEMANA":lang==="fr"?"CETTE SEMAINE":lang==="it"?"SETTIMANA":lang==="de"?"DIESE WOCHE":"THIS WEEK"}
+                    </div>
+                  </div>
+                  <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:1}}>
+                    <div style={{fontSize:todayR?15:11,fontWeight:700,color:todayR?"#fff":"rgba(255,255,255,0.3)",lineHeight:1,fontFamily:mono,letterSpacing:todayR?"-0.5px":"1px",maxWidth:120,textAlign:"right",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                      {todayR?(todayR.l):(lang==="es"||lang==="pt"?"DESCANSO":lang==="fr"?"REPOS":lang==="it"?"RIPOSO":lang==="de"?"PAUSE":"REST")}
+                    </div>
+                    <div style={{fontSize:7,letterSpacing:"2px",color:"rgba(255,255,255,0.3)",fontFamily:mono}}>
+                      {lang==="es"||lang==="pt"?"HOY":lang==="fr"?"AUJOURD'HUI":lang==="it"?"OGGI":lang==="de"?"HEUTE":"TODAY"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* XP Bar */}
+              <div style={{marginBottom:0}}>
+                <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+                  <div style={{fontSize:7,letterSpacing:"2px",color:levelColor||"rgba(255,255,255,0.3)",fontFamily:mono,fontWeight:700}}>{levelName}</div>
+                  <div style={{fontSize:7,letterSpacing:"1px",color:"rgba(255,255,255,0.25)",fontFamily:mono}}>{Math.round(xpPct*100)}% → {LEVEL_NAMES[Math.min(9,userLevel)]}</div>
+                </div>
+                <div style={{height:"2px",background:"rgba(255,255,255,0.06)",borderRadius:1,overflow:"hidden"}}>
+                  <div style={{height:"100%",width:`${xpPct*100}%`,borderRadius:1,
+                    background:"linear-gradient(90deg,"+(levelColor||"#3fcf8e")+","+(levelColor||"#28b878")+")",
+                    transition:"width 0.8s ease"}}/>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Bot chat trigger */}
+        <div onClick={()=>setShowBotChat(true)} style={{position:"absolute",top:40,left:14,zIndex:10,cursor:"pointer",
+          display:"flex",alignItems:"center",gap:6,
+          background:"rgba(255,255,255,0.04)",border:"0.5px solid rgba(255,255,255,0.08)",
+          borderRadius:20,padding:"4px 10px 4px 6px"}}>
+          <div style={{width:18,height:18,borderRadius:"50%",background:"rgba(63,207,142,0.15)",
+            border:"0.5px solid rgba(63,207,142,0.3)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10}}>🤖</div>
+          <span style={{fontSize:8,fontFamily:mono,letterSpacing:1,color:"rgba(255,255,255,0.35)"}}>FORJA BOT</span>
+          <div style={{width:4,height:4,borderRadius:"50%",background:"#3fcf8e",boxShadow:"0 0 6px rgba(63,207,142,0.8)"}}/>
+        </div>
+
+        {/* Days strip */}
+        <div style={{display:"flex",gap:0,borderTop:"0.5px solid rgba(255,255,255,0.04)"}}>
           {(()=>{
             const isCeleb=profile?.mode==="celebrity";
             const celebId=profile?.celebrity;
@@ -4133,56 +4247,9 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
             });
           })()}
           })()}
+          })()}
         </div>
       </div>
-
-      {showBotChat&&(
-        <div style={{position:"fixed",inset:0,zIndex:9999,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}>
-          <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.4)"}} onClick={()=>setShowBotChat(false)}/>
-          <div style={{position:"relative",borderRadius:"40px 40px 0 0",height:"78vh",
-            display:"flex",flexDirection:"column",overflow:"hidden",
-            background:"linear-gradient(180deg,rgba(255,255,255,0.12) 0%,rgba(255,255,255,0.05) 100%)",
-            backdropFilter:"blur(70px) saturate(500%) brightness(1.25)",WebkitBackdropFilter:"blur(70px) saturate(500%) brightness(1.25)",
-            borderTop:"1px solid rgba(255,255,255,0.5)",
-            borderLeft:"1px solid rgba(255,255,255,0.18)",
-            borderRight:"1px solid rgba(255,255,255,0.18)",
-            boxShadow:"0 -60px 120px rgba(0,0,0,0.65),inset 0 1px 0 rgba(255,255,255,0.45)"}}>
-            <div style={{display:"flex",justifyContent:"center",padding:"16px 0 6px",flexShrink:0}}>
-              <div style={{width:44,height:5,borderRadius:3,background:"rgba(255,255,255,0.25)"}}/>
-            </div>
-            <div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 20px 12px",borderBottom:"0.5px solid rgba(255,255,255,0.06)",flexShrink:0}}>
-              <div style={{position:"relative",flexShrink:0}}>
-                <div style={{width:50,height:50,borderRadius:"50%",
-                  background:"rgba(255,255,255,0.1)",
-                  backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",
-                  border:"1px solid rgba(255,255,255,0.4)",
-                  boxShadow:"inset 0 1px 0 rgba(255,255,255,0.5),0 4px 16px rgba(0,0,0,0.4)",
-                  display:"flex",alignItems:"center",justifyContent:"center",fontSize:24}}>🤖</div>
-                <div style={{position:"absolute",bottom:1,right:1,width:12,height:12,borderRadius:"50%",
-                  background:"#3fcf8e",border:"2px solid rgba(6,7,10,0.8)",
-                  boxShadow:"0 0 10px rgba(63,207,142,1)"}}/>
-              </div>
-              <div style={{flex:1}}>
-                <div style={{fontSize:14,fontFamily:mono,fontWeight:700,color:"rgba(255,255,255,0.97)",letterSpacing:"2.5px"}}>FORJA BOT</div>
-                <div style={{fontSize:9,color:"rgba(255,255,255,0.35)",letterSpacing:"1.5px",fontFamily:mono,marginTop:2}}>IA · COACH PERSONAL</div>
-                <div style={{display:"flex",alignItems:"center",gap:5,marginTop:2}}>
-                  <div style={{width:5,height:5,borderRadius:"50%",background:"#3fcf8e",boxShadow:"0 0 6px rgba(63,207,142,0.8)"}}/>
-                  <span style={{fontSize:8,fontFamily:mono,color:"rgba(63,207,142,0.6)",letterSpacing:1}}>COACH ACTIVO</span>
-                </div>
-              </div>
-              <button onClick={()=>setShowBotChat(false)} style={{width:30,height:30,borderRadius:"50%",
-                background:"rgba(255,255,255,0.1)",
-                backdropFilter:"blur(10px)",WebkitBackdropFilter:"blur(10px)",
-                border:"0.5px solid rgba(255,255,255,0.22)",
-                boxShadow:"inset 0 1px 0 rgba(255,255,255,0.3)",
-                color:"rgba(255,255,255,0.6)",fontSize:14,cursor:"pointer",
-                display:"flex",alignItems:"center",justifyContent:"center"}}>&#10005;</button>
-            </div>
-            <BotChat profile={profile} routine={routine} done={done} lang={lang} mono={mono}/>
-          </div>
-        </div>
-      )}
-
       <div style={{padding:"10px 20px 0",background:"rgba(8,10,14,0.95)",
         borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
         <div style={{display:"flex",background:"rgba(255,255,255,0.05)",
