@@ -29,6 +29,18 @@ input[type=number]{-moz-appearance:textfield;}
   0%{stroke-dashoffset:60}
   100%{stroke-dashoffset:0}
 }
+@keyframes ob_logo{
+  0%{opacity:0;transform:translateY(24px) scale(0.93)}
+  100%{opacity:1;transform:translateY(0) scale(1)}
+}
+@keyframes ob_sub{
+  0%{opacity:0;transform:translateY(14px)}
+  100%{opacity:1;transform:translateY(0)}
+}
+@keyframes ob_dot{
+  0%{transform:translateY(0) scale(1);opacity:0.3}
+  100%{transform:translateY(-18px) scale(1.6);opacity:0.8}
+}
 @keyframes pulse{0%,100%{opacity:0.6;transform:translateX(-50%) scale(1)}50%{opacity:1;transform:translateX(-50%) scale(1.04)}}
 @keyframes celebrate{0%{transform:scale(0.5);opacity:0}60%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
 @keyframes floatUp{0%{opacity:1;transform:translateY(0) rotate(0deg);}100%{opacity:0;transform:translateY(-100vh) rotate(180deg);}}
@@ -4675,7 +4687,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
         {showSet&&(
           <div style={{position:"absolute",top:40,right:14,zIndex:20,background:"rgba(10,12,18,0.97)",border:"0.5px solid rgba(255,255,255,0.08)",borderRadius:12,padding:"8px 10px",display:"flex",flexWrap:"wrap",gap:6,maxWidth:260,backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)"}}>
             <button onClick={()=>{const ls=["es","en","fr","it","de","pt"];const nl=ls[(ls.indexOf(lang)+1)%ls.length];setLang(nl);sp({...profile,lang:nl});}} style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(255,255,255,0.08)",background:"transparent",color:"rgba(255,255,255,0.5)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>{lang.toUpperCase()}</button>
-            <button onClick={()=>{showForjaOnboarding();setShowSet(false);}} style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(255,255,255,0.08)",background:"transparent",color:"rgba(255,255,255,0.5)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>{t.reconfig.toUpperCase()}</button>
+            <button onClick={()=>{setStep(1);setShowSet(false);}} style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(255,255,255,0.08)",background:"transparent",color:"rgba(255,255,255,0.5)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>{t.reconfig.toUpperCase()}</button>
             <button onClick={()=>{try{localStorage.removeItem("fv8_toured");}catch{}setTourAskVisible(true);setTourStep(null);setShowSet(false);}} style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(255,255,255,0.08)",background:"transparent",color:"rgba(255,255,255,0.5)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>TUTORIAL</button>
             {isUserAnonymous()&&<button onClick={doGoogleSignIn} style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(66,133,244,0.3)",background:"rgba(66,133,244,0.08)",color:"rgba(66,133,244,0.8)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>GOOGLE</button>}
             {!isUserAnonymous()&&<button onClick={doSignOut} style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(63,207,142,0.2)",background:"transparent",color:"rgba(63,207,142,0.6)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>&#10003; {getUserEmail()?.split("@")[0]||"Google"}</button>}
@@ -5799,1130 +5811,622 @@ function EqIcon({id,color}){
   return null;
 }
 function Onboard({lang,setLang,step,setStep,sp,sr}){
-  const[goal,setGoal]=useState("");
-  const[level,setLevel]=useState("");
-  const[days,setDays]=useState(0);
-  const[split,setSplit]=useState("");
-  const[selDays,setSelDays]=useState([]);
-  const[gender,setGender]=useState("");
-  const[age,setAge]=useState(25);
-  const[weight,setWeight]=useState(70);
-  const[height,setHeight]=useState(175);
-  const[units,setUnits]=useState("metric");
-  const[mode,setMode]=useState(""); // "auto" | "manual"
-  const[manualDays,setManualDays]=useState(0);
-  const[manualSelDays,setManualSelDays]=useState([]);
-  const[manualRoutine,setManualRoutine]=useState(Array(7).fill(null).map(()=>[]));
-  const[catalogDay,setCatalogDay]=useState(0);
-  const[catalogMuscle,setCatalogMuscle]=useState("");
-  const[catalogMec,setCatalogMec]=useState("");    // "compound"|"isolation"|""
-  const[catalogForce,setCatalogForce]=useState(""); // "push"|"pull"|"static"|""
-  const[catalogDiff,setCatalogDiff]=useState("");   // "beginner"|"intermediate"|"advanced"|""
-  const[drawerEx,setDrawerEx]=useState(null);       // ejercicio con drawer abierto
-  const[equipment,setEquipment]=useState([]); // equipo disponible
-  const[selCeleb,setSelCeleb]=useState('arnold');
-  const[showProModal,setShowProModal]=useState(false); /* isPro=true so never shown */
-  const[celebGender,setCelebGender]=useState("m"); // "m" or "f"
-  const[gymType,setGymType]=useState(null); // 'gym' | 'homegym' // celebrity routine selection
-  const[celebData,setCelebData]=useState(null); // full celebrity object
-  const EQ_CARDS=[
-    {id:"rack",            n:{es:"Rack + Barra",en:"Rack + Bar",fr:"Rack + Barre",it:"Rack + Bilanciere",de:"Rack + Stange",pt:"Rack + Barra"},    c:"#6a8fc0",ex:24},
-    {id:"bench",           n:{es:"Banco",en:"Bench",fr:"Banc",it:"Panca",de:"Bank",pt:"Banco"},         c:"#f0b429",ex:18},
-    {id:"dumbbells",       n:{es:"Mancuernas",en:"Dumbbells",fr:"Haltères",it:"Manubri",de:"Kurzhanteln",pt:"Halteres"},     c:"#3fcf8e",ex:20},
-    {id:"pull_up_bar",     n:{es:"Dominadas",en:"Pull-up bar",fr:"Barre de traction",it:"Sbarra trazioni",de:"Klimmzugstange",pt:"Barra de dominadas"},   c:"#8878c0",ex:8},
-    {id:"dip_bar",         n:{es:"Paralelas",en:"Dip bars",fr:"Barres parallèles",it:"Parallele",de:"Barren",pt:"Paralelas"},      c:"#5faa88",ex:5},
-    {id:"ez_bar",          n:{es:"Barra Z / EZ",en:"EZ / Curl bar",fr:"EZ / Curl bar",it:"EZ / Curl bar",de:"EZ / Curl bar",pt:"Barra Z / EZ"}, c:"#c0a870",ex:8},
-    {id:"leg_extension",   n:{es:"Leg Ext / Curl",en:"Leg ext / curl",fr:"Leg ext / curl",it:"Leg ext / curl",de:"Leg ext / curl",pt:"Leg Ext / Curl"},c:"#e05555",ex:6},
-    {id:"cable_machine",   n:{es:"Polea",en:"Cable machine",fr:"Poulie",it:"Puleggia",de:"Kabelzug",pt:"Polia"}, c:"#d96060",ex:12},
-    {id:"weight_vest",     n:{es:"Chaleco lastrado","en":"Weight vest"},  c:"#8878c0",ex:6},
-    {id:"kettlebell",      n:{es:"Kettlebell",en:"Kettlebell",fr:"Kettlebell",it:"Kettlebell",de:"Kettlebell",pt:"Kettlebell"},    c:"#5faa88",ex:10},
-    {id:"resistance_band", n:{es:"Bandas",en:"Bands",fr:"Élastiques",it:"Elastici",de:"Widerstandsbänder",pt:"Faixas elásticas"},         c:"#6a8fc0",ex:8},
-          {id:"treadmill",        n:{es:"Caminadora",en:"Treadmill",fr:"Treadmill",it:"Treadmill",de:"Treadmill",pt:"Caminadora"},     c:"#5faa88",ex:0},
-          {id:"jump_rope",        n:{es:"Cuerda saltar",en:"Jump Rope",fr:"Jump Rope",it:"Jump Rope",de:"Jump Rope",pt:"Cuerda saltar"},     c:"#c0a870",ex:0},
-];
-  const[eqMode,setEqMode]=useState(null); // "full" | "home" | "custom" | null
-  const EQ_MAP={
-    "bench press":["barbell","bench"],"incline bench press":["barbell","bench"],"dumbbell bench press":["dumbbells"],"incline dumbbell press":["dumbbells","bench"],"dumbbell chest fly":["dumbbells"],"cable fly":["cable_machine"],"machine chest press":["machine"],"machine pec fly":["machine"],"push up":[],"decline push up":[],"dips":["dip_bar"],
-    "pull up":["pull_up_bar"],"chin up":["pull_up_bar"],"barbell row":["barbell"],"pendlay row":["barbell"],"dumbbell row":["dumbbells"],"cable row":["cable_machine"],"machine neutral row":["machine"],"lat pulldown":["cable_machine"],"machine pulldown":["machine"],"barbell pullover":["barbell","bench"],"barbell rack pull":["barbell","rack"],"supermans":[],
-    "overhead press":["barbell"],"dumbbell shoulder press":["dumbbells"],"seated overhead press":["dumbbells","bench"],"lateral raise":["dumbbells"],"dumbbell front raise":["dumbbells"],"face pull":["cable_machine"],"cable face pull":["cable_machine"],"machine face pulls":["machine"],"barbell upright row":["barbell"],"barbell shrug":["barbell"],"dumbbell shrug":["dumbbells"],"reverse fly":["dumbbells"],"dumbbell rear delt fly":["dumbbells"],"dumbbell laying reverse fly":["dumbbells"],
-    "squat":["barbell","rack"],"front squat":["barbell","rack"],"goblet squat":["dumbbells"],"leg press":["machine"],"deadlift":["barbell"],"romanian deadlift":["barbell"],"bulgarian split squat":["dumbbells","bench"],"dumbbell bulgarian split squat":["dumbbells"],"leg curl":["machine"],"leg extension":["machine"],"calf raise":[],"seated calf raise":["machine"],"hip thrust":["barbell","bench"],"box jump":["box"],"barbell thruster":["barbell"],
-    "barbell curl":["barbell"],"dumbbell curl":["dumbbells"],"hammer curl":["dumbbells"],"concentration curl":["dumbbells"],"preacher curl":["barbell","bench"],"reverse curl":["barbell"],
-    "tricep pushdown":["cable_machine"],"overhead tricep extension":["dumbbells"],"skull crusher":["barbell","bench"],"bench dips":["bench"],"close grip bench press":["barbell","bench"],"diamond push ups":[],
-    "plank":[],"hanging knee raises":["pull_up_bar"],"machine crunch":["machine"],"mountain climber":[],
-  };
-  const EQ_OPTIONS=[
-    {id:"barbell",        es:"Barra olímpica",        en:"Barbell",           icon:"🏋️", group:lang==="es"||lang==="pt"?"Pesas libres":lang==="fr"?"Poids libres":lang==="it"?"Pesi liberi":lang==="de"?"Freie Gewichte":"Free weights"},
-    {id:"dumbbells",      es:"Mancuernas",             en:"Dumbbells",         icon:"💪", group:lang==="es"||lang==="pt"?"Pesas libres":lang==="fr"?"Poids libres":lang==="it"?"Pesi liberi":lang==="de"?"Freie Gewichte":"Free weights"},
-    {id:"kettlebell",     es:"Kettlebell",             en:"Kettlebell",        icon:"🔔", group:lang==="es"||lang==="pt"?"Pesas libres":lang==="fr"?"Poids libres":lang==="it"?"Pesi liberi":lang==="de"?"Freie Gewichte":"Free weights"},
-    {id:"ez_bar",         es:"Barra EZ (curl)",        en:"EZ curl bar",       icon:"💪", group:lang==="es"||lang==="pt"?"Pesas libres":lang==="fr"?"Poids libres":lang==="it"?"Pesi liberi":lang==="de"?"Freie Gewichte":"Free weights"},
-    {id:"trap_bar",       es:"Trap bar / Hex bar",     en:"Trap bar",          icon:"⬛",  group:lang==="es"||lang==="pt"?"Pesas libres":lang==="fr"?"Poids libres":lang==="it"?"Pesi liberi":lang==="de"?"Freie Gewichte":"Free weights"},
-    {id:"weight_plates",  es:"Discos sueltos",         en:"Weight plates",     icon:"🔘", group:lang==="es"||lang==="pt"?"Pesas libres":lang==="fr"?"Poids libres":lang==="it"?"Pesi liberi":lang==="de"?"Freie Gewichte":"Free weights"},
-    {id:"rack",           es:"Rack / Jaula de potencia",en:"Power rack/cage",  icon:"🏗️", group:lang==="es"||lang==="pt"?"Soportes":lang==="fr"?"Racks":lang==="it"?"Supporti":lang==="de"?"Racks":"Racks & structures"},
-    {id:"bench",          es:"Banco plano",            en:"Flat bench",        icon:"🪑", group:lang==="es"||lang==="pt"?"Soportes":lang==="fr"?"Racks":lang==="it"?"Supporti":lang==="de"?"Racks":"Racks & structures"},
-    {id:"incline_bench",  es:"Banco ajustable/inclinado",en:"Adjustable bench",icon:"📐", group:lang==="es"||lang==="pt"?"Soportes":lang==="fr"?"Racks":lang==="it"?"Supporti":lang==="de"?"Racks":"Racks & structures"},
-    {id:"pull_up_bar",    es:"Barra de dominadas",     en:"Pull-up bar",       icon:"⬆️", group:lang==="es"||lang==="pt"?"Soportes":lang==="fr"?"Racks":lang==="it"?"Supporti":lang==="de"?"Racks":"Racks & structures"},
-    {id:"dip_bar",        es:"Barras paralelas",       en:"Dip bars",          icon:"➕", group:lang==="es"||lang==="pt"?"Soportes":lang==="fr"?"Racks":lang==="it"?"Supporti":lang==="de"?"Racks":"Racks & structures"},
-    {id:"squat_stand",    es:"Soportes de sentadilla", en:"Squat stands",      icon:"🦵", group:lang==="es"||lang==="pt"?"Soportes":lang==="fr"?"Racks":lang==="it"?"Supporti":lang==="de"?"Racks":"Racks & structures"},
-    {id:"machine",        es:"Máquinas de musculación",en:"Weight machines",   icon:"⚙️", group:lang==="es"||lang==="pt"?"Máquinas":lang==="fr"?"Machines":lang==="it"?"Macchine":lang==="de"?"Maschinen":"Machines"},
-    {id:"cable_machine",  es:"Polea / Cable",          en:"Cable machine",     icon:"🔄", group:lang==="es"||lang==="pt"?"Máquinas":lang==="fr"?"Machines":lang==="it"?"Macchine":lang==="de"?"Maschinen":"Machines"},
-    {id:"smith_machine",  es:"Máquina Smith",          en:"Smith machine",     icon:"🔧", group:lang==="es"||lang==="pt"?"Máquinas":lang==="fr"?"Machines":lang==="it"?"Macchine":lang==="de"?"Maschinen":"Machines"},
-    {id:"leg_press_machine",es:"Prensa de piernas",     en:"Leg press machine", icon:"🦿", group:lang==="es"||lang==="pt"?"Máquinas":lang==="fr"?"Machines":lang==="it"?"Macchine":lang==="de"?"Maschinen":"Machines"},
-    {id:"cardio_machine", es:"Máquinas de cardio",     en:"Cardio machines",   icon:"🏃", group:lang==="es"||lang==="pt"?"Máquinas":lang==="fr"?"Machines":lang==="it"?"Macchine":lang==="de"?"Maschinen":"Machines"},
-    {id:"resistance_band",es:"Bandas elásticas",       en:"Resistance bands",  icon:"〰️", group:lang==="es"||lang==="pt"?"Accesorios":lang==="fr"?"Accessoires":lang==="it"?"Accessori":lang==="de"?"Zubehör":"Accessories"},
-    {id:"trx",            es:"TRX / Suspensión",       en:"TRX / Suspension",  icon:"🪝", group:lang==="es"||lang==="pt"?"Accesorios":lang==="fr"?"Accessoires":lang==="it"?"Accessori":lang==="de"?"Zubehör":"Accessories"},
-    {id:"ab_wheel",       es:"Rueda abdominal",        en:"Ab wheel",          icon:"🌀", group:lang==="es"||lang==="pt"?"Accesorios":lang==="fr"?"Accessoires":lang==="it"?"Accessori":lang==="de"?"Zubehör":"Accessories"},
-    {id:"foam_roller",    es:"Foam roller",            en:"Foam roller",       icon:"🪵", group:lang==="es"||lang==="pt"?"Accesorios":lang==="fr"?"Accessoires":lang==="it"?"Accessori":lang==="de"?"Zubehör":"Accessories"},
-    {id:"gymnastic_rings",es:"Anillas de gimnasia",    en:"Gymnastic rings",   icon:"💍", group:lang==="es"||lang==="pt"?"Accesorios":lang==="fr"?"Accessoires":lang==="it"?"Accessori":lang==="de"?"Zubehör":"Accessories"},
-    {id:"parallettes",    es:"Paraletas (push-up bars)",en:"Parallettes",      icon:"🤸", group:lang==="es"||lang==="pt"?"Accesorios":lang==="fr"?"Accessoires":lang==="it"?"Accessori":lang==="de"?"Zubehör":"Accessories"},
-    {id:"box",            es:"Cajón pliométrico",      en:"Plyo box",          icon:"📦", group:lang==="es"||lang==="pt"?"Funcional":lang==="fr"?"Fonctionnel":lang==="it"?"Funzionale":lang==="de"?"Funktional":"Functional"},
-    {id:"battle_ropes",   es:"Cuerdas de batalla",     en:"Battle ropes",      icon:"🌊", group:lang==="es"||lang==="pt"?"Funcional":lang==="fr"?"Fonctionnel":lang==="it"?"Funzionale":lang==="de"?"Funktional":"Functional"},
-    {id:"slam_ball",      es:"Balón medicinal / Slam ball",en:"Medicine/slam ball",icon:"🏀",group:lang==="es"||lang==="pt"?"Funcional":lang==="fr"?"Fonctionnel":lang==="it"?"Funzionale":lang==="de"?"Funktional":"Functional"},
-    {id:"sandbag",        es:"Saco de arena",          en:"Sandbag",           icon:"👝", group:lang==="es"||lang==="pt"?"Funcional":lang==="fr"?"Fonctionnel":lang==="it"?"Funzionale":lang==="de"?"Funktional":"Functional"},
-    {id:"jump_rope",      es:"Cuerda para saltar",     en:"Jump rope",         icon:"🔁", group:lang==="es"||lang==="pt"?"Funcional":lang==="fr"?"Fonctionnel":lang==="it"?"Funzionale":lang==="de"?"Funktional":"Functional"},
-    {id:"stairs",         es:"Escaleras",              en:"Stairs",            icon:"🪜", group:lang==="es"?"Exterior":"Outdoor"},
-    {id:"park_bars",      es:"Barras de parque",       en:"Park bars",         icon:"🌳", group:lang==="es"?"Exterior":"Outdoor"},
-  ];
-  const hasEquip=(ex)=>{
-    const needed=EQ_MAP[ex]||[];
-    if(needed.length===0) return true; // bodyweight siempre disponible
-    const USER_TO_INT={
-      "Rack+Barra":["barbell","rack"],"Banco":["bench"],"Mancuernas":["dumbbells"],
-      "Dominadas":["pull_up_bar"],"Paralelas":["dip_bar"],"Barra Z/EZ":["ez_bar","barbell"],
-      "Leg Ext/Curl":["leg_extension","machine"],"Polea":["cable_machine"],
-      "Chaleco":["weight_vest"],"Kettlebell":["kettlebell"],"Bandas":["bands"],
-    };
-    const gymFull=gymType==="gym";
-    const normEq=new Set(gymFull?["barbell","rack","bench","dumbbells","pull_up_bar","dip_bar","ez_bar","leg_extension","machine","cable_machine","weight_vest","kettlebell","bands","box"]:[]);
-    if(!gymFull) equipment.forEach(e=>{(USER_TO_INT[e]||[e]).forEach(k=>normEq.add(k));});
-    return needed.every(e=>normEq.has(e));
-  };
-  const CATALOG=[
-    {muscle:lang==="es"||lang==="pt"?"Pecho":lang==="fr"?"Pectoraux":lang==="it"?"Petto":lang==="de"?"Brust":"Chest",      color:"#6a8fc0", exs:["bench press","incline bench press","dumbbell bench press","incline dumbbell press","dumbbell chest fly","cable fly","machine chest press","machine pec fly","push up","decline push up","dips","barbell thruster"]},
-    {muscle:lang==="es"||lang==="pt"?"Espalda":lang==="fr"?"Dos":lang==="it"?"Schiena":lang==="de"?"Rücken":"Back",      color:"#3fcf8e", exs:["pull up","chin up","barbell row","pendlay row","dumbbell row","cable row","machine neutral row","lat pulldown","machine pulldown","barbell pullover","barbell rack pull","supermans","deadlift","romanian deadlift"]},
-    {muscle:lang==="es"||lang==="pt"?"Hombros":lang==="fr"?"Épaules":lang==="it"?"Spalle":lang==="de"?"Schultern":"Shoulders", color:"#f0b429", exs:["overhead press","dumbbell shoulder press","seated overhead press","lateral raise","dumbbell front raise","face pull","cable face pull","machine face pulls","barbell upright row","barbell shrug","dumbbell shrug","reverse fly","dumbbell rear delt fly","dumbbell laying reverse fly"]},
-    {muscle:lang==="es"||lang==="pt"?"Piernas":lang==="fr"?"Jambes":lang==="it"?"Gambe":lang==="de"?"Beine":"Legs",      color:"#e05555", exs:["squat","front squat","goblet squat","leg press","romanian deadlift","bulgarian split squat","dumbbell bulgarian split squat","leg curl","leg extension","calf raise","seated calf raise","hip thrust","box jump","deadlift"]},
-    {muscle:lang==="es"||lang==="pt"?"Glúteos":lang==="fr"?"Fessiers":lang==="it"?"Glutei":lang==="de"?"Gesäß":"Glutes",    color:"#e07880", exs:["hip thrust","bulgarian split squat","dumbbell bulgarian split squat","romanian deadlift","squat","goblet squat","box jump","deadlift","leg press"]},
-    {muscle:lang==="es"||lang==="pt"?"Bíceps":lang==="fr"?"Biceps":lang==="it"?"Bicipiti":lang==="de"?"Bizeps":"Biceps",     color:"#8878c0", exs:["barbell curl","dumbbell curl","hammer curl","concentration curl","preacher curl","reverse curl","chin up"]},
-    {muscle:lang==="es"||lang==="pt"?"Tríceps":lang==="fr"?"Triceps":lang==="it"?"Tricipiti":lang==="de"?"Trizeps":"Triceps",   color:"#c07060", exs:["tricep pushdown","overhead tricep extension","skull crusher","bench dips","close grip bench press","diamond push ups","dips","push up"]},
-    {muscle:"Core",         color:"#70a0c0", exs:["plank","hanging knee raises","machine crunch","mountain climber","barbell thruster","supermans","deadlift","squat","front squat"]},
-  ];
-  const t=lang?L[lang]:L.en;
-  const TOTAL_STEPS=mode==="manual"?4:7; // manual: género+modo+días+catálogo
-  const finishManual=()=>{
-    const sd=manualSelDays.length===manualDays?manualSelDays:[0,1,2,3,4,5].slice(0,manualDays);
-    const r=Array(7).fill(null).map((_,i)=>{
-      const idx=sd.indexOf(i);
-      if(idx===-1) return {l:(L[lang]||L.en).rest,ex:[]};
-      const exs=manualRoutine[idx]||[];
-      return {l:`DÍA ${idx+1}`,ex:exs.map(e=>({e,s:3,r:"8-12",id:`m${idx}${e}`}))};
-    });
-    const pfm={lang,goal:"general",level:"int",days:manualDays,age,weight,height,units,selDays:sd,gender,mode:"manual"};
-    FStore.saveProfile(pfm,r);
-    sp(pfm);sr(r);setStep(99);
-  };
-  const toDisp=(valKg,type)=>{
-    if(units==="imperial"){
-      if(type==="weight") return Math.round(valKg*2.2046);
-      if(type==="height") return Math.round(valKg/2.54); // cm → inches
-    }
-    return valKg;
-  };
-  const toMetric=(val,type)=>{
-    if(units==="imperial"){
-      if(type==="weight") return Math.round(val/2.2046);
-      if(type==="height") return Math.round(val*2.54); // inches → cm
-    }
-    return val;
-  };
-  const wLabel=units==="imperial"?"lb":"kg";
-  const hLabel=units==="imperial"?"in":"cm";
-  const wMin=units==="imperial"?66:30;
-  const wMax=units==="imperial"?550:250;
-  const hMin=units==="imperial"?47:120;
-  const hMax=units==="imperial"?87:220;
-  useEffect(()=>{
-    window.dispatchEvent(new CustomEvent("forja:mount"));
+  const mono_="'SF Mono','Courier New',monospace";
+  const BN="'Bebas Neue',cursive";
+  const G="#3fcf8e",A="#f0b429",bg="#04080f";
+  const W="rgba(240,242,245,0.95)";
+  const dim="rgba(240,242,245,0.35)";
+  const card="rgba(255,255,255,0.06)";
+
+  const[ob,setOb]=useState({
+    lang:lang||"es",name:"",gender:null,
+    age:25,goal:null,level:null,
+    equipment:null,daysCount:4,selDays:[1,2,4,6],
+    units:"metric",
   });
-  const finish=()=>{
-    const key=`${days}${level}`;
-    const splits=RAW[key]||RAW[`${days}beg`]||Object.values(RAW)[0];
-    const sd=selDays.length===days?selDays:[0,1,2,3,4,5].slice(0,days);
-    const filteredSplits=splits.map(day=>({
-      ...day,
-      ex:day.ex.map(ex=>({...ex,e:canDoAuto(ex.e,equipment)}))
-    }));
-    const r=buildRoutine7(filteredSplits,sd,goal,equipment);
-    const pf={lang,goal,level,days,age,weight,height,units,selDays:sd,gender,equipment};
-    FStore.saveProfile(pf,r);
-    sp(pf);sr(r);setStep(99);
+  const[nameVal,setNameVal]=useState("");
+  const[ageVal,setAgeVal]=useState(25);
+  const[obStep,setObStep]=useState(0);
+  const[splashReady,setSplashReady]=useState(false);
+  const[generating,setGenerating]=useState(false);
+  const[genPct,setGenPct]=useState(0);
+
+  const set=(k,v)=>setOb(d=>({...d,[k]:v}));
+
+  React.useEffect(()=>{
+    if(obStep===0){
+      const t=setTimeout(()=>setSplashReady(true),1600);
+      return ()=>clearTimeout(t);
+    }
+  },[obStep]);
+
+  const TX={
+    es:{
+      d1:"LU",d2:"MA",d3:"MI",d4:"JU",d5:"VI",d6:"SA",d7:"DO",
+      cont:"CONTINUAR →",back:"← ATRÁS",
+      s1t:"¿En qué idioma\nentrenas?",s1sub:"Lo puedes cambiar después.",
+      s2t:"¿Cómo te\nllamamos?",s2sub:"Tu nombre aparecerá en la app.",s2ph:"Tu nombre",
+      s3t:"Cuéntanos\nsobre ti",s3sub:"Para calcular métricas científicas precisas.",
+      s3gM:"MASCULINO",s3gF:"FEMENINO",s3age:"EDAD",
+      s4t:"¿Cuál es\ntu objetivo?",s4sub:"Diseñamos tu programa en base a esto.",
+      g1:"MÚSCULO",g1d:"Hipertrofia y masa muscular",
+      g2:"FUERZA",g2d:"Levantamientos pesados y fuerza máxima",
+      g3:"DEFINICIÓN",g3d:"Perder grasa, mantener músculo",
+      g4:"GENERAL",g4d:"Balance de salud y composición",
+      s5t:"¿Cuál es\ntu nivel?",s5sub:"Sé honesto — ajusta tu programa completo.",
+      l1:"PRINCIPIANTE",l1d:"Menos de 1 año entrenando",
+      l2:"INTERMEDIO",l2d:"1 a 3 años con buena técnica",
+      l3:"AVANZADO",l3d:"Más de 3 años, técnica sólida",
+      s6t:"¿Dónde\nentrenas?",s6sub:"Ajustamos los ejercicios a tu equipo disponible.",
+      e1:"GYM",e1d:"Acceso completo: barras, máquinas, poleas",
+      e2:"CASA",e2d:"Mancuernas, bandas o poco equipo",
+      e3:"CALISTENIA",e3d:"Solo peso corporal",
+      s7t:"¿Cuántos días\na la semana?",s7sub:"Elige la frecuencia y los días que te quedan.",
+      s8t:"¡Todo listo,\n",s8sub:"Confirma y forjamos tu rutina personalizada.",
+      s8units:"UNIDADES DE MEDIDA",s8kg:"Kilogramos (kg)",s8lb:"Libras (lb)",
+      s8go:"FORJAR MI RUTINA →",
+      s8name:"NOMBRE",s8gender:"SEXO",s8age:"EDAD",s8goal:"OBJETIVO",
+      s8level:"NIVEL",s8equip:"EQUIPO",s8days:"FRECUENCIA",
+      genMsg0:"ANALIZANDO TU PERFIL...",genMsg1:"CALCULANDO SPLITS...",
+      genMsg2:"OPTIMIZANDO EJERCICIOS...",genMsg3:"GENERANDO RUTINA...",genMsg4:"¡LISTO!",
+      start:"COMENZAR",
+    },
+    en:{
+      d1:"MO",d2:"TU",d3:"WE",d4:"TH",d5:"FR",d6:"SA",d7:"SU",
+      cont:"CONTINUE →",back:"← BACK",
+      s1t:"Which language\ndo you train in?",s1sub:"You can change it later.",
+      s2t:"What should\nwe call you?",s2sub:"Your name will appear in the app.",s2ph:"Your name",
+      s3t:"Tell us\nabout you",s3sub:"For precise scientific metric calculations.",
+      s3gM:"MALE",s3gF:"FEMALE",s3age:"AGE",
+      s4t:"What's\nyour goal?",s4sub:"We design your program around this.",
+      g1:"MUSCLE",g1d:"Hypertrophy and muscle mass",
+      g2:"STRENGTH",g2d:"Heavy lifts and maximal strength",
+      g3:"CUT",g3d:"Lose fat, maintain muscle",
+      g4:"GENERAL",g4d:"Health and body composition balance",
+      s5t:"What's\nyour level?",s5sub:"Be honest — it shapes your entire program.",
+      l1:"BEGINNER",l1d:"Less than 1 year training",
+      l2:"INTERMEDIATE",l2d:"1 to 3 years with good technique",
+      l3:"ADVANCED",l3d:"3+ years, solid technique",
+      s6t:"Where do\nyou train?",s6sub:"We match exercises to your available equipment.",
+      e1:"GYM",e1d:"Full access: barbells, machines, cables",
+      e2:"HOME",e2d:"Dumbbells, bands or minimal gear",
+      e3:"CALISTHENICS",e3d:"Bodyweight only",
+      s7t:"How many days\nper week?",s7sub:"Choose your frequency and specific days.",
+      s8t:"All set,\n",s8sub:"Confirm and we'll forge your personalized routine.",
+      s8units:"MEASUREMENT UNITS",s8kg:"Kilograms (kg)",s8lb:"Pounds (lb)",
+      s8go:"FORGE MY ROUTINE →",
+      s8name:"NAME",s8gender:"SEX",s8age:"AGE",s8goal:"GOAL",
+      s8level:"LEVEL",s8equip:"EQUIPMENT",s8days:"FREQUENCY",
+      genMsg0:"ANALYZING YOUR PROFILE...",genMsg1:"CALCULATING SPLITS...",
+      genMsg2:"OPTIMIZING EXERCISES...",genMsg3:"GENERATING ROUTINE...",genMsg4:"DONE!",
+      start:"START",
+    },
   };
-  let _optIdx=0;
-  const glassCard={background:"rgba(66,72,88,0.55)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",border:"1px solid rgba(240,242,245,0.10)",borderRadius:20};
-  const Opt=({active,onClick,children})=>{
-    const n=String(++_optIdx).padStart(2,"0");
-    return(
-      <button onClick={onClick} style={{
-        display:"flex",alignItems:"center",gap:12,width:"100%",
-        padding:"14px 16px",background:"transparent",border:"none",
-        borderBottom:"1px solid rgba(240,242,245,0.08)",cursor:"pointer",
-        textAlign:"left",transition:"background .15s",
-      }}
-      onMouseEnter={e=>e.currentTarget.style.background="rgba(240,242,245,0.04)"}
-      onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-        <div style={{width:28,height:28,borderRadius:8,flexShrink:0,
-          background:active?"rgba(240,242,245,0.15)":"rgba(240,242,245,0.05)",
-          display:"flex",alignItems:"center",justifyContent:"center",
-          fontFamily:"'SF Mono','Courier New',monospace",fontSize:9,
-          color:active?"#F0F2F5":"#7a8294",transition:"all .15s",
-          border:"1px solid "+(active?"rgba(240,242,245,0.3)":"rgba(240,242,245,0.08)")}}>
-          {n}
+  const tx=TX[ob.lang]||TX.es;
+  const dn=[tx.d1,tx.d2,tx.d3,tx.d4,tx.d5,tx.d6,tx.d7];
+
+  // ── Helpers de UI ──────────────────────────────────────────
+  const Prog=({cur,tot})=>(
+    <div style={{display:"flex",gap:4,position:"absolute",top:0,left:0,right:0,padding:"14px 24px 0",zIndex:10}}>
+      {Array(tot).fill(0).map((_,i)=>(
+        <div key={i} style={{flex:1,height:2,borderRadius:1,background:"rgba(255,255,255,0.08)",overflow:"hidden"}}>
+          <div style={{height:"100%",background:G,borderRadius:1,
+            width:i<cur?"100%":"0%",transition:"width 0.4s ease"}}/>
         </div>
-        <div style={{fontSize:15,fontWeight:active?700:400,
-          color:active?"#F0F2F5":"#9aa0b0",transition:"color .15s"}}>
-          {children}
-        </div>
-        {active&&<div style={{marginLeft:"auto",width:18,height:18,borderRadius:"50%",
-          background:"#F0F2F5",display:"flex",alignItems:"center",justifyContent:"center",
-          fontSize:10,color:"#2c3040",flexShrink:0}}>✓</div>}
-      </button>
-    );
-  };
-  const Btn=({onClick,disabled,ghost,children,style={}})=>(
-    <button onClick={onClick} disabled={disabled} style={{
-      width:"100%",padding:"15px 20px",borderRadius:14,cursor:disabled?"not-allowed":"pointer",
-      border:ghost?"1px solid rgba(240,242,245,0.15)":"none",
-      background:ghost?"transparent":disabled?"rgba(240,242,245,0.08)":"#F0F2F5",
-      color:ghost?"rgba(240,242,245,0.6)":disabled?"rgba(240,242,245,0.3)":"#2c3040",
-      fontSize:11,fontFamily:mono,fontWeight:500,letterSpacing:2,
-      textTransform:"uppercase",transition:"all .2s",
-      opacity:disabled?0.5:1,...style
-    }}>{children}</button>
+      ))}
+    </div>
   );
-  const Num=({val,set,min,max,label})=>(
-    <div>
-      <div style={{fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:8,textTransform:"uppercase"}}>{label}</div>
-      <div style={{display:"flex",alignItems:"center",gap:12}}>
-        <button onClick={()=>set(Math.max(min,val-1))} style={{width:36,height:36,borderRadius:"50%",border:"1.5px solid rgba(240,242,245,0.15)",background:"transparent",color:C.tx2,fontSize:18,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>-</button>
-        <div style={{fontSize:36,fontWeight:900,color:C.tx,flex:1,textAlign:"center",letterSpacing:-1}}>{val}</div>
-        <button onClick={()=>set(Math.min(max,val+1))} style={{width:36,height:36,borderRadius:"50%",border:"1.5px solid rgba(240,242,245,0.15)",background:"transparent",color:C.tx2,fontSize:18,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>+</button>
+
+  const BackB=()=>(
+    <button onClick={()=>setObStep(s=>Math.max(1,s-1))} style={{
+      position:"absolute",top:52,left:24,
+      width:34,height:34,borderRadius:10,
+      background:"rgba(255,255,255,0.06)",
+      border:"1px solid rgba(255,255,255,0.1)",
+      color:"rgba(255,255,255,0.5)",fontSize:14,cursor:"pointer",
+      display:"flex",alignItems:"center",justifyContent:"center",
+    }}>←</button>
+  );
+
+  const Title=({t,sub,step:s,tot})=>(
+    <div style={{paddingTop:72}}>
+      {s&&tot&&<div style={{fontFamily:mono_,fontSize:9,letterSpacing:4,color:G,marginBottom:14}}>
+        {String(s).padStart(2,"0")} / {String(tot).padStart(2,"0")}
+      </div>}
+      <div style={{fontFamily:BN,fontSize:"clamp(36px,10vw,50px)",
+        lineHeight:0.93,color:W,marginBottom:10,whiteSpace:"pre-line"}}>{t}</div>
+      {sub&&<div style={{fontSize:13,color:dim,lineHeight:1.5}}>{sub}</div>}
+    </div>
+  );
+
+  const CBtn=({onClick,disabled,label,style={}})=>(
+    <button onClick={onClick} disabled={!!disabled} style={{
+      width:"100%",padding:"17px",borderRadius:14,border:"none",
+      background:disabled?"rgba(255,255,255,0.07)":"linear-gradient(135deg,"+G+",#26a866)",
+      color:disabled?dim:"#04080f",
+      fontFamily:mono_,fontSize:12,fontWeight:700,letterSpacing:3,
+      cursor:disabled?"default":"pointer",transition:"all 0.25s",
+      boxShadow:disabled?"none":"0 0 28px rgba(63,207,142,0.3)",
+      ...style,
+    }}>{label||tx.cont}</button>
+  );
+
+  const wrap={
+    position:"fixed",inset:0,background:bg,zIndex:99999,
+    display:"flex",flexDirection:"column",
+    padding:"0 26px 40px",overflowY:"auto",overflowX:"hidden",
+  };
+
+  // ── STEP 0: SPLASH ─────────────────────────────────────────
+  if(obStep===0) return (
+    <div style={{position:"fixed",inset:0,background:bg,zIndex:99999,
+      display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+      overflow:"hidden"}}>
+      <div style={{position:"absolute",top:"15%",left:"50%",transform:"translateX(-50%)",
+        width:360,height:360,borderRadius:"50%",pointerEvents:"none",
+        background:"radial-gradient(circle,rgba(63,207,142,0.07) 0%,transparent 70%)"}}/>
+      <div style={{position:"absolute",bottom:"20%",right:"5%",
+        width:180,height:180,borderRadius:"50%",pointerEvents:"none",
+        background:"radial-gradient(circle,rgba(240,180,40,0.05) 0%,transparent 70%)"}}/>
+      <div style={{
+        fontFamily:BN,fontSize:"clamp(72px,22vw,100px)",
+        letterSpacing:10,lineHeight:1,color:"#fff",
+        textShadow:"0 0 80px rgba(63,207,142,0.25)",
+        animation:"ob_logo 0.9s cubic-bezier(0.16,1,0.3,1) both",
+      }}>FORJA</div>
+      <div style={{
+        fontFamily:mono_,fontSize:10,letterSpacing:5,
+        color:"rgba(63,207,142,0.65)",marginTop:14,
+        animation:"ob_sub 0.6s 0.5s cubic-bezier(0.16,1,0.3,1) both",
+      }}>FORGE YOUR LEGACY</div>
+      <div style={{
+        marginTop:72,
+        opacity:splashReady?1:0,
+        transform:splashReady?"translateY(0)":"translateY(16px)",
+        transition:"opacity 0.5s ease, transform 0.5s ease",
+      }}>
+        <button onClick={()=>setObStep(1)} style={{
+          padding:"17px 56px",borderRadius:999,
+          background:"linear-gradient(135deg,"+G+",#26a866)",
+          border:"none",cursor:"pointer",
+          fontFamily:mono_,fontSize:12,fontWeight:700,letterSpacing:4,
+          color:"#04080f",
+          boxShadow:"0 0 48px rgba(63,207,142,0.35),0 4px 24px rgba(0,0,0,0.3)",
+        }}>{tx.start}</button>
       </div>
+      {[0,1,2,3,4,5].map(i=>(
+        <div key={i} style={{
+          position:"absolute",
+          width:i%2===0?3:2,height:i%2===0?3:2,
+          borderRadius:"50%",
+          background:i%3===0?"rgba(63,207,142,0.5)":i%3===1?"rgba(240,180,40,0.4)":"rgba(255,255,255,0.2)",
+          left:(10+i*15)+"%",top:(25+Math.sin(i*1.2)*35)+"%",
+          animation:"ob_dot "+(2.2+i*0.4)+"s "+(i*0.3)+"s ease-in-out infinite alternate",
+        }}/>
+      ))}
     </div>
   );
-  const handleBack=()=>{
-    if(step===25&&typeof showForjaOnboarding==='function'){showForjaOnboarding();return;}
-    const map={1:0,15:1,2:15,3:2,4:3,5:4,6:5,7:6,8:7,9:8,10:9,20:2,21:20,22:21,23:21,26:25};
-    if(map[step]!==undefined){setStep(map[step]);window.scrollTo({top:0,behavior:"instant"});}
-  };
-  return(
-    <div style={{minHeight:"100vh",background:"#07080a",color:"#EEEAE3",
-      fontFamily:"'DM Sans',sans-serif",position:"relative",overflowX:"hidden",overflowY:(typeof step==="number"&&step>0&&step<99)?"hidden":undefined}}>
-      {step>0&&step<99&&(<div style={{position:"fixed",top:0,left:0,right:0,
-        height:"1.5px",background:"rgba(238,234,227,.1)",zIndex:200}}>
-        <div style={{height:"100%",background:"#BFA98A",transition:"width .5s ease",
-          width:step===1?"10%":step===2?"20%":step===3?"30%":step===4?"38%":
-            step===5?"46%":step===6?"54%":step===15?"62%":step===7?"70%":
-            step===8?"78%":step===20?"30%":step===21?"40%":step===23?"60%":step===25?"35%":step===26?"70%":"0%"}}/>
-      </div>)}
-      {step>0&&step!==99&&<button onClick={handleBack} style={{position:"fixed",top:18,left:18,zIndex:300,width:34,height:34,borderRadius:"50%",border:"1px solid rgba(238,234,227,.12)",background:"rgba(7,8,10,.8)",backdropFilter:"blur(12px)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
-        <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-          <path d="M9.5 2.5L5 7.5l4.5 5" stroke="rgba(238,234,227,.7)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      </button>}
-      {step===0&&(
-        <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:"radial-gradient(ellipse 120% 80% at 50% 110%, rgba(191,169,138,.06) 0%, #07080a 60%)",position:"relative",overflow:"hidden"}}>
-          <div style={{position:"relative",zIndex:2,display:"flex",flexDirection:"column",alignItems:"center",width:"100%",maxWidth:340,padding:"0 28px"}}>
-            <div style={{marginBottom:8,textAlign:"center"}}>
-              <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:72,letterSpacing:16,color:"#EEEAE3",lineHeight:1,
-                textShadow:"0 0 60px rgba(191,169,138,.15)"}}>FORJA</div>
-              <div style={{width:32,height:1,background:"#BFA98A",opacity:.4,margin:"0 auto 0"}}/>
-            </div>
-            <div style={{marginBottom:40,width:"100%",maxWidth:320}}>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
-                {[
-                  {code:"es",label:"Español",flag:"🇪🇸"},
-                  {code:"en",label:"English",flag:"🇬🇧"},
-                  {code:"fr",label:"Français",flag:"🇫🇷"},
-                  {code:"it",label:"Italiano",flag:"🇮🇹"},
-                  {code:"de",label:"Deutsch",flag:"🇩🇪"},
-                  {code:"pt",label:"Português",flag:"🇧🇷"},
-                ].map(({code,label,flag})=>(
-                  <button key={code} onClick={()=>setLang(code)}
-                    style={{
-                      padding:"12px 8px",borderRadius:12,cursor:"pointer",
-                      border:`1.5px solid ${lang===code?"rgba(191,169,138,.7)":"rgba(238,234,227,.08)"}`,
-                      background:lang===code?"rgba(191,169,138,.12)":"rgba(255,255,255,.02)",
-                      display:"flex",flexDirection:"column",alignItems:"center",gap:5,
-                      transition:"all .2s cubic-bezier(.34,1.56,.64,1)",
-                      transform:lang===code?"scale(1.06)":"scale(1)",
-                      boxShadow:lang===code?"0 0 16px rgba(191,169,138,.15)":"none",
-                    }}>
-                    <span style={{fontSize:22,lineHeight:1}}>{flag}</span>
-                    <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:13,letterSpacing:2,
-                      color:lang===code?"#EEEAE3":"rgba(238,234,227,.3)",lineHeight:1}}>
-                      {code.toUpperCase()}
-                    </span>
-                    <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:9,
-                      color:lang===code?"rgba(191,169,138,.8)":"rgba(238,234,227,.2)",letterSpacing:.3}}>
-                      {label}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div style={{fontFamily:"'SF Mono','Courier New',monospace",fontSize:9,letterSpacing:4,
-              color:"rgba(238,234,227,.25)",textTransform:"uppercase",marginBottom:36,marginTop:20,textAlign:"center"}}>
-              {lang==="es"?"FORJA TU CUERPO":lang==="fr"?"FORGE TON CORPS":lang==="it"?"FORGIA IL TUO CORPO":lang==="de"?"SCHMIEДЕ DEINEN KÖRPER":lang==="pt"?"FORJA TEU CORPO":"BUILD YOUR BODY"}
-            </div>
-            {!isUserAnonymous()?(
-              <div style={{width:"100%",display:"flex",flexDirection:"column",alignItems:"center",gap:14}}>
-                <div style={{display:"flex",alignItems:"center",gap:8,padding:"10px 18px",borderRadius:30,
-                  background:"rgba(95,210,136,.08)",border:"1px solid rgba(95,210,136,.2)"}}>
-                  <div style={{width:7,height:7,borderRadius:"50%",background:"#5fd288",flexShrink:0}}/>
-                  <span style={{fontFamily:"'SF Mono',monospace",fontSize:10,color:"rgba(95,210,136,.85)",
-                    letterSpacing:.5}}>{getUserEmail()}</span>
-                </div>
-                <button onClick={()=>setStep(1)}
-                  style={{width:"100%",padding:"18px",borderRadius:16,cursor:"pointer",
-                    background:"#EEEAE3",color:"#07080a",border:"none",
-                    fontFamily:"'SF Mono',monospace",fontSize:12,fontWeight:700,
-                    letterSpacing:3,textTransform:"uppercase",
-                    display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
-                  {lang==="fr"?"COMMENCER":lang==="it"?"INIZIA":lang==="de"?"STARTEN":lang==="pt"?"COMEÇAR":(lang||"es")==="es"?"COMENZAR":"START"}
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                    <path d="M3 7h8M7 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </button>
-                <button onClick={doSignOut}
-                  style={{background:"none",border:"none",cursor:"pointer",
-                    fontFamily:"'SF Mono',monospace",fontSize:9,
-                    color:"rgba(238,234,227,.2)",letterSpacing:1,padding:"4px"}}>
-                  {lang==="fr"?"Déconnexion":lang==="it"?"Esci":lang==="de"?"Abmelden":lang==="pt"?"Sair":(lang||"es")==="es"?"Cerrar sesión":"Sign out"}
-                </button>
-              </div>
-            ):(
-              <div style={{width:"100%",display:"flex",flexDirection:"column",alignItems:"center",gap:12,
-                opacity:lang?1:0.3,pointerEvents:lang?"all":"none",transition:"opacity .3s"}}>
-                <button onClick={doGoogleSignIn}
-                  style={{width:"100%",padding:"17px 20px",borderRadius:16,cursor:"pointer",
-                    background:"#fff",color:"#1f1f1f",border:"none",
-                    fontFamily:"-apple-system,'SF Pro Display',sans-serif",
-                    fontSize:15,fontWeight:600,letterSpacing:-.2,
-                    display:"flex",alignItems:"center",justifyContent:"center",gap:12,
-                    boxShadow:"0 2px 20px rgba(0,0,0,.4)"}}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
-                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-                  </svg>
-                  {lang==="fr"?"Continuer avec Google":lang==="it"?"Continua con Google":lang==="de"?"Mit Google fortfahren":lang==="pt"?"Continuar com Google":(lang||"es")==="es"?"Continuar con Google":"Continue with Google"}
-                </button>
-                <div style={{display:"flex",alignItems:"center",gap:10,width:"100%",margin:"4px 0"}}>
-                  <div style={{flex:1,height:1,background:"rgba(255,255,255,.07)"}}/>
-                  <span style={{fontFamily:"'SF Mono',monospace",fontSize:9,
-                    color:"rgba(255,255,255,.2)",letterSpacing:2}}>
-                    {lang==="fr"?"OU":lang==="it"?"O":lang==="de"?"ODER":lang==="pt"?"OU":(lang||"es")==="es"?"O":"OR"}
-                  </span>
-                  <div style={{flex:1,height:1,background:"rgba(255,255,255,.07)"}}/>
-                </div>
-                <button onClick={()=>setStep(1)}
-                  style={{width:"100%",padding:"15px 20px",borderRadius:16,cursor:"pointer",
-                    background:"transparent",color:"rgba(238,234,227,.5)",
-                    border:"1px solid rgba(238,234,227,.1)",
-                    fontFamily:"'SF Mono',monospace",fontSize:12,
-                    letterSpacing:1,transition:"all .2s"}}
-                  >
-                  {lang==="fr"?"Continuer sans compte":lang==="it"?"Continua senza account":lang==="de"?"Ohne Konto fortfahren":lang==="pt"?"Continuar sem conta":(lang||"es")==="es"?"Continuar sin cuenta":"Continue without account"}
-                </button>
-                <div style={{fontFamily:"'SF Mono',monospace",fontSize:8,
-                  color:"rgba(255,255,255,.12)",textAlign:"center",lineHeight:1.6,marginTop:4}}>
-                  {(lang||'es')==="es"
-                    ?lang==="fr"?"En continuant tu acceptes de sauvegarder ta routine dans le cloud":lang==="it"?"Continuando accetti di salvare la tua routine nel cloud":lang==="de"?"Mit Fortfahren stimmst du der Cloud-Speicherung zu":lang==="pt"?"Ao continuar, você aceita salvar sua rotina na nuvem":"Al continuar aceptas guardar tu rutina en la nube"
-                    :"By continuing you agree to save your routine in the cloud"}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-      {step===1&&(
-        <div style={{position:"fixed",inset:0,display:"flex",overflow:"hidden"}}>
-          <div style={{position:"absolute",top:0,bottom:0,left:"50%",width:1,background:"rgba(255,255,255,.07)",zIndex:10,pointerEvents:"none",opacity:gender?0:1,transition:"opacity .4s"}}/>
-          {[{key:"male",label:lang==="es"?"HOMBRE":"MAN",img:"https://forjavideos.b-cdn.net/Nano_Banana_2_Metallic_male_humanoid_statue_with_a_classical_warrior_helmet_fully_covering_the_face__3.png",flip:true},{key:"female",label:lang==="es"?"MUJER":"WOMAN",img:"https://forjavideos.b-cdn.net/Nano_Banana_2_Metallic_female_humanoid_statue_with_a_classical_warrior_helmet_fully_covering_the_fac_2.png",flip:false}].map(({key,label,img,flip})=>{
-            const sel=gender===key,desel=gender&&gender!==key;
-            return(
-            <div key={key} onClick={()=>setGender(key)} style={{flex:sel?1.28:desel?0.72:1,position:"relative",cursor:"pointer",overflow:"hidden",transition:"flex .5s cubic-bezier(.4,0,.2,1)"}}>
-              <img src={img} alt={label} style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",objectPosition:"55% 15%",filter:sel?"brightness(.75) saturate(.9)":desel?"brightness(.25) saturate(.3)":"brightness(.5) saturate(.65)",transition:"filter .5s",transform:flip?"scaleX(-1)":"none"}}/>
-              <div style={{position:"absolute",inset:0,background:"linear-gradient(0deg,rgba(7,8,10,.97) 0%,rgba(7,8,10,.3) 35%,transparent 65%)",boxShadow:sel?"inset 0 0 0 1.5px rgba(191,169,138,.4)":"none",pointerEvents:"none",transition:"box-shadow .3s"}}/>
-              {sel&&<div style={{position:"absolute",top:14,right:14,width:26,height:26,borderRadius:"50%",background:"#EEEAE3",display:"flex",alignItems:"center",justifyContent:"center",animation:"popIn .3s cubic-bezier(.34,1.56,.64,1)"}}>
-                <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M2 5.5l2.5 2.5 4.5-4.5" stroke="#07080a" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
-              </div>}
-              <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"24px 22px 130px"}}>
-                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:44,letterSpacing:4,color:"#EEEAE3",lineHeight:1,opacity:desel?0.3:1,transition:"opacity .3s"}}>{label}</div>
-              </div>
-            </div>
-          );})}
-          <div style={{position:"fixed",bottom:0,left:0,right:0,padding:"16px 24px 44px",zIndex:20,background:"linear-gradient(transparent 0%,rgba(7,8,10,.7) 20%,rgba(7,8,10,.95) 55%,rgba(7,8,10,.98) 100%)",display:"flex",flexDirection:"column",alignItems:"center",gap:10}}>
-            <div style={{opacity:gender?1:0,pointerEvents:gender?"all":"none",transition:"opacity .3s",width:"100%",display:"flex",justifyContent:"flex-end"}}>
-              <button onClick={()=>setStep(2)} style={{display:"inline-flex",alignItems:"center",gap:9,padding:"16px 30px",borderRadius:14,background:"#EEEAE3",color:"#07080a",border:"none",cursor:"pointer",fontFamily:mono,fontSize:11,fontWeight:500,letterSpacing:2,textTransform:"uppercase"}}>
-                {(L[lang]||L.en).next.toUpperCase()}<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2.5 6.5h8M6.5 2.5l4 4-4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
-              </button>
-            </div>
-            <button onClick={()=>{setGender(null);setStep(2);}} style={{background:"none",border:"none",cursor:"pointer",fontFamily:mono,fontSize:9,letterSpacing:2,color:"rgba(238,234,227,.65)",padding:"4px 2px"}}>{lang==="es"?"prefiero no definirlo":"prefer not to say"}</button>
-          </div>
-        </div>
-      )}
-      {step===15&&(
-        <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",overflowY:"auto"}}>
-          <div style={{padding:"72px 28px 0",marginBottom:8}}>
-            <div style={{fontFamily:mono,fontSize:9,letterSpacing:4,color:"rgba(238,234,227,.85)",textTransform:"uppercase",marginBottom:14,display:"flex",alignItems:"center",gap:10}}><span style={{width:18,height:1,background:"rgba(238,234,227,.1)",display:"block"}}/>{lang==="es"||lang==="pt"?"EQUIPAMIENTO":lang==="fr"?"ÉQUIPEMENT":lang==="it"?"ATTREZZATURA":lang==="de"?"AUSRÜSTUNG":"EQUIPMENT"}<span style={{width:18,height:1,background:"rgba(238,234,227,.1)",display:"block"}}/></div>
-            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:52,letterSpacing:2,lineHeight:.92,marginBottom:6}}>{lang==="es"||lang==="pt"?"TU":lang==="fr"?"TON":lang==="it"?"IL TUO":lang==="de"?"DEIN":"YOUR"}<br/><span style={{color:"#BFA98A"}}>{lang==="es"||lang==="pt"?"EQUIPAMIENTO":lang==="fr"?"ÉQUIPEMENT":lang==="it"?"ATTREZZATURA":lang==="de"?"AUSRÜSTUNG":"EQUIPMENT"}</span></div>
-            <div style={{fontSize:12,color:"rgba(238,234,227,.8)",letterSpacing:.3,lineHeight:1.65}}>{lang==="es"||lang==="pt"?"La rutina se adapta exactamente a lo que tienes disponible.":lang==="fr"?"La routine s'adapte exactement à ce que tu as.":lang==="it"?"La routine si adatta esattamente a ciò che hai.":lang==="de"?"Die Routine passt sich genau dem an, was du hast.":"Your routine adapts to exactly what you have available."}</div>
-          </div>
-          {[{type:"gym",label:{es:"GYM COMPLETO",en:"FULL GYM"},sub:{es:"Todo el equipamiento",en:"All equipment"}},{type:"homegym",label:{es:"GYM EN CASA",en:"HOME GYM"},sub:{es:"Dinos qué tienes",en:"Tell us what you have"}}].map(({type,label,sub})=>{
-            const sel=gymType===type;
-            const col=type==="gym"?"rgba(61,150,104":"rgba(184,149,64";
-            return(
-            <div key={type} style={{display:"flex",flexDirection:"column",borderTop:"1px solid rgba(238,234,227,.06)",borderLeft:sel?`2.5px solid ${col},.7)`:"2.5px solid transparent",background:sel?`${col},.04)`:"transparent",transition:"all .3s"}}>
-              <div onClick={()=>{setGymType(type);if(type==="gym")setEquipment(["Rack+Barra","Banco","Mancuernas","Dominadas","Paralelas","Barra Z/EZ","Leg Ext/Curl","Polea","Chaleco","Kettlebell","Bandas"]);else setEquipment([]);}} style={{padding:"20px 28px",cursor:"pointer",display:"flex",alignItems:"center",gap:16,minHeight:80}}>
-                <div style={{flex:1}}>
-                  <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:30,letterSpacing:2,color:sel?"#EEEAE3":"rgba(238,234,227,.55)",transition:"color .25s",lineHeight:1}}>{label[lang]||label.en}</div>
-                  <div style={{fontSize:11,fontFamily:mono,letterSpacing:.3,marginTop:4,color:sel?`${col},.8)`:"rgba(238,234,227,.25)",transition:"color .25s"}}>{sub[lang]||sub.en}</div>
-                </div>
-                <div style={{width:20,height:20,borderRadius:"50%",flexShrink:0,border:`1.5px solid ${sel?`${col},.8)`:"rgba(238,234,227,.2)"}`,background:sel?`${col},.15)`:"transparent",display:"flex",alignItems:"center",justifyContent:"center",transition:"all .25s"}}>{sel&&<div style={{width:8,height:8,borderRadius:"50%",background:`${col},1)`}}/>}</div>
-              </div>
-              {sel&&type==="homegym"&&(
-                <div style={{padding:"0 28px 20px",display:"flex",flexWrap:"wrap",gap:7}}>
-                  {[{id:"Rack+Barra",es:"Rack + Barra",en:"Rack + Bar"},{id:"Banco",es:"Banco",en:"Bench"},{id:"Mancuernas",es:"Mancuernas",en:"Dumbbells"},{id:"Dominadas",es:"Dominadas",en:"Pull-up Bar"},{id:"Paralelas",es:"Paralelas",en:"Dip Bars"},{id:"Barra Z/EZ",es:"Barra Z/EZ",en:"EZ Bar"},{id:"Leg Ext/Curl",es:"Leg Ext/Curl",en:"Leg Ext/Curl"},{id:"Polea",es:"Polea",en:"Cable"},{id:"Chaleco",es:"Chaleco Lastre",en:"Weight Vest"},{id:"Kettlebell",es:"Kettlebell",en:"Kettlebell"},{id:"Bandas",es:"Bandas",en:"Bands"}].map(item=>{
-                    const on=equipment.includes(item.id);
-                    return(<div key={item.id} onClick={()=>setEquipment(p=>on?p.filter(x=>x!==item.id):[...p,item.id])} style={{display:"flex",alignItems:"center",gap:5,padding:"8px 14px",borderRadius:40,cursor:"pointer",userSelect:"none",border:`1px solid ${on?"rgba(191,169,138,.45)":"rgba(255,255,255,.09)"}`,background:on?"rgba(191,169,138,.09)":"rgba(255,255,255,.03)",fontSize:11,color:on?"#BFA98A":"rgba(238,234,227,.35)",letterSpacing:.3,transition:"all .15s"}}>
-                      <span style={{width:5,height:5,borderRadius:"50%",background:"currentColor",opacity:on?1:.4}}/>{item[lang]||item.en}
-                    </div>);
-                  })}
-                </div>
-              )}
-            </div>
-          );})}
-          <div style={{flex:1}}/>
-          <div style={{display:"flex",gap:8,padding:"20px 28px 40px"}}>
-            <button onClick={()=>setStep(6)} style={{flex:1,padding:"16px",borderRadius:14,cursor:"pointer",background:"transparent",color:"rgba(238,234,227,.8)",border:"1px solid rgba(238,234,227,.1)",fontFamily:mono,fontSize:11,letterSpacing:1}}>{t.back}</button>
-            <button onClick={()=>setStep(7)} disabled={!gymType||(gymType==="homegym"&&equipment.length===0)} style={{flex:2,padding:"16px",borderRadius:14,cursor:"pointer",background:"#EEEAE3",color:"#07080a",border:"none",fontFamily:mono,fontSize:11,fontWeight:500,letterSpacing:2,textTransform:"uppercase",opacity:(!gymType||(gymType==="homegym"&&equipment.length===0))?0.28:1,transition:"all .18s",display:"flex",alignItems:"center",justifyContent:"center",gap:9}}>
-              {t.next}<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2.5 6.5h8M6.5 2.5l4 4-4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            </button>
-          </div>
-        </div>
-      )}
-      {step===2&&(
-        <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",overflowY:"auto"}}>
-          <div style={{padding:"72px 28px 0",marginBottom:8}}>
-            <div style={{fontFamily:mono,fontSize:9,letterSpacing:4,color:"rgba(238,234,227,.85)",textTransform:"uppercase",marginBottom:14,display:"flex",alignItems:"center",gap:10}}><span style={{width:18,height:1,background:"rgba(238,234,227,.1)",display:"block"}}/>{(L[lang]||L.en).split}<span style={{width:18,height:1,background:"rgba(238,234,227,.1)",display:"block"}}/></div>
-            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:52,letterSpacing:2,lineHeight:.92,marginBottom:6}}>{lang==="es"||lang==="pt"?"TU":lang==="fr"?"TON":lang==="it"?"IL TUO":lang==="de"?"DEIN":"YOUR"}<br/><span style={{color:"#BFA98A"}}>{(L[lang]||L.en).split}</span></div>
-            <div style={{fontSize:12,color:"rgba(238,234,227,.8)",letterSpacing:.3,lineHeight:1.65}}>{lang==="es"||lang==="pt"?"Elige cómo estructurar tu entrenamiento":lang==="fr"?"Choisis comment structurer ton entraînement":lang==="it"?"Scegli come strutturare il tuo allenamento":lang==="de"?"Wähle deine Trainingsstruktur":"Choose how to structure your training"}</div>
-          </div>
-          {[{m:"auto",ns:3,label:{es:"Rutina inteligente",en:"AI-generated",fr:"Routine intelligente",it:"Routine intelligente",de:"Intelligenter Plan",pt:"Rotina inteligente"},sub:{es:"Optimizada para tu objetivo y nivel",en:"Optimized for your goal and level",fr:"Optimisée pour ton objectif et niveau",it:"Ottimizzata per il tuo obiettivo e livello",de:"Optimiert für dein Ziel und Niveau",pt:"Otimizada para seu objetivo e nível"},tag:{es:"RECOMENDADO",en:"RECOMMENDED",fr:"RECOMMANDÉ",it:"CONSIGLIATO",de:"EMPFOHLEN",pt:"RECOMENDADO"},col:"rgba(238,234,227,.9)"},
-            {m:"celebrity",ns:25,label:{es:"Rutina de élite",en:"Elite routine",fr:"Routine d'élite",it:"Routine d'élite",de:"Elite-Routine",pt:"Rotina de elite"},sub:{es:"Arnold . Hemsworth . LeBron . Goggins...",en:"Arnold . Hemsworth . LeBron . Goggins...",fr:"Arnold . Hemsworth . LeBron . Goggins...",it:"Arnold . Hemsworth . LeBron . Goggins...",de:"Arnold . Hemsworth . LeBron . Goggins...",pt:"Arnold . Hemsworth . LeBron . Goggins..."},tag:{es:"ÉLITE",en:"ELITE",fr:"ÉLITE",it:"ÉLITE",de:"ELITE",pt:"ÉLITE"},col:"#BFA98A"},
-            {m:"manual",ns:20,label:{es:"Personalizada",en:"Custom",fr:"Personnalisée",it:"Personalizzata",de:"Eigener Plan",pt:"Personalizada"},sub:{es:"Diseña tu rutina desde cero",en:"Build your own from scratch",fr:"Crée ta routine de zéro",it:"Crea la tua routine da zero",de:"Erstelle dein eigenes Programm",pt:"Crie sua rotina do zero"},tag:{es:"PRO",en:"PRO",fr:"PRO",it:"PRO",de:"PRO",pt:"PRO"},col:"rgba(238,234,227,.4)"},
-          ].map(({m,ns,label,sub,tag,col})=>{
-            const mLocked = m==="manual" && !isPro();
-            return(
-            <div key={m} onClick={()=>{
-              if(mLocked){setShowProModal(true);return;}
-              setMode(m);if(m==="celebrity"){setGymType("gym");setEquipment([]);}setStep(ns);
-            }} style={{padding:"22px 28px",cursor:"pointer",borderTop:"1px solid rgba(238,234,227,.06)",display:"flex",alignItems:"center",gap:16,transition:"background .2s",opacity:mLocked?0.6:1}}>
-              <div style={{flex:1}}>
-                <div style={{display:"flex",alignItems:"baseline",gap:10,marginBottom:5}}>
-                  <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:30,letterSpacing:2,color:col,lineHeight:1}}>{label[lang]||label.en}</div>
-                  {tag&&<div style={{fontFamily:mono,fontSize:7,letterSpacing:2,color:m==="celebrity"?"#BFA98A":m==="manual"?"#c0a870":"rgba(238,234,227,.4)",border:`1px solid ${m==="celebrity"?"rgba(191,169,138,.35)":m==="manual"?"rgba(192,168,112,.4)":"rgba(238,234,227,.15)"}`,padding:"2px 6px",borderRadius:4}}>{tag[lang]||tag.en}</div>}
-                  {mLocked&&<div style={{fontSize:13}}>🔒</div>}
-                </div>
-                <div style={{fontSize:11,color:"rgba(238,234,227,.65)",fontFamily:mono,letterSpacing:.3}}>{sub[lang]||sub.en}</div>
-              </div>
-              <svg style={{opacity:.25,flexShrink:0}} width="7" height="12" viewBox="0 0 7 12" fill="none"><path d="M1 1l5 5.5L1 11" stroke="rgba(238,234,227,.8)" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            </div>
-          );})}
-          <div style={{flex:1}}/>
-          <div style={{padding:"20px 28px 40px"}}>
-            <button onClick={()=>setStep(1)} style={{width:"100%",padding:"16px",borderRadius:14,cursor:"pointer",background:"transparent",color:"rgba(238,234,227,.8)",border:"1px solid rgba(238,234,227,.1)",fontFamily:mono,fontSize:11,letterSpacing:1}}>{t.back}</button>
-          </div>
-        </div>
-      )}
-      {(step>=3&&step<=5)&&(
-        <div style={{padding:"0 28px",paddingTop:"8vh",paddingBottom:48,animation:"fu 0.4s ease"}}>
-          <div style={{display:"flex",gap:6,marginBottom:36}}>
-            {Array.from({length:TOTAL_STEPS},(_,i)=><div key={i} style={{height:2,flex:1,borderRadius:1,background:i<step-1?"#BFA98A":"rgba(238,234,227,.12)",transition:"background .4s"}}/>)}
-          </div>
-                    {step===3&&(<>
-            <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,.55)",letterSpacing:4,marginBottom:16,textTransform:"uppercase"}}>{t.goal}</div>
-            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:24,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"¿Qué buscas?":"What's your goal?"}</div>
-            <div style={{display:"flex",flexDirection:"column",borderTop:`1px solid rgba(240,242,245,0.12)`}}>
-              {[["muscle",t.muscle],["strength",t.strength],["lose",t.lose],["recomp",t.recomp],["general",t.general]].map(([id,lb])=>(
-                <Opt key={id} active={goal===id} onClick={()=>setGoal(id)}>{lb}</Opt>
-              ))}
-            </div>
-            <div style={{display:"flex",gap:10,marginTop:28}}>
-              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(2)}>{t.back}</Btn></div>
-              <div style={{flex:2}}><Btn onClick={()=>setStep(4)} disabled={!goal}>{t.next}</Btn></div>
-            </div>
-          </>)}
-                    {step===4&&mode==="auto"&&(<>
-            <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,.55)",letterSpacing:4,marginBottom:16,textTransform:"uppercase"}}>{t.level}</div>
-            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:24,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"Tu experiencia":"Your experience"}</div>
-            <div style={{display:"flex",flexDirection:"column",borderTop:`1px solid rgba(240,242,245,0.12)`}}>
-              {[["beg",t.beg],["int",t.int],["adv",t.adv]].map(([id,lb])=>(
-                <Opt key={id} active={level===id} onClick={()=>setLevel(id)}>{lb}</Opt>
-              ))}
-            </div>
-            <div style={{display:"flex",gap:10,marginTop:28}}>
-              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(3)}>{t.back}</Btn></div>
-              <div style={{flex:2}}><Btn onClick={()=>setStep(5)} disabled={!level}>{t.next}</Btn></div>
-            </div>
-          </>)}
-                    {step===4&&mode!=="auto"&&(<>
-            <div style={{fontSize:9,fontFamily:mono,color:"rgba(255,255,255,.55)",letterSpacing:4,marginBottom:16,textTransform:"uppercase"}}>{lang==="es"?"UNIDADES":"UNITS"}</div>
-            <div style={{fontSize:34,fontWeight:900,letterSpacing:-1.5,marginBottom:32,lineHeight:1,textTransform:"uppercase"}}>{lang==="es"?"Sistema de medida":"Measurement"}</div>
-            <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:32}}>
-              {[
-                {key:"metric",  es:"Métrico",   en:"Metric",   sub:"kg . cm"},
-                {key:"imperial",es:"Imperial",  en:"Imperial", sub:"lb . in"},
-              ].map(({key,es,en,sub})=>(
-                <button key={key} onClick={()=>setUnits(key)} style={{
-                  display:"flex",alignItems:"center",justifyContent:"space-between",
-                  padding:"16px 18px",borderRadius:14,cursor:"pointer",
-                  border:`1.5px solid ${units===key?C.tx:C.borderL}`,
-                  background:units===key?"rgba(240,242,245,.06)":"transparent",
-                  transition:"all 0.2s",outline:"none",
+
+  // ── STEP 1: IDIOMA ─────────────────────────────────────────
+  if(obStep===1){
+    const langs=[
+      {code:"es",label:"Español",flag:"🇪🇸"},
+      {code:"en",label:"English",flag:"🇺🇸"},
+      {code:"pt",label:"Português",flag:"🇧🇷"},
+      {code:"fr",label:"Français",flag:"🇫🇷"},
+      {code:"it",label:"Italiano",flag:"🇮🇹"},
+      {code:"de",label:"Deutsch",flag:"🇩🇪"},
+    ];
+    return (
+      <div style={wrap}>
+        <Prog cur={1} tot={7}/>
+        <Title t={tx.s1t} sub={tx.s1sub} step={1} tot={7}/>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginTop:28,flex:1}}>
+          {langs.map(l=>{
+            const sel=ob.lang===l.code;
+            return (
+              <button key={l.code}
+                onClick={()=>{set("lang",l.code);setLang(l.code);setObStep(2);}}
+                style={{
+                  padding:"22px 16px",borderRadius:20,
+                  background:sel?"rgba(63,207,142,0.1)":card,
+                  border:sel?"1.5px solid rgba(63,207,142,0.55)":"1px solid rgba(255,255,255,0.07)",
+                  cursor:"pointer",display:"flex",flexDirection:"column",
+                  alignItems:"center",gap:10,transition:"all 0.2s",
+                  boxShadow:sel?"inset 0 1px 0 rgba(63,207,142,0.35)":"none",
                 }}>
-                  <div style={{textAlign:"left"}}>
-                    <div style={{fontSize:16,fontWeight:700,color:C.tx}}>{lang==="es"?es:en}</div>
-                    <div style={{fontSize:11,fontFamily:mono,color:C.tx3,marginTop:2,letterSpacing:1}}>{sub}</div>
-                  </div>
-                  {units===key&&<div style={{width:20,height:20,borderRadius:"50%",background:C.tx,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11}}>✓</div>}
-                </button>
-              ))}
-            </div>
-            <div style={{display:"flex",gap:10,marginTop:8}}>
-              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(3)}>{t.back}</Btn></div>
-              <div style={{flex:2}}><Btn onClick={()=>setStep(5)}>{t.next}</Btn></div>
-            </div>
-          </>)}
-                    {step===5&&(<>
-            <div style={{fontSize:10,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:12}}>{lang==="es"||lang==="pt"?"DATOS FÍSICOS":lang==="fr"?"DONNÉES CORPORELLES":lang==="it"?"DATI FISICI":lang==="de"?"KÖRPERDATEN":"BODY DATA"}</div>
-            <div style={{fontSize:36,fontWeight:900,letterSpacing:-1.5,marginBottom:24,lineHeight:.9}}>{lang==="es"||lang==="pt"?"Tu cuerpo":lang==="fr"?"Ton corps":lang==="it"?"Il tuo corpo":lang==="de"?"Dein Körper":"Your body"}</div>
-            <div style={{display:"flex",flexDirection:"column",gap:20,marginBottom:32}}>
-              <Num val={age} set={setAge} min={13} max={80} label={lang==="es"||lang==="pt"?"EDAD":lang==="fr"?"ÂGE":lang==="it"?"ETÀ":lang==="de"?"ALTER":"AGE"}/>
-              <Num
-                val={toDisp(weight,"weight")}
-                set={v=>setWeight(toMetric(v,"weight"))}
-                min={wMin} max={wMax}
-                label={lang==="es"?`PESO (${wLabel})`:`WEIGHT (${wLabel})`}
-              />
-              <Num
-                val={toDisp(height,"height")}
-                set={v=>setHeight(toMetric(v,"height"))}
-                min={hMin} max={hMax}
-                label={lang==="es"?`ALTURA (${hLabel})`:`HEIGHT (${hLabel})`}
-              />
-            </div>
-            <div style={{display:"flex",gap:10,marginTop:8}}>
-              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(4)}>{t.back}</Btn></div>
-              <div style={{flex:2}}><Btn onClick={()=>setStep(6)}>{t.next}</Btn></div>
-            </div>
-          </>)}
-        </div>
-      )}
-      {step===6&&(
-        <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"0 28px"}}>
-          <div style={{fontFamily:mono,fontSize:9,letterSpacing:4,color:"rgba(238,234,227,.85)",textTransform:"uppercase",marginBottom:14,display:"flex",alignItems:"center",gap:10}}><span style={{width:18,height:1,background:"rgba(238,234,227,.1)",display:"block"}}/>{lang==="es"||lang==="pt"?"FRECUENCIA":lang==="fr"?"FRÉQUENCE":lang==="it"?"FREQUENZA":lang==="de"?"HÄUFIGKEIT":"FREQUENCY"}<span style={{width:18,height:1,background:"rgba(238,234,227,.1)",display:"block"}}/></div>
-          <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:60,letterSpacing:2,lineHeight:.92,textAlign:"center",marginBottom:6}}>{(L[lang]||L.en).days.split(" /")[0]}<br/><span style={{color:"#BFA98A"}}>{lang==="es"||lang==="pt"?"POR SEMANA":lang==="fr"?"PAR SEMAINE":lang==="it"?"A SETTIMANA":lang==="de"?"PRO WOCHE":"PER WEEK"}</span></div>
-          <div style={{fontSize:12,color:"rgba(238,234,227,.8)",textAlign:"center",marginBottom:44}}>{lang==="es"?"La constancia supera a la intensidad.":"Consistency beats intensity."}</div>
-          <div style={{display:"flex",gap:8,marginBottom:20}}>
-            {[3,4,5,6].map(n=>{
-              const sel=days===n;
-              return(
-              <div key={n} onClick={()=>{setDays(n);setSelDays([]);}} style={{width:72,height:92,borderRadius:18,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",border:`1.5px solid ${sel?"rgba(191,169,138,.45)":"rgba(238,234,227,.07)"}`,background:sel?"rgba(191,169,138,.06)":"transparent",transform:sel?"translateY(-6px) scale(1.06)":"none",boxShadow:sel?"0 16px 40px rgba(0,0,0,.5)":"none",transition:"all .28s cubic-bezier(.34,1.56,.64,1)",position:"relative",overflow:"hidden"}}>
-                <div style={{position:"absolute",inset:0,background:"radial-gradient(circle at 50% 120%, rgba(191,169,138,.18), transparent 65%)",opacity:sel?1:0,transition:"opacity .3s"}}/>
-                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:42,letterSpacing:-1,color:sel?"#EEEAE3":"rgba(238,234,227,.22)",transition:"color .28s",lineHeight:1}}>{n}</div>
-                <div style={{fontFamily:mono,fontSize:7.5,letterSpacing:2,color:sel?"#BFA98A":"rgba(238,234,227,.22)",marginTop:5,textTransform:"uppercase"}}>{(L[lang]||L.en).days.split(" /")[0]}</div>
-              </div>
-            );})}
-          </div>
-          <div style={{fontSize:12,color:"rgba(238,234,227,.8)",textAlign:"center",minHeight:18,marginBottom:32}}>
-            {days?([{es:"Ideal para empezar",en:"Great to start"},{es:"Frecuencia óptima",en:"Optimal balance"},{es:"Nivel avanzado",en:"Advanced level"},{es:"Atleta de élite",en:"Elite athlete"}][days-3]?.[lang==="es"?"es":"en"]||""):""}
-          </div>
-          <div style={{display:"flex",gap:8,width:"100%",maxWidth:380}}>
-            <button onClick={()=>setStep(5)} style={{flex:1,padding:"16px",borderRadius:14,cursor:"pointer",background:"transparent",color:"rgba(238,234,227,.8)",border:"1px solid rgba(238,234,227,.1)",fontFamily:mono,fontSize:11,letterSpacing:1}}>{t.back}</button>
-            <button onClick={()=>setStep(15)} disabled={!days} style={{flex:2,padding:"16px",borderRadius:14,cursor:"pointer",background:"#EEEAE3",color:"#07080a",border:"none",fontFamily:mono,fontSize:11,fontWeight:500,letterSpacing:2,textTransform:"uppercase",opacity:!days?0.28:1,transition:"all .18s",display:"flex",alignItems:"center",justifyContent:"center",gap:9}}>
-              {t.next}<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2.5 6.5h8M6.5 2.5l4 4-4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            </button>
-          </div>
-        </div>
-      )}
-      {step===7&&(
-        <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"0 24px"}}>
-          <div style={{fontFamily:mono,fontSize:9,letterSpacing:4,color:"rgba(238,234,227,.85)",textTransform:"uppercase",marginBottom:14,display:"flex",alignItems:"center",gap:10}}><span style={{width:18,height:1,background:"rgba(238,234,227,.1)",display:"block"}}/>{lang==="es"||lang==="pt"?"HORARIO":lang==="fr"?"PLANNING":lang==="it"?"PROGRAMMA":lang==="de"?"ZEITPLAN":"SCHEDULE"}<span style={{width:18,height:1,background:"rgba(238,234,227,.1)",display:"block"}}/></div>
-          <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:60,letterSpacing:2,lineHeight:.92,textAlign:"center",marginBottom:28}}>{lang==="es"||lang==="pt"?"QUÉ":lang==="fr"?"QUELS":lang==="it"?"QUALI":lang==="de"?"WELCHE":"WHICH"}<br/><span style={{color:"#BFA98A"}}>{(L[lang]||L.en).days.split(" /")[0]}</span></div>
-          <div style={{display:"flex",gap:5,marginBottom:36}}>{Array.from({length:days}).map((_,i)=>(<div key={i} style={{width:5,height:5,borderRadius:"50%",background:selDays.length>i?"#BFA98A":"rgba(238,234,227,.12)",transform:selDays.length>i?"scale(1.3)":"scale(1)",transition:"all .3s cubic-bezier(.34,1.56,.64,1)"}}/>))}</div>
-          <div style={{display:"flex",gap:7,width:"100%",maxWidth:390,marginBottom:20}}>
-            {(lang==="es"?["L","M","X","J","V","S","D"]:["M","T","W","T","F","S","S"]).map((letter,i)=>{
-              const full=lang==="es"?["LUN","MAR","MIÉ","JUE","VIE","SÁB","DOM"]:["MON","TUE","WED","THU","FRI","SAT","SUN"];
-              const sel=selDays.includes(i),dim=!sel&&selDays.length>=days;
-              return(
-              <div key={i} onClick={()=>{if(sel)setSelDays(p=>p.filter(x=>x!==i));else if(!dim)setSelDays(p=>[...p,i]);}} style={{flex:1,aspectRatio:"1",borderRadius:"50%",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:dim?"default":"pointer",border:`1.5px solid ${sel?"rgba(191,169,138,.55)":"rgba(238,234,227,.08)"}`,background:sel?"rgba(191,169,138,.09)":"transparent",transform:sel?"scale(1.1)":"scale(1)",opacity:dim?0.2:1,transition:"all .25s cubic-bezier(.34,1.56,.64,1)",position:"relative"}}>
-                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:15,letterSpacing:1,color:sel?"#EEEAE3":"rgba(238,234,227,.3)",lineHeight:1}}>{letter}</div>
-                <div style={{fontFamily:mono,fontSize:6.5,letterSpacing:1,color:sel?"#BFA98A":"rgba(238,234,227,.2)",marginTop:2}}>{full[i]}</div>
-                {sel&&<div style={{position:"absolute",top:-3,right:-3,width:13,height:13,borderRadius:"50%",background:"#BFA98A",display:"flex",alignItems:"center",justifyContent:"center"}}><svg width="6" height="6" viewBox="0 0 6 6" fill="none"><path d="M1 3l1.5 1.5 2.5-2.5" stroke="#07080a" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg></div>}
-              </div>
-            );})}
-          </div>
-          <div style={{fontSize:12,color:"rgba(238,234,227,.8)",textAlign:"center",minHeight:18,marginBottom:32}}>
-            {selDays.length===days?(lang==="es"?"¡Listo. Tu semana está set.":lang==="fr"?"Parfait.":lang==="it"?"Perfetto.":lang==="de"?"Alles bereit.":lang==="pt"?"Tudo certo.":"All set."):(lang==="es"?`${days-selDays.length} día${days-selDays.length!==1?"s":""} más`:`${days-selDays.length} more day${days-selDays.length!==1?"s":""}`)}
-          </div>
-          <div style={{display:"flex",gap:8,width:"100%",maxWidth:390}}>
-            <button onClick={()=>setStep(6)} style={{flex:1,padding:"16px",borderRadius:14,cursor:"pointer",background:"transparent",color:"rgba(238,234,227,.8)",border:"1px solid rgba(238,234,227,.1)",fontFamily:mono,fontSize:11,letterSpacing:1}}>{t.back}</button>
-            <button disabled={selDays.length!==days} onClick={()=>{
-              if(gymType==="gym"){
-                const key=`${days}${level}`;
-                const splits=RAW[key]||RAW[`${days}beg`]||Object.values(RAW)[0];
-                const fs=splits.map(d=>({...d,ex:d.ex.map(ex=>({...ex,e:canDoAuto(ex.e,equipment)}))}));
-                const r=buildRoutine7(fs,selDays,goal,equipment);
-                const pf={lang,goal,level,days,age,weight,height,units,selDays,gender,equipment};
-                FStore.saveProfile(pf,r);sp(pf);sr(r);setStep(99);
-              } else {
-                const key=`${days}${level}`;
-                const splits=RAW[key]||RAW[`${days}beg`]||Object.values(RAW)[0];
-                const fs=splits.map(d=>({...d,ex:d.ex.map(ex=>({...ex,e:canDoAuto(ex.e,equipment)}))}));
-                const r=buildRoutine7(fs,selDays,goal,equipment);
-                const pf={lang,goal,level,days,age,weight,height,units,selDays,gender,equipment};
-                FStore.saveProfile(pf,r);sp(pf);sr(r);setStep(99);
-              }
-            }} style={{flex:2,padding:"16px",borderRadius:14,cursor:"pointer",background:"#EEEAE3",color:"#07080a",border:"none",fontFamily:mono,fontSize:11,fontWeight:500,letterSpacing:2,textTransform:"uppercase",opacity:selDays.length!==days?0.28:1,transition:"all .18s",display:"flex",alignItems:"center",justifyContent:"center",gap:9}}>
-              {gymType==="gym"?((L[lang]||L.en).go):t.next}<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2.5 6.5h8M6.5 2.5l4 4-4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            </button>
-          </div>
-        </div>
-      )}
-      {(step===8)&&(<>
-            <div style={{fontSize:10,fontFamily:mono,color:"rgba(255,255,255,.18)",letterSpacing:3,marginBottom:10,textTransform:"uppercase"}}>
-              {lang==="es"||lang==="pt"?"EQUIPAMIENTO":lang==="fr"?"ÉQUIPEMENT":lang==="it"?"ATTREZZATURA":lang==="de"?"AUSRÜSTUNG":"EQUIPMENT"}
-            </div>
-            <div style={{fontSize:30,fontWeight:900,letterSpacing:-1.2,marginBottom:6,lineHeight:1,
-              background:"linear-gradient(135deg,rgba(255,255,255,.92) 0%,rgba(255,255,255,.5) 100%)",
-              WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"
-            }}>{lang==="es"||lang==="pt"?"¿Qué tienes?":lang==="fr"?"Qu'est-ce que tu as?":lang==="it"?"Cosa hai?":lang==="de"?"Was hast du?":"What do you have?"}</div>
-            <div style={{fontFamily:mono,fontSize:9,color:"rgba(255,255,255,.18)",letterSpacing:1.5,marginBottom:20}}>
-              {lang==="es"?"TOCA EL EQUIPO DE TU GYM":"TAP YOUR GYM EQUIPMENT"}
-            </div>
-            {(()=>{
-              const tot=[...equipment].reduce((s,id)=>{const c=EQ_CARDS.find(x=>x.id===id);return s+(c?.ex||0);},15);
-              return(<>
-                <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:12}}>
-                  {EQ_CARDS.map(({id,n,c,ex,img})=>{
-                    const on=equipment.includes(id);
-                    const cardBg=on?"rgba(255,255,255,.08)":"rgba(255,255,255,.04)";
-                    const cardBorder=on?c:"rgba(255,255,255,.09)";
-                    const cardShadow=on?"0 12px 32px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.12)":"inset 0 1px 0 rgba(255,255,255,.08),0 4px 16px rgba(0,0,0,.25)";
-                    const iconBg=on?"rgba(255,255,255,.12)":"rgba(255,255,255,.06)";
-                    const iconBorder=on?c:"rgba(255,255,255,.1)";
-                    return(
-                      <div key={id} onClick={()=>setEquipment(on?equipment.filter(x=>x!==id):[...equipment,id])} style={{
-                        position:"relative",borderRadius:16,overflow:"hidden",cursor:"pointer",aspectRatio:".85",
-                        background:cardBg,
-                        backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",
-                        border:"1.5px solid "+cardBorder,
-                        boxShadow:cardShadow,
-                        transform:on?"translateY(-3px) scale(1.02)":"scale(1)",
-                        transition:"all .25s cubic-bezier(.34,1.56,.64,1)",
-                      }}>
-                        <div style={{position:"absolute",inset:0,background:`linear-gradient(135deg,${c}18 0%,${c}06 60%,transparent 100%)`,pointerEvents:"none"}}/>
-                        <div style={{position:"absolute",inset:0,background:"linear-gradient(135deg,rgba(255,255,255,.05) 0%,transparent 60%)",pointerEvents:"none",zIndex:1}}/>
-                        {on&&<div style={{position:"absolute",inset:0,background:"rgba(255,255,255,.03)",pointerEvents:"none",zIndex:1}}/>}
-                        <div style={{position:"absolute",top:8,left:8,zIndex:3,width:32,height:32,borderRadius:9,display:"flex",alignItems:"center",justifyContent:"center",background:iconBg,border:"1px solid "+iconBorder,backdropFilter:"blur(8px)",color:on?"rgba(255,255,255,.9)":"rgba(255,255,255,.5)",boxShadow:"inset 0 1px 0 rgba(255,255,255,.1)",transition:"all .25s"}}>
-                          <EqIcon id={id} color={on?c:"rgba(255,255,255,.5)"}/>
-                        </div>
-                        <div style={{position:"absolute",top:7,right:7,zIndex:3,width:20,height:20,borderRadius:"50%",background:c,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#fff",fontWeight:700,opacity:on?1:0,transform:on?"scale(1) rotate(0deg)":"scale(0) rotate(-180deg)",transition:"all .3s cubic-bezier(.34,1.56,.64,1)"}}>✓</div>
-                        <div style={{position:"absolute",bottom:0,left:0,right:0,zIndex:2,padding:"20px 10px 10px",background:"linear-gradient(transparent,rgba(5,8,16,.75) 60%,rgba(5,8,16,.88) 100%)"}}>
-                          <div style={{fontSize:10.5,fontWeight:700,color:on?"rgba(255,255,255,.92)":"rgba(255,255,255,.38)",letterSpacing:.2,transition:"color .2s"}}>{n[lang]||n.en}</div>
-                          <div style={{fontFamily:mono,fontSize:8,color:on?c:"rgba(255,255,255,.12)",letterSpacing:.5,marginTop:2,transition:"color .2s"}}>{ex}+ {lang==="es"||lang==="pt"?"ejercicios":lang==="fr"?"exercices":lang==="it"?"esercizi":lang==="de"?"Übungen":"exercises"}</div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                  <div style={{position:"relative",borderRadius:16,overflow:"hidden",aspectRatio:".85",opacity:.45,background:"rgba(255,255,255,.04)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",border:"1px solid rgba(200,204,216,.15)",boxShadow:"inset 0 1px 0 rgba(255,255,255,.07)"}}>
-                    <div style={{position:"absolute",inset:0,background:"linear-gradient(135deg,rgba(255,255,255,.02),rgba(255,255,255,.005))"}}/>
-                    <div style={{position:"absolute",top:8,left:8,zIndex:2,width:32,height:32,borderRadius:9,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(255,255,255,.05)",border:"1px solid rgba(255,255,255,.07)",color:"rgba(255,255,255,.7)"}}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" style={{width:15,height:15}}><circle cx="12" cy="4" r="2"/><path d="M12 6 L12 14 M9 9 L15 9 M12 14 L9 21 M12 14 L15 21"/></svg>
-                    </div>
-                    <div style={{position:"absolute",top:7,right:7,zIndex:2,width:20,height:20,borderRadius:"50%",background:"rgba(200,204,216,.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"rgba(255,255,255,.75)",fontWeight:700}}>✓</div>
-                    <div style={{position:"absolute",bottom:0,left:0,right:0,zIndex:2,padding:"20px 10px 10px",background:"linear-gradient(transparent,rgba(5,8,16,.7))"}}>
-                      <div style={{fontSize:10.5,fontWeight:700,color:"rgba(255,255,255,.22)",letterSpacing:.2}}>{lang==="es"?"Peso corporal":"Bodyweight"}</div>
-                      <div style={{fontFamily:mono,fontSize:8,color:"rgba(255,255,255,.1)",letterSpacing:.5,marginTop:2}}>{lang==="es"?"siempre incluido":"always included"}</div>
-                    </div>
-                  </div>
-                </div>
-                <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:5,marginBottom:14}}>
-                  {EQ_CARDS.map(({id,c})=>(<div key={id} style={{width:4,height:4,borderRadius:"50%",background:equipment.includes(id)?c:"rgba(255,255,255,.08)",boxShadow:equipment.includes(id)?`0 0 6px ${c}`:"none",transform:equipment.includes(id)?"scale(1.5)":"scale(1)",transition:"all .3s cubic-bezier(.34,1.56,.64,1)"}}/>))}
-                </div>
-                <div style={{borderRadius:18,overflow:"hidden",marginBottom:16,background:"rgba(255,255,255,.04)",backdropFilter:"blur(24px)",WebkitBackdropFilter:"blur(24px)",border:"1px solid rgba(255,255,255,.07)",boxShadow:"inset 0 1px 0 rgba(255,255,255,.08),0 8px 24px rgba(0,0,0,.3)"}}>
-                  <div style={{padding:"12px 16px",borderBottom:"1px solid rgba(255,255,255,.04)",background:"rgba(255,255,255,.02)",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                    <div style={{fontFamily:mono,fontSize:8,letterSpacing:3,color:"rgba(255,255,255,.18)",textTransform:"uppercase"}}>{lang==="es"||lang==="pt"?"equipo seleccionado":lang==="fr"?"sélectionné":lang==="it"?"selezionato":lang==="de"?"ausgewählt":"selected"}</div>
-                    <div style={{fontFamily:mono,fontSize:10,color:equipment.length>0?"#6a8fc0":"rgba(255,255,255,.5)"}}>{equipment.length>0?`${tot}+ ${lang==="es"||lang==="pt"?"ejercicios":lang==="fr"?"exercices":lang==="it"?"esercizi":lang==="de"?"Übungen":"exercises"}`:"—"}</div>
-                  </div>
-                  <div style={{padding:"10px 14px 12px",minHeight:44,display:"flex",flexWrap:"wrap",gap:6,alignItems:"center"}}>
-                    {equipment.length===0
-                      ?<div style={{fontFamily:mono,fontSize:9,color:"rgba(255,255,255,.1)",width:"100%",textAlign:"center",letterSpacing:1}}>{lang==="es"||lang==="pt"?"↑ toca tu equipo arriba":lang==="fr"?"↑ touche l'équipement ci-dessus":lang==="it"?"↑ tocca l'attrezzatura sopra":lang==="de"?"↑ Ausrüstung oben antippen":"↑ tap equipment above"}</div>
-                      :equipment.map(id=>{const card=EQ_CARDS.find(x=>x.id===id);return card?(<div key={id} onClick={()=>setEquipment(equipment.filter(x=>x!==id))} style={{display:"inline-flex",alignItems:"center",gap:5,padding:"5px 12px",borderRadius:50,cursor:"pointer",fontFamily:mono,fontSize:9,color:"rgba(255,255,255,.5)",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.07)",backdropFilter:"blur(8px)",transition:"all .15s"}}><div style={{width:5,height:5,borderRadius:"50%",background:card.c,flexShrink:0}}/>{card.n[lang]||card.n.en}<span style={{opacity:.25,fontSize:13,marginLeft:2}}>×</span></div>):null;})
-                    }
-                  </div>
-                </div>
-              </>);
-            })()}
-            <div style={{display:"flex",gap:10}}>
-              <div style={{flex:1}}><Btn ghost onClick={()=>setStep(mode==="celebrity"?25:gymType==="homegym"?7:6)}>{t.back}</Btn></div>
-              <div style={{flex:2}}><Btn onClick={()=>{
-                if(mode==="celebrity"&&celebData){
-                  const sd=selDays.length===celebData.days?selDays:[0,1,2,3,4,5,6].slice(0,celebData.days);
-                  const r=buildCelebRoutine(celebData,[],sd);
-                  const pf={lang,goal:"muscle",level:"int",days:celebData.days,age,weight,height,units,selDays:sd,gender,equipment:[],mode:"celebrity",celebrity:celebData.id};
-                  FStore.saveProfile(pf,r);
-                  sp(pf);sr(r);setStep(99);
-                } else {
-                  const splits=RAW[`${days}${level}`]||RAW[`${days}beg`]||[];
-                  const filtered=splits.map(d=>({...d,ex:d.ex.map(ex=>({...ex,e:canDoAuto(ex.e,equipment)}))}));
-                  const r=buildRoutine7(filtered,selDays,goal,equipment);
-                  const pf={lang,goal,level,days,age,weight,height,units,selDays,gender,equipment};
-                  FStore.saveProfile(pf,r);sp(pf);sr(r);setStep(99);
-                }
-              }}>{mode==="celebrity"?(lang==="es"||lang==="pt"?"EMPEZAR →":lang==="fr"?"COMMENCER →":lang==="it"?"INIZIA →":lang==="de"?"STARTEN →":"START →"):t.next}</Btn></div>
-            </div>
-          </>)}
-      {step===20&&(
-        <div key="step20" style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"0 24px",animation:"fu 0.4s ease"}}>
-          {true&&(<>
-            <div style={{fontFamily:mono,fontSize:9,letterSpacing:4,color:"rgba(238,234,227,.85)",textTransform:"uppercase",marginBottom:14,display:"flex",alignItems:"center",gap:10}}>
-              <span style={{width:18,height:1,background:"rgba(238,234,227,.1)",display:"block"}}/>
-              {lang==="es"||lang==="pt"?"FRECUENCIA":lang==="fr"?"FRÉQUENCE":lang==="it"?"FREQUENZA":lang==="de"?"HÄUFIGKEIT":"FREQUENCY"}
-              <span style={{width:18,height:1,background:"rgba(238,234,227,.1)",display:"block"}}/>
-            </div>
-            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:60,letterSpacing:2,lineHeight:.92,textAlign:"center",marginBottom:28}}>
-              {lang==="es"?"CUÁNTOS":"HOW MANY"}<br/>
-              <span style={{color:"#BFA98A"}}>{(L[lang]||L.en).days.split(" /")[0]}</span>
-            </div>
-            <div style={{display:"flex",gap:10,justifyContent:"center",marginBottom:32}}>
-              {[3,4,5,6].map(n=>(
-                <div key={n} onClick={()=>{setManualDays(n);setManualSelDays([]);setManualRoutine(Array(7).fill(null).map(()=>[]));}}
-                  style={{width:72,height:92,borderRadius:16,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",
-                    border:`1.5px solid ${manualDays===n?"rgba(191,169,138,.6)":"rgba(238,234,227,.08)"}`,
-                    background:manualDays===n?"rgba(191,169,138,.1)":"transparent",
-                    transform:manualDays===n?"scale(1.08)":"scale(1)",
-                    transition:"all .25s cubic-bezier(.34,1.56,.64,1)"}}>
-                  <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:40,letterSpacing:1,color:manualDays===n?"#EEEAE3":"rgba(238,234,227,.3)",lineHeight:1}}>{n}</div>
-                  <div style={{fontFamily:mono,fontSize:7,letterSpacing:1,color:manualDays===n?"#BFA98A":"rgba(238,234,227,.2)",marginTop:4}}>{(L[lang]||L.en).days.split(" /")[0]}</div>
-                </div>
-              ))}
-            </div>
-            <div style={{display:"flex",gap:8,width:"100%",maxWidth:390}}>
-              <button onClick={()=>setStep(2)} style={{flex:1,padding:"16px",borderRadius:14,cursor:"pointer",background:"transparent",color:"rgba(238,234,227,.8)",border:"1px solid rgba(238,234,227,.1)",fontFamily:mono,fontSize:11,letterSpacing:1}}>{t.back}</button>
-              <button onClick={()=>setStep(21)} disabled={!manualDays} style={{flex:2,padding:"16px",borderRadius:14,cursor:"pointer",background:"#EEEAE3",color:"#07080a",border:"none",fontFamily:mono,fontSize:11,fontWeight:500,letterSpacing:2,textTransform:"uppercase",opacity:!manualDays?0.28:1,transition:"all .18s",display:"flex",alignItems:"center",justifyContent:"center",gap:9}}>
-                {t.next}<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2.5 6.5h8M6.5 2.5l4 4-4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                <span style={{fontSize:32}}>{l.flag}</span>
+                <span style={{fontFamily:mono_,fontSize:10,letterSpacing:2,
+                  color:sel?G:dim}}>{l.label}</span>
               </button>
-            </div>
-          </>)}
+            );
+          })}
         </div>
-      )}
-      {step===21&&(
-        <div key="step21" style={{position:"fixed",inset:0,background:"#07080a",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-start",padding:"48px 24px 40px",overflowY:"auto",zIndex:10,animation:"fu 0.4s ease"}}>
-          {true&&(<>
-            <div style={{fontFamily:mono,fontSize:9,letterSpacing:4,color:"rgba(238,234,227,.85)",textTransform:"uppercase",marginBottom:14,display:"flex",alignItems:"center",gap:10}}>
-              <span style={{width:18,height:1,background:"rgba(238,234,227,.1)",display:"block"}}/>
-              {lang==="es"||lang==="pt"?"HORARIO":lang==="fr"?"PLANNING":lang==="it"?"PROGRAMMA":lang==="de"?"ZEITPLAN":"SCHEDULE"}
-              <span style={{width:18,height:1,background:"rgba(238,234,227,.1)",display:"block"}}/>
-            </div>
-            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:60,letterSpacing:2,lineHeight:.92,textAlign:"center",marginBottom:6}}>
-              {lang==="es"||lang==="pt"?"QUÉ":lang==="fr"?"QUELS":lang==="it"?"QUALI":lang==="de"?"WELCHE":"WHICH"}<br/>
-              <span style={{color:"#BFA98A"}}>{(L[lang]||L.en).days.split(" /")[0]}</span>
-            </div>
-            <div style={{fontSize:11,color:"rgba(238,234,227,.55)",textAlign:"center",marginBottom:28,fontFamily:mono}}>
-              {manualDays}x/{lang==="fr"?"semaine":lang==="it"?"settimana":lang==="de"?"Woche":lang==="pt"?"semana":"week"} · {lang==="es"||lang==="pt"?"PERSONALIZADA":lang==="fr"?"PERSONNALISÉ":lang==="it"?"PERSONALIZZATO":lang==="de"?"BENUTZERDEFINIERT":"CUSTOM"}
-            </div>
-            <div style={{display:"flex",gap:5,marginBottom:36}}>
-              {Array.from({length:manualDays}).map((_,i)=>(<div key={i} style={{width:5,height:5,borderRadius:"50%",background:manualSelDays.length>i?"#BFA98A":"rgba(238,234,227,.12)",transform:manualSelDays.length>i?"scale(1.3)":"scale(1)",transition:"all .3s cubic-bezier(.34,1.56,.64,1)"}}/>))}
-            </div>
-            <div style={{display:"flex",gap:7,width:"100%",maxWidth:390,marginBottom:20}}>
-              {(lang==="es"?["L","M","X","J","V","S","D"]:["M","T","W","T","F","S","S"]).map((letter,i)=>{
-                const full=lang==="es"?["LUN","MAR","MIÉ","JUE","VIE","SÁB","DOM"]:["MON","TUE","WED","THU","FRI","SAT","SUN"];
-                const sel=manualSelDays.includes(i),dim=!sel&&manualSelDays.length>=manualDays;
-                return(
-                <div key={i} onClick={()=>{if(sel)setManualSelDays(p=>p.filter(x=>x!==i));else if(!dim)setManualSelDays(p=>[...p,i].sort((a,b)=>a-b));}} style={{flex:1,aspectRatio:"1",borderRadius:"50%",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:dim?"default":"pointer",border:`1.5px solid ${sel?"rgba(191,169,138,.55)":"rgba(238,234,227,.08)"}`,background:sel?"rgba(191,169,138,.09)":"transparent",transform:sel?"scale(1.1)":"scale(1)",opacity:dim?0.2:1,transition:"all .25s cubic-bezier(.34,1.56,.64,1)",position:"relative"}}>
-                  <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:15,letterSpacing:1,color:sel?"#EEEAE3":"rgba(238,234,227,.3)",lineHeight:1}}>{letter}</div>
-                  <div style={{fontFamily:mono,fontSize:6.5,letterSpacing:1,color:sel?"#BFA98A":"rgba(238,234,227,.2)",marginTop:2}}>{full[i]}</div>
-                  {sel&&<div style={{position:"absolute",top:-3,right:-3,width:13,height:13,borderRadius:"50%",background:"#BFA98A",display:"flex",alignItems:"center",justifyContent:"center"}}><svg width="6" height="6" viewBox="0 0 6 6" fill="none"><path d="M1 3l1.5 1.5 2.5-2.5" stroke="#07080a" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg></div>}
-                </div>
-                );
-              })}
-            </div>
-            <div style={{fontSize:12,color:"rgba(238,234,227,.8)",textAlign:"center",minHeight:18,marginBottom:32}}>
-              {manualSelDays.length===manualDays?(lang==="es"?"¡Listo. Tu semana está set.":lang==="fr"?"Parfait.":lang==="it"?"Perfetto.":lang==="de"?"Alles bereit.":lang==="pt"?"Tudo certo.":"All set."):(lang==="es"?`${manualDays-manualSelDays.length} día${manualDays-manualSelDays.length!==1?"s":""} más`:`${manualDays-manualSelDays.length} more day${manualDays-manualSelDays.length!==1?"s":""}`)}
-            </div>
-            <div style={{display:"flex",gap:8,width:"100%",maxWidth:390}}>
-              <button onClick={()=>setStep(20)} style={{flex:1,padding:"16px",borderRadius:14,cursor:"pointer",background:"transparent",color:"rgba(238,234,227,.8)",border:"1px solid rgba(238,234,227,.1)",fontFamily:mono,fontSize:11,letterSpacing:1}}>{t.back}</button>
-              <button onClick={()=>{setCatalogDay(0);setCatalogMuscle("");setStep(23);}} disabled={manualSelDays.length!==manualDays} style={{flex:2,padding:"16px",borderRadius:14,cursor:"pointer",background:"#EEEAE3",color:"#07080a",border:"none",fontFamily:mono,fontSize:11,fontWeight:500,letterSpacing:2,textTransform:"uppercase",opacity:manualSelDays.length!==manualDays?0.28:1,transition:"all .18s",display:"flex",alignItems:"center",justifyContent:"center",gap:9}}>
-                {t.next}<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2.5 6.5h8M6.5 2.5l4 4-4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      </div>
+    );
+  }
+
+  // ── STEP 2: NOMBRE ─────────────────────────────────────────
+  if(obStep===2){
+    const ok=nameVal.trim().length>0;
+    return (
+      <div style={wrap}>
+        <Prog cur={2} tot={7}/>
+        <BackB/>
+        <Title t={tx.s2t} sub={tx.s2sub} step={2} tot={7}/>
+        <div style={{marginTop:32,flex:1,display:"flex",flexDirection:"column",gap:20}}>
+          <input
+            autoFocus
+            value={nameVal}
+            onChange={e=>setNameVal(e.target.value)}
+            onKeyDown={e=>{if(e.key==="Enter"&&ok){set("name",nameVal.trim());setObStep(3);}}}
+            placeholder={tx.s2ph}
+            maxLength={30}
+            style={{
+              width:"100%",padding:"20px 22px",borderRadius:18,
+              background:"rgba(255,255,255,0.05)",
+              border:"1.5px solid "+(ok?"rgba(63,207,142,0.4)":"rgba(255,255,255,0.12)"),
+              color:W,fontSize:24,fontWeight:700,outline:"none",
+              fontFamily:"inherit",caretColor:G,transition:"border-color 0.25s",
+            }}/>
+          <div style={{flex:1}}/>
+          <CBtn
+            onClick={()=>{if(ok){set("name",nameVal.trim());setObStep(3);}}}
+            disabled={!ok}/>
+        </div>
+      </div>
+    );
+  }
+
+  // ── STEP 3: GÉNERO + EDAD ──────────────────────────────────
+  if(obStep===3){
+    const ok=ob.gender&&ageVal>=13&&ageVal<=100;
+    return (
+      <div style={wrap}>
+        <Prog cur={3} tot={7}/>
+        <BackB/>
+        <Title t={tx.s3t} sub={tx.s3sub} step={3} tot={7}/>
+        <div style={{marginTop:28,display:"flex",gap:10,marginBottom:32}}>
+          {[{id:"male",label:tx.s3gM,icon:"♂"},{id:"female",label:tx.s3gF,icon:"♀"}].map(g=>{
+            const sel=ob.gender===g.id;
+            return (
+              <button key={g.id} onClick={()=>set("gender",g.id)} style={{
+                flex:1,padding:"26px 16px",borderRadius:20,
+                background:sel?"rgba(63,207,142,0.1)":card,
+                border:sel?"1.5px solid rgba(63,207,142,0.55)":"1px solid rgba(255,255,255,0.07)",
+                cursor:"pointer",display:"flex",flexDirection:"column",
+                alignItems:"center",gap:12,transition:"all 0.22s",
+              }}>
+                <span style={{fontSize:40,opacity:sel?1:0.5}}>{g.icon}</span>
+                <span style={{fontFamily:mono_,fontSize:10,letterSpacing:2,color:sel?G:dim}}>{g.label}</span>
               </button>
-            </div>
-          </>)}
+            );
+          })}
         </div>
-      )}
-      {step===23&&(
-        <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",background:"#07080a",color:"#EEEAE3"}}>
-          <div style={{position:"sticky",top:0,zIndex:20,background:"rgba(7,8,10,.97)",backdropFilter:"blur(24px)",WebkitBackdropFilter:"blur(24px)",borderBottom:"1px solid rgba(255,255,255,.06)",padding:"52px 20px 0"}}>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"center",marginBottom:12}}>
-              <div style={{flex:1,padding:"0 12px"}}>
-                <div style={{display:"flex",gap:4,alignItems:"center"}}>
-                  {manualSelDays.map((_,i)=>(
-                    <div key={i} onClick={()=>setCatalogDay(i)} style={{flex:1,height:3,borderRadius:2,cursor:"pointer",transition:"all .3s",
-                      background:i<catalogDay?"#BFA98A":i===catalogDay?"#EEEAE3":"rgba(255,255,255,.1)"}}/>
-                  ))}
-                </div>
-                <div style={{fontFamily:mono,fontSize:8,color:"rgba(255,255,255,.3)",letterSpacing:2,textAlign:"center",marginTop:6}}>
-                  {lang==="es"?`DÍA ${catalogDay+1} DE ${manualSelDays.length}`:`DAY ${catalogDay+1} OF ${manualSelDays.length}`}
-                </div>
-              </div>
-              <div style={{width:24,color:"rgba(255,255,255,.4)",fontSize:8,fontFamily:mono,textAlign:"right"}}>
-                {(manualRoutine[catalogDay]||[]).length>0&&`${(manualRoutine[catalogDay]||[]).length}✓`}
-              </div>
-            </div>
-            {(()=>{
-              const dayIdx=manualSelDays[catalogDay];
-              const DAY_FULL=lang==="es"?["LUNES","MARTES","MIÉRCOLES","JUEVES","VIERNES","SÁBADO","DOMINGO"]:["MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY","SUNDAY"];
-              const cnt=(manualRoutine[catalogDay]||[]).length;
-              return(
-                <div style={{marginBottom:14}}>
-                  <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:44,letterSpacing:2,lineHeight:.9,color:"#EEEAE3"}}>{DAY_FULL[dayIdx]}</div>
-                  <div style={{fontFamily:mono,fontSize:9,color:"rgba(255,255,255,.25)",letterSpacing:2,marginTop:5,display:"flex",alignItems:"center",gap:8}}>
-                    <span>{lang==="es"||lang==="pt"?"ELIGE TUS EJERCICIOS":lang==="fr"?"CHOISIS TES EXERCICES":lang==="it"?"SCEGLI I TUOI ESERCIZI":lang==="de"?"WÄHLE DEINE ÜBUNGEN":"CHOOSE YOUR EXERCISES"}</span>
-                    {cnt>0&&<span style={{color:"rgba(95,210,136,.6)"}}>· {cnt} {lang==="es"||lang==="pt"?"agregados":lang==="fr"?"ajoutés":lang==="it"?"aggiunti":lang==="de"?"hinzugefügt":"added"}</span>}
-                  </div>
-                </div>
-              );
-            })()}
-            <div style={{display:"flex",gap:5,overflowX:"auto",paddingBottom:14,scrollbarWidth:"none"}}>
-              <button onClick={()=>setCatalogMuscle("")} style={{flexShrink:0,padding:"6px 14px",borderRadius:20,cursor:"pointer",fontFamily:mono,fontSize:9,letterSpacing:.5,whiteSpace:"nowrap",transition:"all .15s",border:`1px solid ${catalogMuscle===""?"rgba(255,255,255,.35)":"rgba(255,255,255,.07)"}`,background:catalogMuscle===""?"rgba(255,255,255,.08)":"transparent",color:catalogMuscle===""?"#EEEAE3":"rgba(255,255,255,.3)"}}>
-                {lang==="es"||lang==="pt"?"Todo":lang==="fr"?"Tout":lang==="it"?"Tutto":lang==="de"?"Alle":"All"}
-              </button>
-              {CATALOG.map(({muscle,color})=>{
-                const active=catalogMuscle===muscle;
-                return(<button key={muscle} onClick={()=>setCatalogMuscle(active?"":muscle)} style={{flexShrink:0,padding:"6px 14px",borderRadius:20,cursor:"pointer",fontFamily:mono,fontSize:9,letterSpacing:.5,whiteSpace:"nowrap",transition:"all .15s",border:`1px solid ${active?color+"88":"rgba(255,255,255,.07)"}`,background:active?color+"15":"transparent",color:active?color:"rgba(255,255,255,.3)"}}>{muscle}</button>);
-              })}
+        <div style={{fontFamily:mono_,fontSize:9,letterSpacing:3,color:dim,marginBottom:16}}>{tx.s3age}</div>
+        <div style={{display:"flex",alignItems:"center",gap:20,marginBottom:36}}>
+          <button onClick={()=>setAgeVal(v=>Math.max(13,v-1))} style={{
+            width:52,height:52,borderRadius:"50%",border:"1px solid rgba(255,255,255,0.12)",
+            background:card,color:W,fontSize:26,cursor:"pointer",flexShrink:0,
+          }}>−</button>
+          <div style={{flex:1,textAlign:"center"}}>
+            <div style={{fontFamily:BN,fontSize:80,color:G,lineHeight:1}}>{ageVal}</div>
+            <div style={{fontFamily:mono_,fontSize:9,letterSpacing:3,color:dim,marginTop:4}}>
+              {ob.lang==="es"||ob.lang==="pt"?"AÑOS":"YEARS OLD"}
             </div>
           </div>
-          <div style={{flex:1,overflowY:"auto",padding:"14px 16px 140px"}}>
-            {(manualRoutine[catalogDay]||[]).length>0&&(
-              <div style={{marginBottom:16,padding:"10px 14px",borderRadius:12,background:"rgba(95,210,136,.05)",border:"1px solid rgba(95,210,136,.1)"}}>
-                <div style={{fontFamily:mono,fontSize:8,color:"rgba(95,210,136,.5)",letterSpacing:2,textTransform:"uppercase",marginBottom:8}}>
-                  {lang==="es"||lang==="pt"?"EN ESTE DÍA":lang==="fr"?"CE JOUR":lang==="it"?"IN QUESTO GIORNO":lang==="de"?"AN DIESEM TAG":"THIS DAY"} · {(manualRoutine[catalogDay]||[]).length}
+          <button onClick={()=>setAgeVal(v=>Math.min(100,v+1))} style={{
+            width:52,height:52,borderRadius:"50%",border:"1px solid rgba(255,255,255,0.12)",
+            background:card,color:W,fontSize:26,cursor:"pointer",flexShrink:0,
+          }}>+</button>
+        </div>
+        <CBtn onClick={()=>{if(ok){set("age",ageVal);setObStep(4);}}} disabled={!ok}/>
+      </div>
+    );
+  }
+
+  // ── STEP 4: OBJETIVO ───────────────────────────────────────
+  if(obStep===4){
+    const goals=[
+      {id:"muscle",  em:"💪",label:tx.g1,desc:tx.g1d,color:"#4898e8"},
+      {id:"strength",em:"⚡",label:tx.g2,desc:tx.g2d,color:A},
+      {id:"lose",    em:"🔥",label:tx.g3,desc:tx.g3d,color:"#e05555"},
+      {id:"general", em:"⚖️",label:tx.g4,desc:tx.g4d,color:G},
+    ];
+    return (
+      <div style={wrap}>
+        <Prog cur={4} tot={7}/>
+        <BackB/>
+        <Title t={tx.s4t} sub={tx.s4sub} step={4} tot={7}/>
+        <div style={{marginTop:24,display:"flex",flexDirection:"column",gap:10}}>
+          {goals.map(g=>{
+            const sel=ob.goal===g.id;
+            return (
+              <button key={g.id}
+                onClick={()=>{set("goal",g.id);setTimeout(()=>setObStep(5),160);}}
+                style={{
+                  padding:"18px 20px",borderRadius:18,textAlign:"left",
+                  background:sel?"rgba(255,255,255,0.06)":card,
+                  border:sel?"1.5px solid "+g.color+"88":"1px solid rgba(255,255,255,0.07)",
+                  cursor:"pointer",display:"flex",alignItems:"center",gap:16,
+                  transition:"all 0.22s cubic-bezier(0.34,1.56,0.64,1)",
+                  transform:sel?"scale(1.02)":"scale(1)",
+                  boxShadow:sel?"0 0 20px "+g.color+"20":"none",
+                }}>
+                <div style={{
+                  width:44,height:44,borderRadius:12,flexShrink:0,
+                  background:sel?g.color+"18":"rgba(255,255,255,0.05)",
+                  border:"1px solid "+(sel?g.color+"44":"rgba(255,255,255,0.08)"),
+                  display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,
+                }}>{g.em}</div>
+                <div style={{flex:1}}>
+                  <div style={{fontFamily:mono_,fontSize:11,fontWeight:700,letterSpacing:2,
+                    color:sel?g.color:dim,marginBottom:3}}>{g.label}</div>
+                  <div style={{fontSize:12,color:"rgba(255,255,255,0.35)",lineHeight:1.4}}>{g.desc}</div>
                 </div>
-                <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-                  {(manualRoutine[catalogDay]||[]).map(ex=>{
-                    const esKey=Object.entries(ES_TO_META||{}).find(([k,v])=>v===ex)?.[0]||ex;
-                    return(<div key={ex} style={{display:"flex",alignItems:"center",gap:5,padding:"5px 10px 5px 13px",borderRadius:20,background:"rgba(95,210,136,.1)",border:"1px solid rgba(95,210,136,.18)"}}>
-                      <span style={{fontSize:11,color:"rgba(95,210,136,.9)",letterSpacing:-.2}}>{esKey.charAt(0).toUpperCase()+esKey.slice(1)}</span>
-                      <button onClick={e=>{e.stopPropagation();const r=[...manualRoutine];r[catalogDay]=(r[catalogDay]||[]).filter(x=>x!==ex);setManualRoutine(r);}} style={{background:"none",border:"none",color:"rgba(95,210,136,.4)",cursor:"pointer",fontSize:17,lineHeight:1,padding:"0 0 0 2px"}}>×</button>
-                    </div>);
-                  })}
-                </div>
-              </div>
-            )}
-            {CATALOG.filter(g=>!catalogMuscle||g.muscle===catalogMuscle).map(group=>{
-              const filtered=mode==="manual" ? group.exs : group.exs.filter(ex=>hasEquip(ex));
-              if(filtered.length===0) return null;
-              return(
-                <React.Fragment key={group.muscle}>
-                  {!catalogMuscle&&(
-                    <div style={{display:"flex",alignItems:"center",gap:10,padding:"6px 0 10px",marginTop:4}}>
-                      <div style={{width:2,height:16,borderRadius:2,background:group.color,flexShrink:0}}/>
-                      <div style={{fontFamily:mono,fontSize:9,color:group.color,letterSpacing:3,textTransform:"uppercase",fontWeight:700}}>{group.muscle}</div>
-                      <div style={{flex:1,height:1,background:"rgba(255,255,255,.04)"}}/>
-                    </div>
-                  )}
-                  <div style={{display:"flex",flexDirection:"column",gap:7,marginBottom:catalogMuscle?7:18}}>
-                    {filtered.map(ex=>{
-                      const esKey=Object.entries(ES_TO_META||{}).find(([k,v])=>v===ex)?.[0]||ex;
-                      const disp=esKey.charAt(0).toUpperCase()+esKey.slice(1);
-                      const added=(manualRoutine[catalogDay]||[]).includes(ex);
-                      const meta=EX_META[ex];
-                      const vidUrl=getVid(esKey)||getVid(ex);
-                      const DC={beginner:"#5fd288",intermediate:"#f0b43c",advanced:"#e85040"};
-                      const DL={beginner:lang==="es"||lang==="pt"?"Básico":lang==="fr"?"Débutant":lang==="it"?"Base":lang==="de"?"Anfänger":"Basic",intermediate:lang==="es"||lang==="pt"?"Medio":lang==="fr"?"Moyen":lang==="it"?"Medio":lang==="de"?"Mittel":"Mid",advanced:lang==="es"||lang==="pt"?"Avanzado":lang==="fr"?"Avancé":lang==="it"?"Avanzato":lang==="de"?"Fortgeschr.":"Adv"};
-                      return(
-                        <div key={ex} onClick={()=>{const r=[...manualRoutine];added?r[catalogDay]=(r[catalogDay]||[]).filter(x=>x!==ex):r[catalogDay]=[...(r[catalogDay]||[]),ex];setManualRoutine(r);}}
-                          style={{display:"flex",alignItems:"stretch",borderRadius:14,overflow:"hidden",cursor:"pointer",border:`1px solid ${added?"rgba(95,210,136,.25)":"rgba(255,255,255,.05)"}`,background:added?"rgba(95,210,136,.04)":"rgba(255,255,255,.015)",transition:"all .15s",minHeight:64}}>
-                          <div style={{width:3,flexShrink:0,background:added?"rgba(95,210,136,.6)":group.color+"33"}}/>
-                          {vidUrl?(
-                            <div style={{width:72,flexShrink:0,background:"rgba(0,0,0,.4)",overflow:"hidden"}}>
-                              <video src={vidUrl} muted loop playsInline preload="metadata"
-                                style={{width:"100%",height:"100%",objectFit:"cover",opacity:.5,display:"block"}}
-                                onLoadedMetadata={e=>{e.currentTarget.currentTime=0.5;}}
-                                onMouseEnter={e=>e.currentTarget.play()}
-                                onMouseLeave={e=>{e.currentTarget.pause();e.currentTarget.currentTime=0.5;}}
-                                onTouchStart={e=>{const v=e.currentTarget;v.paused?v.play():v.pause();}}
-                              />
-                            </div>
-                          ):(
-                            <div style={{width:72,flexShrink:0,background:"rgba(255,255,255,.02)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                              <div style={{fontFamily:mono,fontSize:18,opacity:.15}}>{group.color?"●":"—"}</div>
-                            </div>
-                          )}
-                          <div style={{flex:1,padding:"11px 10px",display:"flex",flexDirection:"column",justifyContent:"center",gap:4,minWidth:0}}>
-                            <div style={{fontSize:13,fontWeight:600,color:added?"rgba(95,210,136,.95)":"#EEEAE3",letterSpacing:-.3,lineHeight:1.2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{disp}</div>
-                            <div style={{display:"flex",alignItems:"center",gap:8}}>
-                              {(meta?.p||[]).slice(0,1).map(m=><span key={m} style={{fontFamily:mono,fontSize:8,color:"rgba(255,255,255,.22)",letterSpacing:.3,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:110}}>{m}</span>)}
-                              {meta?.diff&&<span style={{fontFamily:mono,fontSize:8,color:DC[meta.diff],letterSpacing:.5,marginLeft:"auto",flexShrink:0}}>{DL[meta.diff]}</span>}
-                            </div>
-                          </div>
-                          <div style={{width:50,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                            <div style={{width:30,height:30,borderRadius:"50%",transition:"all .15s",border:`1.5px solid ${added?"rgba(95,210,136,.5)":"rgba(255,255,255,.1)"}`,background:added?"rgba(95,210,136,.15)":"rgba(255,255,255,.03)",display:"flex",alignItems:"center",justifyContent:"center",color:added?"rgba(95,210,136,.9)":"rgba(255,255,255,.3)",fontSize:added?13:20,fontWeight:added?700:300,lineHeight:1}}>{added?"✓":"+"}</div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </React.Fragment>
-              );
-            })}
-          </div>
-          <div style={{position:"sticky",bottom:0,background:"rgba(7,8,10,.98)",backdropFilter:"blur(24px)",padding:"14px 20px 36px",borderTop:"1px solid rgba(255,255,255,.05)"}}>
-            {(manualRoutine[catalogDay]||[]).length===0&&(
-              <div style={{fontFamily:mono,fontSize:9,color:"rgba(255,255,255,.2)",letterSpacing:1,textAlign:"center",marginBottom:10}}>
-                {lang==="es"||lang==="pt"?"Agrega al menos 1 ejercicio":lang==="fr"?"Ajoutez au moins 1 exercice":lang==="it"?"Aggiungi almeno 1 esercizio":lang==="de"?"Mindestens 1 Übung hinzufügen":"Add at least 1 exercise"}
-              </div>
-            )}
-            {catalogDay<manualSelDays.length-1?(
-              <button onClick={()=>{if((manualRoutine[catalogDay]||[]).length>0){setCatalogDay(p=>p+1);setCatalogMuscle("");window.scrollTo(0,0);}}}
-                disabled={(manualRoutine[catalogDay]||[]).length===0}
-                style={{width:"100%",padding:"16px",borderRadius:14,cursor:"pointer",background:"#EEEAE3",color:"#07080a",border:"none",fontFamily:mono,fontSize:12,fontWeight:600,letterSpacing:2,textTransform:"uppercase",opacity:(manualRoutine[catalogDay]||[]).length===0?0.2:1,transition:"all .2s",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
-                {lang==="es"||lang==="pt"?"SIGUIENTE DÍA":lang==="fr"?"JOUR SUIVANT":lang==="it"?"GIORNO SUCCESSIVO":lang==="de"?"NÄCHSTER TAG":"NEXT DAY"}
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M7 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                {sel&&<div style={{width:8,height:8,borderRadius:"50%",flexShrink:0,
+                  background:g.color,boxShadow:"0 0 10px "+g.color}}/>}
               </button>
-            ):(
-              <button onClick={()=>{
-                const pf={lang,goal,level:levelSel,days:manualDays,age,weight,height,units,selDays:manualSelDays,gender,equipment};
-                const r=manualSelDays.map((_,i)=>(manualRoutine[i]||[]).map((ex,j)=>({e:Object.entries(ES_TO_META||{}).find(([k,v])=>v===ex)?.[0]||ex,s:3,r:"8-12",id:`m${i}${j}${ex}`})));
-                FStore.saveProfile(pf,r);sp(pf);sr(r);setStep(99);
-              }} disabled={(manualRoutine[catalogDay]||[]).length===0}
-                style={{width:"100%",padding:"16px",borderRadius:14,cursor:"pointer",background:"#BFA98A",color:"#07080a",border:"none",fontFamily:mono,fontSize:12,fontWeight:600,letterSpacing:3,textTransform:"uppercase",opacity:(manualRoutine[catalogDay]||[]).length===0?0.2:1,transition:"all .2s"}}>
-                {lang==="es"?"FORJAR RUTINA →":"FORGE ROUTINE →"}
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  // ── STEP 5: NIVEL ──────────────────────────────────────────
+  if(obStep===5){
+    const levels=[
+      {id:"beg",num:"01",label:tx.l1,desc:tx.l1d},
+      {id:"int",num:"02",label:tx.l2,desc:tx.l2d},
+      {id:"adv",num:"03",label:tx.l3,desc:tx.l3d},
+    ];
+    return (
+      <div style={wrap}>
+        <Prog cur={5} tot={7}/>
+        <BackB/>
+        <Title t={tx.s5t} sub={tx.s5sub} step={5} tot={7}/>
+        <div style={{marginTop:24,display:"flex",flexDirection:"column",gap:10}}>
+          {levels.map(l=>{
+            const sel=ob.level===l.id;
+            return (
+              <button key={l.id}
+                onClick={()=>{set("level",l.id);setTimeout(()=>setObStep(6),160);}}
+                style={{
+                  padding:"20px 20px",borderRadius:18,textAlign:"left",
+                  background:sel?"rgba(63,207,142,0.07)":card,
+                  border:sel?"1.5px solid rgba(63,207,142,0.5)":"1px solid rgba(255,255,255,0.07)",
+                  cursor:"pointer",display:"flex",alignItems:"center",gap:16,
+                  transition:"all 0.22s cubic-bezier(0.34,1.56,0.64,1)",
+                  transform:sel?"scale(1.02)":"scale(1)",
+                }}>
+                <div style={{
+                  fontFamily:BN,fontSize:32,color:sel?G:"rgba(255,255,255,0.1)",
+                  lineHeight:1,flexShrink:0,width:36,textAlign:"center",
+                  transition:"color 0.2s",
+                }}>{l.num}</div>
+                <div style={{flex:1}}>
+                  <div style={{fontFamily:mono_,fontSize:11,fontWeight:700,letterSpacing:2,
+                    color:sel?G:dim,marginBottom:3}}>{l.label}</div>
+                  <div style={{fontSize:12,color:"rgba(255,255,255,0.35)",lineHeight:1.4}}>{l.desc}</div>
+                </div>
               </button>
-            )}
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  // ── STEP 6: EQUIPO + DÍAS ─────────────────────────────────
+  if(obStep===6){
+    const equips=[
+      {id:"gym",  em:"🏋️",label:tx.e1,desc:tx.e1d},
+      {id:"home", em:"🏠",label:tx.e2,desc:tx.e2d},
+      {id:"bw",   em:"🤸",label:tx.e3,desc:tx.e3d},
+    ];
+    const toggleDay=(i)=>{
+      const cur=ob.selDays;
+      if(cur.includes(i)){
+        if(cur.length>1) set("selDays",cur.filter(x=>x!==i));
+      } else {
+        if(cur.length<ob.daysCount) set("selDays",[...cur,i].sort((a,b)=>a-b));
+      }
+    };
+    const ok=ob.equipment&&ob.selDays.length>0;
+    return (
+      <div style={wrap}>
+        <Prog cur={6} tot={7}/>
+        <BackB/>
+        <Title t={tx.s6t} sub={tx.s6sub} step={6} tot={7}/>
+        <div style={{marginTop:20,display:"flex",flexDirection:"column",gap:8,marginBottom:28}}>
+          {equips.map(e=>{
+            const sel=ob.equipment===e.id;
+            return (
+              <button key={e.id} onClick={()=>set("equipment",e.id)} style={{
+                padding:"14px 18px",borderRadius:16,textAlign:"left",
+                background:sel?"rgba(63,207,142,0.07)":card,
+                border:sel?"1.5px solid rgba(63,207,142,0.5)":"1px solid rgba(255,255,255,0.07)",
+                cursor:"pointer",display:"flex",alignItems:"center",gap:14,transition:"all 0.2s",
+              }}>
+                <span style={{fontSize:22,opacity:sel?1:0.5}}>{e.em}</span>
+                <div>
+                  <div style={{fontFamily:mono_,fontSize:10,fontWeight:700,letterSpacing:2,
+                    color:sel?G:dim,marginBottom:2}}>{e.label}</div>
+                  <div style={{fontSize:11,color:"rgba(255,255,255,0.35)"}}>{e.desc}</div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        <Title t={tx.s7t} sub={tx.s7sub} step={null}/>
+        <div style={{display:"flex",gap:8,margin:"20px 0 16px"}}>
+          {[3,4,5,6].map(n=>{
+            const sel=ob.daysCount===n;
+            return (
+              <button key={n} onClick={()=>{
+                set("daysCount",n);
+                const auto=[1,2,3,4,5,6,0].slice(0,n);
+                set("selDays",auto);
+              }} style={{
+                flex:1,padding:"14px 8px",borderRadius:14,
+                background:sel?"rgba(63,207,142,0.1)":card,
+                border:sel?"1.5px solid rgba(63,207,142,0.55)":"1px solid rgba(255,255,255,0.07)",
+                cursor:"pointer",transition:"all 0.2s",
+              }}>
+                <div style={{fontFamily:BN,fontSize:28,color:sel?G:dim,lineHeight:1}}>{n}</div>
+                <div style={{fontFamily:mono_,fontSize:7,letterSpacing:2,
+                  color:sel?"rgba(63,207,142,0.6)":dim,marginTop:4}}>
+                  {ob.lang==="es"||ob.lang==="pt"?"DÍAS":"DAYS"}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+        <div style={{display:"flex",gap:6,marginBottom:28}}>
+          {dn.map((d,i)=>{
+            const sel=ob.selDays.includes(i);
+            return (
+              <button key={i} onClick={()=>toggleDay(i)} style={{
+                flex:1,padding:"14px 4px",borderRadius:12,
+                background:sel?"rgba(63,207,142,0.13)":card,
+                border:sel?"1.5px solid rgba(63,207,142,0.55)":"1px solid rgba(255,255,255,0.07)",
+                cursor:"pointer",display:"flex",flexDirection:"column",
+                alignItems:"center",gap:6,
+                transition:"all 0.2s cubic-bezier(0.34,1.56,0.64,1)",
+                transform:sel?"scale(1.06)":"scale(1)",
+              }}>
+                <div style={{fontFamily:mono_,fontSize:7,letterSpacing:1,color:sel?G:dim}}>{d}</div>
+                <div style={{width:5,height:5,borderRadius:"50%",
+                  background:sel?G:"rgba(255,255,255,0.12)"}}/>
+              </button>
+            );
+          })}
+        </div>
+        <CBtn onClick={()=>setObStep(7)} disabled={!ok}/>
+      </div>
+    );
+  }
+
+  // ── STEP 7: CONFIRMAR ──────────────────────────────────────
+  if(obStep===7){
+    const goalLabels={muscle:tx.g1,strength:tx.g2,lose:tx.g3,general:tx.g4};
+    const levelLabels={beg:tx.l1,int:tx.l2,adv:tx.l3};
+    const equipLabels={gym:tx.e1,home:tx.e2,bw:tx.e3};
+    const summary=[
+      {label:tx.s8name,   val:ob.name},
+      {label:tx.s8gender, val:ob.gender==="male"?tx.s3gM:tx.s3gF},
+      {label:tx.s8age,    val:ob.age+" "+(ob.lang==="es"?"años":"yrs")},
+      {label:tx.s8goal,   val:goalLabels[ob.goal]||ob.goal},
+      {label:tx.s8level,  val:levelLabels[ob.level]||ob.level},
+      {label:tx.s8equip,  val:equipLabels[ob.equipment]||ob.equipment},
+      {label:tx.s8days,   val:ob.selDays.length+" "+(ob.lang==="es"?"días/sem":"d/wk")},
+    ];
+
+    if(generating){
+      const msgs=[tx.genMsg0,tx.genMsg1,tx.genMsg2,tx.genMsg3,tx.genMsg4];
+      const msgIdx=genPct<20?0:genPct<45?1:genPct<70?2:genPct<90?3:4;
+      return (
+        <div style={{position:"fixed",inset:0,background:bg,zIndex:99999,
+          display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:32}}>
+          <div style={{fontFamily:BN,fontSize:"clamp(36px,10vw,50px)",color:W,
+            textAlign:"center",lineHeight:0.95,marginBottom:6}}>
+            {ob.lang==="es"?"FORJANDO":"FORGING"}
           </div>
+          <div style={{fontFamily:BN,fontSize:"clamp(36px,10vw,50px)",color:G,
+            textAlign:"center",lineHeight:0.95,marginBottom:48}}>
+            {ob.lang==="es"?"TU RUTINA":"YOUR ROUTINE"}
+          </div>
+          <div style={{width:"100%",maxWidth:260,height:2,background:"rgba(255,255,255,0.08)",
+            borderRadius:1,overflow:"hidden",marginBottom:16}}>
+            <div style={{height:"100%",borderRadius:1,
+              background:"linear-gradient(90deg,"+G+",#26a866)",
+              width:genPct+"%",transition:"width 0.3s ease",
+              boxShadow:"0 0 12px rgba(63,207,142,0.5)"}}/>
+          </div>
+          <div style={{fontFamily:mono_,fontSize:9,letterSpacing:3,color:dim}}>{msgs[msgIdx]}</div>
         </div>
-      )}
-      {step===25&&(
-        <div style={{minHeight:"100vh",padding:"64px 26px 40px",boxSizing:"border-box"}}>
-          {(()=>{
-              const CELEB_CARDS=[
-                {id:"arnold",    img:IMGS_C.arnold,    ac:"#f0a830", label:"IRON ARNOLD",    name:{es:"SCHWARZENEGGER",en:"SCHWARZENEGGER"}, badge:"CHEST+BACK",days:6, split:"Pecho+Espalda / Piernas+Gemelos / Brazos+Hombros (×2)", lvl:{es:"EXTREMO",en:"EXTREME",fr:"EXTRÊME",it:"ESTREMO",de:"EXTREM",pt:"EXTREMO"},  source:"The New Encyclopedia of Modern Bodybuilding — Schwarzenegger & Dobbins (1998)", desc:{es:"Split documentado en su libro: Pecho+Espalda, Hombros+Brazos, Piernas — repetido 2x/semana. 5-6 series × 6-10 reps, pirámide invertida hasta fallo. Sesiones de 90-120 min.",en:"Documented in his book: Chest+Back, Shoulders+Arms, Legs — twice weekly. 5-6 sets x 6-10 reps, inverted pyramid to failure. 90-120 min sessions."}},
-                {id:"hemsworth", img:IMGS_C.hemsworth, ac:"#4898e8", label:"THOR WEEK",      name:{es:"HEMSWORTH",en:"HEMSWORTH"},           badge:"6 DÍAS",  days:6, split:"Espalda / Pecho / Piernas / Hombros / Brazos / HIIT",          lvl:{es:"ALTO",en:"HIGH",fr:"ÉLEVÉ",it:"ALTO",de:"HOCH",pt:"ALTO"},        source:"Luke Zocchi (trainer) . Centr App . Men's Health 2022", desc:{es:"Documentado por Luke Zocchi en Centr: press banca 8 series pirámide 12→4 reps. Fuerza heavy + HIIT funcional. Máx 60 min/sesión. Énfasis hombros y espalda para el look Thor.",en:"Documented by Luke Zocchi on Centr: bench press 8 sets pyramid 12→4 reps. Heavy strength + functional HIIT. Max 60 min/session. Shoulder and back emphasis for the Thor look."}},
-                {id:"rock",      img:IMGS_C.rock,      ac:"#30c870", label:"IRON PARADISE",  name:{es:"THE ROCK",en:"THE ROCK"},             badge:"4AM IRON",  days:6, split:"Piernas / Espalda / Hombros / Brazos / Piernas / Pecho",  lvl:{es:"BRUTAL",en:"BRUTAL",fr:"BRUTAL",it:"BRUTALE",de:"BRUTAL",pt:"BRUTAL"},    source:"Instagram @therock . Men's Journal . ESPN Body Issue 2019", desc:{es:"Documentado en Instagram: 4×12 base, pirámide semanal 12→10→8→6. Cardio 30-50 min en ayunas a las 4AM + 90 min pesas. Usa SSB squat (no barra clásica) y prensa. Sin peso muerto tradicional.",en:"Documented on Instagram: 4x12 base, weekly pyramid 12→10→8→6. 30-50 min fasted cardio at 4AM + 90 min weights. Uses SSB squat (not barbell) and leg press. No conventional deadlift."}},
-                {id:"goggins",   img:IMGS_C.goggins,   ac:"#e09020", label:"NO EXCUSES",     name:{es:"GOGGINS",en:"GOGGINS"},               badge:"CALISTENIA",days:7, split:"Circuito / Calistenia / Core / Gimnasio / Circuito / Calistenia / Core",               lvl:{es:"INFERNAL",en:"INFERNAL",fr:"INFERNAL",it:"INFERNALE",de:"INFERNAL",pt:"INFERNAL"},source:"Can't Hurt Me — David Goggins (2018) . podcasts verificados", desc:{es:"Documentado en su libro: calistenia pura, series al fallo absoluto sin número fijo. Regla del 40%: cuando crees que terminaste, vas al 40% de tu capacidad real. Cardio diario obligatorio. Entrena incluso lesionado.",en:"Documented in his book: pure calisthenics, sets to absolute failure with no fixed number. 40% rule: when you think you're done, you're at 40% of real capacity. Daily mandatory cardio. Trains through injury."}},
-                {id:"cavill",    img:IMGS_C.cavill,    ac:"#c83030", label:"SUPERMAN GRIND", name:{es:"CAVILL",en:"CAVILL"},                 badge:"POWERBUILD",days:5, split:"Tren inferior / Espalda / Hombros / Pecho / Full Body",      lvl:{es:"ALTO",en:"HIGH",fr:"ÉLEVÉ",it:"ALTO",de:"HOCH",pt:"ALTO"},        source:"Dave Rienzi (trainer) . Men's Health / GQ 2013-2023", desc:{es:"Reportado por Dave Rienzi: powerbuilding — fuerza base heavy (press banca >140kg) seguido de volumen estético. 4 series × 6-10 reps. Prep Man of Steel duró 10 meses. Énfasis en pecho y espalda.",en:"Reported by Dave Rienzi: powerbuilding — heavy base strength (140kg+ bench) then aesthetic volume. 4 sets x 6-10 reps. Man of Steel prep lasted 10 months. Chest and back emphasis."}},
-                {id:"ronaldo",   img:IMGS_C.ronaldo,   ac:"#d4a820", label:"CR7 CIRCUIT",    name:{es:"RONALDO",en:"RONALDO"},               badge:"ATLÉTICO",  days:5, split:"Fuerza / Explosivo / Funcional / Descanso / Pliometría",         lvl:{es:"ALTO",en:"HIGH",fr:"ÉLEVÉ",it:"ALTO",de:"HOCH",pt:"ALTO"},        source:"Múltiples fuentes verificadas 2022-2024 . Set For Set . Man of Many", desc:{es:"5 días, 3-4h/día. Lunes: circuito piernas ×3. Martes: upper body ×3. Miércoles: 5×5 power cleans (fuerza explosiva). Jueves: core y estabilidad. Viernes: full body. Reps altas (8-15) — sin levantamientos máximos.",en:"5 days, 3-4h/day. Monday: leg circuit x3. Tuesday: upper body x3. Wednesday: 5x5 power cleans (explosive strength). Thursday: core and stability. Friday: full body. High reps (8-15) — no max lifting."}},
-                {id:"stallone",  img:IMGS_C.stallone,  ac:"#e88020", label:"ROCKY PREP",     name:{es:"STALLONE",en:"STALLONE"},             badge:"GOLDEN ERA",days:6, split:"Pecho+Espalda+Abs / Piernas+Cardio / Hombros+Brazos (×2)",  lvl:{es:"ALTO",en:"HIGH",fr:"ÉLEVÉ",it:"ALTO",de:"HOCH",pt:"ALTO"},        source:"DVD extras Rocky III (1982) + Rocky IV (1985) . entrevistas verificadas", desc:{es:"Documentado en extras Rocky III/IV: dos sesiones diarias (mañana y tarde). En Rocky IV bajó a <1,000 kcal/día. Alta frecuencia de torso. Cardio matutino obligatorio. Énfasis en brazos, pecho y espalda para la silueta de boxeador.",en:"Documented in Rocky III/IV DVD extras: two daily sessions (morning and afternoon). Rocky IV prep: under 1,000 kcal/day. High upper body frequency. Mandatory morning cardio. Arms, chest and back emphasis for the boxer silhouette."}},
-                {id:"lebron",    img:IMGS_C.lebron,    ac:"#f0a818", label:"KING PROTOCOL",  name:{es:"LEBRON",en:"LEBRON"},                 badge:"KING",  days:5, split:"Full Body / Piernas / Upper Body / Conditioning / Core", lvl:{es:"ALTO",en:"HIGH",fr:"ÉLEVÉ",it:"ALTO",de:"HOCH",pt:"ALTO"},        source:"Mike Mancias (trainer) . Sports Illustrated . The Shop HBO", desc:{es:"Confirmado por trainer Mike Mancias: 5 días, enfoque en explosividad y movilidad funcional. +$1.5M/año en recuperación. Crioterapia, yoga y trabajo de movilidad integrados. Movimientos funcionales sobre aislamiento.",en:"Confirmed by trainer Mike Mancias: 5 days, focus on explosiveness and functional mobility. $1.5M+/year in recovery. Cryotherapy, yoga and mobility work integrated. Functional over isolation."}},
-                {id:"zyzz",      img:IMGS_C.zyzz,      ac:"#e050a8", label:"AESTHETICS GOD", name:{es:"ZYZZ",en:"ZYZZ"},                     badge:"BRO SPLIT", days:5, split:"Pecho+Tríceps / Espalda+Bíceps / Piernas / Hombros / Full Body",  lvl:{es:"MODERADO",en:"MODERATE",fr:"MODÉRÉ",it:"MODERATO",de:"MODERAT",pt:"MODERADO"},source:"Videos YouTube originales 2009-2011 . bodybuilding.com foros", desc:{es:"Documentado en sus videos: bro split 5 días, 4 series × 10-12 reps. Estética sobre fuerza — definición y proporción como objetivo. Cardio ligero 2-3×/semana. Dieta de definición. WGMM.",en:"Documented in his videos: 5-day bro split, 4 sets x 10-12 reps. Aesthetics over strength — definition and proportion as goal. Light cardio 2-3x/week. Cutting diet. WGMM."}},
-              ]
-              const CELEB_CARDS_F=[
-                {id:"serena",   img:IMGS_C.serena,   ac:"#e84393", label:"SERENA WEEK",     name:{es:"SERENA WILLIAMS",en:"SERENA WILLIAMS"}, badge:"GLUTES+CORE", days:5, split:"Brazos+Core / Booty Burnout / Core+Piernas / Cardio / Full Body", lvl:{es:"ALTO",en:"HIGH",fr:"ÉLEVÉ",it:"ALTO",de:"HOCH",pt:"ALTO"},    source:"Serena Williams official training breakdown — booty burnout + core circuits", desc:{es:"Circuitos de 3-5 series con 8-12 reps. 'Booty burnout' con sentadillas con barra, core intenso con fitball. Cardio suave día 4. Full body circuito día 5.",en:"Circuits of 3-5 sets x 8-12 reps. Booty burnout with barbell squats, intense core with fitball. Light cardio day 4. Full body circuit day 5."}},
-                {id:"galgadot", img:IMGS_C.galgadot, ac:"#c0a870", label:"WONDER WOMAN",    name:{es:"GAL GADOT",en:"GAL GADOT"},             badge:"BARBELL+HIIT", days:5, split:"Circuito / Barbell Complex / Push+Pull / Cardio / Complex+Core", lvl:{es:"EXTREMO",en:"EXTREME",fr:"EXTRÊME",it:"ESTREMO",de:"EXTREM",pt:"EXTREMO"}, source:"Gal Gadot Wonder Woman training — trainer Mark Twight / Gym Jones protocol", desc:{es:"Barbell complex sin soltar la barra: Romanian DL + Row + Reverse curl + Push press + Squat. 4 rondas. Shadow boxing + V-ups como superset. Muy exigente.",en:"Barbell complex without dropping the bar: Romanian DL + Row + Reverse curl + Push press + Squat. 4 rounds. Shadow boxing + V-ups superset. Very demanding."}},
-                {id:"jlo",      img:IMGS_C.jlo,      ac:"#f0b429", label:"J-LO WEEK",        name:{es:"JENNIFER LOPEZ",en:"JENNIFER LOPEZ"},    badge:"FULL BODY",   days:5, split:"Tren inferior / Tren superior / Funcional / Cardio / Full Body", lvl:{es:"MEDIO",en:"MEDIUM",fr:"MOYEN",it:"MEDIO",de:"MITTEL",pt:"MÉDIO"}, source:"Jennifer Lopez training program — trainer David Kirsch", desc:{es:"3-4 series de 10-15 reps. Énfasis en glúteos y tren inferior. Hip thrusts, sumo squat con balón medicinal, resistance bands. Cardio 30-40 min día 4.",en:"3-4 sets of 10-15 reps. Emphasis on glutes and lower body. Hip thrusts, sumo squat with medicine ball, resistance bands. 30-40 min cardio day 4."}},
-                {id:"margot",   img:IMGS_C.margot,   ac:"#4898e8", label:"CRAZY 8",           name:{es:"MARGOT ROBBIE",en:"MARGOT ROBBIE"},      badge:"CRAZY 8",    days:5, split:"Crazy 8 / Cardio / Crazy 8 Light / Fuerza / Cardio", lvl:{es:"ALTO",en:"HIGH",fr:"ÉLEVÉ",it:"ALTO",de:"HOCH",pt:"ALTO"}, source:"Margot Robbie Harley Quinn training — Crazy 8 circuit, trainer David Higgins", desc:{es:"Circuito 'Crazy 8': 8 ejercicios × 20-30 reps, 3-4 rondas. Lateral raises, tricep extensions, arabesques con peso, bodyweight squats. Explosivo.",en:"'Crazy 8' circuit: 8 exercises × 20-30 reps, 3-4 rounds. Lateral raises, tricep extensions, weighted arabesques, bodyweight squats. Explosive style."}},
-                {id:"zendaya",  img:IMGS_C.zendaya,  ac:"#9b59b6", label:"ZENDAYA CIRCUIT",  name:{es:"ZENDAYA",en:"ZENDAYA"},                  badge:"BODYWEIGHT",  days:5, split:"Circuito / Cardio / Circuito Light / Yoga+Core / Boxing+Cardio", lvl:{es:"MEDIO",en:"MEDIUM",fr:"MOYEN",it:"MEDIO",de:"MITTEL",pt:"MÉDIO"}, source:"Zendaya workout breakdown — bodyweight + boxing + yoga protocol", desc:{es:"Circuito bodyweight: knee push-ups, air squats, jump squats, burpees, sit-ups, lunges. Boxing en sombra. Yoga 30 min. Jogging 800m+ de base. Sin pesas.",en:"Bodyweight circuit: knee push-ups, air squats, jump squats, burpees, sit-ups, lunges. Shadow boxing. 30-min yoga. 800m+ jog base. No weights needed."}},
-                {id:"halle",    img:IMGS_C.halle,    ac:"#3fcf8e", label:"HALLE CIRCUIT",    name:{es:"HALLE BERRY",en:"HALLE BERRY"},           badge:"FUERZA+SALTO",days:4, split:"Circuito Halle / Cardio / Circuito Halle B / Core+Estabilidad", lvl:{es:"ALTO",en:"HIGH",fr:"ÉLEVÉ",it:"ALTO",de:"HOCH",pt:"ALTO"}, source:"Halle Berry strength circuit — low rep heavy training protocol", desc:{es:"Circuito intenso 6-8 reps, 3-5 vueltas: Arnold press + jump squat, V-ups + overhead press, jumping jacks + burpees. 45 s descanso entre rondas. Heavy.",en:"Intense circuit 6-8 reps, 3-5 rounds: Arnold press + jump squat, V-ups + overhead press, jumping jacks + burpees. 45s rest between rounds. Heavy."}},
-                {id:"brie",     img:IMGS_C.brie,     ac:"#e05555", label:"CAPTAIN MARVEL",   name:{es:"BRIE LARSON",en:"BRIE LARSON"},           badge:"PPL+FULL",    days:6, split:"Pull Day / Push Day / Piernas / Full Body / Full Body B / Descanso", lvl:{es:"EXTREMO",en:"EXTREME",fr:"EXTRÊME",it:"ESTREMO",de:"EXTREM",pt:"EXTREMO"}, source:"Brie Larson Captain Marvel — trainer Jason Walsh, documented workout week", desc:{es:"Pull: deadlift 5 series pirámide 12→3 reps + lat pulldown + chin-ups. Push: bench press pirámide + overhead press. Piernas: squats pirámide + hip thrusts. Full body día 4-5.",en:"Pull: deadlift 5 sets pyramid 12→3 reps + lat pulldown + chin-ups. Push: bench press pyramid + overhead press. Legs: squats pyramid + hip thrusts. Full body day 4-5."}},
-                {id:"scarlett", img:IMGS_C.scarlett, ac:"#48c9b0", label:"BLACK WIDOW",      name:{es:"SCARLETT JOHANSSON",en:"SCARLETT JOHANSSON"}, badge:"FUERZA+FUNC",days:5, split:"Fuerza A / Circuito / Recuperación / Fuerza B / Circuito B", lvl:{es:"ALTO",en:"HIGH",fr:"ÉLEVÉ",it:"ALTO",de:"HOCH",pt:"ALTO"}, source:"Scarlett Johansson Black Widow training — trainer Bobby Strom protocol", desc:{es:"Barbell squats + overhead press pirámide 8,8,8,5,3. Circuito funcional: pistol squats, pull-ups, medicine ball slams, jump rope. Recuperación activa día 3.",en:"Barbell squats + overhead press pyramid 8,8,8,5,3. Functional circuit: pistol squats, pull-ups, medicine ball slams, jump rope. Active recovery day 3."}},
-                {id:"jessica",  img:IMGS_C.jessica,  ac:"#f39c12", label:"JESSICA STRONG",   name:{es:"JESSICA ALBA",en:"JESSICA ALBA"},           badge:"UNILATERAL",  days:3, split:"Unilateral A / Unilateral+Core / Full Body", lvl:{es:"MEDIO",en:"MEDIUM",fr:"MOYEN",it:"MEDIO",de:"MITTEL",pt:"MÉDIO"}, source:"Jessica Alba full body strength day — documented training breakdown", desc:{es:"Énfasis unilateral: split squat trasero elevado, RDL unilateral, hip bridge + press pecho. Warm-up con F.A.S.T. hip rocks y bear planks. 2 rondas.",en:"Unilateral emphasis: rear-foot elevated split squat, single-leg RDL, hip bridge + chest press. Warm-up with F.A.S.T. hip rocks and bear planks. 2 rounds."}},
-                {id:"rihanna",  img:IMGS_C.rihanna,  ac:"#e91e63", label:"RIHANNA RUN",      name:{es:"RIHANNA",en:"RIHANNA"},                    badge:"CARDIO+FUERZA",days:4, split:"Cardio+Fuerza / Cardio+Fuerza B / Pilates+Core / Cardio+Fuerza C", lvl:{es:"MEDIO",en:"MEDIUM",fr:"MOYEN",it:"MEDIO",de:"MITTEL",pt:"MÉDIO"}, source:"Rihanna training declaration — 5K run + Pilates + light strength 3-5x/week", desc:{es:"Carrera 5K + Pilates 30 min + 25 reps: squats, lunges, reverse crunches. Simple pero consistente. Pilates enfocado en core día 3. Sin excesos.",en:"5K run + 30 min Pilates + 25 reps: squats, lunges, reverse crunches. Simple but consistent. Core-focused Pilates day 3. No overcomplication."}},
-              ];
-              return(<>
-                <div style={{fontSize:10,fontFamily:mono,color:"rgba(255,255,255,.18)",letterSpacing:3,marginBottom:8,textTransform:"uppercase"}}>{lang==="es"?"ELIGE TU RETO":"CHOOSE YOUR CHALLENGE"}</div>
-                <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:36,letterSpacing:3,lineHeight:.9,marginBottom:4,
-                  background:"linear-gradient(135deg,rgba(255,255,255,.95) 0%,rgba(255,255,255,.4) 100%)",
-                  WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"
-                }}>{lang==="es"||lang==="pt"?"ENTRENA COMO":lang==="fr"?"ENTRAÎNE-TOI COMME":lang==="it"?"ALLENATI COME":lang==="de"?"TRAINIERE WIE":"TRAIN LIKE"}<br/>{lang==="es"||lang==="pt"?"UNA LEYENDA":lang==="fr"?"UNE LÉGENDE":lang==="it"?"UNA LEGGENDA":lang==="de"?"EINE LEGENDE":"A LEGEND"}</div>
-                <div style={{fontFamily:mono,fontSize:9,color:"rgba(255,255,255,.18)",letterSpacing:2,marginBottom:18}}>{lang==="es"||lang==="pt"?"RETO SEMANAL . RUTINA VERIFICADA":lang==="fr"?"DÉFI HEBDO . ROUTINE VÉRIFIÉE":lang==="it"?"SFIDA SETTIMANALE . ROUTINE VERIFICATA":lang==="de"?"WOCHENROUTINE . VERIFIZIERTES PROGRAMM":"WEEKLY CHALLENGE . VERIFIED ROUTINE"}</div>
-                <div style={{display:"flex",gap:6,marginBottom:14}}>
-                  {[{v:"m",label:lang==="es"?"♂ HOMBRES":"♂ MEN",color:"#4898e8"},
-                    {v:"f",label:lang==="es"?"♀ MUJERES":"♀ WOMEN",color:"#e84393"}].map(g=>(
-                    <button key={g.v} onClick={()=>{setCelebGender(g.v);setSelCeleb(null);}}
-                      style={{flex:1,padding:"8px 0",borderRadius:10,border:"none",cursor:"pointer",
-                        background:celebGender===g.v?`${g.color}22`:"rgba(255,255,255,0.04)",
-                        color:celebGender===g.v?g.color:"rgba(255,255,255,0.4)",
-                        fontFamily:mono,fontSize:10,fontWeight:700,letterSpacing:2,
-                        boxShadow:celebGender===g.v?`0 0 0 1.5px ${g.color}88`:"0 0 0 1px rgba(255,255,255,0.08)",
-                        transition:"all .2s"}}>
-                      {g.label}
-                    </button>
-                  ))}
-                </div>
-                <div style={{marginLeft:-26,marginRight:-26,paddingLeft:26,paddingRight:26,overflowX:"auto",overflowY:"visible",marginBottom:16,WebkitOverflowScrolling:"touch",msOverflowStyle:"none",scrollbarWidth:"none"}}>
-                  <div style={{display:"flex",gap:10,paddingTop:14,paddingBottom:12,width:"max-content",overflow:"visible"}}>
-                    {(celebGender==="f"?CELEB_CARDS_F:CELEB_CARDS).map(({id,img,ac,label,name,badge,days,lvl},cardIdx)=>{
-                      const on=selCeleb===id;
-                      const locked=!isPro()&&cardIdx>=FREE_CELEB_LIMIT;
-                      return(
-                        <div key={id} onClick={()=>locked?setShowProModal(true):setSelCeleb(on?null:id)} style={{
-                          position:"relative",flexShrink:0,width:148,height:234,borderRadius:18,overflow:"hidden",cursor:"pointer",
-                          border:`1.5px solid ${locked?"rgba(255,255,255,.04)":on?ac:"rgba(255,255,255,.07)"}`,
-                          opacity:locked?0.55:1,
-                          transition:"all .3s cubic-bezier(.34,1.56,.64,1)",
-                          transform:on?"translateY(-8px) scale(1.04)":"scale(1)",
-                          boxShadow:on?`0 0 0 1px ${ac},0 20px 48px rgba(0,0,0,.7),0 0 40px ${ac}33`:"none",
-                        }}>
-                          <img src={img||""} alt="" style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",
-                            filter:on?"brightness(.9) saturate(1.1)":"brightness(.7) saturate(.8)",
-                            transition:"filter .3s",transform:"scale(1.05)"}}
-                            onError={e=>{e.target.style.display="none";}}/>
-                          <div style={{position:"absolute",top:0,left:0,right:0,height:"30%",background:"linear-gradient(rgba(0,0,0,.4),transparent)",pointerEvents:"none"}}/>
-                          <div style={{position:"absolute",bottom:0,left:0,right:0,height:"60%",background:"linear-gradient(transparent,rgba(0,0,0,.97) 60%)",pointerEvents:"none"}}/>
-                          {on&&<div style={{position:"absolute",inset:0,background:`radial-gradient(ellipse at 50% 60%,${ac}20 0%,transparent 70%)`,pointerEvents:"none"}}/>}
-                          <div style={{position:"absolute",inset:0,borderRadius:18,background:"linear-gradient(135deg,rgba(255,255,255,.08) 0%,transparent 40%,rgba(0,0,0,.2) 100%)",pointerEvents:"none"}}/>
-                          <div style={{position:"absolute",top:0,left:0,width:3,height:"100%",background:`linear-gradient(180deg,${ac},transparent)`,opacity:on?1:.7,borderRadius:"18px 0 0 18px"}}/>
-                          <div style={{position:"absolute",top:11,right:11,fontFamily:mono,fontSize:7,letterSpacing:2,color:ac,background:"rgba(0,0,0,.75)",padding:"3px 7px",borderRadius:5,border:`1px solid ${ac}55`,backdropFilter:"blur(4px)"}}>{badge}</div>
-                          <div style={{position:"absolute",top:11,left:11,width:20,height:20,borderRadius:"50%",background:ac,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#fff",fontWeight:900,opacity:on?1:0,transform:on?"scale(1) rotate(0)":"scale(0) rotate(-180deg)",transition:"all .3s cubic-bezier(.34,1.56,.64,1)",boxShadow:`0 0 12px ${ac}`}}>✓</div>
-                          {locked&&(
-                            <div style={{position:"absolute",inset:0,zIndex:10,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:"rgba(8,10,14,0.65)",backdropFilter:"blur(2px)"}}>
-                              <div style={{fontSize:20,marginBottom:6}}>🔒</div>
-                              <div style={{fontFamily:"'SF Mono','Fira Code',monospace",fontSize:8,color:"#c0a870",letterSpacing:2,fontWeight:700}}>PRO</div>
-                            </div>
-                          )}
-                          <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"6px 12px 14px"}}>
-                            <div style={{fontFamily:mono,fontSize:8,letterSpacing:2.5,color:ac,marginBottom:3,opacity:.95}}>{label}</div>
-                            <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:18,letterSpacing:1.5,color:"#fff",lineHeight:1,marginBottom:7}}>{name[lang]||name.en}</div>
-                            <div style={{display:"flex",alignItems:"center",gap:5}}>
-                              <span style={{fontFamily:mono,fontSize:8,color:"rgba(255,255,255,.65)",letterSpacing:1.5}}>{days} {(L[lang]||L.en).days.split(" /")[0]}</span>
-                              <span style={{fontFamily:mono,fontSize:7,padding:"2px 6px",borderRadius:4,border:`1px solid ${ac}`,color:ac,letterSpacing:1.5,opacity:.9}}>{lvl[lang]||lvl.en}</span>
-                              {['EXTREMO','INFERNAL','BRUTAL','EXTREME','INFERNAL','BRUTAL','EXTRÊME','ESTREMO'].includes(lvl.es||lvl.en)&&(
-                                <span style={{fontSize:9,opacity:.7}} title="Alto riesgo de sobreentrenamiento">⚠️</span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-                {selCeleb&&(()=>{
-                  const card=[...CELEB_CARDS,...CELEB_CARDS_F].find(x=>x.id===selCeleb);
-                  if(!card)return null;
-                  return(
-                    <div style={{borderRadius:18,overflow:"hidden",marginBottom:16,background:"rgba(255,255,255,.04)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",border:`1px solid ${card.ac}33`,boxShadow:`inset 0 1px 0 rgba(255,255,255,.08),0 0 24px ${card.ac}18`}}>
-                      <div style={{padding:"14px 16px",borderBottom:"1px solid rgba(255,255,255,.05)",background:"rgba(255,255,255,.02)",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                        <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:22,letterSpacing:2,color:card.ac}}>{card.label}</div>
-                        <div style={{fontFamily:mono,fontSize:8,color:"rgba(255,255,255,.6)",letterSpacing:2}}>{card.days} {(L[lang]||L.en).days.split(" /")[0]} . {card.split}</div>
-                      </div>
-                      <div style={{padding:"12px 16px"}}>
-                        <div style={{fontSize:11,color:"rgba(255,255,255,.5)",lineHeight:1.65,borderLeft:`2px solid ${card.ac}`,paddingLeft:12,marginBottom:12}}>{lang==="es"?card.desc.es:card.desc.en}</div>
-                        <div style={{fontFamily:mono,fontSize:8,color:"rgba(255,255,255,.18)",fontStyle:"italic",marginBottom:6}}>📖 {card.source}</div>
-                      {(()=>{
-                        const EQL={"rack":"Rack+Barra","bench":"Banco","dumbbells":"Mancuernas","pull_up_bar":"Barra dominadas","dip_bar":"Paralelas","cable_machine":"Polea","leg_extension":"Leg extension","ez_bar":"Barra Z/EZ","weight_vest":"Chaleco"};
-                        const allExs=Object.values(CELEB_EXERCISES[card.id]||{}).flat();
-                        const needed=new Set();
-                        allExs.forEach(ex=>{(CELEB_EQ_NEEDS[typeof ex==="string"?ex:ex.e]||[]).forEach(e=>needed.add(e));});
-                        const items=[...needed].filter(e=>EQL[e]);
-                        if(!items.length)return null;
-                        return(<div style={{marginBottom:10,padding:"10px 12px",background:"rgba(255,255,255,0.04)",borderRadius:10,border:"1px solid rgba(255,255,255,0.07)"}}>
-                          <div style={{fontSize:8,fontFamily:mono,color:"rgba(255,255,255,.3)",letterSpacing:2,marginBottom:8}}>{lang==="es"?"// EQUIPO NECESARIO":"// REQUIRED EQUIPMENT"}</div>
-                          <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-                            {items.map(e=>(<span key={e} style={{fontSize:8,fontFamily:mono,padding:"3px 8px",borderRadius:20,background:"rgba(255,255,255,0.06)",color:"rgba(255,255,255,0.6)",border:"1px solid rgba(255,255,255,0.1)"}}>{EQL[e]}</span>))}
-                          </div>
-                        </div>);
-                      })()}
-                      <div style={{fontFamily:mono,fontSize:7,color:"rgba(255,255,255,.1)",letterSpacing:.3,lineHeight:1.5,borderTop:"1px solid rgba(255,255,255,.04)",paddingTop:8}}>
-                      <div style={{marginTop:12,padding:"10px 14px",borderRadius:10,
-                        background:"rgba(240,168,24,0.08)",border:"1px solid rgba(240,168,24,0.25)"}}>
-                        <div style={{display:"flex",alignItems:"flex-start",gap:8,marginBottom:6}}>
-                          <span style={{fontSize:14,flexShrink:0}}>⚠️</span>
-                          <div style={{fontFamily:mono,fontSize:8,color:"#f0a818",letterSpacing:1,fontWeight:700,lineHeight:1.5}}>
-                            {lang==="es"||lang==="pt"?"BAJO TU PROPIO RIESGO":
-                             lang==="fr"?"À TES RISQUES ET PÉRILS":
-                             lang==="it"?"A TUO RISCHIO E PERICOLO":
-                             lang==="de"?"AUF EIGENE GEFAHR":
-                             "USE AT YOUR OWN RISK"}
-                          </div>
-                        </div>
-                        <div style={{fontFamily:mono,fontSize:8,color:"rgba(255,255,255,0.45)",lineHeight:1.7,paddingLeft:22}}>
-                          {lang==="es"||lang==="pt"
-                            ?"Esta es la rutina real documentada del atleta — diseñada para su nivel y años de adaptación. El volumen puede superar tus límites actuales (MEV/MRV) y llevar la carga semanal a zona de riesgo. Empieza con 3-4 días, escucha tu cuerpo y aumenta gradualmente."
-                            :lang==="fr"
-                            ?"Il s'agit de la vraie routine documentée de cet athlète — conçue pour son niveau et ses années d'adaptation. Le volume peut dépasser tes limites actuelles et augmenter le risque de blessure. Commence par 3-4 jours et augmente progressivement."
-                            :lang==="it"
-                            ?"Questa è la routine documentata reale dell'atleta — progettata per il suo livello e anni di adattamento. Il volume può superare i tuoi limiti attuali e portare il carico a zona di rischio. Inizia con 3-4 giorni e aumenta gradualmente."
-                            :lang==="de"
-                            ?"Dies ist die dokumentierte echte Routine des Athleten — entwickelt für sein Niveau und Jahre der Anpassung. Das Volumen kann deine aktuellen Grenzen übersteigen. Beginne mit 3-4 Tagen und steigere dich schrittweise."
-                            :"This is the athlete's real documented routine — designed for their level and years of adaptation. Volume may exceed your current limits (MEV/MRV) and push weekly load into risk zone. Start with 3-4 days, listen to your body, and build gradually."}
-                        </div>
-                        <div style={{fontFamily:mono,fontSize:7,color:"rgba(255,255,255,0.2)",marginTop:6,paddingLeft:22,letterSpacing:.3}}>
-                          {lang==="es"||lang==="pt"?"📖 Fuente verificada · Series/reps adaptadas al equipamiento":
-                           lang==="fr"?"📖 Source vérifiée · Séries/reps adaptées à l'équipement":
-                           lang==="it"?"📖 Fonte verificata · Serie/reps adattate all'attrezzatura":
-                           lang==="de"?"📖 Verifizierte Quelle · Sätze/Wdhl. ans Equipment angepasst":
-                           "📖 Verified source · Sets/reps adapted to available equipment"}
-                        </div>
-                      </div></div>
-                      </div>
-                    </div>
-                  );
-                })()}
-                <div style={{display:"flex",gap:10}}>
-                  <div style={{flex:1}}><Btn ghost onClick={()=>setStep(2)}>{t.back}</Btn></div>
-                  <div style={{flex:2}}><Btn disabled={!selCeleb} onClick={()=>{
-                    const cel=[...CELEB_CARDS,...CELEB_CARDS_F].find(x=>x.id===selCeleb);
-                    if(!cel)return;
-setDays(cel.days);setCelebData(cel);const sd=profile?.selDays;const autoSd=[1,2,3,4,5,6,0].slice(0,cel.days);setSelDays(sd&&sd.length===cel.days?sd:autoSd);
-sp(p=>({...p,celebrity:selCeleb,mode:'celebrity',selDays:sd&&sd.length===cel.days?sd:autoSd,days:cel.days}));setStep(99);
-                  }}>{lang==="es"?"ELEGIR ESTA RUTINA →":"SELECT THIS ROUTINE →"}</Btn></div>
-                </div>
-              </>);
-            })()}
-        </div>
-      )}
-      {step===26&&(
-        <div style={{position:"fixed",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"0 28px",background:"#07080a",zIndex:50,animation:"forjaFadeSlide .38s ease"}}>
-          <div style={{fontFamily:mono,fontSize:9,letterSpacing:4,color:"rgba(238,234,227,.85)",textTransform:"uppercase",marginBottom:14,display:"flex",alignItems:"center",gap:10}}><span style={{width:18,height:1,background:"rgba(238,234,227,.1)",display:"block"}}/>{lang==="es"||lang==="pt"?"HORARIO":lang==="fr"?"PLANNING":lang==="it"?"PROGRAMMA":lang==="de"?"ZEITPLAN":"SCHEDULE"}<span style={{width:18,height:1,background:"rgba(238,234,227,.1)",display:"block"}}/></div>
-          <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:60,letterSpacing:2,lineHeight:.92,textAlign:"center",marginBottom:6}}>{lang==="es"||lang==="pt"?"QUÉ":lang==="fr"?"QUELS":lang==="it"?"QUALI":lang==="de"?"WELCHE":"WHICH"}<br/><span style={{color:"#BFA98A"}}>{(L[lang]||L.en).days.split(" /")[0]}</span></div>
-          <div style={{fontSize:11,color:"rgba(238,234,227,.65)",textAlign:"center",marginBottom:32,fontFamily:mono}}>{celebData&&`${celebData.days}x/${lang==="fr"?"semaine":lang==="it"?"settimana":lang==="de"?"Woche":lang==="pt"?"semana":"week"} . ${(typeof celebData.name==="object"?(celebData.name[lang]||celebData.name.es):celebData.name)||celebData.id}`}</div>
-          <div style={{display:"flex",gap:5,marginBottom:36}}>{celebData&&Array.from({length:celebData.days}).map((_,i)=>(<div key={i} style={{width:5,height:5,borderRadius:"50%",background:selDays.length>i?"#BFA98A":"rgba(238,234,227,.12)",transform:selDays.length>i?"scale(1.3)":"scale(1)",transition:"all .3s"}}/>))}</div>
-          <div style={{display:"flex",gap:7,width:"100%",maxWidth:390,marginBottom:20}}>
-            {(lang==="es"?["L","M","X","J","V","S","D"]:["M","T","W","T","F","S","S"]).map((letter,i)=>{
-              const full=lang==="es"?["LUN","MAR","MIÉ","JUE","VIE","SÁB","DOM"]:["MON","TUE","WED","THU","FRI","SAT","SUN"];
-              const nd=celebData?celebData.days:7;
-              const sel=selDays.includes(i),dim=!sel&&selDays.length>=nd;
-              return(
-              <div key={i} onClick={()=>{if(sel)setSelDays(p=>p.filter(x=>x!==i));else if(!dim)setSelDays(p=>[...p,i]);}} style={{flex:1,aspectRatio:"1",borderRadius:"50%",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:dim?"default":"pointer",border:`1.5px solid ${sel?"rgba(191,169,138,.55)":"rgba(238,234,227,.08)"}`,background:sel?"rgba(191,169,138,.09)":"transparent",transform:sel?"scale(1.1)":"scale(1)",opacity:dim?0.2:1,transition:"all .25s cubic-bezier(.34,1.56,.64,1)",position:"relative"}}>
-                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:15,color:sel?"#EEEAE3":"rgba(238,234,227,.3)",lineHeight:1}}>{letter}</div>
-                <div style={{fontFamily:mono,fontSize:6.5,color:sel?"#BFA98A":"rgba(238,234,227,.2)",marginTop:2}}>{full[i]}</div>
-                {sel&&<div style={{position:"absolute",top:-3,right:-3,width:13,height:13,borderRadius:"50%",background:"#BFA98A",display:"flex",alignItems:"center",justifyContent:"center"}}><svg width="6" height="6" viewBox="0 0 6 6" fill="none"><path d="M1 3l1.5 1.5 2.5-2.5" stroke="#07080a" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg></div>}
+      );
+    }
+
+    const doGenerate=()=>{
+      setGenerating(true);
+      let p=0;
+      const iv=setInterval(()=>{
+        p+=Math.random()*15+8;
+        if(p>=100){
+          p=100;
+          clearInterval(iv);
+          setGenPct(100);
+          setTimeout(()=>{
+            // Generar rutina real
+            const days=ob.selDays.length||ob.daysCount||4;
+            const key=String(days)+(ob.level||"beg");
+            const splits=RAW[key]||RAW[String(days)+"beg"]||Object.values(RAW)[0];
+            const sd=ob.selDays.length>0?ob.selDays:[0,1,2,3].slice(0,days);
+            const filtered=splits?splits.map(day=>({
+              ...day,
+              ex:day.ex.map(ex=>({...ex,e:canDoAuto(ex.e,ob.equipment||"gym")}))
+            })):[];
+            const routine=buildRoutine7(filtered,sd,ob.goal||"general",ob.equipment||"gym");
+            const pf={
+              lang:ob.lang,goal:ob.goal||"general",level:ob.level||"beg",
+              days:days,selDays:sd,gender:ob.gender||"male",age:ob.age||25,
+              weight:70,height:175,units:ob.units||"metric",
+              equipment:ob.equipment||"gym",name:ob.name||"Atleta",
+              mode:"auto",toured:false,
+            };
+            FStore.saveProfile(pf,routine);
+            sp(pf);sr(routine);setStep(99);
+          },400);
+        } else {
+          setGenPct(Math.round(p));
+        }
+      },200);
+    };
+
+    return (
+      <div style={wrap}>
+        <Prog cur={7} tot={7}/>
+        <BackB/>
+        <Title t={tx.s8t+(ob.name||""+"!")} sub={tx.s8sub} step={7} tot={7}/>
+        <div style={{marginTop:20,display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:20}}>
+          {summary.map((s,i)=>(
+            <div key={i} style={{padding:"12px 14px",borderRadius:14,background:card,
+              border:"1px solid rgba(255,255,255,0.06)"}}>
+              <div style={{fontFamily:mono_,fontSize:7,letterSpacing:2,color:dim,marginBottom:4}}>
+                {s.label}
               </div>
-            );})}
-          </div>
-          <div style={{fontSize:12,color:"rgba(238,234,227,.8)",textAlign:"center",minHeight:18,marginBottom:32}}>
-            {celebData&&(selDays.length===celebData.days?(lang==="es"?"¡Listo. Tu semana está set.":lang==="fr"?"Parfait.":lang==="it"?"Perfetto.":lang==="de"?"Alles bereit.":lang==="pt"?"Tudo certo.":"All set."):(lang==="es"?`${celebData.days-selDays.length} día${celebData.days-selDays.length!==1?"s":""} más`:`${celebData.days-selDays.length} more day${celebData.days-selDays.length!==1?"s":""}`))}
-          </div>
-          <div style={{display:"flex",gap:8,width:"100%",maxWidth:390}}>
-            <button onClick={()=>setStep(25)} style={{flex:1,padding:"16px",borderRadius:14,cursor:"pointer",background:"transparent",color:"rgba(238,234,227,.8)",border:"1px solid rgba(238,234,227,.1)",fontFamily:mono,fontSize:11,letterSpacing:1}}>{t.back}</button>
-            <button disabled={!celebData||selDays.length!==celebData?.days} onClick={()=>{
-              if(!celebData)return;
-              const r=buildCelebRoutine(celebData,[],selDays);
-              const pf={lang,goal:"muscle",level:"int",days:celebData.days,age,weight,height,units,selDays,gender,equipment:[],mode:"celebrity",celebrity:celebData.id};
-              FStore.saveProfile(pf,r);sp(pf);sr(r);setStep(99);
-            }} style={{flex:2,padding:"16px",borderRadius:14,cursor:"pointer",background:"#EEEAE3",color:"#07080a",border:"none",fontFamily:mono,fontSize:11,fontWeight:500,letterSpacing:2,textTransform:"uppercase",opacity:(!celebData||selDays.length!==celebData?.days)?0.28:1,transition:"all .18s",display:"flex",alignItems:"center",justifyContent:"center",gap:9}}>
-              {(L[lang]||L.en).go}
-            </button>
-          </div>
+              <div style={{fontFamily:mono_,fontSize:10,fontWeight:700,color:W,
+                textTransform:"uppercase",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                {s.val}
+              </div>
+            </div>
+          ))}
         </div>
-      )}
-    </div>
-  );
+        <div style={{fontFamily:mono_,fontSize:9,letterSpacing:3,color:dim,marginBottom:10}}>
+          {tx.s8units}
+        </div>
+        <div style={{display:"flex",gap:8,marginBottom:24}}>
+          {[{id:"metric",label:tx.s8kg},{id:"imperial",label:tx.s8lb}].map(u=>(
+            <button key={u.id} onClick={()=>set("units",u.id)} style={{
+              flex:1,padding:"12px",borderRadius:12,
+              background:ob.units===u.id?"rgba(63,207,142,0.08)":card,
+              border:ob.units===u.id?"1.5px solid rgba(63,207,142,0.45)":"1px solid rgba(255,255,255,0.07)",
+              cursor:"pointer",fontFamily:mono_,fontSize:10,letterSpacing:1,
+              color:ob.units===u.id?G:dim,transition:"all 0.2s",
+            }}>{u.label}</button>
+          ))}
+        </div>
+        <CBtn onClick={doGenerate} label={tx.s8go}/>
+      </div>
+    );
+  }
+
+  return null;
 }
+
 function getZoneState(zk, st) {
   const ts = st[zk]; if(!ts) return "rec";
   const h = (Date.now()-ts)/3600000, rec = ZONE_REC_HOURS[zk]||72;
