@@ -4202,9 +4202,10 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
 
             return e("div",{key:i,
               style:{display:"flex",flexDirection:"column",alignItems:"center",gap:6,opacity:isFuture&&!isToday?0.3:1},
-              onClick:function(){
-                window.dispatchEvent(new CustomEvent("forja:selectDay",{detail:{day:i}}));
-              }},
+              onClick:(function(dayIdx){return function(){
+                if(setSel)setSel(dayIdx);
+                if(setTab)setTab("train");
+              };})(i)},
               e("div",{style:dotStyle},inner),
               e("span",{style:{fontSize:7,letterSpacing:1.5,color:labelColor,fontFamily:mono}},
                 (DN2[lang]||DN2.es)[i])
