@@ -4203,8 +4203,7 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
             return e("div",{key:i,
               style:{display:"flex",flexDirection:"column",alignItems:"center",gap:6,opacity:isFuture&&!isToday?0.3:1},
               onClick:function(){
-                if(typeof setSel==="function") setSel(i);
-                if(typeof setTab==="function") setTab("train");
+                window.dispatchEvent(new CustomEvent("forja:selectDay",{detail:{day:i}}));
               }},
               e("div",{style:dotStyle},inner),
               e("span",{style:{fontSize:7,letterSpacing:1.5,color:labelColor,fontFamily:mono}},
@@ -4309,6 +4308,8 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   React.useEffect(()=>{
     const startHandler=()=>{if(day&&day.ex&&day.ex.length)setInWorkout(true);};
     window.addEventListener("forja:startWorkout",startHandler);
+    const selectDayHandler=(ev)=>{if(ev.detail&&ev.detail.day!==undefined){setSel(ev.detail.day);setTabR("train");setAddEx(false);setInWorkout(false);}};
+    window.addEventListener("forja:selectDay",selectDayHandler);
     const toggleHandler=(ev)=>{
       const s=ev.detail&&ev.detail.sel!==undefined?ev.detail.sel:sel;
       const r=routine?routine[s]:null;
@@ -4325,6 +4326,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
     return()=>{
       window.removeEventListener("forja:startWorkout",startHandler);
       window.removeEventListener("forja:toggleDay",toggleHandler);
+      window.removeEventListener("forja:selectDay",selectDayHandler);
     };
   },[day,done,routine,sel]);
   React.useEffect(()=>{
