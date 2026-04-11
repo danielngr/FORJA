@@ -2627,7 +2627,10 @@ const VID={
 const getVid=name=>{
   if(!name) return null;
   const low=name.toLowerCase().trim();
-  return VID[low]||VID[ES_TO_META[low]]||null;
+  const result=VID[low]||VID[ES_TO_META[low]]||null;
+  if(!result) console.log("[FORJA] No video for:",JSON.stringify(low));
+  else console.log("[FORJA] Video found:",low,"→",result.slice(-40));
+  return result;
 };
 const epley=(w,r)=>r===1?+w:Math.round(+w*(1+0.0333*+r));
 const ARC_C=2*Math.PI*18; // circumference r=18
