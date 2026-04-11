@@ -4025,35 +4025,21 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
   fitnessAge=Math.max(userAge-15, Math.min(userAge+15, fitnessAge));
   var ageDiff=userAge-fitnessAge; // positivo = corazón más joven
 
-  // trainDone real = días con TODOS los ejercicios completados esta semana
-  // incluyendo el estado actual de done[]
-  var trainDoneReal=0;
-  for(var wi=0;wi<7;wi++){
-    var rw=routine?routine[wi]:null;
-    if(!rw||!rw.ex||!rw.ex.length) continue;
-    if(rw.ex.every(function(x){return done[wi+"-"+x.id];})) trainDoneReal++;
-  }
-  // Delta semanal basado en estudios de detraining (PMC9398774, PMC10853933)
-  // <10 días sin entrenar: cambio insignificante
-  // 3 semanas sin entrenar: -4.18% VO2max → ~+0.1 años Fitness Age
-  // 5+ días/sem entrenando: ~-0.1 años
-  // Estado del corazón: vivo = todos los ejercicios de HOY completados
-  var todayExs=todayR?todayR.ex:[];
-  var heartAlive=todayExs.length>0&&todayExs.every(function(x){return done[tdi+"-"+x.id];});
-  // Solo dos estados: vivo (bajando) o congelado (subiendo)
-  var weeklyDelta=heartAlive?-0.1:+0.1;
-  var deltaSign=heartAlive?"↓":"↑";
-  var deltaColor=heartAlive?"#3fcf8e":"#e8a020";
-  var deltaAbs="0.1";
-
-  // Recalcular fitnessAge con días reales
-  var vo2estReal=isFemale
-    ?(56.363 + 1.921*Math.min(7,trainDoneReal) - 0.381*userAge)
-    :(67.350 + 1.921*Math.min(7,trainDoneReal) - 0.381*userAge);
-  fitnessAge=Math.round(userAge - 0.2*(vo2estReal - vo2avg));
+  // fitnessAge estable — basado en trainDone histórico, no cambia con un tap
+  var vo2estFinal=isFemale
+    ?(56.363 + 1.921*Math.min(7,trainDone) - 0.381*userAge)
+    :(67.350 + 1.921*Math.min(7,trainDone) - 0.381*userAge);
+  fitnessAge=Math.round(userAge - 0.2*(vo2estFinal - vo2avg));
   fitnessAge=Math.max(userAge-15, Math.min(userAge+15, fitnessAge));
   ageDiff=userAge-fitnessAge;
 
+  // Estado vivo/congelado — solo cambia color y flecha, NO el número
+  var todayExs=todayR?todayR.ex:[];
+  var heartAlive=todayExs.length>0&&todayExs.every(function(x){return done[tdi+"-"+x.id];});
+  var deltaSign=heartAlive?"↓":"↑";
+  var deltaColor=heartAlive?"#3fcf8e":"#e8a020";
+  var deltaAbs="0.1";
+  var weeklyDelta=heartAlive?-0.1:+0.1;
   var fitnessAgeColor=heartAlive?"#3fcf8e":"#e8a020";
 
   return e("div",{style:{position:"relative",zIndex:1}},
