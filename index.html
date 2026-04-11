@@ -4093,7 +4093,7 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
       ),
 
       // Rectángulo HOY con corazón — igual al boceto
-      e(FrozenHeartBanner,{day:todayR,done:done,sel:tdi,lang:lang,mono:mono,compact:false,
+      e(FrozenHeartBanner,{day:(sel!==undefined?routine&&routine[sel]:todayR),done:done,sel:(sel!==undefined?sel:tdi),lang:lang,mono:mono,compact:false,
         onStart:null,fitnessAge:fitnessAge,ageDiff:ageDiff,weeklyDelta:weeklyDelta,
         deltaSign:deltaSign,deltaColor:deltaColor,deltaAbs:deltaAbs}),
 
