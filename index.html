@@ -6377,8 +6377,13 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               equipment:ob.equipment||"gym",name:ob.name||"Atleta",
               mode:"auto",toured:false,
             };
-            FStore.saveProfile(pf,routine);
-            sp(pf);sr(routine);setStep(99);
+            try{
+              FStore.saveProfile(pf,routine);
+              sp(pf);sr(routine);setStep(99);
+            }catch(err){
+              console.error("[FORJA ONBOARD]",err);
+              alert("Error: "+err.message);
+            }
           },400);
         } else {
           setGenPct(Math.round(p));
