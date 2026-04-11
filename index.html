@@ -5811,563 +5811,305 @@ function EqIcon({id,color}){
   return null;
 }
 function Onboard({lang,setLang,step,setStep,sp,sr}){
-  const mono_="'SF Mono','Courier New',monospace";
   const BN="'Bebas Neue',cursive";
-  const G="#3fcf8e",A="#f0b429",bg="#04080f";
+  const MN="'SF Mono','Courier New',monospace";
+  const G="#3fcf8e";
+  const bg="#04080f";
   const W="rgba(240,242,245,0.95)";
-  const dim="rgba(240,242,245,0.35)";
-  const card="rgba(255,255,255,0.06)";
+  const dim="rgba(240,242,245,0.32)";
 
+  // Estado del onboarding
   const[ob,setOb]=useState({
-    lang:lang||"es",name:"",gender:null,
-    age:25,goal:null,level:null,
-    equipment:null,daysCount:4,selDays:[1,2,4,6],
-    units:"metric",
+    lang:lang||"es",name:"",gender:null,age:25,
+    goal:null,level:null,equipment:null,
+    daysCount:4,selDays:[1,2,4,6],units:"metric",
   });
   const[nameVal,setNameVal]=useState("");
   const[ageVal,setAgeVal]=useState(25);
-  const[obStep,setObStep]=useState(0);
-  const[splashReady,setSplashReady]=useState(false);
+  const[section,setSection]=useState(0); // sección activa dentro de la página única
+  const[done,setDone]=useState([]); // secciones completadas
+  const[splashOut,setSplashOut]=useState(false);
   const[generating,setGenerating]=useState(false);
   const[genPct,setGenPct]=useState(0);
+  const canvasRef=React.useRef(null);
+  const animRef=React.useRef(null);
+  const particlesRef=React.useRef([]);
+  const mouseRef=React.useRef({x:0,y:0});
+  const progressRef=React.useRef(0);
 
   const set=(k,v)=>setOb(d=>({...d,[k]:v}));
+  const markDone=(s)=>setDone(d=>d.includes(s)?d:[...d,s]);
 
+  // ── Esfera de partículas Three.js ──────────────────────────
   React.useEffect(()=>{
-    if(obStep===0){
-      const t=setTimeout(()=>setSplashReady(true),1600);
-      return ()=>clearTimeout(t);
+    const canvas=canvasRef.current;
+    if(!canvas||!window.THREE) return;
+    const W2=canvas.offsetWidth||320;
+    const H2=canvas.offsetHeight||320;
+    const dpr=Math.min(window.devicePixelRatio||1,2);
+    const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+    renderer.setSize(W2,H2);
+    renderer.setPixelRatio(dpr);
+    renderer.setClearColor(0x000000,0);
+
+    const scene=new THREE.Scene();
+    const camera=new THREE.PerspectiveCamera(60,1,0.1,100);
+    camera.position.z=3.2;
+
+    // Crear partículas en esfera fibonacci
+    const N=1800;
+    const positions=new Float32Array(N*3);
+    const colors=new Float32Array(N*3);
+    const sizes=new Float32Array(N);
+    const phi=Math.PI*(3-Math.sqrt(5));
+
+    for(let i=0;i<N;i++){
+      const y=1-2*(i/(N-1));
+      const r=Math.sqrt(1-y*y);
+      const theta=phi*i;
+      const scale=0.9+Math.random()*0.15;
+      positions[i*3]=Math.cos(theta)*r*scale;
+      positions[i*3+1]=y*scale;
+      positions[i*3+2]=Math.sin(theta)*r*scale;
+      colors[i*3]=0.24;colors[i*3+1]=0.81;colors[i*3+2]=0.56; // verde base
+      sizes[i]=2+Math.random()*3;
     }
-  },[obStep]);
+
+    const geo=new THREE.BufferGeometry();
+    geo.setAttribute('position',new THREE.BufferAttribute(positions,3));
+    geo.setAttribute('color',new THREE.BufferAttribute(colors,3));
+    geo.setAttribute('size',new THREE.BufferAttribute(sizes,1));
+
+    const mat=new THREE.ShaderMaterial({
+      vertexColors:true,
+      transparent:true,
+      uniforms:{
+        uTime:{value:0},
+        uProgress:{value:0},
+        uMouse:{value:new THREE.Vector2(0,0)},
+      },
+      vertexShader:`
+        attribute float size;
+        attribute vec3 color;
+        varying vec3 vColor;
+        varying float vAlpha;
+        uniform float uTime;
+        uniform float uProgress;
+        uniform vec2 uMouse;
+        void main(){
+          vColor=color;
+          vec3 pos=position;
+          float dist=length(pos);
+          float wave=sin(uTime*1.2+pos.x*3.0+pos.y*2.0)*0.04;
+          pos+=normalize(pos)*wave;
+          // Reacción al mouse
+          vec2 mDiff=uMouse-pos.xy;
+          float mDist=length(mDiff);
+          if(mDist<0.6) pos.z+=0.15*(0.6-mDist);
+          // Progreso: pulso verde
+          float progPulse=sin(uTime*2.0+dist*4.0)*uProgress*0.5;
+          pos+=normalize(pos)*progPulse*0.08;
+          vAlpha=0.6+sin(uTime*0.8+pos.y*5.0)*0.3;
+          gl_PointSize=size*(1.0+uProgress*0.4);
+          gl_Position=projectionMatrix*modelViewMatrix*vec4(pos,1.0);
+        }
+      `,
+      fragmentShader:`
+        varying vec3 vColor;
+        varying float vAlpha;
+        void main(){
+          float d=length(gl_PointCoord-0.5)*2.0;
+          if(d>1.0) discard;
+          float alpha=vAlpha*(1.0-d*d);
+          gl_FragColor=vec4(vColor,alpha*0.85);
+        }
+      `,
+    });
+
+    const points=new THREE.Points(geo,mat);
+    scene.add(points);
+
+    let t=0;
+    const animate=()=>{
+      animRef.current=requestAnimationFrame(animate);
+      t+=0.008;
+      mat.uniforms.uTime.value=t;
+      mat.uniforms.uProgress.value=progressRef.current;
+      // Rotación suave + seguimiento mouse
+      points.rotation.y=t*0.15+mouseRef.current.x*0.3;
+      points.rotation.x=mouseRef.current.y*0.2+Math.sin(t*0.3)*0.1;
+      renderer.render(scene,camera);
+    };
+    animate();
+
+    const onMove=(e)=>{
+      const rect=canvas.getBoundingClientRect();
+      const cx=rect.left+rect.width/2;
+      const cy=rect.top+rect.height/2;
+      const px=e.touches?e.touches[0].clientX:e.clientX;
+      const py=e.touches?e.touches[0].clientY:e.clientY;
+      mouseRef.current={
+        x:(px-cx)/(rect.width/2)*1.2,
+        y:-(py-cy)/(rect.height/2)*0.8,
+      };
+    };
+    window.addEventListener('mousemove',onMove);
+    window.addEventListener('touchmove',onMove,{passive:true});
+
+    return()=>{
+      if(animRef.current) cancelAnimationFrame(animRef.current);
+      renderer.dispose();
+      window.removeEventListener('mousemove',onMove);
+      window.removeEventListener('touchmove',onMove);
+    };
+  },[]);
+
+  // Actualizar progreso de la esfera
+  React.useEffect(()=>{
+    progressRef.current=done.length/7;
+  },[done]);
+
+  // Actualizar colores de la esfera según selección
+  React.useEffect(()=>{
+    const goalColors={
+      muscle:[0.28,0.53,0.91],
+      strength:[0.94,0.70,0.16],
+      lose:[0.88,0.21,0.21],
+      general:[0.24,0.81,0.56],
+    };
+    // El color se actualiza vía shader uniforms — por ahora el verde base
+  },[ob.goal]);
 
   const TX={
     es:{
-      d1:"LU",d2:"MA",d3:"MI",d4:"JU",d5:"VI",d6:"SA",d7:"DO",
+      dn:["LU","MA","MI","JU","VI","SA","DO"],
+      s0:"FORJA",s0tag:"FORGE YOUR LEGACY",s0btn:"COMENZAR",
+      s1:"Idioma",
+      s2:"¿Cómo te llamamos?",s2ph:"Tu nombre",
+      s3:"Cuéntanos sobre ti",
+      s3gM:"MASCULINO",s3gF:"FEMENINO",s3age:"AÑOS",
+      s4:"Tu objetivo",
+      g1:"MÚSCULO",g2:"FUERZA",g3:"DEFINICIÓN",g4:"GENERAL",
+      g1d:"Hipertrofia y masa",g2d:"Fuerza máxima",g3d:"Perder grasa",g4d:"Balance",
+      s5:"Tu nivel",
+      l1:"PRINCIPIANTE",l1d:"< 1 año",
+      l2:"INTERMEDIO",l2d:"1–3 años",
+      l3:"AVANZADO",l3d:"3+ años",
+      s6:"¿Dónde entrenas?",
+      e1:"GYM",e1d:"Equipo completo",e2:"CASA",e2d:"Equipo básico",e3:"CALISTENIA",e3d:"Peso corporal",
+      s7:"Días a la semana",
+      s8:"Todo listo",s8sub:"Confirma y forjamos tu rutina.",
+      s8go:"FORJAR →",s8units:"UNIDADES",s8kg:"kg",s8lb:"lb",
+      gen0:"ANALIZANDO...",gen1:"CALCULANDO...",gen2:"GENERANDO...",gen3:"LISTO",
       cont:"CONTINUAR →",back:"← ATRÁS",
-      s1t:"¿En qué idioma\nentrenas?",s1sub:"Lo puedes cambiar después.",
-      s2t:"¿Cómo te\nllamamos?",s2sub:"Tu nombre aparecerá en la app.",s2ph:"Tu nombre",
-      s3t:"Cuéntanos\nsobre ti",s3sub:"Para calcular métricas científicas precisas.",
-      s3gM:"MASCULINO",s3gF:"FEMENINO",s3age:"EDAD",
-      s4t:"¿Cuál es\ntu objetivo?",s4sub:"Diseñamos tu programa en base a esto.",
-      g1:"MÚSCULO",g1d:"Hipertrofia y masa muscular",
-      g2:"FUERZA",g2d:"Levantamientos pesados y fuerza máxima",
-      g3:"DEFINICIÓN",g3d:"Perder grasa, mantener músculo",
-      g4:"GENERAL",g4d:"Balance de salud y composición",
-      s5t:"¿Cuál es\ntu nivel?",s5sub:"Sé honesto — ajusta tu programa completo.",
-      l1:"PRINCIPIANTE",l1d:"Menos de 1 año entrenando",
-      l2:"INTERMEDIO",l2d:"1 a 3 años con buena técnica",
-      l3:"AVANZADO",l3d:"Más de 3 años, técnica sólida",
-      s6t:"¿Dónde\nentrenas?",s6sub:"Ajustamos los ejercicios a tu equipo disponible.",
-      e1:"GYM",e1d:"Acceso completo: barras, máquinas, poleas",
-      e2:"CASA",e2d:"Mancuernas, bandas o poco equipo",
-      e3:"CALISTENIA",e3d:"Solo peso corporal",
-      s7t:"¿Cuántos días\na la semana?",s7sub:"Elige la frecuencia y los días que te quedan.",
-      s8t:"¡Todo listo,\n",s8sub:"Confirma y forjamos tu rutina personalizada.",
-      s8units:"UNIDADES DE MEDIDA",s8kg:"Kilogramos (kg)",s8lb:"Libras (lb)",
-      s8go:"FORJAR MI RUTINA →",
-      s8name:"NOMBRE",s8gender:"SEXO",s8age:"EDAD",s8goal:"OBJETIVO",
-      s8level:"NIVEL",s8equip:"EQUIPO",s8days:"FRECUENCIA",
-      genMsg0:"ANALIZANDO TU PERFIL...",genMsg1:"CALCULANDO SPLITS...",
-      genMsg2:"OPTIMIZANDO EJERCICIOS...",genMsg3:"GENERANDO RUTINA...",genMsg4:"¡LISTO!",
-      start:"COMENZAR",
     },
     en:{
-      d1:"MO",d2:"TU",d3:"WE",d4:"TH",d5:"FR",d6:"SA",d7:"SU",
+      dn:["MO","TU","WE","TH","FR","SA","SU"],
+      s0:"FORJA",s0tag:"FORGE YOUR LEGACY",s0btn:"START",
+      s1:"Language",
+      s2:"What's your name?",s2ph:"Your name",
+      s3:"Tell us about you",
+      s3gM:"MALE",s3gF:"FEMALE",s3age:"YEARS",
+      s4:"Your goal",
+      g1:"MUSCLE",g2:"STRENGTH",g3:"CUT",g4:"GENERAL",
+      g1d:"Hypertrophy",g2d:"Max strength",g3d:"Lose fat",g4d:"Balance",
+      s5:"Your level",
+      l1:"BEGINNER",l1d:"< 1 year",
+      l2:"INTERMEDIATE",l2d:"1–3 years",
+      l3:"ADVANCED",l3d:"3+ years",
+      s6:"Where do you train?",
+      e1:"GYM",e1d:"Full equipment",e2:"HOME",e2d:"Basic gear",e3:"CALISTHENICS",e3d:"Bodyweight",
+      s7:"Days per week",
+      s8:"All set",s8sub:"Confirm and we'll forge your routine.",
+      s8go:"FORGE IT →",s8units:"UNITS",s8kg:"kg",s8lb:"lb",
+      gen0:"ANALYZING...",gen1:"CALCULATING...",gen2:"GENERATING...",gen3:"DONE",
       cont:"CONTINUE →",back:"← BACK",
-      s1t:"Which language\ndo you train in?",s1sub:"You can change it later.",
-      s2t:"What should\nwe call you?",s2sub:"Your name will appear in the app.",s2ph:"Your name",
-      s3t:"Tell us\nabout you",s3sub:"For precise scientific metric calculations.",
-      s3gM:"MALE",s3gF:"FEMALE",s3age:"AGE",
-      s4t:"What's\nyour goal?",s4sub:"We design your program around this.",
-      g1:"MUSCLE",g1d:"Hypertrophy and muscle mass",
-      g2:"STRENGTH",g2d:"Heavy lifts and maximal strength",
-      g3:"CUT",g3d:"Lose fat, maintain muscle",
-      g4:"GENERAL",g4d:"Health and body composition balance",
-      s5t:"What's\nyour level?",s5sub:"Be honest — it shapes your entire program.",
-      l1:"BEGINNER",l1d:"Less than 1 year training",
-      l2:"INTERMEDIATE",l2d:"1 to 3 years with good technique",
-      l3:"ADVANCED",l3d:"3+ years, solid technique",
-      s6t:"Where do\nyou train?",s6sub:"We match exercises to your available equipment.",
-      e1:"GYM",e1d:"Full access: barbells, machines, cables",
-      e2:"HOME",e2d:"Dumbbells, bands or minimal gear",
-      e3:"CALISTHENICS",e3d:"Bodyweight only",
-      s7t:"How many days\nper week?",s7sub:"Choose your frequency and specific days.",
-      s8t:"All set,\n",s8sub:"Confirm and we'll forge your personalized routine.",
-      s8units:"MEASUREMENT UNITS",s8kg:"Kilograms (kg)",s8lb:"Pounds (lb)",
-      s8go:"FORGE MY ROUTINE →",
-      s8name:"NAME",s8gender:"SEX",s8age:"AGE",s8goal:"GOAL",
-      s8level:"LEVEL",s8equip:"EQUIPMENT",s8days:"FREQUENCY",
-      genMsg0:"ANALYZING YOUR PROFILE...",genMsg1:"CALCULATING SPLITS...",
-      genMsg2:"OPTIMIZING EXERCISES...",genMsg3:"GENERATING ROUTINE...",genMsg4:"DONE!",
-      start:"START",
     },
   };
   const tx=TX[ob.lang]||TX.es;
-  const dn=[tx.d1,tx.d2,tx.d3,tx.d4,tx.d5,tx.d6,tx.d7];
+  const dn=tx.dn;
 
-  // ── Helpers de UI ──────────────────────────────────────────
-  const Prog=({cur,tot})=>(
-    <div style={{display:"flex",gap:4,position:"absolute",top:0,left:0,right:0,padding:"14px 24px 0",zIndex:10}}>
-      {Array(tot).fill(0).map((_,i)=>(
-        <div key={i} style={{flex:1,height:2,borderRadius:1,background:"rgba(255,255,255,0.08)",overflow:"hidden"}}>
-          <div style={{height:"100%",background:G,borderRadius:1,
-            width:i<cur?"100%":"0%",transition:"width 0.4s ease"}}/>
-        </div>
-      ))}
+  // ── Componentes helper ─────────────────────────────────────
+  const Chip=({active,onClick,children,color})=>(
+    <button onClick={onClick} style={{
+      padding:"11px 18px",borderRadius:999,border:"none",cursor:"pointer",
+      background:active?(color||G)+"20":"rgba(255,255,255,0.05)",
+      border:"1.5px solid "+(active?(color||G)+"70":"rgba(255,255,255,0.08)"),
+      fontFamily:MN,fontSize:10,fontWeight:700,letterSpacing:2,
+      color:active?(color||G):"rgba(255,255,255,0.4)",
+      transition:"all 0.22s cubic-bezier(0.34,1.56,0.64,1)",
+      transform:active?"scale(1.06)":"scale(1)",
+      flexShrink:0,
+    }}>{children}</button>
+  );
+
+  const SectionLabel=({n,label,done:isDone})=>(
+    <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
+      <div style={{
+        width:24,height:24,borderRadius:"50%",flexShrink:0,
+        background:isDone?G:"rgba(255,255,255,0.08)",
+        border:"1px solid "+(isDone?G:"rgba(255,255,255,0.15)"),
+        display:"flex",alignItems:"center",justifyContent:"center",
+        fontFamily:MN,fontSize:9,
+        color:isDone?"#04080f":"rgba(255,255,255,0.4)",
+        transition:"all 0.3s",
+        boxShadow:isDone?"0 0 12px "+G+"60":"none",
+      }}>{isDone?"✓":n}</div>
+      <div style={{fontFamily:MN,fontSize:9,letterSpacing:3,
+        color:isDone?G:"rgba(255,255,255,0.3)"}}>{label}</div>
     </div>
   );
 
-  const BackB=()=>(
-    <button onClick={()=>setObStep(s=>Math.max(1,s-1))} style={{
-      position:"absolute",top:52,left:24,
-      width:34,height:34,borderRadius:10,
-      background:"rgba(255,255,255,0.06)",
-      border:"1px solid rgba(255,255,255,0.1)",
-      color:"rgba(255,255,255,0.5)",fontSize:14,cursor:"pointer",
-      display:"flex",alignItems:"center",justifyContent:"center",
-    }}>←</button>
-  );
-
-  const Title=({t,sub,step:s,tot})=>(
-    <div style={{paddingTop:72}}>
-      {s&&tot&&<div style={{fontFamily:mono_,fontSize:9,letterSpacing:4,color:G,marginBottom:14}}>
-        {String(s).padStart(2,"0")} / {String(tot).padStart(2,"0")}
-      </div>}
-      <div style={{fontFamily:BN,fontSize:"clamp(36px,10vw,50px)",
-        lineHeight:0.93,color:W,marginBottom:10,whiteSpace:"pre-line"}}>{t}</div>
-      {sub&&<div style={{fontSize:13,color:dim,lineHeight:1.5}}>{sub}</div>}
-    </div>
-  );
-
-  const CBtn=({onClick,disabled,label,style={}})=>(
+  const ContinueBtn=({onClick,disabled,label})=>(
     <button onClick={onClick} disabled={!!disabled} style={{
-      width:"100%",padding:"17px",borderRadius:14,border:"none",
-      background:disabled?"rgba(255,255,255,0.07)":"linear-gradient(135deg,"+G+",#26a866)",
-      color:disabled?dim:"#04080f",
-      fontFamily:mono_,fontSize:12,fontWeight:700,letterSpacing:3,
+      width:"100%",padding:"16px",borderRadius:14,border:"none",
+      background:disabled?"rgba(255,255,255,0.06)":"linear-gradient(135deg,"+G+",#26a866)",
+      color:disabled?"rgba(255,255,255,0.25)":"#04080f",
+      fontFamily:MN,fontSize:11,fontWeight:700,letterSpacing:3,
       cursor:disabled?"default":"pointer",transition:"all 0.25s",
-      boxShadow:disabled?"none":"0 0 28px rgba(63,207,142,0.3)",
-      ...style,
+      boxShadow:disabled?"none":"0 0 24px rgba(63,207,142,0.28)",
+      marginTop:16,
     }}>{label||tx.cont}</button>
   );
 
-  const wrap={
-    position:"fixed",inset:0,background:bg,zIndex:99999,
-    display:"flex",flexDirection:"column",
-    padding:"0 26px 40px",overflowY:"auto",overflowX:"hidden",
-  };
-
-  // ── STEP 0: SPLASH ─────────────────────────────────────────
-  if(obStep===0) return (
-    <div style={{position:"fixed",inset:0,background:bg,zIndex:99999,
-      display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
-      overflow:"hidden"}}>
-      <div style={{position:"absolute",top:"15%",left:"50%",transform:"translateX(-50%)",
-        width:360,height:360,borderRadius:"50%",pointerEvents:"none",
-        background:"radial-gradient(circle,rgba(63,207,142,0.07) 0%,transparent 70%)"}}/>
-      <div style={{position:"absolute",bottom:"20%",right:"5%",
-        width:180,height:180,borderRadius:"50%",pointerEvents:"none",
-        background:"radial-gradient(circle,rgba(240,180,40,0.05) 0%,transparent 70%)"}}/>
-      <div style={{
-        fontFamily:BN,fontSize:"clamp(72px,22vw,100px)",
-        letterSpacing:10,lineHeight:1,color:"#fff",
-        textShadow:"0 0 80px rgba(63,207,142,0.25)",
-        animation:"ob_logo 0.9s cubic-bezier(0.16,1,0.3,1) both",
-      }}>FORJA</div>
-      <div style={{
-        fontFamily:mono_,fontSize:10,letterSpacing:5,
-        color:"rgba(63,207,142,0.65)",marginTop:14,
-        animation:"ob_sub 0.6s 0.5s cubic-bezier(0.16,1,0.3,1) both",
-      }}>FORGE YOUR LEGACY</div>
-      <div style={{
-        marginTop:72,
-        opacity:splashReady?1:0,
-        transform:splashReady?"translateY(0)":"translateY(16px)",
-        transition:"opacity 0.5s ease, transform 0.5s ease",
-      }}>
-        <button onClick={()=>setObStep(1)} style={{
-          padding:"17px 56px",borderRadius:999,
-          background:"linear-gradient(135deg,"+G+",#26a866)",
-          border:"none",cursor:"pointer",
-          fontFamily:mono_,fontSize:12,fontWeight:700,letterSpacing:4,
-          color:"#04080f",
-          boxShadow:"0 0 48px rgba(63,207,142,0.35),0 4px 24px rgba(0,0,0,0.3)",
-        }}>{tx.start}</button>
-      </div>
-      {[0,1,2,3,4,5].map(i=>(
-        <div key={i} style={{
-          position:"absolute",
-          width:i%2===0?3:2,height:i%2===0?3:2,
-          borderRadius:"50%",
-          background:i%3===0?"rgba(63,207,142,0.5)":i%3===1?"rgba(240,180,40,0.4)":"rgba(255,255,255,0.2)",
-          left:(10+i*15)+"%",top:(25+Math.sin(i*1.2)*35)+"%",
-          animation:"ob_dot "+(2.2+i*0.4)+"s "+(i*0.3)+"s ease-in-out infinite alternate",
-        }}/>
-      ))}
-    </div>
-  );
-
-  // ── STEP 1: IDIOMA ─────────────────────────────────────────
-  if(obStep===1){
-    const langs=[
-      {code:"es",label:"Español",flag:"🇪🇸"},
-      {code:"en",label:"English",flag:"🇺🇸"},
-      {code:"pt",label:"Português",flag:"🇧🇷"},
-      {code:"fr",label:"Français",flag:"🇫🇷"},
-      {code:"it",label:"Italiano",flag:"🇮🇹"},
-      {code:"de",label:"Deutsch",flag:"🇩🇪"},
-    ];
-    return (
-      <div style={wrap}>
-        <Prog cur={1} tot={7}/>
-        <Title t={tx.s1t} sub={tx.s1sub} step={1} tot={7}/>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginTop:28,flex:1}}>
-          {langs.map(l=>{
-            const sel=ob.lang===l.code;
-            return (
-              <button key={l.code}
-                onClick={()=>{set("lang",l.code);setLang(l.code);setObStep(2);}}
-                style={{
-                  padding:"22px 16px",borderRadius:20,
-                  background:sel?"rgba(63,207,142,0.1)":card,
-                  border:sel?"1.5px solid rgba(63,207,142,0.55)":"1px solid rgba(255,255,255,0.07)",
-                  cursor:"pointer",display:"flex",flexDirection:"column",
-                  alignItems:"center",gap:10,transition:"all 0.2s",
-                  boxShadow:sel?"inset 0 1px 0 rgba(63,207,142,0.35)":"none",
-                }}>
-                <span style={{fontSize:32}}>{l.flag}</span>
-                <span style={{fontFamily:mono_,fontSize:10,letterSpacing:2,
-                  color:sel?G:dim}}>{l.label}</span>
-              </button>
-            );
-          })}
+  // ── GENERANDO ──────────────────────────────────────────────
+  if(generating){
+    const msgs=[tx.gen0,tx.gen1,tx.gen2,tx.gen3];
+    const mi=genPct<30?0:genPct<60?1:genPct<90?2:3;
+    return(
+      <div style={{position:"fixed",inset:0,background:bg,zIndex:99999,
+        display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+        <canvas ref={canvasRef} style={{width:280,height:280,opacity:0.9}}/>
+        <div style={{fontFamily:BN,fontSize:42,color:W,letterSpacing:2,marginTop:8,textAlign:"center"}}>
+          {ob.lang==="es"?"FORJANDO":"FORGING"}<br/>
+          <span style={{color:G}}>{ob.lang==="es"?"TU RUTINA":"YOUR ROUTINE"}</span>
         </div>
+        <div style={{width:200,height:1.5,background:"rgba(255,255,255,0.08)",
+          borderRadius:1,margin:"28px 0 12px",overflow:"hidden"}}>
+          <div style={{height:"100%",background:G,width:genPct+"%",
+            transition:"width 0.3s ease",boxShadow:"0 0 10px "+G+"80"}}/>
+        </div>
+        <div style={{fontFamily:MN,fontSize:9,letterSpacing:4,color:dim}}>{msgs[mi]}</div>
       </div>
     );
   }
 
-  // ── STEP 2: NOMBRE ─────────────────────────────────────────
-  if(obStep===2){
-    const ok=nameVal.trim().length>0;
-    return (
-      <div style={wrap}>
-        <Prog cur={2} tot={7}/>
-        <BackB/>
-        <Title t={tx.s2t} sub={tx.s2sub} step={2} tot={7}/>
-        <div style={{marginTop:32,flex:1,display:"flex",flexDirection:"column",gap:20}}>
-          <input
-            autoFocus
-            value={nameVal}
-            onChange={e=>setNameVal(e.target.value)}
-            onKeyDown={e=>{if(e.key==="Enter"&&ok){set("name",nameVal.trim());setObStep(3);}}}
-            placeholder={tx.s2ph}
-            maxLength={30}
-            style={{
-              width:"100%",padding:"20px 22px",borderRadius:18,
-              background:"rgba(255,255,255,0.05)",
-              border:"1.5px solid "+(ok?"rgba(63,207,142,0.4)":"rgba(255,255,255,0.12)"),
-              color:W,fontSize:24,fontWeight:700,outline:"none",
-              fontFamily:"inherit",caretColor:G,transition:"border-color 0.25s",
-            }}/>
-          <div style={{flex:1}}/>
-          <CBtn
-            onClick={()=>{if(ok){set("name",nameVal.trim());setObStep(3);}}}
-            disabled={!ok}/>
-        </div>
-      </div>
-    );
-  }
-
-  // ── STEP 3: GÉNERO + EDAD ──────────────────────────────────
-  if(obStep===3){
-    const ok=ob.gender&&ageVal>=13&&ageVal<=100;
-    return (
-      <div style={wrap}>
-        <Prog cur={3} tot={7}/>
-        <BackB/>
-        <Title t={tx.s3t} sub={tx.s3sub} step={3} tot={7}/>
-        <div style={{marginTop:28,display:"flex",gap:10,marginBottom:32}}>
-          {[{id:"male",label:tx.s3gM,icon:"♂"},{id:"female",label:tx.s3gF,icon:"♀"}].map(g=>{
-            const sel=ob.gender===g.id;
-            return (
-              <button key={g.id} onClick={()=>set("gender",g.id)} style={{
-                flex:1,padding:"26px 16px",borderRadius:20,
-                background:sel?"rgba(63,207,142,0.1)":card,
-                border:sel?"1.5px solid rgba(63,207,142,0.55)":"1px solid rgba(255,255,255,0.07)",
-                cursor:"pointer",display:"flex",flexDirection:"column",
-                alignItems:"center",gap:12,transition:"all 0.22s",
-              }}>
-                <span style={{fontSize:40,opacity:sel?1:0.5}}>{g.icon}</span>
-                <span style={{fontFamily:mono_,fontSize:10,letterSpacing:2,color:sel?G:dim}}>{g.label}</span>
-              </button>
-            );
-          })}
-        </div>
-        <div style={{fontFamily:mono_,fontSize:9,letterSpacing:3,color:dim,marginBottom:16}}>{tx.s3age}</div>
-        <div style={{display:"flex",alignItems:"center",gap:20,marginBottom:36}}>
-          <button onClick={()=>setAgeVal(v=>Math.max(13,v-1))} style={{
-            width:52,height:52,borderRadius:"50%",border:"1px solid rgba(255,255,255,0.12)",
-            background:card,color:W,fontSize:26,cursor:"pointer",flexShrink:0,
-          }}>−</button>
-          <div style={{flex:1,textAlign:"center"}}>
-            <div style={{fontFamily:BN,fontSize:80,color:G,lineHeight:1}}>{ageVal}</div>
-            <div style={{fontFamily:mono_,fontSize:9,letterSpacing:3,color:dim,marginTop:4}}>
-              {ob.lang==="es"||ob.lang==="pt"?"AÑOS":"YEARS OLD"}
-            </div>
-          </div>
-          <button onClick={()=>setAgeVal(v=>Math.min(100,v+1))} style={{
-            width:52,height:52,borderRadius:"50%",border:"1px solid rgba(255,255,255,0.12)",
-            background:card,color:W,fontSize:26,cursor:"pointer",flexShrink:0,
-          }}>+</button>
-        </div>
-        <CBtn onClick={()=>{if(ok){set("age",ageVal);setObStep(4);}}} disabled={!ok}/>
-      </div>
-    );
-  }
-
-  // ── STEP 4: OBJETIVO ───────────────────────────────────────
-  if(obStep===4){
-    const goals=[
-      {id:"muscle",  em:"💪",label:tx.g1,desc:tx.g1d,color:"#4898e8"},
-      {id:"strength",em:"⚡",label:tx.g2,desc:tx.g2d,color:A},
-      {id:"lose",    em:"🔥",label:tx.g3,desc:tx.g3d,color:"#e05555"},
-      {id:"general", em:"⚖️",label:tx.g4,desc:tx.g4d,color:G},
-    ];
-    return (
-      <div style={wrap}>
-        <Prog cur={4} tot={7}/>
-        <BackB/>
-        <Title t={tx.s4t} sub={tx.s4sub} step={4} tot={7}/>
-        <div style={{marginTop:24,display:"flex",flexDirection:"column",gap:10}}>
-          {goals.map(g=>{
-            const sel=ob.goal===g.id;
-            return (
-              <button key={g.id}
-                onClick={()=>{set("goal",g.id);setTimeout(()=>setObStep(5),160);}}
-                style={{
-                  padding:"18px 20px",borderRadius:18,textAlign:"left",
-                  background:sel?"rgba(255,255,255,0.06)":card,
-                  border:sel?"1.5px solid "+g.color+"88":"1px solid rgba(255,255,255,0.07)",
-                  cursor:"pointer",display:"flex",alignItems:"center",gap:16,
-                  transition:"all 0.22s cubic-bezier(0.34,1.56,0.64,1)",
-                  transform:sel?"scale(1.02)":"scale(1)",
-                  boxShadow:sel?"0 0 20px "+g.color+"20":"none",
-                }}>
-                <div style={{
-                  width:44,height:44,borderRadius:12,flexShrink:0,
-                  background:sel?g.color+"18":"rgba(255,255,255,0.05)",
-                  border:"1px solid "+(sel?g.color+"44":"rgba(255,255,255,0.08)"),
-                  display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,
-                }}>{g.em}</div>
-                <div style={{flex:1}}>
-                  <div style={{fontFamily:mono_,fontSize:11,fontWeight:700,letterSpacing:2,
-                    color:sel?g.color:dim,marginBottom:3}}>{g.label}</div>
-                  <div style={{fontSize:12,color:"rgba(255,255,255,0.35)",lineHeight:1.4}}>{g.desc}</div>
-                </div>
-                {sel&&<div style={{width:8,height:8,borderRadius:"50%",flexShrink:0,
-                  background:g.color,boxShadow:"0 0 10px "+g.color}}/>}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
-
-  // ── STEP 5: NIVEL ──────────────────────────────────────────
-  if(obStep===5){
-    const levels=[
-      {id:"beg",num:"01",label:tx.l1,desc:tx.l1d},
-      {id:"int",num:"02",label:tx.l2,desc:tx.l2d},
-      {id:"adv",num:"03",label:tx.l3,desc:tx.l3d},
-    ];
-    return (
-      <div style={wrap}>
-        <Prog cur={5} tot={7}/>
-        <BackB/>
-        <Title t={tx.s5t} sub={tx.s5sub} step={5} tot={7}/>
-        <div style={{marginTop:24,display:"flex",flexDirection:"column",gap:10}}>
-          {levels.map(l=>{
-            const sel=ob.level===l.id;
-            return (
-              <button key={l.id}
-                onClick={()=>{set("level",l.id);setTimeout(()=>setObStep(6),160);}}
-                style={{
-                  padding:"20px 20px",borderRadius:18,textAlign:"left",
-                  background:sel?"rgba(63,207,142,0.07)":card,
-                  border:sel?"1.5px solid rgba(63,207,142,0.5)":"1px solid rgba(255,255,255,0.07)",
-                  cursor:"pointer",display:"flex",alignItems:"center",gap:16,
-                  transition:"all 0.22s cubic-bezier(0.34,1.56,0.64,1)",
-                  transform:sel?"scale(1.02)":"scale(1)",
-                }}>
-                <div style={{
-                  fontFamily:BN,fontSize:32,color:sel?G:"rgba(255,255,255,0.1)",
-                  lineHeight:1,flexShrink:0,width:36,textAlign:"center",
-                  transition:"color 0.2s",
-                }}>{l.num}</div>
-                <div style={{flex:1}}>
-                  <div style={{fontFamily:mono_,fontSize:11,fontWeight:700,letterSpacing:2,
-                    color:sel?G:dim,marginBottom:3}}>{l.label}</div>
-                  <div style={{fontSize:12,color:"rgba(255,255,255,0.35)",lineHeight:1.4}}>{l.desc}</div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
-
-  // ── STEP 6: EQUIPO + DÍAS ─────────────────────────────────
-  if(obStep===6){
-    const equips=[
-      {id:"gym",  em:"🏋️",label:tx.e1,desc:tx.e1d},
-      {id:"home", em:"🏠",label:tx.e2,desc:tx.e2d},
-      {id:"bw",   em:"🤸",label:tx.e3,desc:tx.e3d},
-    ];
-    const toggleDay=(i)=>{
-      const cur=ob.selDays;
-      if(cur.includes(i)){
-        if(cur.length>1) set("selDays",cur.filter(x=>x!==i));
-      } else {
-        if(cur.length<ob.daysCount) set("selDays",[...cur,i].sort((a,b)=>a-b));
-      }
-    };
-    const ok=ob.equipment&&ob.selDays.length>0;
-    return (
-      <div style={wrap}>
-        <Prog cur={6} tot={7}/>
-        <BackB/>
-        <Title t={tx.s6t} sub={tx.s6sub} step={6} tot={7}/>
-        <div style={{marginTop:20,display:"flex",flexDirection:"column",gap:8,marginBottom:28}}>
-          {equips.map(e=>{
-            const sel=ob.equipment===e.id;
-            return (
-              <button key={e.id} onClick={()=>set("equipment",e.id)} style={{
-                padding:"14px 18px",borderRadius:16,textAlign:"left",
-                background:sel?"rgba(63,207,142,0.07)":card,
-                border:sel?"1.5px solid rgba(63,207,142,0.5)":"1px solid rgba(255,255,255,0.07)",
-                cursor:"pointer",display:"flex",alignItems:"center",gap:14,transition:"all 0.2s",
-              }}>
-                <span style={{fontSize:22,opacity:sel?1:0.5}}>{e.em}</span>
-                <div>
-                  <div style={{fontFamily:mono_,fontSize:10,fontWeight:700,letterSpacing:2,
-                    color:sel?G:dim,marginBottom:2}}>{e.label}</div>
-                  <div style={{fontSize:11,color:"rgba(255,255,255,0.35)"}}>{e.desc}</div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-
-        <Title t={tx.s7t} sub={tx.s7sub} step={null}/>
-        <div style={{display:"flex",gap:8,margin:"20px 0 16px"}}>
-          {[3,4,5,6].map(n=>{
-            const sel=ob.daysCount===n;
-            return (
-              <button key={n} onClick={()=>{
-                set("daysCount",n);
-                const auto=[1,2,3,4,5,6,0].slice(0,n);
-                set("selDays",auto);
-              }} style={{
-                flex:1,padding:"14px 8px",borderRadius:14,
-                background:sel?"rgba(63,207,142,0.1)":card,
-                border:sel?"1.5px solid rgba(63,207,142,0.55)":"1px solid rgba(255,255,255,0.07)",
-                cursor:"pointer",transition:"all 0.2s",
-              }}>
-                <div style={{fontFamily:BN,fontSize:28,color:sel?G:dim,lineHeight:1}}>{n}</div>
-                <div style={{fontFamily:mono_,fontSize:7,letterSpacing:2,
-                  color:sel?"rgba(63,207,142,0.6)":dim,marginTop:4}}>
-                  {ob.lang==="es"||ob.lang==="pt"?"DÍAS":"DAYS"}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-        <div style={{display:"flex",gap:6,marginBottom:28}}>
-          {dn.map((d,i)=>{
-            const sel=ob.selDays.includes(i);
-            return (
-              <button key={i} onClick={()=>toggleDay(i)} style={{
-                flex:1,padding:"14px 4px",borderRadius:12,
-                background:sel?"rgba(63,207,142,0.13)":card,
-                border:sel?"1.5px solid rgba(63,207,142,0.55)":"1px solid rgba(255,255,255,0.07)",
-                cursor:"pointer",display:"flex",flexDirection:"column",
-                alignItems:"center",gap:6,
-                transition:"all 0.2s cubic-bezier(0.34,1.56,0.64,1)",
-                transform:sel?"scale(1.06)":"scale(1)",
-              }}>
-                <div style={{fontFamily:mono_,fontSize:7,letterSpacing:1,color:sel?G:dim}}>{d}</div>
-                <div style={{width:5,height:5,borderRadius:"50%",
-                  background:sel?G:"rgba(255,255,255,0.12)"}}/>
-              </button>
-            );
-          })}
-        </div>
-        <CBtn onClick={()=>setObStep(7)} disabled={!ok}/>
-      </div>
-    );
-  }
-
-  // ── STEP 7: CONFIRMAR ──────────────────────────────────────
-  if(obStep===7){
-    const goalLabels={muscle:tx.g1,strength:tx.g2,lose:tx.g3,general:tx.g4};
-    const levelLabels={beg:tx.l1,int:tx.l2,adv:tx.l3};
-    const equipLabels={gym:tx.e1,home:tx.e2,bw:tx.e3};
-    const summary=[
-      {label:tx.s8name,   val:ob.name},
-      {label:tx.s8gender, val:ob.gender==="male"?tx.s3gM:tx.s3gF},
-      {label:tx.s8age,    val:ob.age+" "+(ob.lang==="es"?"años":"yrs")},
-      {label:tx.s8goal,   val:goalLabels[ob.goal]||ob.goal},
-      {label:tx.s8level,  val:levelLabels[ob.level]||ob.level},
-      {label:tx.s8equip,  val:equipLabels[ob.equipment]||ob.equipment},
-      {label:tx.s8days,   val:ob.selDays.length+" "+(ob.lang==="es"?"días/sem":"d/wk")},
-    ];
-
-    if(generating){
-      const msgs=[tx.genMsg0,tx.genMsg1,tx.genMsg2,tx.genMsg3,tx.genMsg4];
-      const msgIdx=genPct<20?0:genPct<45?1:genPct<70?2:genPct<90?3:4;
-      return (
-        <div style={{position:"fixed",inset:0,background:bg,zIndex:99999,
-          display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:32}}>
-          <div style={{fontFamily:BN,fontSize:"clamp(36px,10vw,50px)",color:W,
-            textAlign:"center",lineHeight:0.95,marginBottom:6}}>
-            {ob.lang==="es"?"FORJANDO":"FORGING"}
-          </div>
-          <div style={{fontFamily:BN,fontSize:"clamp(36px,10vw,50px)",color:G,
-            textAlign:"center",lineHeight:0.95,marginBottom:48}}>
-            {ob.lang==="es"?"TU RUTINA":"YOUR ROUTINE"}
-          </div>
-          <div style={{width:"100%",maxWidth:260,height:2,background:"rgba(255,255,255,0.08)",
-            borderRadius:1,overflow:"hidden",marginBottom:16}}>
-            <div style={{height:"100%",borderRadius:1,
-              background:"linear-gradient(90deg,"+G+",#26a866)",
-              width:genPct+"%",transition:"width 0.3s ease",
-              boxShadow:"0 0 12px rgba(63,207,142,0.5)"}}/>
-          </div>
-          <div style={{fontFamily:mono_,fontSize:9,letterSpacing:3,color:dim}}>{msgs[msgIdx]}</div>
-        </div>
-      );
-    }
-
-    const doGenerate=()=>{
-      setGenerating(true);
-      let p=0;
-      const iv=setInterval(()=>{
-        p+=Math.random()*15+8;
-        if(p>=100){
-          p=100;
-          clearInterval(iv);
-          setGenPct(100);
-          setTimeout(()=>{
-            // Generar rutina real
+  // ── PÁGINA ÚNICA DE ONBOARDING ─────────────────────────────
+  const doFinish=()=>{
+    setGenerating(true);
+    let p=0;
+    const iv=setInterval(()=>{
+      p+=Math.random()*14+7;
+      if(p>=100){
+        p=100;clearInterval(iv);setGenPct(100);
+        setTimeout(()=>{
+          try{
             const days=ob.selDays.length||ob.daysCount||4;
             const key=String(days)+(ob.level||"beg");
             const splits=RAW[key]||RAW[String(days)+"beg"]||Object.values(RAW)[0];
             const sd=ob.selDays.length>0?ob.selDays:[0,1,2,3].slice(0,days);
             const eqArr=ob.equipment==="gym"?["barbell","dumbbell","cable","machine","pullup_bar"]:
-              ob.equipment==="home"?["dumbbell","pullup_bar","resistance_band"]:
-              ["pullup_bar"];
+              ob.equipment==="home"?["dumbbell","pullup_bar","resistance_band"]:["pullup_bar"];
             const filtered=splits?splits.map(day=>({
               ...day,
               ex:day.ex.map(ex=>({...ex,e:canDoAuto(ex.e,eqArr)}))
@@ -6375,60 +6117,361 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             const routine=buildRoutine7(filtered,sd,ob.goal||"general",eqArr);
             const pf={
               lang:ob.lang,goal:ob.goal||"general",level:ob.level||"beg",
-              days:days,selDays:sd,gender:ob.gender||"male",age:ob.age||25,
+              days,selDays:sd,gender:ob.gender||"male",age:ob.age||25,
               weight:70,height:175,units:ob.units||"metric",
               equipment:ob.equipment||"gym",name:ob.name||"Atleta",
               mode:"auto",toured:false,
             };
             FStore.saveProfile(pf,routine);
             sp(pf);sr(routine);setStep(99);
-          },400);
-        } else {
-          setGenPct(Math.round(p));
-        }
-      },200);
-    };
+          }catch(e){console.error(e);}
+        },400);
+      } else setGenPct(Math.round(p));
+    },200);
+  };
 
-    return (
-      <div style={wrap}>
-        <Prog cur={7} tot={7}/>
-        <BackB/>
-        <Title t={tx.s8t+(ob.name||""+"!")} sub={tx.s8sub} step={7} tot={7}/>
-        <div style={{marginTop:20,display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:20}}>
-          {summary.map((s,i)=>(
-            <div key={i} style={{padding:"12px 14px",borderRadius:14,background:card,
-              border:"1px solid rgba(255,255,255,0.06)"}}>
-              <div style={{fontFamily:mono_,fontSize:7,letterSpacing:2,color:dim,marginBottom:4}}>
-                {s.label}
-              </div>
-              <div style={{fontFamily:mono_,fontSize:10,fontWeight:700,color:W,
-                textTransform:"uppercase",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-                {s.val}
-              </div>
-            </div>
+  const langs=[
+    {code:"es",flag:"🇪🇸",label:"ES"},{code:"en",flag:"🇺🇸",label:"EN"},
+    {code:"pt",flag:"🇧🇷",label:"PT"},{code:"fr",flag:"🇫🇷",label:"FR"},
+    {code:"it",flag:"🇮🇹",label:"IT"},{code:"de",flag:"🇩🇪",label:"DE"},
+  ];
+  const goals=[
+    {id:"muscle",em:"💪",label:tx.g1,desc:tx.g1d,color:"#4898e8"},
+    {id:"strength",em:"⚡",label:tx.g2,desc:tx.g2d,color:A},
+    {id:"lose",em:"🔥",label:tx.g3,desc:tx.g3d,color:"#e05555"},
+    {id:"general",em:"⚖️",label:tx.g4,desc:tx.g4d,color:G},
+  ];
+  const levels=[
+    {id:"beg",label:tx.l1,sub:tx.l1d},
+    {id:"int",label:tx.l2,sub:tx.l2d},
+    {id:"adv",label:tx.l3,sub:tx.l3d},
+  ];
+  const equips=[
+    {id:"gym",em:"🏋️",label:tx.e1,desc:tx.e1d},
+    {id:"home",em:"🏠",label:tx.e2,desc:tx.e2d},
+    {id:"bw",em:"🤸",label:tx.e3,desc:tx.e3d},
+  ];
+
+  const allDone=ob.name&&ob.gender&&ob.goal&&ob.level&&ob.equipment&&ob.selDays.length>0;
+
+  return(
+    <div style={{position:"fixed",inset:0,background:bg,zIndex:99999,
+      overflowY:"auto",overflowX:"hidden"}}>
+
+      {/* Esfera flotante — sticky en la parte superior */}
+      <div style={{
+        position:"sticky",top:0,zIndex:10,
+        display:"flex",flexDirection:"column",alignItems:"center",
+        background:"linear-gradient(180deg,"+bg+" 60%,transparent 100%)",
+        paddingTop:24,paddingBottom:8,
+      }}>
+        <canvas ref={canvasRef} style={{
+          width:200,height:200,
+          cursor:"crosshair",
+        }}/>
+        {/* Nombre + progreso debajo de la esfera */}
+        {ob.name&&(
+          <div style={{fontFamily:BN,fontSize:28,color:W,letterSpacing:2,
+            marginTop:-8,textAlign:"center"}}>
+            {ob.name.toUpperCase()}
+          </div>
+        )}
+        {!ob.name&&(
+          <div style={{fontFamily:BN,fontSize:22,color:"rgba(255,255,255,0.15)",
+            letterSpacing:4,marginTop:-8}}>FORJA</div>
+        )}
+        {/* Barra de progreso */}
+        <div style={{display:"flex",gap:4,marginTop:10,width:160}}>
+          {[0,1,2,3,4,5,6].map(i=>(
+            <div key={i} style={{flex:1,height:2,borderRadius:1,
+              background:done.includes(i)?G:"rgba(255,255,255,0.1)",
+              transition:"background 0.4s ease",
+              boxShadow:done.includes(i)?"0 0 6px "+G:"none",
+            }}/>
           ))}
         </div>
-        <div style={{fontFamily:mono_,fontSize:9,letterSpacing:3,color:dim,marginBottom:10}}>
-          {tx.s8units}
-        </div>
-        <div style={{display:"flex",gap:8,marginBottom:24}}>
-          {[{id:"metric",label:tx.s8kg},{id:"imperial",label:tx.s8lb}].map(u=>(
-            <button key={u.id} onClick={()=>set("units",u.id)} style={{
-              flex:1,padding:"12px",borderRadius:12,
-              background:ob.units===u.id?"rgba(63,207,142,0.08)":card,
-              border:ob.units===u.id?"1.5px solid rgba(63,207,142,0.45)":"1px solid rgba(255,255,255,0.07)",
-              cursor:"pointer",fontFamily:mono_,fontSize:10,letterSpacing:1,
-              color:ob.units===u.id?G:dim,transition:"all 0.2s",
-            }}>{u.label}</button>
-          ))}
-        </div>
-        <CBtn onClick={doGenerate} label={tx.s8go}/>
       </div>
-    );
-  }
 
-  return null;
+      {/* Contenido scrolleable */}
+      <div style={{padding:"0 26px 80px"}}>
+
+        {/* S1: IDIOMA */}
+        <div style={{marginBottom:40}}>
+          <SectionLabel n="1" label={tx.s1} done={done.includes(0)}/>
+          <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+            {langs.map(l=>(
+              <button key={l.code}
+                onClick={()=>{set("lang",l.code);setLang(l.code);markDone(0);}}
+                style={{
+                  padding:"10px 16px",borderRadius:999,
+                  background:ob.lang===l.code?G+"20":"rgba(255,255,255,0.05)",
+                  border:"1.5px solid "+(ob.lang===l.code?G+"80":"rgba(255,255,255,0.08)"),
+                  cursor:"pointer",display:"flex",alignItems:"center",gap:8,
+                  transition:"all 0.2s",
+                }}>
+                <span style={{fontSize:18}}>{l.flag}</span>
+                <span style={{fontFamily:MN,fontSize:9,letterSpacing:2,
+                  color:ob.lang===l.code?G:"rgba(255,255,255,0.4)"}}>{l.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* S2: NOMBRE */}
+        <div style={{marginBottom:40}}>
+          <SectionLabel n="2" label={tx.s2} done={done.includes(1)}/>
+          <input
+            value={nameVal}
+            onChange={e=>setNameVal(e.target.value)}
+            onKeyDown={e=>{
+              if(e.key==="Enter"&&nameVal.trim()){
+                set("name",nameVal.trim());markDone(1);
+              }
+            }}
+            placeholder={tx.s2ph}
+            maxLength={24}
+            style={{
+              width:"100%",padding:"18px 20px",borderRadius:16,
+              background:"rgba(255,255,255,0.05)",
+              border:"1.5px solid "+(nameVal.trim()?"rgba(63,207,142,0.4)":"rgba(255,255,255,0.1)"),
+              color:W,fontSize:22,fontWeight:700,outline:"none",
+              fontFamily:"inherit",caretColor:G,transition:"border-color 0.25s",
+            }}/>
+          {nameVal.trim()&&!done.includes(1)&&(
+            <button onClick={()=>{set("name",nameVal.trim());markDone(1);}}
+              style={{marginTop:10,padding:"10px 20px",borderRadius:10,border:"none",
+                background:G+"20",color:G,fontFamily:MN,fontSize:9,letterSpacing:2,
+                cursor:"pointer",border:"1px solid "+G+"40"}}>
+              {tx.cont}
+            </button>
+          )}
+        </div>
+
+        {/* S3: GÉNERO + EDAD */}
+        <div style={{marginBottom:40}}>
+          <SectionLabel n="3" label={tx.s3} done={done.includes(2)}/>
+          <div style={{display:"flex",gap:10,marginBottom:24}}>
+            {[{id:"male",label:tx.s3gM,icon:"♂"},{id:"female",label:tx.s3gF,icon:"♀"}].map(g=>(
+              <button key={g.id}
+                onClick={()=>{set("gender",g.id);}}
+                style={{
+                  flex:1,padding:"20px 12px",borderRadius:18,
+                  background:ob.gender===g.id?"rgba(63,207,142,0.1)":"rgba(255,255,255,0.04)",
+                  border:"1.5px solid "+(ob.gender===g.id?"rgba(63,207,142,0.5)":"rgba(255,255,255,0.07)"),
+                  cursor:"pointer",display:"flex",flexDirection:"column",
+                  alignItems:"center",gap:10,transition:"all 0.22s",
+                }}>
+                <span style={{fontSize:36,opacity:ob.gender===g.id?1:0.4}}>{g.icon}</span>
+                <span style={{fontFamily:MN,fontSize:9,letterSpacing:2,
+                  color:ob.gender===g.id?G:"rgba(255,255,255,0.35)"}}>{g.label}</span>
+              </button>
+            ))}
+          </div>
+          <div style={{fontFamily:MN,fontSize:8,letterSpacing:3,color:dim,marginBottom:12}}>{tx.s3age}</div>
+          <div style={{display:"flex",alignItems:"center",gap:16,marginBottom:16}}>
+            <button onClick={()=>setAgeVal(v=>Math.max(13,v-1))} style={{
+              width:44,height:44,borderRadius:"50%",border:"1px solid rgba(255,255,255,0.1)",
+              background:"rgba(255,255,255,0.05)",color:W,fontSize:22,cursor:"pointer",flexShrink:0,
+            }}>−</button>
+            <div style={{flex:1,textAlign:"center"}}>
+              <span style={{fontFamily:BN,fontSize:64,color:G,lineHeight:1}}>{ageVal}</span>
+            </div>
+            <button onClick={()=>setAgeVal(v=>Math.min(100,v+1))} style={{
+              width:44,height:44,borderRadius:"50%",border:"1px solid rgba(255,255,255,0.1)",
+              background:"rgba(255,255,255,0.05)",color:W,fontSize:22,cursor:"pointer",flexShrink:0,
+            }}>+</button>
+          </div>
+          {ob.gender&&!done.includes(2)&&(
+            <button onClick={()=>{set("age",ageVal);markDone(2);}}
+              style={{padding:"10px 20px",borderRadius:10,border:"1px solid "+G+"40",
+                background:G+"20",color:G,fontFamily:MN,fontSize:9,letterSpacing:2,cursor:"pointer"}}>
+              {tx.cont}
+            </button>
+          )}
+        </div>
+
+        {/* S4: OBJETIVO */}
+        <div style={{marginBottom:40}}>
+          <SectionLabel n="4" label={tx.s4} done={done.includes(3)}/>
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            {goals.map(g=>{
+              const sel=ob.goal===g.id;
+              return(
+                <button key={g.id}
+                  onClick={()=>{set("goal",g.id);markDone(3);}}
+                  style={{
+                    padding:"16px 18px",borderRadius:16,textAlign:"left",
+                    background:sel?g.color+"12":"rgba(255,255,255,0.04)",
+                    border:"1.5px solid "+(sel?g.color+"66":"rgba(255,255,255,0.07)"),
+                    cursor:"pointer",display:"flex",alignItems:"center",gap:14,
+                    transition:"all 0.22s cubic-bezier(0.34,1.56,0.64,1)",
+                    transform:sel?"scale(1.02)":"scale(1)",
+                  }}>
+                  <span style={{fontSize:22,opacity:sel?1:0.5}}>{g.em}</span>
+                  <div>
+                    <div style={{fontFamily:MN,fontSize:10,fontWeight:700,letterSpacing:2,
+                      color:sel?g.color:"rgba(255,255,255,0.45)",marginBottom:2}}>{g.label}</div>
+                    <div style={{fontSize:11,color:"rgba(255,255,255,0.3)"}}>{g.desc}</div>
+                  </div>
+                  {sel&&<div style={{marginLeft:"auto",width:7,height:7,borderRadius:"50%",
+                    background:g.color,boxShadow:"0 0 8px "+g.color}}/>}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* S5: NIVEL */}
+        <div style={{marginBottom:40}}>
+          <SectionLabel n="5" label={tx.s5} done={done.includes(4)}/>
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            {levels.map((l,i)=>{
+              const sel=ob.level===l.id;
+              return(
+                <button key={l.id}
+                  onClick={()=>{set("level",l.id);markDone(4);}}
+                  style={{
+                    padding:"16px 18px",borderRadius:16,textAlign:"left",
+                    background:sel?"rgba(63,207,142,0.08)":"rgba(255,255,255,0.04)",
+                    border:"1.5px solid "+(sel?"rgba(63,207,142,0.5)":"rgba(255,255,255,0.07)"),
+                    cursor:"pointer",display:"flex",alignItems:"center",gap:14,
+                    transition:"all 0.22s",
+                  }}>
+                  <div style={{fontFamily:BN,fontSize:28,color:sel?G:"rgba(255,255,255,0.12)",
+                    width:32,textAlign:"center",lineHeight:1}}>0{i+1}</div>
+                  <div>
+                    <div style={{fontFamily:MN,fontSize:10,fontWeight:700,letterSpacing:2,
+                      color:sel?G:"rgba(255,255,255,0.45)",marginBottom:2}}>{l.label}</div>
+                    <div style={{fontSize:11,color:"rgba(255,255,255,0.3)"}}>{l.sub}</div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* S6: EQUIPO */}
+        <div style={{marginBottom:40}}>
+          <SectionLabel n="6" label={tx.s6} done={done.includes(5)}/>
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            {equips.map(e=>{
+              const sel=ob.equipment===e.id;
+              return(
+                <button key={e.id}
+                  onClick={()=>{set("equipment",e.id);markDone(5);}}
+                  style={{
+                    padding:"14px 18px",borderRadius:14,textAlign:"left",
+                    background:sel?"rgba(63,207,142,0.07)":"rgba(255,255,255,0.04)",
+                    border:"1.5px solid "+(sel?"rgba(63,207,142,0.45)":"rgba(255,255,255,0.07)"),
+                    cursor:"pointer",display:"flex",alignItems:"center",gap:12,transition:"all 0.2s",
+                  }}>
+                  <span style={{fontSize:22,opacity:sel?1:0.5}}>{e.em}</span>
+                  <div>
+                    <div style={{fontFamily:MN,fontSize:10,fontWeight:700,letterSpacing:2,
+                      color:sel?G:"rgba(255,255,255,0.45)",marginBottom:2}}>{e.label}</div>
+                    <div style={{fontSize:11,color:"rgba(255,255,255,0.3)"}}>{e.desc}</div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* S7: DÍAS */}
+        <div style={{marginBottom:40}}>
+          <SectionLabel n="7" label={tx.s7} done={done.includes(6)}/>
+          <div style={{display:"flex",gap:8,marginBottom:16}}>
+            {[3,4,5,6].map(n=>{
+              const sel=ob.daysCount===n;
+              return(
+                <button key={n}
+                  onClick={()=>{
+                    set("daysCount",n);
+                    set("selDays",[1,2,3,4,5,6,0].slice(0,n));
+                    markDone(6);
+                  }}
+                  style={{
+                    flex:1,padding:"14px 6px",borderRadius:14,
+                    background:sel?"rgba(63,207,142,0.1)":"rgba(255,255,255,0.04)",
+                    border:"1.5px solid "+(sel?"rgba(63,207,142,0.55)":"rgba(255,255,255,0.07)"),
+                    cursor:"pointer",transition:"all 0.2s",
+                  }}>
+                  <div style={{fontFamily:BN,fontSize:26,color:sel?G:"rgba(255,255,255,0.3)",lineHeight:1}}>{n}</div>
+                  <div style={{fontFamily:MN,fontSize:7,letterSpacing:2,
+                    color:sel?"rgba(63,207,142,0.6)":"rgba(255,255,255,0.2)",marginTop:4}}>
+                    {ob.lang==="es"?"DÍAS":"DAYS"}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          <div style={{display:"flex",gap:6}}>
+            {dn.map((d,i)=>{
+              const sel=ob.selDays.includes(i);
+              return(
+                <button key={i}
+                  onClick={()=>{
+                    const cur=ob.selDays;
+                    if(cur.includes(i)){
+                      if(cur.length>1) set("selDays",cur.filter(x=>x!==i));
+                    } else {
+                      if(cur.length<ob.daysCount) set("selDays",[...cur,i].sort((a,b)=>a-b));
+                    }
+                    markDone(6);
+                  }}
+                  style={{
+                    flex:1,padding:"12px 3px",borderRadius:10,
+                    background:sel?"rgba(63,207,142,0.12)":"rgba(255,255,255,0.04)",
+                    border:"1.5px solid "+(sel?"rgba(63,207,142,0.5)":"rgba(255,255,255,0.07)"),
+                    cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:5,
+                    transition:"all 0.18s cubic-bezier(0.34,1.56,0.64,1)",
+                    transform:sel?"scale(1.08)":"scale(1)",
+                  }}>
+                  <span style={{fontFamily:MN,fontSize:7,letterSpacing:1,color:sel?G:"rgba(255,255,255,0.3)"}}>{d}</span>
+                  <div style={{width:5,height:5,borderRadius:"50%",
+                    background:sel?G:"rgba(255,255,255,0.1)"}}/>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* S8: CONFIRMAR */}
+        {allDone&&(
+          <div style={{
+            padding:"24px 20px",borderRadius:20,
+            background:"rgba(255,255,255,0.04)",
+            border:"1px solid rgba(255,255,255,0.08)",
+            marginBottom:24,
+          }}>
+            <div style={{fontFamily:BN,fontSize:32,color:W,marginBottom:4}}>{tx.s8}</div>
+            <div style={{fontSize:13,color:dim,marginBottom:20}}>{tx.s8sub}</div>
+            <div style={{display:"flex",gap:8,marginBottom:20}}>
+              {[{id:"metric",label:tx.s8kg},{id:"imperial",label:tx.s8lb}].map(u=>(
+                <button key={u.id} onClick={()=>set("units",u.id)} style={{
+                  flex:1,padding:"10px",borderRadius:10,
+                  background:ob.units===u.id?"rgba(63,207,142,0.1)":"rgba(255,255,255,0.04)",
+                  border:"1.5px solid "+(ob.units===u.id?"rgba(63,207,142,0.45)":"rgba(255,255,255,0.07)"),
+                  cursor:"pointer",fontFamily:MN,fontSize:10,letterSpacing:1,
+                  color:ob.units===u.id?G:"rgba(255,255,255,0.3)",transition:"all 0.2s",
+                }}>{u.label}</button>
+              ))}
+            </div>
+            <button onClick={doFinish} style={{
+              width:"100%",padding:"18px",borderRadius:14,border:"none",
+              background:"linear-gradient(135deg,"+G+",#26a866)",
+              color:"#04080f",fontFamily:MN,fontSize:12,fontWeight:700,letterSpacing:3,
+              cursor:"pointer",boxShadow:"0 0 32px rgba(63,207,142,0.3)",
+            }}>{tx.s8go}</button>
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
 }
+
+
 
 function getZoneState(zk, st) {
   const ts = st[zk]; if(!ts) return "rec";
