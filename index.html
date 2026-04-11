@@ -3741,7 +3741,7 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact}){
 
     var scene=new THREE.Scene();
     var cam=new THREE.PerspectiveCamera(28,W/H,0.1,100);
-    cam.position.set(12.5,1.1,26);cam.lookAt(8.0,1.1,0);
+    cam.position.set(8.0,1.1,26);cam.lookAt(8.0,1.1,0);
 
     var envTexture=null;
     if(window.THREE.RoomEnvironment){
@@ -3757,6 +3757,7 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact}){
     var cold=new THREE.DirectionalLight(0x88bbff,2.5);cold.position.set(0,-2,-3);scene.add(cold);
     var iceLight=new THREE.PointLight(0x88ccff,8,6);iceLight.position.set(2.0,0.5,2.5);scene.add(iceLight);
     var botLight=new THREE.PointLight(0x4488cc,3,5);botLight.position.set(1.5,-2,2);scene.add(botLight);
+    var sideLight=new THREE.PointLight(0x88bbff,2,5);sideLight.position.set(-2,1,2);scene.add(sideLight);
 
     new THREE.GLTFLoader().load(
       "https://pub-28277a6ce79d49479afd0cb1bba27b44.r2.dev/HEARTS/frozen_heart.glb",
@@ -3805,20 +3806,23 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact}){
         model.rotation.y=t*0.6;
         model.rotation.x=Math.sin(t*0.4)*0.12;
         if(alive){
-          beatTRef.current+=0.05;
+          beatTRef.current+=0.06;
           var bt=beatTRef.current;
-          var b1=Math.pow(Math.max(0,Math.sin(bt*1.8)),3);
-          var b2=Math.pow(Math.max(0,Math.sin(bt*1.8-0.8)),3)*0.6;
-          var beat=b1+b2;var s=1+beat*0.12;
+          // Latido doble más dramático — lub-DUB fuerte
+          var b1=Math.pow(Math.max(0,Math.sin(bt*2.0)),3);
+          var b2=Math.pow(Math.max(0,Math.sin(bt*2.0-0.7)),4)*0.75;
+          var beat=b1+b2;var s=1+beat*0.18;
           model.scale.set(s,s,s);
-          // Blanco brillante — explosión de luz pura en el latido
-          iceLight.intensity=6+beat*18;botLight.intensity=3+beat*8;
-          iceLight.color.set(0xffffff);botLight.color.set(0xddeeff);
+          // Luz blanca explosiva sincronizada con el latido
+          iceLight.intensity=4+beat*28;botLight.intensity=2+beat*14;
+          sideLight.intensity=2+beat*10;
+          iceLight.color.set(0xffffff);botLight.color.set(0xeef5ff);
+          sideLight.color.set(0xffffff);
           if(iceMesh)iceMesh.visible=false;
         } else {
           model.scale.set(1,1,1);
-          iceLight.intensity=8+Math.sin(t*1.2)*2.5;botLight.intensity=3;
-          iceLight.color.set(0x88ccff);botLight.color.set(0x4488cc);
+          iceLight.intensity=8+Math.sin(t*1.2)*2.5;botLight.intensity=3;sideLight.intensity=2;
+          iceLight.color.set(0x88ccff);botLight.color.set(0x4488cc);sideLight.color.set(0x88bbff);
           if(iceMesh)iceMesh.visible=true;
         }
       }
@@ -3833,24 +3837,46 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact}){
     function fogLoop(){
       fogAnimIdRef.current=requestAnimationFrame(fogLoop);
       ft+=0.012;fctx.clearRect(0,0,W,H);
-      var cx=W*0.72,cy=H*0.5;
+      var cx=W*0.5,cy=H*0.5;
       if(isAliveRef.current){
-        // Aura blanca pulsante — explosión de luz
-        var pulse=Math.abs(Math.sin(ft*2.2));
-        var aw=fctx.createRadialGradient(cx,cy,4,cx,cy,H*0.8);
-        aw.addColorStop(0,"rgba(255,255,255,"+(0.18+pulse*0.15)+")");
-        aw.addColorStop(.3,"rgba(200,230,255,"+(0.08+pulse*0.08)+")");
-        aw.addColorStop(.7,"rgba(150,200,255,"+(0.03+pulse*0.04)+")");
+        // Latido en canvas — sincronizado con la animación 3D
+        var pulse=Math.pow(Math.max(0,Math.sin(ft*2.0)),3)+Math.pow(Math.max(0,Math.sin(ft*2.0-0.7)),4)*0.75;
+        pulse=Math.min(1,pulse);
+
+        // Aura central explosiva
+        var aw=fctx.createRadialGradient(cx,cy,0,cx,cy,H*0.9);
+        aw.addColorStop(0,"rgba(255,255,255,"+(0.35+pulse*0.45)+")");
+        aw.addColorStop(.15,"rgba(220,240,255,"+(0.15+pulse*0.25)+")");
+        aw.addColorStop(.4,"rgba(180,220,255,"+(0.06+pulse*0.12)+")");
+        aw.addColorStop(.7,"rgba(120,180,255,"+(0.02+pulse*0.05)+")");
         aw.addColorStop(1,"rgba(0,0,0,0)");
         fctx.fillStyle=aw;fctx.fillRect(0,0,W,H);
-        // Rim blanco en latido
+
+        // Flash completo en el pico del latido
+        if(pulse>0.7){
+          fctx.fillStyle="rgba(255,255,255,"+(pulse-0.7)*0.18+")";
+          fctx.fillRect(0,0,W,H);
+        }
+
+        // Bordes que brillan con el latido
         var rimW=fctx.createLinearGradient(0,0,W,0);
         rimW.addColorStop(0,"rgba(255,255,255,0)");
-        rimW.addColorStop(.3,"rgba(255,255,255,"+(0.3+pulse*0.4)+")");
-        rimW.addColorStop(.5,"rgba(255,255,255,"+(0.5+pulse*0.5)+")");
-        rimW.addColorStop(.7,"rgba(255,255,255,"+(0.3+pulse*0.4)+")");
+        rimW.addColorStop(.2,"rgba(255,255,255,"+(0.4+pulse*0.6)+")");
+        rimW.addColorStop(.5,"rgba(255,255,255,"+(0.7+pulse*0.3)+")");
+        rimW.addColorStop(.8,"rgba(255,255,255,"+(0.4+pulse*0.6)+")");
         rimW.addColorStop(1,"rgba(255,255,255,0)");
-        fctx.fillStyle=rimW;fctx.fillRect(0,0,W,2);
+        fctx.fillStyle=rimW;fctx.fillRect(0,0,W,2.5);
+        fctx.fillRect(0,H-2.5,W,2.5);
+
+        // Rayos laterales verticales
+        var rimL=fctx.createLinearGradient(0,0,0,H);
+        rimL.addColorStop(0,"rgba(255,255,255,0)");
+        rimL.addColorStop(.3,"rgba(255,255,255,"+(0.3+pulse*0.4)+")");
+        rimL.addColorStop(.7,"rgba(255,255,255,"+(0.3+pulse*0.4)+")");
+        rimL.addColorStop(1,"rgba(255,255,255,0)");
+        fctx.fillStyle=rimL;
+        fctx.fillRect(0,0,2,H);
+        fctx.fillRect(W-2,0,2,H);
         return;
       }
       var a2=fctx.createRadialGradient(cx,cy,H*0.05,cx,cy,W*0.9);
