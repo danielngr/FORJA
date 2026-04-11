@@ -3900,91 +3900,75 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
   var tdi=dow===0?6:dow-1;
   var todayR=routine?routine[tdi]:null;
 
-  // Racha
   var streak=0;
   for(var si=0;si<365;si++){
     var ds=new Date(today);ds.setDate(ds.getDate()-si);
-    var dayIdx2=ds.getDay()===0?6:ds.getDay()-1;
-    var rr=routine?routine[dayIdx2]:null;
+    var di2=ds.getDay()===0?6:ds.getDay()-1;
+    var rr=routine?routine[di2]:null;
     if(!rr){streak++;continue;}
-    var wkOff2=Math.round((new Date(today)-ds)/(7*24*3600*1000))*-1;
-    var savedDone=FStore.loadDone(wk(wkOff2));
-    var hasDone2=rr.ex.some(function(x){return savedDone[dayIdx2+"-"+x.id]||done[dayIdx2+"-"+x.id];});
-    if(!hasDone2&&ds.toISOString().slice(0,10)!==today)break;
+    var wkO=Math.round((new Date(today)-ds)/(7*24*3600*1000))*-1;
+    var sd2=FStore.loadDone(wk(wkO));
+    if(!sd2[di2+"-"+(rr.ex[0]||{id:""}).id]&&ds.toISOString().slice(0,10)!==today)break;
+    var anyDone=rr.ex.some(function(x){return sd2[di2+"-"+x.id]||done[di2+"-"+x.id];});
+    if(!anyDone&&ds.toISOString().slice(0,10)!==today)break;
     streak++;
   }
 
-  // XP y nivel
   var totalXP=muscleXP?Object.values(muscleXP).reduce(function(a,v){return a+(v.xp||0);},0):0;
-  var currentLevel=xpToLevel(totalXP);
-  var nextThresh=xpForNextLevel(currentLevel);
-  var prevThresh=XP_THRESHOLDS[currentLevel-1]||0;
-  var xpPct=nextThresh===Infinity?1:Math.min(1,(totalXP-prevThresh)/(nextThresh-prevThresh));
-  var xpPctRound=Math.round(xpPct*100);
-  var LNAMES=["IRON I","IRON II","IRON III","IRON IV","IRON V","IRON VI","IRON VII","IRON VIII","IRON IX","IRON X"];
-  var lvlName=LNAMES[Math.min(9,currentLevel-1)];
-  var lvlNext=LNAMES[Math.min(9,currentLevel)]||"MAX";
-  var lvlColor=xpLevelColor(currentLevel);
+  var lvl=xpToLevel(totalXP);
+  var lvlColor=xpLevelColor(lvl);
+  var xpPrev=XP_THRESHOLDS[Math.max(0,lvl-2)]||0;
+  var xpNext2=XP_THRESHOLDS[lvl]||XP_THRESHOLDS[XP_THRESHOLDS.length-1];
+  var xpPct=Math.round(lvl>=10?100:((totalXP-xpPrev)/Math.max(1,xpNext2-xpPrev))*100);
+  var LN=["IRON I","IRON II","IRON III","IRON IV","IRON V","IRON VI","IRON VII","IRON VIII","IRON IX","IRON X"];
+  var lvlName=LN[Math.min(9,lvl-1)];
+  var lvlNext=LN[Math.min(9,lvl)]||"MAX";
 
-  // Semana
   var mo2=dow===0?-6:1-dow;
   var mon2=new Date(now);mon2.setDate(now.getDate()+mo2+weekOff*7);
-  var sun2=new Date(mon2);sun2.setDate(mon2.getDate()+6);
-  var weekDays=Array(7).fill(0).map(function(_,i){return new Date(mon2.getTime()+i*86400000);});
-  var trainingDays=weekDays.filter(function(_,i){return routine&&routine[i]&&routine[i].ex&&routine[i].ex.length>0;}).length;
-  var doneThisWeek=weekDays.filter(function(d,i){
+  var wkDays=Array(7).fill(0).map(function(_,i){return new Date(mon2.getTime()+i*86400000);});
+  var trainTotal=wkDays.filter(function(_,i){return routine&&routine[i]&&routine[i].ex&&routine[i].ex.length>0;}).length;
+  var trainDone=wkDays.filter(function(d,i){
     var r=routine?routine[i]:null;if(!r||!r.ex||!r.ex.length)return false;
-    var wkOff3=Math.round((new Date(today)-d)/(7*24*3600*1000))*-1;
-    var sd=FStore.loadDone(wk(wkOff3));
+    var wo=Math.round((new Date(today)-d)/(7*24*3600*1000))*-1;
+    var sd=FStore.loadDone(wk(wo));
     return r.ex.every(function(x){return sd[i+"-"+x.id]||done[i+"-"+x.id];});
   }).length;
 
-  // Label semana
   var MONTHS=["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+  var sun2=new Date(mon2);sun2.setDate(mon2.getDate()+6);
   var fmtD=function(d){return d.getDate()+" "+MONTHS[d.getMonth()];};
-  var weekLabel=weekOff===0
-    ?(lang==="es"||lang==="pt"?"ESTA SEMANA":lang==="it"?"QUESTA SETTIMANA":lang==="de"?"DIESE WOCHE":"THIS WEEK")
-    :weekOff===-1?(lang==="es"?"SEMANA PASADA":"LAST WEEK")
-    :(fmtD(mon2)+" – "+fmtD(sun2));
-
-  var ringDash=trainingDays>0?(doneThisWeek/trainingDays)*182.2:0;
-  var ringDashStr=ringDash.toFixed(1)+" 182.2";
+  var weekLabel=weekOff===0?(lang==="es"||lang==="pt"?"ESTA SEMANA":lang==="it"?"QUESTA SETTIMANA":"THIS WEEK"):weekOff===-1?(lang==="es"?"SEMANA PASADA":"LAST WEEK"):(fmtD(mon2)+" – "+fmtD(sun2));
+  var ringDash=(trainTotal>0?(trainDone/trainTotal)*182.2:0).toFixed(1)+" 182.2";
 
   var hr=now.getHours();
   var greeting=lang==="es"||lang==="pt"?(hr<12?"Buenos días,":(hr<19?"Buenas tardes,":"Buenas noches,")):(hr<12?"Good morning,":(hr<19?"Good afternoon,":"Good evening,"));
   var userName=profile&&profile.name?profile.name:"Atleta";
 
-  // Último PR
-  var lastPRName="", lastPRVal="", bestDate="";
+  var lastPRName="",lastPRVal="";
   try{
-    var storedLogs=JSON.parse(localStorage.getItem("fv8l")||"{}");
-    Object.entries(storedLogs).forEach(function(kv){
+    var lgs=JSON.parse(localStorage.getItem("fv8l")||"{}");
+    var bd="";
+    Object.entries(lgs).forEach(function(kv){
       (kv[1]||[]).forEach(function(en){
-        if(en.d&&en.d>bestDate&&en.rm>0){bestDate=en.d;lastPRName=en.exName||kv[0];lastPRVal=Math.round(en.rm)+"kg";}
+        if(en.d&&en.d>bd&&en.rm>0){bd=en.d;lastPRName=en.exName||kv[0];lastPRVal=Math.round(en.rm)+"kg";}
       });
     });
   }catch(_){}
 
   return e("div",{style:{position:"relative",zIndex:1}},
 
-    // ── ROW NAV: ESTA SEMANA + ⚙ ──
+    // Nav ESTA SEMANA + settings
     e("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 18px 0"}},
       e("div",{style:{display:"flex",alignItems:"center",gap:4}},
-        e("button",{onClick:function(){setWeekOff(function(p){return Math.max(-12,p-1);});},
-          style:{background:"none",border:"none",color:"rgba(255,255,255,0.25)",fontSize:18,cursor:"pointer",padding:"0 4px",lineHeight:1}},"‹"),
+        e("button",{onClick:function(){setWeekOff(function(p){return Math.max(-12,p-1);});},style:{background:"none",border:"none",color:"rgba(255,255,255,0.25)",fontSize:18,cursor:"pointer",padding:"0 4px",lineHeight:1}},"‹"),
         e("span",{style:{fontSize:7,fontFamily:mono,letterSpacing:3,color:"rgba(255,255,255,0.35)",fontWeight:600}},weekLabel),
-        e("button",{onClick:function(){setWeekOff(function(p){return Math.min(0,p+1);});},
-          style:{background:"none",border:"none",color:weekOff===0?"rgba(255,255,255,0.08)":"rgba(255,255,255,0.25)",fontSize:18,cursor:weekOff===0?"default":"pointer",padding:"0 4px",lineHeight:1}},"›")
+        e("button",{onClick:function(){setWeekOff(function(p){return Math.min(0,p+1);});},style:{background:"none",border:"none",color:weekOff===0?"rgba(255,255,255,0.08)":"rgba(255,255,255,0.25)",fontSize:18,cursor:weekOff===0?"default":"pointer",padding:"0 4px",lineHeight:1}},"›")
       ),
-      e("div",{style:{display:"flex",alignItems:"center",gap:8}},
-        e("button",{onClick:function(){setShowSet(!showSet);},
-          style:{width:26,height:26,borderRadius:8,border:"0.5px solid rgba(255,255,255,0.1)",
-            background:"rgba(255,255,255,0.05)",cursor:"pointer",
-            color:"rgba(255,255,255,0.4)",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center"}},"⚙")
-      )
+      e("button",{onClick:function(){setShowSet(!showSet);},style:{width:26,height:26,borderRadius:8,border:"0.5px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.05)",cursor:"pointer",color:"rgba(255,255,255,0.4)",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center"}},"⚙")
     ),
 
-    // ── CARD GLASS PRINCIPAL ──
+    // Card glass principal
     e("div",{style:{
       margin:"12px 18px 0",
       background:"linear-gradient(135deg,rgba(20,35,90,0.92) 0%,rgba(10,18,50,0.95) 100%)",
@@ -3994,103 +3978,72 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
       borderRight:"0.5px solid rgba(255,255,255,0.18)",
       borderBottom:"0.5px solid rgba(255,255,255,0.05)",
       boxShadow:"inset 0 1.5px 0 rgba(255,255,255,0.4),0 16px 48px rgba(0,0,30,0.6)",
-      overflow:"hidden",padding:"18px 16px 16px",position:"relative",
+      overflow:"hidden",padding:"18px 16px 16px",position:"relative"
     }},
-      // Brillo esquina
-      e("div",{style:{position:"absolute",top:-42,left:-24,width:190,height:120,
-        background:"radial-gradient(ellipse,rgba(255,255,255,0.12) 0%,transparent 68%)",
-        transform:"rotate(-22deg)",pointerEvents:"none",zIndex:0}}),
-      e("div",{style:{position:"absolute",inset:0,borderRadius:24,
-        background:"linear-gradient(148deg,rgba(255,255,255,0.1) 0%,rgba(255,255,255,0.02) 22%,transparent 64%)",
-        pointerEvents:"none",zIndex:0}}),
+      e("div",{style:{position:"absolute",top:-42,left:-24,width:190,height:120,background:"radial-gradient(ellipse,rgba(255,255,255,0.12) 0%,transparent 68%)",transform:"rotate(-22deg)",pointerEvents:"none",zIndex:0}}),
+      e("div",{style:{position:"absolute",inset:0,borderRadius:24,background:"linear-gradient(148deg,rgba(255,255,255,0.1) 0%,rgba(255,255,255,0.02) 22%,transparent 64%)",pointerEvents:"none",zIndex:0}}),
 
-      // Saludo + pill racha + corazon
-      e("div",{style:{display:"flex",alignItems:"stretch",marginBottom:14,position:"relative",zIndex:1,gap:12}},
+      // Fila superior: texto izquierda + corazón derecha
+      e("div",{style:{display:"flex",alignItems:"flex-start",gap:8,marginBottom:14,position:"relative",zIndex:1}},
 
-        // Columna izquierda: saludo + ring + XP + PR
-        e("div",{style:{flex:1,display:"flex",flexDirection:"column",justifyContent:"space-between"}},
-          // Saludo + pill
-          e("div",{style:{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:14}},
+        // Columna izquierda: saludo + pill racha
+        e("div",{style:{flex:1}},
+          e("div",{style:{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:10}},
             e("div",null,
               e("div",{style:{fontSize:11,color:"rgba(255,255,255,0.32)",marginBottom:3,fontFamily:mono}},greeting),
               e("div",{style:{fontSize:24,fontWeight:700,color:"#fff",letterSpacing:-0.5,lineHeight:1}},userName)
             ),
-            e("div",{style:{padding:"5px 12px",borderRadius:20,background:"rgba(50,110,255,0.12)",
-              border:"1px solid rgba(120,175,255,0.5)",display:"flex",alignItems:"center",gap:5}},
-              e("span",{style:{fontSize:14}},"⚡"),
-              e("span",{style:{fontSize:14,fontWeight:700,color:"rgba(190,220,255,0.96)"}},streak),
+            e("div",{style:{padding:"5px 11px",borderRadius:20,background:"rgba(50,110,255,0.12)",border:"1px solid rgba(120,175,255,0.5)",display:"flex",alignItems:"center",gap:5}},
+              e("span",{style:{fontSize:13}},"⚡"),
+              e("span",{style:{fontSize:13,fontWeight:700,color:"rgba(190,220,255,0.96)"}},streak),
               e("span",{style:{fontSize:8,fontFamily:mono,letterSpacing:1.5,color:"rgba(100,155,255,0.6)"}}," DÍAS")
             )
           ),
 
-          // Row inferior: ring + XP + PR
-          e("div",{style:{display:"flex",alignItems:"center",gap:14}},
-        // Ring semanal
-        e("div",{style:{position:"relative",width:68,height:68,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}},
-          e("svg",{width:"68",height:"68",viewBox:"0 0 68 68",style:{position:"absolute",overflow:"visible"}},
-            e("defs",null,
-              e("linearGradient",{id:"rg3",x1:"0%",y1:"0%",x2:"100%",y2:"100%"},
-                e("stop",{offset:"0%",stopColor:"rgba(130,190,255,0.8)"}),
-                e("stop",{offset:"100%",stopColor:"#4878ff"})
+          // Ring + XP + PR
+          e("div",{style:{display:"flex",alignItems:"center",gap:12}},
+            // Ring semanal
+            e("div",{style:{position:"relative",width:64,height:64,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}},
+              e("svg",{width:"64",height:"64",viewBox:"0 0 64 64",style:{position:"absolute",overflow:"visible"}},
+                e("defs",null,e("linearGradient",{id:"rg3",x1:"0%",y1:"0%",x2:"100%",y2:"100%"},e("stop",{offset:"0%",stopColor:"rgba(130,190,255,0.8)"}),e("stop",{offset:"100%",stopColor:"#4878ff"}))),
+                e("circle",{cx:"32",cy:"32",r:"26",fill:"none",stroke:"rgba(255,255,255,0.05)",strokeWidth:"5"}),
+                e("circle",{cx:"32",cy:"32",r:"26",fill:"none",stroke:"url(#rg3)",strokeWidth:"5",strokeDasharray:ringDash,strokeLinecap:"round",transform:"rotate(-90 32 32)",style:{filter:"drop-shadow(0 0 4px rgba(80,140,255,0.8))"}})
+              ),
+              e("div",{style:{textAlign:"center",position:"relative",zIndex:1}},
+                e("div",{style:{fontSize:13,fontWeight:800,color:"#fff",lineHeight:1}},trainDone+"/"+trainTotal),
+                e("div",{style:{fontSize:6,fontFamily:mono,letterSpacing:2,color:"rgba(255,255,255,0.28)",marginTop:2}},"SEM")
               )
             ),
-            e("circle",{cx:"34",cy:"34",r:"27",fill:"none",stroke:"rgba(255,255,255,0.05)",strokeWidth:"5"}),
-            e("circle",{cx:"34",cy:"34",r:"27",fill:"none",stroke:"url(#rg3)",strokeWidth:"5",
-              strokeDasharray:ringDashStr,strokeLinecap:"round",transform:"rotate(-90 34 34)",
-              style:{filter:"drop-shadow(0 0 4px rgba(80,140,255,0.8))"}})
-          ),
-          e("div",{style:{textAlign:"center",position:"relative",zIndex:1}},
-            e("div",{style:{fontSize:14,fontWeight:800,color:"#fff",lineHeight:1,letterSpacing:-0.5}},doneThisWeek+"/"+trainingDays),
-            e("div",{style:{fontSize:6,fontFamily:mono,letterSpacing:2,color:"rgba(255,255,255,0.28)",marginTop:2}},"SEM")
+            // XP + PR
+            e("div",{style:{flex:1}},
+              e("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:4}},
+                e("div",{style:{display:"flex",alignItems:"center",gap:5}},
+                  e("span",{style:{fontSize:8,fontFamily:mono,letterSpacing:2,color:"rgba(185,215,255,0.65)",fontWeight:600}},lvlName),
+                  lvl<10?e("span",{style:{fontSize:8,color:"rgba(255,255,255,0.18)",fontFamily:mono}},"→ "+lvlNext):null
+                ),
+                e("span",{style:{fontSize:7,fontFamily:mono,color:"rgba(255,255,255,0.2)"}},xpPct+"%")
+              ),
+              e("div",{style:{height:2,borderRadius:1,overflow:"hidden",background:"rgba(255,255,255,0.06)",marginBottom:10}},
+                e("div",{style:{width:xpPct+"%",height:"100%",background:"linear-gradient(90deg,"+lvlColor+"88,"+lvlColor+")",borderRadius:1,boxShadow:"0 0 8px "+lvlColor+"88",transition:"width 0.8s ease"}})
+              ),
+              e("div",{style:{fontSize:7,fontFamily:mono,letterSpacing:2,color:"rgba(255,255,255,0.25)",marginBottom:2}},"ÚLTIMO PR"),
+              e("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between"}},
+                e("div",{style:{fontSize:11,fontWeight:700,color:"rgba(255,255,255,0.85)",maxWidth:90,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},lastPRName||(lang==="es"?"Sin registros":"No logs")),
+                lastPRVal?e("div",{style:{padding:"3px 8px",borderRadius:10,background:"rgba(255,215,0,0.08)",border:"1px solid rgba(255,215,0,0.35)"}},e("span",{style:{fontSize:9,fontWeight:700,color:"rgba(255,215,0,0.85)"}},"🏆 "+lastPRVal)):null
+              )
+            )
           )
         ),
 
-        // XP + PR
-        e("div",{style:{flex:1,display:"flex",flexDirection:"column",gap:10}},
-          // XP bar
-          e("div",null,
-            e("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:4}},
-              e("div",{style:{display:"flex",alignItems:"center",gap:5}},
-                e("span",{style:{fontSize:8,fontFamily:mono,letterSpacing:2,color:"rgba(185,215,255,0.65)",fontWeight:600}},lvlName),
-                currentLevel<10&&e("span",{style:{fontSize:8,color:"rgba(255,255,255,0.18)",fontFamily:mono}},"→ "+lvlNext)
-              ),
-              e("span",{style:{fontSize:7,fontFamily:mono,color:"rgba(255,255,255,0.2)"}},xpPctRound+"%")
-            ),
-            e("div",{style:{height:2,borderRadius:1,overflow:"hidden",background:"rgba(255,255,255,0.06)"}},
-              e("div",{style:{width:xpPctRound+"%",height:"100%",
-                background:"linear-gradient(90deg,"+lvlColor+"88,"+lvlColor+")",
-                borderRadius:1,boxShadow:"0 0 8px "+lvlColor+"88",transition:"width 0.8s ease"}})
-            )
-          ),
-          // Último PR
-          e("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between"}},
-            e("div",null,
-              e("div",{style:{fontSize:7,fontFamily:mono,letterSpacing:2,color:"rgba(255,255,255,0.25)",marginBottom:2}},"ÚLTIMO PR"),
-              e("div",{style:{fontSize:12,fontWeight:700,color:"rgba(255,255,255,0.85)",maxWidth:110,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},
-                lastPRName||(lang==="es"?"Sin registros":"No logs"))
-            ),
-            lastPRVal&&e("div",{style:{padding:"4px 10px",borderRadius:12,
-              background:"rgba(255,215,0,0.08)",border:"1px solid rgba(255,215,0,0.35)"}},
-              e("span",{style:{fontSize:10,fontWeight:700,color:"rgba(255,215,0,0.85)"}},"🏆 "+lastPRVal)
-            )
-          )
-          ) // fin row inferior ring+XP+PR
-        ), // fin columna izquierda
+        // Corazón frozen — derecha
+        e(FrozenHeartBanner,{day:todayR,done:done,sel:tdi,lang:lang,mono:mono,compact:true,
+          onStart:function(){window.dispatchEvent(new CustomEvent("forja:startWorkout"));}})
+      )
+    ),
 
-        // Columna derecha: corazón frozen
-        e(FrozenHeartBanner,{
-          day:todayR,done:done,sel:tdi,lang:lang,mono:mono,
-          onStart:function(){window.dispatchEvent(new CustomEvent("forja:startWorkout"));},
-          compact:true
-        })
-
-      ), // fin flex saludo+corazon
-    ), // fin card glass
-
-    // ── TABS ENTRENO / CUERPO ──
+    // Tabs ENTRENO / CUERPO
     e("div",{style:{padding:"10px 18px 0"}},
-      e("div",{style:{display:"flex",background:"rgba(255,255,255,0.04)",borderRadius:14,padding:4,gap:4,
-        border:"0.5px solid rgba(255,255,255,0.08)"}},
+      e("div",{style:{display:"flex",background:"rgba(255,255,255,0.04)",borderRadius:14,padding:4,gap:4,border:"0.5px solid rgba(255,255,255,0.08)"}},
         [{id:"train",l:lang==="es"||lang==="pt"?"ENTRENO":lang==="fr"?"ENTRAÎNEMENT":lang==="it"?"ALLENAMENTO":lang==="de"?"TRAINING":"WORKOUT",icon:"⚡"},
          {id:"body",l:lang==="es"||lang==="pt"?"CUERPO":lang==="fr"?"CORPS":lang==="it"?"CORPO":lang==="de"?"KÖRPER":"BODY",icon:"🫀"}
         ].map(function(tb){
@@ -4101,7 +4054,7 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
               color:active?"#EEEAE3":"rgba(255,255,255,0.3)",
               fontSize:11,fontWeight:active?800:600,fontFamily:mono,letterSpacing:2,
               transition:"all .2s",
-              boxShadow:active?"inset 0 1px 0 rgba(255,255,255,0.5),0 2px 12px rgba(0,0,0,0.3)":"none",
+              boxShadow:active?"inset 0 1px 0 rgba(255,255,255,0.5)":"none",
               borderTop:active?"1px solid rgba(255,255,255,0.35)":"1px solid transparent",
               display:"flex",alignItems:"center",justifyContent:"center",gap:6}},
             e("span",{style:{fontSize:13,opacity:active?1:0.4}},tb.icon),
