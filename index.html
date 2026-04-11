@@ -4351,7 +4351,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                             <defs><linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="rgba(130,190,255,0.8)"/><stop offset="100%" stopColor="#4878ff"/></linearGradient></defs>
                             <circle cx="36" cy="36" r="29" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="6"/>
                             <circle cx="36" cy="36" r="29" fill="none" stroke="url(#ringGrad)" strokeWidth="6"
-                              strokeDasharray={`${weekTotalFull>0?(weekDone/weekTotalFull)*182.2:0} 182.2`}
+                              strokeDasharray={(weekTotalFull>0?(weekDone/weekTotalFull)*182.2:0)+" 182.2"}
                               strokeLinecap="round" transform="rotate(-90 36 36)"
                               style={{animation:"ringPulse 3s ease-in-out infinite",filter:"drop-shadow(0 0 4px rgba(80,140,255,0.7))"}}/>
                           </svg>
@@ -4373,7 +4373,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                               <span style={{fontSize:7,fontFamily:mono,color:"rgba(255,255,255,0.2)"}}>{xpPct}%</span>
                             </div>
                             <div style={{height:2,borderRadius:1,overflow:"hidden",background:"rgba(255,255,255,0.06)"}}>
-                              <div style={{width:`${xpPct}%`,height:"100%",background:`linear-gradient(90deg,${lvlColor}88,${lvlColor})`,borderRadius:1,boxShadow:`0 0 8px ${lvlColor}88`,transition:"width 0.8s ease"}}/>
+                              <div style={{width:xpPct+"%",height:"100%",background:"linear-gradient(90deg,"+lvlColor+"88,"+lvlColor+")",borderRadius:1,boxShadow:"0 0 8px "+lvlColor+"88",transition:"width 0.8s ease"}}/>
                             </div>
                           </div>
                           {/* Último PR */}
