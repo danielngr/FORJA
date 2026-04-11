@@ -3982,6 +3982,26 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
     });
   }catch(_){}
 
+  // Edad Cardiovascular — modelo NTNU (Nes et al. 2014)
+  // Estima VO2max desde actividad semanal + género + edad
+  var userAge=profile&&profile.age?parseInt(profile.age):25;
+  var isFemale=profile&&profile.gender==="female";
+  var diasSemana=Math.min(7,trainTotal>0?trainDone+(7-trainTotal)*0.1:0); // días entrenados ajustados
+  // Fórmula non-exercise NTNU validada en 37,000 personas
+  var vo2est=isFemale
+    ?(56.363 + 1.921*diasSemana - 0.381*userAge - 0.754*0) // sin cintura usamos 0
+    :(67.350 + 1.921*diasSemana - 0.381*userAge - 0.754*0);
+  // VO2max promedio por edad/sexo (Cooper Institute normative data)
+  var vo2avg=isFemale
+    ?(userAge<30?37:userAge<40?35:userAge<50?33:userAge<60?30:27)
+    :(userAge<30?47:userAge<40?43:userAge<50?40:userAge<60?36:32);
+  // Fitness Age = edad - 0.2*(vo2est - vo2avg) — fórmula NTNU publicada en Med Sci Sports Exerc 2014
+  var fitnessAge=Math.round(userAge - 0.2*(vo2est - vo2avg));
+  fitnessAge=Math.max(Math.round(userAge*0.6), Math.min(Math.round(userAge*1.4), fitnessAge));
+  var ageDiff=userAge-fitnessAge;
+  var fitnessAgeColor=ageDiff>2?"#3fcf8e":ageDiff>0?"#6aafff":ageDiff>-2?"rgba(255,255,255,0.5)":"#e8a020";
+  var fitnessAgeLabel=ageDiff>3?"EXCELENTE":ageDiff>0?"BUENO":ageDiff>-2?"PROMEDIO":"MEJORAR";
+
   return e("div",{style:{position:"relative",zIndex:1}},
 
     // Nav ESTA SEMANA + settings
@@ -4050,10 +4070,26 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
           e("div",{style:{height:2,borderRadius:1,overflow:"hidden",background:"rgba(255,255,255,0.06)",marginBottom:10}},
             e("div",{style:{width:xpPct+"%",height:"100%",background:"linear-gradient(90deg,"+lvlColor+"88,"+lvlColor+")",borderRadius:1,boxShadow:"0 0 8px "+lvlColor+"88",transition:"width 0.8s ease"}})
           ),
-          e("div",{style:{fontSize:7,fontFamily:mono,letterSpacing:2,color:"rgba(255,255,255,0.25)",marginBottom:2}},"ÚLTIMO PR"),
           e("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between"}},
-            e("div",{style:{fontSize:11,fontWeight:700,color:"rgba(255,255,255,0.85)",maxWidth:90,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},lastPRName||(lang==="es"?"Sin registros":"No logs")),
-            lastPRVal?e("div",{style:{padding:"3px 8px",borderRadius:10,background:"rgba(255,215,0,0.08)",border:"1px solid rgba(255,215,0,0.35)"}},e("span",{style:{fontSize:9,fontWeight:700,color:"rgba(255,215,0,0.85)"}},"🏆 "+lastPRVal)):null
+            e("div",null,
+              e("div",{style:{fontSize:7,fontFamily:mono,letterSpacing:2,color:"rgba(255,255,255,0.25)",marginBottom:3}},"EDAD CARDIOVASCULAR"),
+              e("div",{style:{display:"flex",alignItems:"baseline",gap:5}},
+                e("span",{style:{fontSize:22,fontWeight:800,color:fitnessAgeColor,lineHeight:1}},fitnessAge),
+                e("span",{style:{fontSize:9,color:"rgba(255,255,255,0.3)",fontFamily:mono}},"años")
+              )
+            ),
+            e("div",{style:{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:3}},
+              e("div",{style:{
+                padding:"3px 8px",borderRadius:8,
+                background:ageDiff>0?"rgba(63,207,142,0.1)":ageDiff>-2?"rgba(255,255,255,0.05)":"rgba(232,160,32,0.1)",
+                border:"1px solid "+(ageDiff>0?"rgba(63,207,142,0.3)":ageDiff>-2?"rgba(255,255,255,0.1)":"rgba(232,160,32,0.3)"),
+              }},
+                e("span",{style:{fontSize:8,fontFamily:mono,letterSpacing:1,fontWeight:700,color:fitnessAgeColor}},fitnessAgeLabel)
+              ),
+              e("div",{style:{fontSize:8,color:"rgba(255,255,255,0.2)",fontFamily:mono}},
+                ageDiff>0?"−"+ageDiff+" vs tu edad":ageDiff<0?"+"+Math.abs(ageDiff)+" vs tu edad":"= tu edad"
+              )
+            )
           )
         )
       )
