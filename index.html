@@ -4047,24 +4047,35 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
     </div>
   );}
   return(<>
-      <div style={{background:"#08090e",borderBottom:"0.5px solid rgba(255,255,255,0.06)",position:"relative",height:220,overflow:"hidden"}}>
+      <div style={{background:"#08090e",borderBottom:"0.5px solid rgba(255,255,255,0.06)",position:"relative"}}>
 
-        <canvas id="forja-bot-canvas" style={{position:"absolute",inset:0,width:"100%",height:"100%",zIndex:1,display:"block"}}/>
-        <div onClick={()=>setShowBotChat(true)} style={{position:"absolute",inset:0,zIndex:9,cursor:"pointer"}}/>
-
-        <div style={{position:"absolute",inset:0,zIndex:2,pointerEvents:"none",background:"linear-gradient(90deg,rgba(8,9,14,.6) 0%,transparent 18%,transparent 82%,rgba(8,9,14,.6) 100%)"}}/>
-        <div style={{position:"absolute",top:0,left:0,right:0,height:60,zIndex:2,pointerEvents:"none",background:"linear-gradient(180deg,rgba(8,9,14,.55) 0%,transparent 100%)"}}/>
-
-        <div style={{position:"absolute",top:10,right:10,zIndex:10,display:"flex",alignItems:"center",gap:8}}>
-          {day&&exs.length>0&&(
-            <div style={{display:"flex",alignItems:"center",gap:5}}>
-              <span style={{fontSize:8,fontFamily:mono,color:"rgba(255,255,255,0.2)",letterSpacing:1}}>{dc}/{exs.length}</span>
-              <div style={{width:28,height:1.5,background:"rgba(255,255,255,0.06)",borderRadius:1}}>
-                <div style={{height:"100%",width:`${pct*100}%`,background:pct===1?"#3fcf8e":"rgba(255,255,255,0.3)",borderRadius:1,transition:"width .4s"}}/>
+        {/* Row 1: ESTA SEMANA nav + settings */}
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 16px 0"}}>
+          {(()=>{
+            const now=new Date(),dow=now.getDay(),mo=dow===0?-6:1-dow;
+            const mon=new Date(now); mon.setDate(now.getDate()+mo+weekOff*7);
+            const sun=new Date(mon); sun.setDate(mon.getDate()+6);
+            const fmt=d=>d.getDate()+" "+["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"][d.getMonth()];
+            const lbl=weekOff===0?(lang==="es"||lang==="pt"?"ESTA SEMANA":lang==="fr"?"CETTE SEMAINE":lang==="it"?"QUESTA SETTIMANA":lang==="de"?"DIESE WOCHE":"THIS WEEK"):weekOff===-1?(lang==="es"||lang==="pt"?"SEMANA PASADA":"LAST WEEK"):fmt(mon)+" - "+fmt(sun);
+            return(
+              <div data-tour="cal-nav" style={{display:"flex",alignItems:"center",gap:4}}>
+                <button onClick={()=>setWeekOff(p=>Math.max(-12,p-1))} style={{background:"none",border:"none",color:"rgba(255,255,255,0.25)",fontSize:18,cursor:"pointer",lineHeight:1,padding:"0 4px"}}>&#8249;</button>
+                <span style={{fontSize:7,fontFamily:mono,letterSpacing:3,color:"rgba(255,255,255,0.35)"}}>{lbl}</span>
+                <button onClick={()=>setWeekOff(p=>Math.min(0,p+1))} style={{background:"none",border:"none",color:weekOff===0?"rgba(255,255,255,0.08)":"rgba(255,255,255,0.25)",fontSize:18,cursor:weekOff===0?"default":"pointer",lineHeight:1,padding:"0 4px"}}>&#8250;</button>
               </div>
-            </div>
-          )}
-          <button onClick={()=>setShowSet(!showSet)} style={{width:26,height:26,borderRadius:8,border:"0.5px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.05)",cursor:"pointer",color:"rgba(255,255,255,0.4)",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center"}}>&#9881;</button>
+            );
+          })()}
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            {day&&exs.length>0&&(
+              <div style={{display:"flex",alignItems:"center",gap:5}}>
+                <span style={{fontSize:8,fontFamily:mono,color:"rgba(255,255,255,0.2)",letterSpacing:1}}>{dc}/{exs.length}</span>
+                <div style={{width:28,height:1.5,background:"rgba(255,255,255,0.06)",borderRadius:1}}>
+                  <div style={{height:"100%",width:`${pct*100}%`,background:pct===1?"#3fcf8e":"rgba(255,255,255,0.3)",borderRadius:1,transition:"width .4s"}}/>
+                </div>
+              </div>
+            )}
+            <button onClick={()=>setShowSet(!showSet)} style={{width:26,height:26,borderRadius:8,border:"0.5px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.05)",cursor:"pointer",color:"rgba(255,255,255,0.4)",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center"}}>&#9881;</button>
+          </div>
         </div>
 
         {showSet&&(
@@ -4077,22 +4088,8 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
           </div>
         )}
 
-        {(()=>{
-          const now=new Date(),dow=now.getDay(),mo=dow===0?-6:1-dow;
-          const mon=new Date(now); mon.setDate(now.getDate()+mo+weekOff*7);
-          const sun=new Date(mon); sun.setDate(mon.getDate()+6);
-          const fmt=d=>d.getDate()+" "+["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"][d.getMonth()];
-          const lbl=weekOff===0?(lang==="es"||lang==="pt"?"ESTA SEMANA":lang==="fr"?"CETTE SEMAINE":lang==="it"?"QUESTA SETTIMANA":lang==="de"?"DIESE WOCHE":"THIS WEEK"):weekOff===-1?(lang==="es"||lang==="pt"?"SEMANA PASADA":"LAST WEEK"):fmt(mon)+" - "+fmt(sun);
-          return(
-            <div data-tour="cal-nav" style={{position:"absolute",top:12,left:0,right:0,zIndex:10,display:"flex",alignItems:"center",justifyContent:"center",gap:8,pointerEvents:"none"}}>
-              <button onClick={()=>setWeekOff(p=>Math.max(-12,p-1))} style={{pointerEvents:"all",background:"none",border:"none",color:"rgba(255,255,255,0.25)",fontSize:18,cursor:"pointer",lineHeight:1,padding:"0 6px"}}>&#8249;</button>
-              <span style={{fontSize:7,fontFamily:mono,letterSpacing:3,color:"rgba(255,255,255,0.35)"}}>{lbl}</span>
-              <button onClick={()=>setWeekOff(p=>Math.min(0,p+1))} style={{pointerEvents:"all",background:"none",border:"none",color:weekOff===0?"rgba(255,255,255,0.08)":"rgba(255,255,255,0.25)",fontSize:18,cursor:weekOff===0?"default":"pointer",lineHeight:1,padding:"0 6px"}}>&#8250;</button>
-            </div>
-          );
-        })()}
-
-        <div style={{position:"absolute",bottom:0,left:0,right:0,zIndex:10,display:"flex",background:"linear-gradient(0deg,rgba(8,9,14,0.95) 0%,rgba(8,9,14,0.5) 55%,transparent 100%)",paddingTop:28}}>
+        {/* Row 2: días de la semana */}
+        <div style={{display:"flex",marginTop:8}}>
           {(()=>{
             const isCeleb=profile?.mode==="celebrity";
             const celebId=profile?.celebrity;
@@ -4141,7 +4138,6 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                 </button>
               );
             });
-          })()}
           })()}
         </div>
       </div>
@@ -7520,167 +7516,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/environments/RoomEnvironment.js"></script>
 
 
-<script>
-(function initBot(){
-  const CDN="https://pub-28277a6ce79d49479afd0cb1bba27b44.r2.dev/bot-anims/";
-  const FY=-7.8, FOV=35, CZ=14, CAM_Y=-4.4;
 
-  // Una animación por estado — elegida al abrir la app
-  const MOOD_ANIMS={
-    victory:  [{a:"clapping",    walk:false}, {a:"twerkdance",   walk:false}, {a:"jogging",      walk:true}],
-    active:   [{a:"jogging",     walk:true},  {a:"walking_skin", walk:true},  {a:"drunkwalk",    walk:true}],
-    idle:     [{a:"fishing",     walk:false}, {a:"cowmilking",   walk:false}, {a:"rifleaiming",  walk:false}, {a:"gunplay", walk:false}],
-    low:      [{a:"plank",       walk:false}, {a:"laying",       walk:false}, {a:"situps",       walk:false}],
-    dead:     [{a:"laying",      walk:false}, {a:"jumpplank",    walk:false}],
-    normal:   [{a:"walking_skin",walk:true},  {a:"jogging",      walk:true},  {a:"drunkwalk",    walk:true}],
-  };
-
-  function getMood(){
-    try{
-      const done=JSON.parse(localStorage.getItem("fv8_done")||"{}");
-      const hist=JSON.parse(localStorage.getItem("fv8_hist")||"[]");
-      const today=new Date().toISOString().slice(0,10);
-      const DAY=86400000, days=new Set();
-      Object.keys(done).forEach(k=>{const p=k.split("-");if(p.length>=3)days.add(p.slice(0,3).join("-"));});
-      hist.forEach(h=>{if(h.date)days.add(h.date.slice(0,10));});
-      const sorted=[...days].sort().reverse();
-      if(!sorted.length) return "normal";
-      const daysSince=Math.floor((Date.now()-new Date(sorted[0]))/DAY);
-      if(sorted[0]===today) return "victory";
-      if(daysSince>=3) return "dead";
-      if(daysSince>=2) return "low";
-      let streak=0,prev=null;
-      for(const d of sorted){const dt=new Date(d);if(!prev){streak=1;prev=dt;continue;}if(Math.floor((prev-dt)/DAY)<=1){streak++;prev=dt;}else break;}
-      if(streak>=3) return "active";
-      return "idle";
-    }catch(e){}
-    return "normal";
-  }
-
-  let ren, scene, cam, clock, aid;
-  let model=null, mixer=null;
-  let ready=false;
-  let cx=-4, canWalk=true, currentAnim='';
-
-  function tryInit(){
-    const canvas=document.getElementById("forja-bot-canvas");
-    if(!canvas||canvas.dataset.bi) return;
-    if(!window.THREE||!window.THREE.GLTFLoader) return;
-    canvas.dataset.bi="1";
-    const W=canvas.offsetWidth||window.innerWidth||390, H=200;
-    canvas.width=W*devicePixelRatio; canvas.height=H*devicePixelRatio;
-    ren=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
-    ren.setSize(W,H); ren.setPixelRatio(Math.min(devicePixelRatio,2));
-    ren.setClearColor(0,0);
-    scene=new THREE.Scene();
-    cam=new THREE.PerspectiveCamera(FOV,W/H,0.1,200);
-    cam.position.set(0,CAM_Y,CZ); cam.lookAt(0,CAM_Y,0);
-    scene.add(new THREE.AmbientLight(0xffffff,1.4));
-    const dl=new THREE.DirectionalLight(0xfff8f0,2.5); dl.position.set(3,8,5); scene.add(dl);
-    const dl2=new THREE.DirectionalLight(0x8090ff,0.6); dl2.position.set(-4,2,3); scene.add(dl2);
-    const floorGeo=new THREE.PlaneGeometry(40,40,20,20);
-    const floorMat=new THREE.MeshBasicMaterial({color:0x3a4f8a,wireframe:true,transparent:true,opacity:0.28});
-    const floorMesh=new THREE.Mesh(floorGeo,floorMat);
-    floorMesh.rotation.x=-Math.PI/2;
-    floorMesh.position.y=FY+0.05;
-    scene.add(floorMesh);
-    const glowGeo=new THREE.CircleGeometry(2.5,32);
-    const glowMat=new THREE.MeshBasicMaterial({color:0x8878a0,transparent:true,opacity:0.1,side:THREE.DoubleSide});
-    const glowDisk=new THREE.Mesh(glowGeo,glowMat);
-    glowDisk.rotation.x=-Math.PI/2;
-    glowDisk.position.y=FY+0.06;
-    scene.add(glowDisk);
-    window._botGlow=glowDisk;
-    clock=new THREE.Clock();
-
-    // Elegir animación según mood
-    const mood=getMood();
-    const opts=MOOD_ANIMS[mood]||MOOD_ANIMS.normal;
-    const chosen=opts[Math.floor(Math.random()*opts.length)];
-    canWalk=chosen.walk;
-    currentAnim=chosen.a;
-    console.log('BOT mood=',mood,'anim=',chosen.a);
-
-    fetch(CDN+chosen.a+".glb").then(r=>r.arrayBuffer()).then(buf=>{
-      new THREE.GLTFLoader().parse(buf, CDN, (gltf)=>{
-        model=gltf.scene;
-        const rm=[];
-        model.traverse(c=>{if(c.name==="Cube"||c.name==="default")rm.push(c);});
-        rm.forEach(c=>c.parent&&c.parent.remove(c));
-        model.traverse(c=>{
-          if(!(c.isMesh||c.isSkinnedMesh)) return;
-          const n=c.name||"";
-          if(n==="Mascara"||n==="polySurface3"){if(c.material)c.material.skinning=true; return;}
-          const col=n==="Cabeza"?0xeae6e0:n==="Cuerpo"||n==="Pierna"||n==="Pierna1"?0x3a3e4a:n==="Brazo"||n==="Brazo1"||n==="Dedos1"||n==="Dedos_Fin"?0xe4e0da:0x888898;
-          const mat=new THREE.MeshStandardMaterial({color:col,roughness:0.5,metalness:0.1});
-          if(c.isSkinnedMesh) mat.skinning=true;
-          c.material=mat;
-        });
-        model.scale.setScalar(36);
-        model.rotation.x=-0.15;
-        model.position.set(canWalk?cx:0, FY, 0);
-        scene.add(model);
-        mixer=new THREE.AnimationMixer(model);
-        if(gltf.animations[0]){
-          const clip=gltf.animations[0].clone();
-          if(canWalk) clip.tracks=clip.tracks.filter(t=>!(t.name.toLowerCase().includes('hip')&&t.name.toLowerCase().includes('position')));
-          const a=mixer.clipAction(clip);
-          a.setLoop(THREE.LoopRepeat); a.play();
-        }
-        ready=true;
-        animate();
-      }, e=>console.error('BOT parse:',e));
-    }).catch(e=>console.error('BOT fetch:',e));
-  }
-
-  function animate(){
-    aid=requestAnimationFrame(animate);
-    if(!ready||!model) return;
-    const dt=Math.min(clock.getDelta(),0.05);
-    mixer&&mixer.update(dt);
-
-    if(canWalk){
-      const EDGE=7, SPD=1.8;
-      if(!window._botDir){ window._botDir=1; window._botTurn=0; }
-      if(window._botTurn>0){
-        window._botTurn-=dt;
-        const t=1-Math.max(0,window._botTurn)/0.3;
-        const fromY=window._botDir>0?-Math.PI/2:Math.PI/2;
-        const toY=window._botDir>0?Math.PI/2:-Math.PI/2;
-        model.rotation.y=fromY+(toY-fromY)*t;
-      } else {
-        cx+=window._botDir*SPD*dt;
-        model.rotation.y=window._botDir>0?Math.PI/2:-Math.PI/2;
-        if(cx>=EDGE){ cx=EDGE; window._botDir=-1; window._botTurn=0.3; }
-        else if(cx<=-EDGE){ cx=-EDGE; window._botDir=1; window._botTurn=0.3; }
-      }
-      model.position.x=cx;
-    } else {
-      model.position.x=0;
-      model.rotation.y=(currentAnim==="laying"||currentAnim==="falling")?0:Math.PI/2;
-    }
-
-    cam.lookAt(0,CAM_Y,0);
-    ren.render(scene,cam);
-  }
-
-  document.addEventListener("visibilitychange",()=>{
-    if(document.hidden) cancelAnimationFrame(aid);
-    else{ clock=new THREE.Clock(); if(ready) animate(); }
-  });
-  window.addEventListener("resize",()=>{
-    const canvas=document.getElementById("forja-bot-canvas");
-    if(!canvas||!ren) return;
-    const W2=window.innerWidth||390;
-    canvas.width=W2*devicePixelRatio; canvas.height=200*devicePixelRatio;
-    ren.setSize(W2,200); cam.aspect=W2/200; cam.updateProjectionMatrix();
-  });
-  window.FORJA_BOT={ trigger(){} };
-
-  window.addEventListener("load",()=>setTimeout(tryInit,100));
-  setInterval(()=>{if(!ready)tryInit();},500);
-})();
-</script>
 <script>
 </script>
 
