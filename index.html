@@ -4195,13 +4195,13 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
             } else if(isToday){
               inner=e("span",{style:{fontSize:13,fontWeight:800,color:"rgba(255,255,255,0.97)"}},dayDate.getDate());
             } else {
-              inner=e("span",{style:{fontSize:11,color:"rgba(255,255,255,0.12)"}},isRest||isFuture?"—":dayDate.getDate());
+              inner=e("span",{style:{fontSize:11,fontWeight:600,color:"rgba(255,255,255,0.6)"}},isRest?"·":dayDate.getDate());
             }
 
-            var labelColor=cp?"rgba(63,207,142,0.5)":isToday?"rgba(255,255,255,0.52)":"rgba(255,255,255,0.12)";
+            var labelColor=cp?"#3fcf8e":isToday?"#fff":"rgba(255,255,255,0.55)";
 
             return e("div",{key:i,
-              style:{display:"flex",flexDirection:"column",alignItems:"center",gap:6,opacity:isFuture&&!isToday?0.3:1},
+              style:{display:"flex",flexDirection:"column",alignItems:"center",gap:6,opacity:isFuture&&!isToday?0.6:1},
               onClick:(function(dayIdx){return function(){
                 if(setSel)setSel(dayIdx);
                 if(setTab)setTab("train");
