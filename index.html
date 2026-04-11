@@ -3914,7 +3914,7 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
     React.createElement("div",{style:{position:"absolute",inset:0,zIndex:3,padding:"14px 16px",display:"flex",flexDirection:"column",justifyContent:"space-between",pointerEvents:"none"}},
       React.createElement("div",null,
         React.createElement("div",{style:{fontFamily:"monospace",fontSize:8,color:"rgba(255,255,255,0.28)",letterSpacing:3,marginBottom:5}},"HOY"),
-        React.createElement("div",{style:{fontFamily:"monospace",fontSize:21,fontWeight:800,color:"#fff",letterSpacing:-0.5,lineHeight:1,marginBottom:4}},day?day.l:"—"),
+        React.createElement("div",{style:{fontFamily:"monospace",fontSize:day?21:16,fontWeight:800,color:day?"#fff":"rgba(255,255,255,0.4)",letterSpacing:-0.5,lineHeight:1,marginBottom:4}},day?day.l:(lang==="es"||lang==="pt"?"DESCANSO":lang==="it"?"RIPOSO":lang==="fr"?"REPOS":"REST")),
         React.createElement("div",{style:{fontFamily:"monospace",fontSize:7,color:"rgba(255,255,255,0.25)",letterSpacing:1.5}},dayExs.length+" EJERC · TAP PARA INICIAR")
       ),
       fitnessAge?React.createElement("div",{style:{display:"flex",alignItems:"flex-end",justifyContent:"space-between"}},
