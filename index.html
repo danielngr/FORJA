@@ -4007,9 +4007,11 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
         )
       ),
 
-      // FrozenHeartBanner placeholder — se renderiza en el tab train
-      // Aquí solo el ring + XP + PR
-      e("div",{style:{display:"flex",alignItems:"center",gap:14,position:"relative",zIndex:1}},
+      // FrozenHeartBanner dentro de la card glass
+      e(FrozenHeartBanner,{day:todayR,done:done,sel:tdi,lang:lang,mono:mono,
+        onStart:function(){window.dispatchEvent(new CustomEvent("forja:startWorkout"));}}),
+
+      e("div",{style:{display:"flex",alignItems:"center",gap:14,marginTop:14,position:"relative",zIndex:1}},
         // Ring semanal
         e("div",{style:{position:"relative",width:68,height:68,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}},
           e("svg",{width:"68",height:"68",viewBox:"0 0 68 68",style:{position:"absolute",overflow:"visible"}},
@@ -4155,6 +4157,11 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   const[showXPTooltip,setShowXPTooltip]=useState(null); // zone name
   const[xpAnimZone,setXpAnimZone]=useState(null); // zone currently animating level up
   const[scrollVersion,setScrollVersion]=useState(0); // increments after scroll to trigger re-render
+  React.useEffect(()=>{
+    const startHandler=()=>{if(day&&day.ex&&day.ex.length)setInWorkout(true);};
+    window.addEventListener("forja:startWorkout",startHandler);
+    return()=>window.removeEventListener("forja:startWorkout",startHandler);
+  },[day]);
   React.useEffect(()=>{
     const handler=()=>setShowProModal&&setShowProModal(true);
     window.addEventListener("forja:showPro",handler);
@@ -4442,59 +4449,6 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
           tab={tab} setTab={setTabR}
         />
 
-        <div style={{display:"flex",gap:0,borderTop:"0.5px solid rgba(255,255,255,0.04)"}}>
-          {(()=>{
-            const isCeleb=profile?.mode==="celebrity";
-            const celebId=profile?.celebrity;
-            const CMETA_={arnold:{l:"PUMP⚡",c:"#f0a830"},hemsworth:{l:"ODIN🪓",c:"#4898e8"},rock:{l:"4AM🪨",c:"#30c870"},goggins:{l:"CANT💀",c:"#e09020"},cavill:{l:"KRYPT💪",c:"#8868d8"},ronaldo:{l:"SIUUU⚽",c:"#e83030"},stallone:{l:"YO!🥊",c:"#e88020"},lebron:{l:"KING👑",c:"#f0a818"},zyzz:{l:"WGMM✨",c:"#e050a8"},serena:{l:"ACE🎾",c:"#e84393"},galgadot:{l:"ALMA⚔️",c:"#c0a870"},jlo:{l:"JLO💃",c:"#f0b429"},margot:{l:"WILD🃏",c:"#4898e8"},brie:{l:"CAPT⭐",c:"#e05555"},rihanna:{l:"RIH🌊",c:"#e91e63"}};
-            const cm=celebId?CMETA_[celebId]:null;
-            const now=new Date();
-            const dow=now.getDay();
-            const mondayOffset=dow===0?-6:1-dow;
-            const todayDayIdx = dow===0?6:dow-1; // Mon=0 ... Sun=6
-            return Array(7).fill(0).map((_,i)=>{
-              const d=routine?routine[i]:null,de=d?d.ex:[],dd=de.filter(x=>done[`${i}-${x.id}`]).length;
-              const cp=de.length>0&&dd===de.length;
-              const isSel=sel===i;
-              const isRest=!d;
-              const cc=cm?.c;
-              const dayDate=new Date(now);
-              dayDate.setDate(now.getDate()+mondayOffset+i+weekOff*7);
-              const isToday=weekOff===0&&i===todayDayIdx;
-              const isFuture=weekOff===0&&i>todayDayIdx;
-              const isPastWeek=weekOff<0;
-              const hasDone=dd>0;
-              return(
-                <button key={i} data-tour={i===todayDayIdx?"cal-day":undefined} onClick={()=>{setSel(i);setTabR("train");setAddEx(false);setInWorkout(false);}}
-                  style={{flex:1,border:"none",background:"transparent",cursor:"pointer",
-                    display:"flex",flexDirection:"column",alignItems:"center",
-                    padding:"0 0 10px",opacity:isFuture&&!isSel?0.2:isPastWeek&&!hasDone&&!isSel&&!isRest?0.3:1,
-                    transition:"opacity .15s"}}>
-                  <div style={{width:"100%",height:isSel?2:1,marginBottom:7,transition:"all .2s",
-                    background:isSel?(cc||"rgba(255,255,255,0.8)"):cp?"#3fcf8e":isToday?(cc||"rgba(246,173,85,0.5)"):"rgba(255,255,255,0.05)",
-                    boxShadow:cp?"0 0 6px rgba(63,207,142,0.5)":isToday?"0 0 6px rgba(246,173,85,0.4)":"none"}}/>
-                  {(cp||isToday)&&<div style={{width:3,height:3,borderRadius:"50%",marginBottom:4,
-                    background:cp?"#3fcf8e":(cc||"#f6ad55"),boxShadow:cp?"0 0 5px rgba(63,207,142,0.7)":"0 0 5px rgba(246,173,85,0.6)"}}/>}
-                  <div style={{fontSize:8,fontFamily:mono,letterSpacing:1.5,lineHeight:1,fontWeight:isSel||isToday?700:400,
-                    color:isSel?(cc||"#fff"):isToday?(cc||"rgba(255,255,255,0.75)"):"rgba(255,255,255,0.25)"}}>
-                    {DN[lang][i]}
-                  </div>
-                  <div style={{fontSize:13,fontFamily:mono,fontWeight:800,marginTop:2,lineHeight:1,
-                    color:isSel?"#fff":isToday?"rgba(255,255,255,0.65)":cp?"rgba(255,255,255,0.35)":"rgba(255,255,255,0.15)"}}>
-                    {dayDate.getDate()}
-                  </div>
-                  <div style={{fontSize:6,fontFamily:mono,marginTop:3,letterSpacing:0.5,
-                    color:isSel?(cc||"rgba(255,255,255,0.4)"):isToday?"rgba(255,255,255,0.25)":"rgba(255,255,255,0.08)",
-                    overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"90%",textAlign:"center"}}>
-                    {d?(isCeleb&&cm?cm.l:d.l):(L[lang]||L.en).rest}
-                  </div>
-                </button>
-              );
-            });
-          })()}
-          })()}
-          })()}
-        </div>
       </div>
 
       <div style={{padding:"14px 18px 90px"}}>
@@ -4521,10 +4475,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
               </div>
             ):(
               <>
-                <FrozenHeartBanner
-                  day={day} done={done} sel={sel} lang={lang} mono={mono}
-                  onStart={()=>{if(day&&day.ex&&day.ex.length)setInWorkout(true);}}
-                />
+
                 {day&&day.ex&&day.ex.length>0&&(
                   <div onClick={()=>{setExpressGroup(null);setExpressTime(15);setShowExpress(true);}}
                     style={{margin:"10px 0 4px",padding:"10px 14px",borderRadius:12,cursor:"pointer",
