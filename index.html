@@ -6365,11 +6365,14 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             const key=String(days)+(ob.level||"beg");
             const splits=RAW[key]||RAW[String(days)+"beg"]||Object.values(RAW)[0];
             const sd=ob.selDays.length>0?ob.selDays:[0,1,2,3].slice(0,days);
+            const eqArr=ob.equipment==="gym"?["barbell","dumbbell","cable","machine","pullup_bar"]:
+              ob.equipment==="home"?["dumbbell","pullup_bar","resistance_band"]:
+              ["pullup_bar"];
             const filtered=splits?splits.map(day=>({
               ...day,
-              ex:day.ex.map(ex=>({...ex,e:canDoAuto(ex.e,ob.equipment||"gym")}))
+              ex:day.ex.map(ex=>({...ex,e:canDoAuto(ex.e,eqArr)}))
             })):[];
-            const routine=buildRoutine7(filtered,sd,ob.goal||"general",ob.equipment||"gym");
+            const routine=buildRoutine7(filtered,sd,ob.goal||"general",eqArr);
             const pf={
               lang:ob.lang,goal:ob.goal||"general",level:ob.level||"beg",
               days:days,selDays:sd,gender:ob.gender||"male",age:ob.age||25,
@@ -6377,13 +6380,8 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               equipment:ob.equipment||"gym",name:ob.name||"Atleta",
               mode:"auto",toured:false,
             };
-            try{
-              FStore.saveProfile(pf,routine);
-              sp(pf);sr(routine);setStep(99);
-            }catch(err){
-              console.error("[FORJA ONBOARD]",err);
-              alert("Error: "+err.message);
-            }
+            FStore.saveProfile(pf,routine);
+            sp(pf);sr(routine);setStep(99);
           },400);
         } else {
           setGenPct(Math.round(p));
