@@ -3872,8 +3872,13 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact}){
     );
   }
 
+  var handleClick=function(){
+    if(onStart){onStart();return;}
+    // Toggle estado vivo/congelado — simular ejercicios completados
+    window.dispatchEvent(new CustomEvent("forja:toggleDay",{detail:{sel:sel}}));
+  };
   return React.createElement("div",{
-    onClick:onStart,
+    onClick:handleClick,
     style:{width:"100%",height:160,borderRadius:16,position:"relative",cursor:"pointer",
       background:isAlive?"#180408":"#04080f",transition:"background 0.8s ease",
       overflow:"hidden",border:"0.5px solid rgba(255,255,255,0.08)",marginBottom:0}},
@@ -3992,7 +3997,7 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
 
       // Rectángulo HOY con corazón — igual al boceto
       e(FrozenHeartBanner,{day:todayR,done:done,sel:tdi,lang:lang,mono:mono,compact:false,
-        onStart:function(){window.dispatchEvent(new CustomEvent("forja:startWorkout"));}}),
+        onStart:null}),
 
       // Ring + XP + PR
       e("div",{style:{display:"flex",alignItems:"center",gap:12,marginTop:14,position:"relative",zIndex:1}},
@@ -4202,8 +4207,24 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   React.useEffect(()=>{
     const startHandler=()=>{if(day&&day.ex&&day.ex.length)setInWorkout(true);};
     window.addEventListener("forja:startWorkout",startHandler);
-    return()=>window.removeEventListener("forja:startWorkout",startHandler);
-  },[day]);
+    const toggleHandler=(ev)=>{
+      const s=ev.detail&&ev.detail.sel!==undefined?ev.detail.sel:sel;
+      const r=routine?routine[s]:null;
+      if(!r||!r.ex||!r.ex.length) return;
+      const allDone=r.ex.every(function(x){return done[s+"-"+x.id];});
+      const nd={...done};
+      r.ex.forEach(function(x){
+        if(allDone) delete nd[s+"-"+x.id];
+        else nd[s+"-"+x.id]=true;
+      });
+      sd(nd);
+    };
+    window.addEventListener("forja:toggleDay",toggleHandler);
+    return()=>{
+      window.removeEventListener("forja:startWorkout",startHandler);
+      window.removeEventListener("forja:toggleDay",toggleHandler);
+    };
+  },[day,done,routine,sel]);
   React.useEffect(()=>{
     const handler=()=>setShowProModal&&setShowProModal(true);
     window.addEventListener("forja:showPro",handler);
