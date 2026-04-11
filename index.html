@@ -4037,10 +4037,14 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
   // <10 días sin entrenar: cambio insignificante
   // 3 semanas sin entrenar: -4.18% VO2max → ~+0.1 años Fitness Age
   // 5+ días/sem entrenando: ~-0.1 años
-  var weeklyDelta=trainDoneReal>=5?-0.1:trainDoneReal>=3?-0.05:trainDoneReal>=1?0:+0.1;
-  var deltaSign=weeklyDelta<0?"↓":weeklyDelta>0?"↑":"→";
-  var deltaColor=weeklyDelta<0?"#3fcf8e":weeklyDelta>0?"#e8a020":"rgba(255,255,255,0.4)";
-  var deltaAbs=Math.abs(weeklyDelta).toFixed(1);
+  // Estado del corazón: vivo = todos los ejercicios de HOY completados
+  var todayExs=todayR?todayR.ex:[];
+  var heartAlive=todayExs.length>0&&todayExs.every(function(x){return done[tdi+"-"+x.id];});
+  // Solo dos estados: vivo (bajando) o congelado (subiendo)
+  var weeklyDelta=heartAlive?-0.1:+0.1;
+  var deltaSign=heartAlive?"↓":"↑";
+  var deltaColor=heartAlive?"#3fcf8e":"#e8a020";
+  var deltaAbs="0.1";
 
   // Recalcular fitnessAge con días reales
   var vo2estReal=isFemale
@@ -4050,7 +4054,7 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
   fitnessAge=Math.max(userAge-15, Math.min(userAge+15, fitnessAge));
   ageDiff=userAge-fitnessAge;
 
-  var fitnessAgeColor=weeklyDelta<0?"#3fcf8e":weeklyDelta>0?"#e8a020":"rgba(255,255,255,0.4)";
+  var fitnessAgeColor=heartAlive?"#3fcf8e":"#e8a020";
 
   return e("div",{style:{position:"relative",zIndex:1}},
 
