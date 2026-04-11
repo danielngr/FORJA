@@ -4686,8 +4686,8 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                     </div>
                   </div>
                 )}
-                <div style={{display:"flex",gap:8,marginTop:0,alignItems:"flex-start"}}>
-                  <div style={{flex:1,minWidth:0}}>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:0}}>
+                  <div style={{minWidth:0}}>
                     {tab==="train"&&(()=>{
                   const{acute,chronic,ratio}=acwr;
                   const hasData=(acute>=50||chronic>=50); // require meaningful training load (≥50kg)
@@ -4763,7 +4763,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                   );
                 })()}
                   </div>
-                  <div style={{flex:1,minWidth:0}}>
+                  <div style={{minWidth:0}}>
                                     {(()=>{
                   const zoneToGroup={
                     pecho:lang==="es"||lang==="pt"?"Pecho":lang==="fr"?"Pectoraux":lang==="it"?"Petto":lang==="de"?"Brust":"Chest",
