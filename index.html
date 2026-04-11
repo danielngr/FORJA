@@ -4686,8 +4686,8 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                     </div>
                   </div>
                 )}
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:0}}>
-                  <div style={{minWidth:0}}>
+                <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:0}}>
+                  <div>
                     {tab==="train"&&(()=>{
                   const{acute,chronic,ratio}=acwr;
                   const hasData=(acute>=50||chronic>=50); // require meaningful training load (≥50kg)
@@ -4703,7 +4703,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                   }[zone];
                   const barW=ratio>0?Math.min(100,Math.round((ratio/2)*100)):0;
                   return(
-                    <div data-tour="carga-semanal" style={{padding:"14px 16px",background:C.card,borderRadius:12,border:`1px solid ${hasData?zoneColor+"44":"rgba(255,255,255,0.06)"}`,}}>
+                    <div data-tour="carga-semanal" style={{padding:"10px 14px",background:C.card,borderRadius:12,border:`1px solid ${hasData?zoneColor+"44":"rgba(255,255,255,0.06)"}`,}}>
                       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:hasData?10:0}}>
                         <div style={{display:"flex",alignItems:"center",gap:6}}>
                           <span style={{fontFamily:mono,fontSize:9,color:C.tx3,letterSpacing:2}}>// {lang==="es"||lang==="pt"?"CARGA SEMANAL":lang==="fr"?"CHARGE HEBDOMADAIRE":lang==="it"?"CARICO SETTIMANALE":lang==="de"?"WOCHENLAST":"WEEKLY LOAD"}</span>
@@ -4763,7 +4763,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                   );
                 })()}
                   </div>
-                  <div style={{minWidth:0}}>
+                  <div>
                                     {(()=>{
                   const zoneToGroup={
                     pecho:lang==="es"||lang==="pt"?"Pecho":lang==="fr"?"Pectoraux":lang==="it"?"Petto":lang==="de"?"Brust":"Chest",
