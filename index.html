@@ -4025,17 +4025,27 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
   fitnessAge=Math.max(userAge-15, Math.min(userAge+15, fitnessAge));
   var ageDiff=userAge-fitnessAge; // positivo = corazón más joven
 
-  // fitnessAge estable — basado en trainDone histórico, no cambia con un tap
+  // Estado vivo/congelado — basado en done[] en memoria (reactivo al toggle)
+  var todayExs=todayR?todayR.ex:[];
+  var heartAlive=todayExs.length>0&&todayExs.every(function(x){return done[tdi+"-"+x.id];});
+
+  // fitnessAge: cuenta días completos de la semana desde done[] en memoria
+  // pero EXCLUYE hoy para que el número sea estable al toggle
+  var diasCompletados=0;
+  for(var wi2=0;wi2<7;wi2++){
+    if(wi2===tdi) continue; // excluir hoy
+    var rw2=routine?routine[wi2]:null;
+    if(!rw2||!rw2.ex||!rw2.ex.length) continue;
+    if(rw2.ex.every(function(x){return done[wi2+"-"+x.id];})) diasCompletados++;
+  }
   var vo2estFinal=isFemale
-    ?(56.363 + 1.921*Math.min(7,trainDone) - 0.381*userAge)
-    :(67.350 + 1.921*Math.min(7,trainDone) - 0.381*userAge);
+    ?(56.363 + 1.921*Math.min(7,diasCompletados) - 0.381*userAge)
+    :(67.350 + 1.921*Math.min(7,diasCompletados) - 0.381*userAge);
   fitnessAge=Math.round(userAge - 0.2*(vo2estFinal - vo2avg));
   fitnessAge=Math.max(userAge-15, Math.min(userAge+15, fitnessAge));
   ageDiff=userAge-fitnessAge;
 
-  // Estado vivo/congelado — solo cambia color y flecha, NO el número
-  var todayExs=todayR?todayR.ex:[];
-  var heartAlive=todayExs.length>0&&todayExs.every(function(x){return done[tdi+"-"+x.id];});
+  // Color y flecha: solo dependen del estado vivo/congelado
   var deltaSign=heartAlive?"↓":"↑";
   var deltaColor=heartAlive?"#3fcf8e":"#e8a020";
   var deltaAbs="0.1";
