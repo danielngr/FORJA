@@ -3741,7 +3741,7 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact}){
 
     var scene=new THREE.Scene();
     var cam=new THREE.PerspectiveCamera(28,W/H,0.1,100);
-    cam.position.set(8.0,1.1,26);cam.lookAt(8.0,1.1,0);
+    cam.position.set(12.5,1.1,26);cam.lookAt(8.0,1.1,0);
 
     var envTexture=null;
     if(window.THREE.RoomEnvironment){
@@ -3811,11 +3811,11 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact}){
           // Latido doble más dramático — lub-DUB fuerte
           var b1=Math.pow(Math.max(0,Math.sin(bt*2.0)),3);
           var b2=Math.pow(Math.max(0,Math.sin(bt*2.0-0.7)),4)*0.75;
-          var beat=b1+b2;var s=1+beat*0.18;
+          var beat=b1+b2;var s=1+beat*0.09;
           model.scale.set(s,s,s);
-          // Luz blanca explosiva sincronizada con el latido
-          iceLight.intensity=4+beat*28;botLight.intensity=2+beat*14;
-          sideLight.intensity=2+beat*10;
+          // Luz blanca suave pero presente
+          iceLight.intensity=4+beat*12;botLight.intensity=2+beat*6;
+          sideLight.intensity=2+beat*4;
           iceLight.color.set(0xffffff);botLight.color.set(0xeef5ff);
           sideLight.color.set(0xffffff);
           if(iceMesh)iceMesh.visible=false;
@@ -3837,46 +3837,28 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact}){
     function fogLoop(){
       fogAnimIdRef.current=requestAnimationFrame(fogLoop);
       ft+=0.012;fctx.clearRect(0,0,W,H);
-      var cx=W*0.5,cy=H*0.5;
+      var cx=W*0.62,cy=H*0.5;
       if(isAliveRef.current){
         // Latido en canvas — sincronizado con la animación 3D
         var pulse=Math.pow(Math.max(0,Math.sin(ft*2.0)),3)+Math.pow(Math.max(0,Math.sin(ft*2.0-0.7)),4)*0.75;
         pulse=Math.min(1,pulse);
 
-        // Aura central explosiva
-        var aw=fctx.createRadialGradient(cx,cy,0,cx,cy,H*0.9);
-        aw.addColorStop(0,"rgba(255,255,255,"+(0.35+pulse*0.45)+")");
-        aw.addColorStop(.15,"rgba(220,240,255,"+(0.15+pulse*0.25)+")");
-        aw.addColorStop(.4,"rgba(180,220,255,"+(0.06+pulse*0.12)+")");
-        aw.addColorStop(.7,"rgba(120,180,255,"+(0.02+pulse*0.05)+")");
+        // Aura suave centrada en el corazón
+        var aw=fctx.createRadialGradient(cx,cy,0,cx,cy,H*0.75);
+        aw.addColorStop(0,"rgba(255,255,255,"+(0.15+pulse*0.18)+")");
+        aw.addColorStop(.3,"rgba(220,235,255,"+(0.06+pulse*0.10)+")");
+        aw.addColorStop(.7,"rgba(180,210,255,"+(0.02+pulse*0.04)+")");
         aw.addColorStop(1,"rgba(0,0,0,0)");
         fctx.fillStyle=aw;fctx.fillRect(0,0,W,H);
 
-        // Flash completo en el pico del latido
-        if(pulse>0.7){
-          fctx.fillStyle="rgba(255,255,255,"+(pulse-0.7)*0.18+")";
-          fctx.fillRect(0,0,W,H);
-        }
-
-        // Bordes que brillan con el latido
+        // Rim superior sutil
         var rimW=fctx.createLinearGradient(0,0,W,0);
         rimW.addColorStop(0,"rgba(255,255,255,0)");
-        rimW.addColorStop(.2,"rgba(255,255,255,"+(0.4+pulse*0.6)+")");
-        rimW.addColorStop(.5,"rgba(255,255,255,"+(0.7+pulse*0.3)+")");
-        rimW.addColorStop(.8,"rgba(255,255,255,"+(0.4+pulse*0.6)+")");
+        rimW.addColorStop(.25,"rgba(255,255,255,"+(0.25+pulse*0.35)+")");
+        rimW.addColorStop(.5,"rgba(255,255,255,"+(0.45+pulse*0.25)+")");
+        rimW.addColorStop(.75,"rgba(255,255,255,"+(0.25+pulse*0.35)+")");
         rimW.addColorStop(1,"rgba(255,255,255,0)");
-        fctx.fillStyle=rimW;fctx.fillRect(0,0,W,2.5);
-        fctx.fillRect(0,H-2.5,W,2.5);
-
-        // Rayos laterales verticales
-        var rimL=fctx.createLinearGradient(0,0,0,H);
-        rimL.addColorStop(0,"rgba(255,255,255,0)");
-        rimL.addColorStop(.3,"rgba(255,255,255,"+(0.3+pulse*0.4)+")");
-        rimL.addColorStop(.7,"rgba(255,255,255,"+(0.3+pulse*0.4)+")");
-        rimL.addColorStop(1,"rgba(255,255,255,0)");
-        fctx.fillStyle=rimL;
-        fctx.fillRect(0,0,2,H);
-        fctx.fillRect(W-2,0,2,H);
+        fctx.fillStyle=rimW;fctx.fillRect(0,0,W,1.8);
         return;
       }
       var a2=fctx.createRadialGradient(cx,cy,H*0.05,cx,cy,W*0.9);
