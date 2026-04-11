@@ -4686,7 +4686,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                     </div>
                   </div>
                 )}
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:0}}>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:0,alignItems:"stretch"}}>
                   <div>
                     {tab==="train"&&(()=>{
                   const{acute,chronic,ratio}=acwr;
@@ -4703,7 +4703,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                   }[zone];
                   const barW=ratio>0?Math.min(100,Math.round((ratio/2)*100)):0;
                   return(
-                    <div data-tour="carga-semanal" style={{padding:"10px 14px",background:C.card,borderRadius:12,minHeight:90,border:`1px solid ${hasData?zoneColor+"44":"rgba(255,255,255,0.06)"}`,}}>
+                    <div data-tour="carga-semanal" style={{padding:"10px 14px",background:C.card,borderRadius:12,height:"100%",border:`1px solid ${hasData?zoneColor+"44":"rgba(255,255,255,0.06)"}`,}}>
                       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:hasData?10:0}}>
                         <div style={{display:"flex",alignItems:"center",gap:6}}>
                           <span style={{fontFamily:mono,fontSize:9,color:C.tx3,letterSpacing:2}}>// {lang==="es"||lang==="pt"?"CARGA SEMANAL":lang==="fr"?"CHARGE HEBDOMADAIRE":lang==="it"?"CARICO SETTIMANALE":lang==="de"?"WOCHENLAST":"WEEKLY LOAD"}</span>
@@ -4853,7 +4853,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                   const entries=Object.entries(vol).sort((a,b)=>b[1]-a[1]);
                   const cap = (L[lang]||L.en).sets.toLowerCase();
                   return(
-                    <div data-tour="vol-weekly" style={{padding:"10px 14px",background:C.card,borderRadius:12,minHeight:90,border:`1px solid ${C.borderL}`}}>
+                    <div data-tour="vol-weekly" style={{padding:"10px 14px",background:C.card,borderRadius:12,height:"100%",border:`1px solid ${C.borderL}`}}>
                       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
                         <div style={{display:"flex",alignItems:"center",gap:6}}>
                           <div style={{fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:2}}>
