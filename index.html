@@ -3706,6 +3706,164 @@ function translateMuscle(name, lang){
   }
   return name; // fallback: return original
 }
+function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk,showSet,setShowSet,setShowBotChat,mono,profile}){
+  const now=new Date();
+  const dow=now.getDay();
+  const tdi=dow===0?6:dow-1;
+  const todayR=routine?routine[tdi]:null;
+  const dc2=todayR?todayR.ex.filter(function(x){return done[tdi+"-"+x.id];}).length:0;
+  const tot2=todayR?todayR.ex.length:0;
+
+  var streak=0;
+  for(var si=0;si<365;si++){
+    var ds=new Date(today);ds.setDate(ds.getDate()-si);
+    var dayIdx2=ds.getDay()===0?6:ds.getDay()-1;
+    var rr=routine?routine[dayIdx2]:null;
+    if(!rr){streak++;continue;}
+    var wkOff2=Math.round((new Date(today)-ds)/(7*24*3600*1000))*-1;
+    var savedDone=FStore.loadDone(wk(wkOff2));
+    var hasDone2=rr.ex.some(function(x){return savedDone[dayIdx2+"-"+x.id]||done[dayIdx2+"-"+x.id];});
+    if(!hasDone2&&ds.toISOString().slice(0,10)!==today)break;
+    streak++;
+  }
+
+  var totalXP=muscleXP?Object.values(muscleXP).reduce(function(a,v){return a+(v.xp||0);},0):0;
+  var currentLevel=xpToLevel(totalXP);
+  var nextThresh=xpForNextLevel(currentLevel);
+  var prevThresh=XP_THRESHOLDS[currentLevel-1]||0;
+  var xpPct=nextThresh===Infinity?1:Math.min(1,(totalXP-prevThresh)/(nextThresh-prevThresh));
+  var LNAMES=["IRON","BRONZE","SILVER","GOLD","PLATINUM","DIAMOND","ELITE","MASTER","LEGEND","APEX"];
+  var LCOLORS=["#a0a8b8","#e8a050","#d8d8e8","#ffd700","#e8e4ff","#60e8ff","#ff6b35","#c060ff","#ff4040","#00ff88"];
+  var LGRADS=["rgba(160,168,184,","rgba(232,160,80,","rgba(216,216,232,","rgba(255,215,0,","rgba(232,228,255,","rgba(96,232,255,","rgba(255,107,53,","rgba(192,96,255,","rgba(255,64,64,","rgba(0,255,136,"];
+  var LROMAN=["I","II","III"];
+  var lvlName=LNAMES[Math.min(9,currentLevel-1)]+" "+LROMAN[(currentLevel-1)%3];
+  var lvlColor=LCOLORS[Math.min(9,currentLevel-1)];
+  var lvlGrad=LGRADS[Math.min(9,currentLevel-1)];
+  var nextLvlName=LNAMES[Math.min(9,currentLevel)]+" "+LROMAN[currentLevel%3];
+
+  var now2=new Date(),dow2=now2.getDay(),mo2=dow2===0?-6:1-dow2;
+  var mon2=new Date(now2);mon2.setDate(now2.getDate()+mo2+weekOff*7);
+  var weekDays=Array(7).fill(0).map(function(_,i){return new Date(mon2.getTime()+i*86400000);});
+  var doneThisWeek=weekDays.filter(function(d,i){
+    var r=routine?routine[i]:null;if(!r)return false;
+    var wkOff3=Math.round((new Date(today)-d)/(7*24*3600*1000))*-1;
+    var sd=FStore.loadDone(wk(wkOff3));
+    return r.ex.some(function(x){return sd[i+"-"+x.id]||done[i+"-"+x.id];});
+  }).length;
+  var trainingDays=weekDays.filter(function(_,i){return routine&&routine[i];}).length;
+
+  var sun2=new Date(mon2);sun2.setDate(mon2.getDate()+6);
+  var MONTHS=["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+  var fmtD=function(d){return d.getDate()+" "+MONTHS[d.getMonth()];};
+  var weekLabel=weekOff===0
+    ?(lang==="es"||lang==="pt"?"ESTA SEMANA":lang==="it"?"QUESTA SETTIMANA":lang==="de"?"DIESE WOCHE":"THIS WEEK")
+    :weekOff===-1?(lang==="es"?"SEMANA PASADA":"LAST WEEK")
+    :(fmtD(mon2)+" – "+fmtD(sun2));
+
+  var xpPctRound=Math.round(xpPct*100);
+  var isRestDay=!todayR;
+  var perfectWeek=doneThisWeek===trainingDays&&trainingDays>0;
+  var todayLabel=todayR?todayR.l:(lang==="es"?"DESCANSO":lang==="it"?"RIPOSO":"REST");
+  var streakFire=streak>=7?"🔥":streak>=3?"⚡":"";
+
+  return React.createElement("div",{style:{padding:"14px 20px 0",position:"relative",zIndex:1,overflow:"hidden"}},
+
+    // Glow accent top-right basado en nivel
+    React.createElement("div",{style:{position:"absolute",top:-60,right:-40,width:220,height:180,
+      background:"radial-gradient(ellipse,"+lvlGrad+"0.12) 0%,transparent 65%)",
+      pointerEvents:"none",zIndex:0}}),
+    // Glow verde si semana perfecta
+    perfectWeek&&React.createElement("div",{style:{position:"absolute",bottom:0,left:-20,width:180,height:120,
+      background:"radial-gradient(ellipse,rgba(63,207,142,0.08) 0%,transparent 70%)",
+      pointerEvents:"none",zIndex:0}}),
+
+    // Row 1: semana nav + settings
+    React.createElement("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14,position:"relative",zIndex:1}},
+      React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6}},
+        React.createElement("button",{onClick:function(){setWeekOff(function(p){return Math.max(-12,p-1);});},
+          style:{background:"none",border:"none",color:"rgba(255,255,255,0.25)",fontSize:18,cursor:"pointer",padding:"0 2px",lineHeight:1}},"‹"),
+        React.createElement("span",{style:{fontSize:7,fontFamily:mono,letterSpacing:3,color:"rgba(255,255,255,0.35)",fontWeight:600}},weekLabel),
+        React.createElement("button",{onClick:function(){setWeekOff(function(p){return Math.min(0,p+1);});},
+          style:{background:"none",border:"none",color:weekOff===0?"rgba(255,255,255,0.08)":"rgba(255,255,255,0.25)",fontSize:18,cursor:weekOff===0?"default":"pointer",padding:"0 2px",lineHeight:1}},"›")
+      ),
+      React.createElement("button",{onClick:function(){setShowSet(!showSet);},
+        style:{width:28,height:28,borderRadius:8,border:"0.5px solid rgba(255,255,255,0.12)",
+          background:"rgba(255,255,255,0.05)",cursor:"pointer",
+          color:"rgba(255,255,255,0.4)",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center"}},"⚙")
+    ),
+
+    // Row 2: número grande + side stats
+    React.createElement("div",{style:{display:"flex",alignItems:"flex-end",justifyContent:"space-between",marginBottom:16,position:"relative",zIndex:1}},
+
+      // Racha — protagonista
+      React.createElement("div",null,
+        React.createElement("div",{style:{display:"flex",alignItems:"baseline",gap:8}},
+          React.createElement("div",{style:{
+            fontSize:72,fontWeight:900,lineHeight:1,letterSpacing:"-4px",
+            color:"#fff",
+            textShadow:"0 0 60px rgba(255,255,255,0.15),0 0 20px rgba(255,255,255,0.1)"
+          }},streak),
+          streak>0&&React.createElement("div",{style:{fontSize:20,marginBottom:4}},streakFire)
+        ),
+        React.createElement("div",{style:{fontSize:7,fontFamily:mono,letterSpacing:3,
+          color:"rgba(255,255,255,0.3)",marginTop:2,fontWeight:600}},
+          lang==="es"||lang==="pt"?"DÍAS DE RACHA":lang==="it"?"GIORNI SERIE":"DAY STREAK")
+      ),
+
+      // Side stats
+      React.createElement("div",{style:{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:10,paddingBottom:6}},
+        // Semana
+        React.createElement("div",{style:{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:1}},
+          React.createElement("div",{style:{fontSize:22,fontWeight:800,lineHeight:1,
+            color:perfectWeek?"#3fcf8e":"rgba(255,255,255,0.9)"}},
+            doneThisWeek+"/"+trainingDays),
+          React.createElement("div",{style:{fontSize:7,fontFamily:mono,letterSpacing:2,
+            color:perfectWeek?"rgba(63,207,142,0.6)":"rgba(255,255,255,0.25)"}},
+            lang==="es"?"SEMANA":lang==="it"?"SETTIMANA":"WEEK")
+        ),
+        // Hoy
+        React.createElement("div",{style:{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:2}},
+          React.createElement("div",{style:{
+            fontSize:todayR?14:10,fontWeight:800,lineHeight:1,
+            color:todayR?"rgba(255,255,255,0.95)":"rgba(255,255,255,0.25)",
+            letterSpacing:todayR?0.5:2
+          }},todayLabel),
+          todayR&&tot2>0&&React.createElement("div",{style:{
+            fontSize:8,fontFamily:mono,letterSpacing:1.5,
+            color:dc2===tot2?"#3fcf8e":"rgba(255,255,255,0.3)",fontWeight:600
+          }},dc2+"/"+tot2+" "+(lang==="es"?"EJERC":"EX"))
+        )
+      )
+    ),
+
+    // Row 3: nivel + XP bar
+    React.createElement("div",{style:{marginBottom:2,position:"relative",zIndex:1}},
+      React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}},
+        React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6}},
+          React.createElement("div",{style:{
+            fontSize:8,fontFamily:mono,letterSpacing:2,fontWeight:700,
+            color:lvlColor,
+            textShadow:"0 0 12px "+lvlColor
+          }},lvlName),
+          React.createElement("div",{style:{fontSize:8,color:"rgba(255,255,255,0.2)",fontFamily:mono}},"→"),
+          React.createElement("div",{style:{fontSize:8,fontFamily:mono,letterSpacing:1.5,color:"rgba(255,255,255,0.35)"}},nextLvlName)
+        ),
+        React.createElement("div",{style:{fontSize:7,fontFamily:mono,color:"rgba(255,255,255,0.25)",letterSpacing:1}},xpPctRound+"%")
+      ),
+      // XP bar
+      React.createElement("div",{style:{height:2,background:"rgba(255,255,255,0.07)",borderRadius:1,overflow:"hidden",position:"relative"}},
+        React.createElement("div",{style:{
+          position:"absolute",inset:0,
+          background:"linear-gradient(90deg,"+lvlGrad+"0.3) 0%,"+lvlColor+" 100%)",
+          width:xpPctRound+"%",borderRadius:1,
+          boxShadow:"0 0 8px "+lvlColor
+        }})
+      )
+    )
+  );
+}
+
+
 function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   const t=L[lang];
   const[sel,setSel]=useState(()=>{const d=new Date().getDay();return d===0?6:d-1;});
@@ -3714,7 +3872,6 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   const setTabR=useCallback((t)=>{setTab(t);if(t==="train"){const l=FStore.loadACWRLocal();setAcwr(computeACWR(l));}},[setAcwr]);
   const[done,setDone]=useState({});
   const[logs,setLogs]=useState({});
-  const[macros,setMacros]=useState({});
   const[inWorkout,setInWorkout]=useState(false);
   const[showProModal,setShowProModal]=useState(false); /* isPro=true so never shown */
   const[showExpress,setShowExpress]=useState(false);
@@ -3723,8 +3880,6 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   const[expressDay,setExpressDay]=useState(null);
   const[addEx,setAddEx]=useState(false);
   const[nex,setNex]=useState({e:"",s:3,r:"8-12"});
-  const[addF,setAddF]=useState(false);
-  const[fd,setFd]=useState({n:"",cal:"",prot:"",carbs:"",fat:"",m:"mid"});
   const[showSet,setShowSet]=useState(false);
   const[showBotChat,setShowBotChat]=useState(false);
   const[confirmR,setConfirmR]=useState(false);
@@ -3786,10 +3941,8 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
     }catch{ return false; }
   });
   const w=wk(weekOff),today=tdy();
-  const mt={cal:2000,prot:150,carbs:200,fat:60};
   useEffect(()=>{
     setDone(FStore.loadDone(w));
-    if(weekOff===0) setMacros(FStore.loadMacros(today));
     FStore.loadLogs().then(l=>setLogs(l));
     (async()=>{try{const sb=getSB();const user=await ensureAuth();if(!sb||!user)return;const{data}=await sb.from('strength_history').select('exercise_id,exercise_name').eq('user_id',user.id).limit(500);if(!data)return;const nm=JSON.parse(localStorage.getItem('fv8_nm')||'{}');data.forEach(r=>{if(r.exercise_name&&r.exercise_name!==r.exercise_id)nm[r.exercise_id]=r.exercise_name;});localStorage.setItem('fv8_nm',JSON.stringify(nm));}catch(_){}})();
     const localLoads=FStore.loadACWRLocal();
@@ -3877,13 +4030,10 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
     return()=>clearTimeout(t);
   },[tourAskVisible]);
   const slg=useCallback(n=>{setLogs(n);FStore.saveLogs(n);},[]);
-  const sm=useCallback(n=>{setMacros(n);FStore.saveMacros(today,n);},[today]);
   const day=routine?routine[sel]:null;
   const exs=day?day.ex:[];
   const dc=exs.filter(x=>done[`${sel}-${x.id}`]).length;
   const pct=exs.length?dc/exs.length:0;
-  const entries=macros.entries||[];
-  const tot=entries.reduce((a,e)=>({cal:a.cal+(+e.cal||0),prot:a.prot+(+e.prot||0),carbs:a.carbs+(+e.carbs||0),fat:a.fat+(+e.fat||0)}),{cal:0,prot:0,carbs:0,fat:0});
   const toggle=id=>{const k=`${sel}-${id}`;if(!done[k])sd({...done,[k]:true});};
   const BW_EXERCISES=new Set(["pull up","weighted pull up","chin up","push up","decline push up","dips","bench dips","diamond push ups","plank","mountain climber","hanging knee raises","box jump","bodyweight squat","dominadas","dominadas agarre supino","dominadas lastradas","fondos","fondos en banco","flexiones","flexión","sentadilla peso corporal","sentadilla con salto","burpee","plancha","crunch","abs","zancada con salto","pistol squat","step up","mountain climber","superman","hiperextensión","elevación de piernas","flutter kicks","russian twist","hollow body","v-up","sit up","salto al cajón","saltar la cuerda","sprint","caminar","subir escaleras","remo australiano"]);
   const NO_TIME_EX=["cardio suave","cardio moderado","cardio","estiramientos","estiramiento","yoga","pilates","sprint 200m","saltar la cuerda","jumping jacks","arm haulers","mountain climbers","bear crawl","farmer walk","cardio (carrera)","cardio caminata","movilidad"];
@@ -3964,8 +4114,6 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   };
   const addExFn=()=>{if(!nex.e||!day)return;const r=[...routine];r[sel].ex=[...r[sel].ex,{...nex,id:`${sel}${Date.now()}`}];sr(r);setAddEx(false);setNex({e:"",s:3,r:"8-12"});};
   const rmEx=id=>{const r=[...routine];r[sel].ex=r[sel].ex.filter(x=>x.id!==id);sr(r);};
-  const addFood=()=>{if(!fd.n||!fd.cal)return;const m={...macros};if(!m.entries)m.entries=[];m.entries.push({...fd,id:Date.now()});sm(m);setAddF(false);setFd({n:"",cal:"",prot:"",carbs:"",fat:"",m:"mid"});};
-  const rmFood=id=>{const m={...macros};m.entries=(m.entries||[]).filter(x=>x.id!==id);sm(m);};
   useEffect(()=>{
     window.dispatchEvent(new CustomEvent("forja:mount"));
   });
@@ -4047,38 +4195,10 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
     </div>
   );}
   return(<>
-      <div style={{background:"#08090e",borderBottom:"0.5px solid rgba(255,255,255,0.06)",position:"relative"}}>
-
-        {/* Row 1: ESTA SEMANA nav + settings */}
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 16px 0"}}>
-          {(()=>{
-            const now=new Date(),dow=now.getDay(),mo=dow===0?-6:1-dow;
-            const mon=new Date(now); mon.setDate(now.getDate()+mo+weekOff*7);
-            const sun=new Date(mon); sun.setDate(mon.getDate()+6);
-            const fmt=d=>d.getDate()+" "+["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"][d.getMonth()];
-            const lbl=weekOff===0?(lang==="es"||lang==="pt"?"ESTA SEMANA":lang==="fr"?"CETTE SEMAINE":lang==="it"?"QUESTA SETTIMANA":lang==="de"?"DIESE WOCHE":"THIS WEEK"):weekOff===-1?(lang==="es"||lang==="pt"?"SEMANA PASADA":"LAST WEEK"):fmt(mon)+" - "+fmt(sun);
-            return(
-              <div data-tour="cal-nav" style={{display:"flex",alignItems:"center",gap:4}}>
-                <button onClick={()=>setWeekOff(p=>Math.max(-12,p-1))} style={{background:"none",border:"none",color:"rgba(255,255,255,0.25)",fontSize:18,cursor:"pointer",lineHeight:1,padding:"0 4px"}}>&#8249;</button>
-                <span style={{fontSize:7,fontFamily:mono,letterSpacing:3,color:"rgba(255,255,255,0.35)"}}>{lbl}</span>
-                <button onClick={()=>setWeekOff(p=>Math.min(0,p+1))} style={{background:"none",border:"none",color:weekOff===0?"rgba(255,255,255,0.08)":"rgba(255,255,255,0.25)",fontSize:18,cursor:weekOff===0?"default":"pointer",lineHeight:1,padding:"0 4px"}}>&#8250;</button>
-              </div>
-            );
-          })()}
-          <div style={{display:"flex",alignItems:"center",gap:8}}>
-          {day&&exs.length>0&&(
-            <div style={{display:"flex",alignItems:"center",gap:5}}>
-              <span style={{fontSize:8,fontFamily:mono,color:"rgba(255,255,255,0.2)",letterSpacing:1}}>{dc}/{exs.length}</span>
-              <div style={{width:28,height:1.5,background:"rgba(255,255,255,0.06)",borderRadius:1}}>
-                <div style={{height:"100%",width:`${pct*100}%`,background:pct===1?"#3fcf8e":"rgba(255,255,255,0.3)",borderRadius:1,transition:"width .4s"}}/>
-              </div>
-            </div>
-          )}
-          <button onClick={()=>setShowSet(!showSet)} style={{width:26,height:26,borderRadius:8,border:"0.5px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.05)",cursor:"pointer",color:"rgba(255,255,255,0.4)",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center"}}>&#9881;</button>
-        </div>
+      <div style={{background:"#08090e",borderBottom:"0.5px solid rgba(255,255,255,0.06)",position:"relative",overflow:"hidden"}}>
 
         {showSet&&(
-          <div style={{position:"absolute",top:40,right:10,zIndex:20,background:"rgba(10,12,18,0.97)",border:"0.5px solid rgba(255,255,255,0.08)",borderRadius:12,padding:"8px 10px",display:"flex",flexWrap:"wrap",gap:6,maxWidth:260}}>
+          <div style={{position:"absolute",top:40,right:14,zIndex:20,background:"rgba(10,12,18,0.97)",border:"0.5px solid rgba(255,255,255,0.08)",borderRadius:12,padding:"8px 10px",display:"flex",flexWrap:"wrap",gap:6,maxWidth:260,backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)"}}>
             <button onClick={()=>{const ls=["es","en","fr","it","de","pt"];const nl=ls[(ls.indexOf(lang)+1)%ls.length];setLang(nl);sp({...profile,lang:nl});}} style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(255,255,255,0.08)",background:"transparent",color:"rgba(255,255,255,0.5)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>{lang.toUpperCase()}</button>
             <button onClick={()=>{showForjaOnboarding();setShowSet(false);}} style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(255,255,255,0.08)",background:"transparent",color:"rgba(255,255,255,0.5)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>{t.reconfig.toUpperCase()}</button>
             <button onClick={()=>{try{localStorage.removeItem("fv8_toured");}catch{}setTourAskVisible(true);setTourStep(null);setShowSet(false);}} style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(255,255,255,0.08)",background:"transparent",color:"rgba(255,255,255,0.5)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>TUTORIAL</button>
@@ -4087,8 +4207,15 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
           </div>
         )}
 
-        {/* Row 2: días de la semana */}
-        <div style={{display:"flex",marginTop:8}}>
+        <BannerDashboard
+          routine={routine} done={done} muscleXP={muscleXP} lang={lang}
+          weekOff={weekOff} setWeekOff={setWeekOff} today={today} wk={wk}
+          showSet={showSet} setShowSet={setShowSet}
+          setShowBotChat={setShowBotChat}
+          mono={mono} profile={profile}
+        />
+
+        <div style={{display:"flex",gap:0,borderTop:"0.5px solid rgba(255,255,255,0.04)"}}>
           {(()=>{
             const isCeleb=profile?.mode==="celebrity";
             const celebId=profile?.celebrity;
@@ -4111,7 +4238,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
               const isPastWeek=weekOff<0;
               const hasDone=dd>0;
               return(
-                <button key={i} data-tour={i===todayDayIdx?"cal-day":undefined} onClick={()=>{setSel(i);setTabR("train");setAddEx(false);setAddF(false);setInWorkout(false);}}
+                <button key={i} data-tour={i===todayDayIdx?"cal-day":undefined} onClick={()=>{setSel(i);setTabR("train");setAddEx(false);setInWorkout(false);}}
                   style={{flex:1,border:"none",background:"transparent",cursor:"pointer",
                     display:"flex",flexDirection:"column",alignItems:"center",
                     padding:"0 0 10px",opacity:isFuture&&!isSel?0.2:isPastWeek&&!hasDone&&!isSel&&!isRest?0.3:1,
@@ -4139,36 +4266,9 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
             });
           })()}
           })()}
+          })()}
         </div>
       </div>
-
-      {showBotChat&&(
-        <div style={{position:"fixed",inset:0,zIndex:9999,display:"flex",flexDirection:"column",justifyContent:"flex-end"}}>
-          <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.5)"}} onClick={()=>setShowBotChat(false)}/>
-          <div style={{position:"relative",borderRadius:"28px 28px 0 0",height:"70vh",
-            display:"flex",flexDirection:"column",overflow:"hidden",
-            background:"rgba(12,14,22,0.96)",
-            backdropFilter:"blur(40px)",WebkitBackdropFilter:"blur(40px)",
-            boxShadow:"0 -1px 0 rgba(255,255,255,0.1),0 -30px 60px rgba(0,0,0,0.8)"}}>
-            <div style={{height:1,background:"linear-gradient(90deg,transparent,rgba(255,255,255,0.15),transparent)",flexShrink:0}}/>
-            <div style={{display:"flex",justifyContent:"center",paddingTop:12,flexShrink:0}}>
-              <div style={{width:40,height:4,borderRadius:2,background:"rgba(255,255,255,0.15)"}}/>
-            </div>
-            <div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 20px 12px",borderBottom:"0.5px solid rgba(255,255,255,0.06)",flexShrink:0}}>
-              <div style={{width:38,height:38,borderRadius:"50%",background:"rgba(63,207,142,0.1)",border:"0.5px solid rgba(63,207,142,0.25)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>🤖</div>
-              <div style={{flex:1}}>
-                <div style={{fontSize:12,fontFamily:mono,fontWeight:700,color:"rgba(255,255,255,0.9)",letterSpacing:2}}>FORJA BOT</div>
-                <div style={{display:"flex",alignItems:"center",gap:5,marginTop:2}}>
-                  <div style={{width:5,height:5,borderRadius:"50%",background:"#3fcf8e",boxShadow:"0 0 6px rgba(63,207,142,0.8)"}}/>
-                  <span style={{fontSize:8,fontFamily:mono,color:"rgba(63,207,142,0.6)",letterSpacing:1}}>COACH ACTIVO</span>
-                </div>
-              </div>
-              <button onClick={()=>setShowBotChat(false)} style={{width:28,height:28,borderRadius:"50%",background:"rgba(255,255,255,0.05)",border:"0.5px solid rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.4)",fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>&#10005;</button>
-            </div>
-            <BotChat profile={profile} routine={routine} done={done} lang={lang} mono={mono}/>
-          </div>
-        </div>
-      )}
 
       <div style={{padding:"10px 20px 0",background:"rgba(8,10,14,0.95)",
         borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
@@ -4177,7 +4277,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
           {[{id:"train",l:(L[lang]||L.en).train,icon:"⚡"},{id:"body",l:lang==="es"||lang==="pt"?"CUERPO":lang==="fr"?"CORPS":lang==="it"?"CORPO":lang==="de"?"KÖRPER":"BODY",icon:"🫀"}].map(tb=>{
             const active=tab===tb.id;
             return(
-            <button key={tb.id} data-tour={tb.id==="body"?"tab-body":undefined} onClick={()=>{setTab(tb.id);setAddEx(false);setAddF(false);}}
+            <button key={tb.id} data-tour={tb.id==="body"?"tab-body":undefined} onClick={()=>{setTab(tb.id);setAddEx(false);}}
               style={{flex:1,padding:"9px 0",border:"none",borderRadius:10,cursor:"pointer",
                 background:active?"rgba(255,255,255,0.13)":"transparent",
                 color:active?"#EEEAE3":"#b8c0d4",
@@ -4215,157 +4315,23 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
               </div>
             ):(
               <>
-                {(()=>{
-                  const totalXP=Object.values(muscleXP).reduce((s,z)=>s+(z&&z.xp?z.xp:0),0);
-                  const lvl=xpToLevel(totalXP);
-                  const lvlColor=xpLevelColor(lvl);
-                  const xpPrev=XP_THRESHOLDS[Math.max(0,lvl-2)]||0;
-                  const xpNext=XP_THRESHOLDS[lvl]||XP_THRESHOLDS[XP_THRESHOLDS.length-1];
-                  const xpPct=lvl>=10?100:Math.round(((totalXP-xpPrev)/Math.max(1,xpNext-xpPrev))*100);
-                  const LVL_NAMES=["IRON I","IRON II","IRON III","IRON IV","IRON V","IRON VI","IRON VII","IRON VIII","IRON IX","IRON X"];
-                  const lvlName=LVL_NAMES[Math.min(9,lvl-1)];
-                  const lvlNext=LVL_NAMES[Math.min(9,lvl)]||"";
-
-                  const dow2=new Date().getDay();
-                  const todayIdx=dow2===0?6:dow2-1;
-                  let weekDone=0;
-                  const weekTotalFull=(routine||[]).filter(d=>d&&d.ex&&d.ex.length>0).length;
-                  for(let i=0;i<=todayIdx;i++){
-                    const r2=routine?routine[i]:null;
-                    if(!r2||!r2.ex||r2.ex.length===0) continue;
-                    if(r2.ex.every(x=>done[i+"-"+x.id])) weekDone++;
-                  }
-
-                  const trainedDays=new Set();
-                  Object.values(logs||{}).flat().forEach(function(e){if(e&&e.d)trainedDays.add(e.d.slice(0,10));});
-                  for(let i=0;i<=todayIdx;i++){
-                    const r2=routine?routine[i]:null;
-                    if(!r2||!r2.ex||r2.ex.length===0) continue;
-                    if(r2.ex.every(x=>done[i+"-"+x.id])){
-                      const d2=new Date(); d2.setDate(d2.getDate()-(todayIdx-i));
-                      trainedDays.add(d2.toISOString().slice(0,10));
-                    }
-                  }
-                  let streak=0;
-                  const sc=new Date();
-                  while(streak<365){
-                    if(!trainedDays.has(sc.toISOString().slice(0,10))) break;
-                    streak++; sc.setDate(sc.getDate()-1);
-                  }
-
-                  let lastPRName="", lastPRVal="", bestDate="";
-                  Object.entries(logs||{}).forEach(function(kv){
-                    (kv[1]||[]).forEach(function(e){
-                      if(e.d&&e.d>bestDate&&e.rm>0){bestDate=e.d;lastPRName=e.exName||kv[0];lastPRVal=Math.round(e.rm)+"kg";}
-                    });
-                  });
-
-                  const hr=new Date().getHours();
-                  const greeting=lang==="es"||lang==="pt"?(hr<12?"Buenos días,":(hr<19?"Buenas tardes,":"Buenas noches,")):(hr<12?"Good morning,":(hr<19?"Good afternoon,":"Good evening,"));
-                  const userName=profile&&profile.name?profile.name:"Atleta";
-
-                  const ringDash=weekTotalFull>0?(weekDone/weekTotalFull)*182.2:0;
-
-                  return(
-                    <div style={{
-                      background:"linear-gradient(135deg,rgba(20,35,90,0.9) 0%,rgba(10,18,50,0.95) 100%)",
-                      borderRadius:24,
-                      borderTop:"1.5px solid rgba(255,255,255,0.45)",
-                      borderLeft:"0.5px solid rgba(255,255,255,0.18)",
-                      borderRight:"0.5px solid rgba(255,255,255,0.18)",
-                      borderBottom:"0.5px solid rgba(255,255,255,0.05)",
-                      boxShadow:"inset 0 1.5px 0 rgba(255,255,255,0.4),0 16px 48px rgba(0,0,30,0.6)",
-                      position:"relative",overflow:"hidden",
-                      marginBottom:12,padding:"20px 18px 18px",
-                    }}>
-                      <div style={{position:"absolute",top:-42,left:-24,width:190,height:120,
-                        background:"radial-gradient(ellipse,rgba(255,255,255,0.15) 0%,rgba(255,255,255,0.05) 38%,transparent 68%)",
-                        transform:"rotate(-22deg)",pointerEvents:"none",zIndex:0}}/>
-                      <div style={{position:"absolute",inset:0,borderRadius:24,
-                        background:"linear-gradient(148deg,rgba(255,255,255,0.12) 0%,rgba(255,255,255,0.03) 22%,transparent 64%)",
-                        pointerEvents:"none",zIndex:0}}/>
-
-                      <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",marginBottom:16,position:"relative",zIndex:1}}>
-                        <div>
-                          <div style={{fontSize:11,color:"rgba(255,255,255,0.32)",marginBottom:3,fontFamily:mono}}>{greeting}</div>
-                          <div style={{fontSize:26,fontWeight:700,color:"#fff",letterSpacing:-1,lineHeight:1}}>{userName}</div>
-                        </div>
-                        <div style={{padding:"5px 12px",borderRadius:20,background:"rgba(50,110,255,0.12)",
-                          border:"1px solid rgba(120,175,255,0.5)",
-                          display:"flex",alignItems:"center",gap:6}}>
-                          <span style={{fontSize:14}}>⚡</span>
-                          <span style={{fontSize:14,fontWeight:700,color:"rgba(190,220,255,0.96)"}}>{streak}</span>
-                          <span style={{fontSize:8,fontFamily:mono,letterSpacing:1.5,color:"rgba(100,155,255,0.6)"}}>DÍAS</span>
-                        </div>
-                      </div>
-
-                      <FrozenHeartBanner
-                        day={day} done={done} sel={sel} lang={lang} mono={mono}
-                        onStart={()=>{if(day&&day.ex&&day.ex.length)setInWorkout(true);}}
-                      />
-
-                      <div style={{display:"flex",alignItems:"center",gap:16,marginTop:16,position:"relative",zIndex:1}}>
-                        <div style={{position:"relative",width:72,height:72,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                          <svg width="72" height="72" viewBox="0 0 72 72" style={{position:"absolute",overflow:"visible"}}>
-                            <defs>
-                              <linearGradient id="rg2" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" stopColor="rgba(130,190,255,0.8)"/>
-                                <stop offset="100%" stopColor="#4878ff"/>
-                              </linearGradient>
-                            </defs>
-                            <circle cx="36" cy="36" r="29" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="6"/>
-                            <circle cx="36" cy="36" r="29" fill="none" stroke="url(#rg2)" strokeWidth="6"
-                              strokeDasharray={ringDash+" 182.2"}
-                              strokeLinecap="round" transform="rotate(-90 36 36)"
-                              style={{filter:"drop-shadow(0 0 4px rgba(80,140,255,0.8))"}}/>
-                          </svg>
-                          <div style={{textAlign:"center",position:"relative",zIndex:1}}>
-                            <div style={{fontSize:15,fontWeight:800,color:"#fff",lineHeight:1,letterSpacing:-0.5}}>{weekDone+"/"+weekTotalFull}</div>
-                            <div style={{fontSize:6,fontFamily:mono,letterSpacing:2,color:"rgba(255,255,255,0.28)",marginTop:2}}>SEM</div>
-                          </div>
-                        </div>
-
-                        <div style={{flex:1,display:"flex",flexDirection:"column",gap:10}}>
-                          <div>
-                            <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
-                              <div style={{display:"flex",alignItems:"center",gap:5}}>
-                                <span style={{fontSize:8,fontFamily:mono,letterSpacing:2,color:"rgba(185,215,255,0.65)",fontWeight:600}}>{lvlName}</span>
-                                {lvl<10&&<span style={{fontSize:8,color:"rgba(255,255,255,0.18)",fontFamily:mono}}>{"→ "+lvlNext}</span>}
-                              </div>
-                              <span style={{fontSize:7,fontFamily:mono,color:"rgba(255,255,255,0.2)"}}>{xpPct+"%"}</span>
-                            </div>
-                            <div style={{height:2,borderRadius:1,overflow:"hidden",background:"rgba(255,255,255,0.06)"}}>
-                              <div style={{width:xpPct+"%",height:"100%",
-                                background:"linear-gradient(90deg,"+lvlColor+"88,"+lvlColor+")",
-                                borderRadius:1,
-                                boxShadow:"0 0 8px "+lvlColor+"88",
-                                transition:"width 0.8s ease"}}/>
-                            </div>
-                          </div>
-                          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                            <div>
-                              <div style={{fontSize:7,fontFamily:mono,letterSpacing:2,color:"rgba(255,255,255,0.25)",marginBottom:2}}>ÚLTIMO PR</div>
-                              <div style={{fontSize:12,fontWeight:700,color:"rgba(255,255,255,0.85)",maxWidth:100,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-                                {lastPRName||lang==="es"||lang==="pt"?"Sin registros":"No logs"}
-                              </div>
-                            </div>
-                            {lastPRVal&&(
-                              <div style={{padding:"4px 10px",borderRadius:12,
-                                background:"rgba(255,215,0,0.08)",
-                                border:"1px solid rgba(255,215,0,0.35)"}}>
-                                <span style={{fontSize:10,fontWeight:700,color:"rgba(255,215,0,0.85)"}}>{"🏆 "+lastPRVal}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })()}
-
+                <div id="forja-dumbbell-wrap" data-tour="start-workout" style={{width:"100%",height:180,borderRadius:16,overflow:"hidden",position:"relative",background:C.bg,cursor:"pointer"}}
+                  onClick={()=>{if(day&&day.ex&&day.ex.length)setInWorkout(true);}}
+                >
+                  <canvas id="forja-dumbbell-canvas" style={{width:"100%",height:"100%",display:"block"}}></canvas>
+                  <div style={{position:"absolute",bottom:16,left:"50%",transform:"translateX(-50%)",
+                    background:"rgba(240,242,245,0.12)",backdropFilter:"blur(8px)",
+                    border:"1px solid rgba(240,242,245,0.20)",
+                    padding:"7px 20px",borderRadius:20,
+                    fontSize:10,fontFamily:"monospace",color:C.tx,letterSpacing:2,fontWeight:700,
+                    whiteSpace:"nowrap",pointerEvents:"none",
+                    animation:"pulse 2.2s ease-in-out infinite"}}>
+                    ▶ {t.startWorkout}
+                  </div>
+                </div>
                 {day&&day.ex&&day.ex.length>0&&(
                   <div onClick={()=>{setExpressGroup(null);setExpressTime(15);setShowExpress(true);}}
-                    style={{marginBottom:12,padding:"10px 14px",borderRadius:14,cursor:"pointer",
+                    style={{margin:"10px 0 4px",padding:"10px 14px",borderRadius:12,cursor:"pointer",
                       background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",
                       display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
                     <div style={{width:28,height:28,borderRadius:8,flexShrink:0,
@@ -4686,76 +4652,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
               </>
             )}
           </div>
-        )}
-        {tab==="macros"&&(
-          <div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
-              {[{v:tot.cal,mx:mt.cal,c:C.tx,l:t.cal,u:"kcal"},{v:tot.prot,mx:mt.prot,c:C.green,l:t.prot,u:"g"},{v:tot.carbs,mx:mt.carbs,c:C.blue,l:t.carbs,u:"g"},{v:tot.fat,mx:mt.fat,c:C.purple,l:t.fat,u:"g"}].map((r,i)=>{
-                const left=r.mx-r.v,p2=Math.min(r.v/r.mx,1);
-                return(
-                  <div key={i} style={{padding:"14px",background:C.card,borderRadius:12,border:`1px solid ${C.borderL}`,boxShadow:"inset 0 1px 0 rgba(255,255,255,0.5)"}}>
-                    <div style={{fontSize:9,fontFamily:mono,color:r.c,letterSpacing:2,marginBottom:6,fontWeight:600}}>{r.l}</div>
-                    <div style={{fontSize:26,fontWeight:800,color:r.v>r.mx?C.red:C.tx}}>{r.v}</div>
-                    <div style={{fontSize:9,fontFamily:mono,color:C.tx3,marginBottom:8}}>{r.u} / {r.mx}</div>
-                    <div style={{height:2,background:C.borderL,borderRadius:1,overflow:"hidden"}}>
-                      <div style={{height:"100%",background:r.c,width:`${p2*100}%`,transition:"width 0.4s"}}/>
-                    </div>
-                    <div style={{fontSize:9,fontFamily:mono,color:left>=0?C.tx3:C.red,marginTop:5}}>
-                      {left>=0?`${left}${r.u} ${t.left}`:`${Math.abs(left)}${r.u} ${t.over}`}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            {entries.map(f=>{
-              const mc={am:C.yellow,mid:C.tx,snk:C.blue,pm:C.purple};
-              return(
-                <div key={f.id} style={{display:"flex",alignItems:"center",padding:"12px 0",borderBottom:`1px solid ${C.borderL}`,gap:12}}>
-                  <div style={{width:3,height:32,borderRadius:2,background:mc[f.m]||C.tx3,flexShrink:0}}/>
-                  <div style={{flex:1}}>
-                    <div style={{fontSize:14,fontWeight:600}}>{f.n}</div>
-                    <div style={{display:"flex",gap:8,marginTop:2}}>
-                      <span style={{fontSize:10,fontFamily:mono,color:C.tx2}}>{f.cal}kcal</span>
-                      <span style={{fontSize:10,fontFamily:mono,color:C.green}}>{f.prot}P</span>
-                      <span style={{fontSize:10,fontFamily:mono,color:C.blue}}>{f.carbs}C</span>
-                      <span style={{fontSize:10,fontFamily:mono,color:C.purple}}>{f.fat}F</span>
-                    </div>
-                  </div>
-                  <button onClick={()=>rmFood(f.id)} style={{background:"none",border:"none",color:C.tx3,fontSize:16,cursor:"pointer"}}>×</button>
-                </div>
-              );
-            })}
-            {entries.length===0&&!addF&&(
-              <div style={{textAlign:"center",padding:"40px 0",fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:2}}>// 0 KCAL LOGGED</div>
-            )}
-            {!addF?(
-              <button onClick={()=>setAddF(true)} style={{width:"100%",padding:"13px 0",marginTop:10,borderRadius:10,border:`1.5px dashed ${C.border}`,background:"transparent",color:C.green,fontSize:10,fontFamily:mono,letterSpacing:2,cursor:"pointer"}}>{t.addFood}</button>
-            ):(
-              <div style={{marginTop:12,padding:16,background:C.card,borderRadius:12,border:`1.5px solid ${C.borderL}`}}>
-                <Inp placeholder={t.what} value={fd.n} onChange={e=>setFd({...fd,n:e.target.value})}/>
-                <div style={{display:"flex",gap:5,marginTop:8}}>
-                  {[["am",t.am],["mid",t.mid],["snk",t.snk],["pm",t.pm]].map(([k,lb])=>(
-                    <button key={k} onClick={()=>setFd({...fd,m:k})} style={{flex:1,padding:"8px 0",borderRadius:7,border:`1.5px solid ${fd.m===k?C.tx:C.borderL}`,background:fd.m===k?C.tx:"transparent",color:fd.m===k?C.white:C.tx3,fontSize:9,fontFamily:mono,cursor:"pointer",transition:"all 0.15s"}}>
-                      {lb.slice(0,3).toUpperCase()}
-                    </button>
-                  ))}
-                </div>
-                <div style={{display:"flex",gap:5,marginTop:8}}>
-                  {[["cal","KCAL",C.tx],["prot","P",C.green],["carbs","C",C.blue],["fat","F",C.purple]].map(([k,lb,clr])=>(
-                    <div key={k} style={{flex:1}}>
-                      <div style={{fontSize:9,color:clr,fontFamily:mono,letterSpacing:1,textAlign:"center",marginBottom:3,fontWeight:600}}>{lb}</div>
-                      <Inp type="number" value={fd[k]} onChange={e=>setFd({...fd,[k]:e.target.value})} style={{textAlign:"center",fontSize:16,fontWeight:800,padding:9}}/>
-                    </div>
-                  ))}
-                </div>
-                <div style={{display:"flex",gap:8,marginTop:12}}>
-                  <button onClick={()=>setAddF(false)} style={{flex:1,padding:11,borderRadius:9,border:`1.5px solid ${C.borderL}`,background:"transparent",color:C.tx3,fontSize:10,fontFamily:mono,cursor:"pointer"}}>{(L[lang]||L.en).cancel.toUpperCase()}</button>
-                  <button onClick={addFood} style={{flex:2,padding:11,borderRadius:9,border:"none",background:C.tx,color:C.white,fontSize:10,fontFamily:mono,fontWeight:700,cursor:"pointer",letterSpacing:1}}>{t.save}</button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+        )}}
         {tab==="body"&&(
           <BodyHeatmapTab logs={logs} routine={routine} lang={lang} muscleXP={muscleXP} xpLevelUps={xpLevelUps} setXpLevelUps={setXpLevelUps} showXPTooltip={showXPTooltip} setShowXPTooltip={setShowXPTooltip} xpAnimZone={xpAnimZone} setXpAnimZone={setXpAnimZone}/>
         )}
@@ -7317,186 +7214,6 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
     )
   );
 }
-function FrozenHeartBanner({day, done, sel, lang, mono, onStart}){
-  const canvasRef = React.useRef(null);
-  const fogRef = React.useRef(null);
-  const tRef = React.useRef(0);
-  const beatTRef = React.useRef(0);
-  const animIdRef = React.useRef(null);
-  const fogAnimIdRef = React.useRef(null);
-  const heartModelRef = React.useRef(null);
-  const iceMeshRef = React.useRef(null);
-  const isAliveRef = React.useRef(false);
-
-  const dayExs = day ? (day.ex || []) : [];
-  const doneCount = dayExs.filter(x => done[sel+"-"+x.id]).length;
-  const isAlive = dayExs.length > 0 && doneCount === dayExs.length;
-  isAliveRef.current = isAlive;
-
-  React.useEffect(()=>{
-    const canvas = canvasRef.current;
-    const fogCanvas = fogRef.current;
-    if(!canvas||!fogCanvas||!window.THREE||!window.THREE.GLTFLoader) return;
-    const card = canvas.parentElement;
-    const W = card.offsetWidth;
-    const H = 160;
-    const dpr = Math.min(window.devicePixelRatio||1,2);
-
-    const renderer = new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
-    renderer.setSize(W,H); renderer.setPixelRatio(dpr);
-    renderer.setClearColor(0x000000,0);
-    renderer.physicallyCorrectLights=true;
-    renderer.toneMapping=THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure=1.4;
-    renderer.outputEncoding=THREE.sRGBEncoding;
-
-    const scene=new THREE.Scene();
-    const cam=new THREE.PerspectiveCamera(28,W/H,0.1,100);
-    cam.position.set(12.5,1.1,26); cam.lookAt(8.0,1.1,0);
-
-    let envTexture=null;
-    if(window.THREE.RoomEnvironment){
-      const pmrem=new THREE.PMREMGenerator(renderer);
-      pmrem.compileCubemapShader();
-      envTexture=pmrem.fromScene(new THREE.RoomEnvironment()).texture;
-      scene.environment=envTexture;
-    }
-
-    scene.add(new THREE.AmbientLight(0x6688bb,2.5));
-    const key=new THREE.DirectionalLight(0xaaccff,2.5); key.position.set(2,5,4); scene.add(key);
-    const fill=new THREE.DirectionalLight(0x4488ff,3); fill.position.set(-3,2,3); scene.add(fill);
-    const cold=new THREE.DirectionalLight(0x88bbff,2.5); cold.position.set(0,-2,-3); scene.add(cold);
-    const iceLight=new THREE.PointLight(0x88ccff,8,6); iceLight.position.set(2.0,0.5,2.5); scene.add(iceLight);
-    const botLight=new THREE.PointLight(0x4488cc,3,5); botLight.position.set(1.5,-2,2); scene.add(botLight);
-
-    new THREE.GLTFLoader().load(
-      'https://pub-28277a6ce79d49479afd0cb1bba27b44.r2.dev/HEARTS/frozen_heart.glb',
-      function(gltf){
-        const model=gltf.scene;
-        heartModelRef.current=model;
-        const box=new THREE.Box3().setFromObject(model);
-        const center=box.getCenter(new THREE.Vector3());
-        const size=box.getSize(new THREE.Vector3());
-        const scale=0.6/Math.max(size.x,size.y,size.z);
-        model.scale.setScalar(scale);
-        model.position.set(15.5-center.x*scale,-center.y*scale,-center.z*scale);
-        const meshes=[];
-        model.traverse(c=>{if(c.isMesh)meshes.push(c);});
-        meshes.forEach((child,idx)=>{
-          const m=child.material;
-          if(envTexture){m.envMap=envTexture;m.envMapIntensity=2.5;}
-          if(idx===1){
-            m.transparent=false;m.opacity=1.0;m.depthWrite=true;
-            child.renderOrder=0;m.needsUpdate=true;
-          } else {
-            iceMeshRef.current=child;
-            child.material=new THREE.MeshPhysicalMaterial({
-              color:new THREE.Color(0.65,0.85,1.0),
-              roughness:0.0,metalness:0.0,transmission:0.94,thickness:1.8,
-              transparent:true,ior:1.31,clearcoat:1.0,clearcoatRoughness:0.0,
-              reflectivity:1.0,envMap:envTexture,envMapIntensity:5.0,
-              attenuationColor:new THREE.Color(0.3,0.6,1.0),attenuationDistance:1.2,
-              side:THREE.DoubleSide,depthWrite:false,
-            });
-            child.renderOrder=1;
-          }
-        });
-        scene.add(model);
-      }
-    );
-
-    function animate(){
-      animIdRef.current=requestAnimationFrame(animate);
-      tRef.current+=0.008;
-      const t=tRef.current;
-      const alive=isAliveRef.current;
-      const model=heartModelRef.current;
-      const iceMesh=iceMeshRef.current;
-      if(model){
-        model.rotation.y=t*0.6;
-        model.rotation.x=Math.sin(t*0.4)*0.12;
-        if(alive){
-          beatTRef.current+=0.05;
-          const bt=beatTRef.current;
-          const b1=Math.pow(Math.max(0,Math.sin(bt*1.8)),3);
-          const b2=Math.pow(Math.max(0,Math.sin(bt*1.8-0.8)),3)*0.6;
-          const beat=b1+b2; const s=1+beat*0.1;
-          model.scale.set(s,s,s);
-          iceLight.intensity=5+beat*10; botLight.intensity=2+beat*5;
-          iceLight.color.set(0xff2244); botLight.color.set(0xff1133);
-          if(iceMesh)iceMesh.visible=false;
-        } else {
-          model.scale.set(1,1,1);
-          iceLight.intensity=8+Math.sin(t*1.2)*2.5; botLight.intensity=3;
-          iceLight.color.set(0x88ccff); botLight.color.set(0x4488cc);
-          if(iceMesh)iceMesh.visible=true;
-        }
-      }
-      renderer.render(scene,cam);
-    }
-    animate();
-
-    fogCanvas.width=W*dpr; fogCanvas.height=H*dpr;
-    fogCanvas.style.width=W+"px"; fogCanvas.style.height=H+"px";
-    const fctx=fogCanvas.getContext("2d"); fctx.scale(dpr,dpr);
-    let ft=0;
-    function fogLoop(){
-      fogAnimIdRef.current=requestAnimationFrame(fogLoop);
-      ft+=0.012; fctx.clearRect(0,0,W,H);
-      if(isAliveRef.current) return;
-      const cx=W*0.72,cy=H*0.5;
-      const a2=fctx.createRadialGradient(cx,cy,H*0.05,cx,cy,W*0.9);
-      a2.addColorStop(0,"rgba(100,180,255,"+(0.12+Math.sin(ft*.6)*.04)+")");
-      a2.addColorStop(.5,"rgba(50,120,220,"+(0.06+Math.sin(ft*.4)*.02)+")");
-      a2.addColorStop(1,"rgba(0,0,0,0)");
-      fctx.fillStyle=a2; fctx.fillRect(0,0,W,H);
-      const a1=fctx.createRadialGradient(cx,cy,4,cx,cy,H*0.65);
-      a1.addColorStop(0,"rgba(140,210,255,"+(0.28+Math.sin(ft*.8)*.08)+")");
-      a1.addColorStop(.35,"rgba(70,150,255,"+(0.12+Math.sin(ft*.6)*.03)+")");
-      a1.addColorStop(1,"rgba(0,0,0,0)");
-      fctx.fillStyle=a1; fctx.fillRect(0,0,W,H);
-      const rim=fctx.createLinearGradient(0,0,W,0);
-      rim.addColorStop(0,"rgba(180,220,255,0)");
-      rim.addColorStop(.25,"rgba(200,235,255,"+(0.35+Math.sin(ft*.6)*.1)+")");
-      rim.addColorStop(.5,"rgba(220,245,255,"+(0.55+Math.sin(ft*.8)*.15)+")");
-      rim.addColorStop(.75,"rgba(200,235,255,"+(0.35+Math.sin(ft*.6)*.1)+")");
-      rim.addColorStop(1,"rgba(180,220,255,0)");
-      fctx.fillStyle=rim; fctx.fillRect(0,0,W,1.5);
-    }
-    fogLoop();
-
-    return ()=>{
-      if(animIdRef.current)cancelAnimationFrame(animIdRef.current);
-      if(fogAnimIdRef.current)cancelAnimationFrame(fogAnimIdRef.current);
-      renderer.dispose();
-    };
-  },[]);
-
-  return(
-    <div data-tour="start-workout" onClick={onStart} style={{
-      width:"100%",height:160,borderRadius:16,position:"relative",cursor:"pointer",
-      background:isAlive?"#180408":"#04080f",transition:"background 0.8s ease",
-      overflow:"hidden",border:"0.5px solid rgba(255,255,255,0.08)",
-    }}>
-      <canvas ref={canvasRef} style={{position:"absolute",inset:0,width:"100%",height:"100%",zIndex:1,pointerEvents:"none",borderRadius:16}}/>
-      <canvas ref={fogRef} style={{position:"absolute",inset:0,width:"100%",height:"100%",zIndex:2,pointerEvents:"none",borderRadius:16}}/>
-      <div style={{position:"absolute",inset:0,zIndex:3,padding:"16px 18px",display:"flex",flexDirection:"column",justifyContent:"flex-end",pointerEvents:"none"}}>
-        <div style={{fontFamily:"monospace",fontSize:9,color:"rgba(255,255,255,0.3)",letterSpacing:3,marginBottom:5}}>HOY</div>
-        <div style={{fontFamily:"monospace",fontSize:22,fontWeight:800,color:"#fff",letterSpacing:-0.5,lineHeight:1,marginBottom:4}}>{day?day.l:"—"}</div>
-        <div style={{fontFamily:"monospace",fontSize:8,color:"rgba(255,255,255,0.3)",letterSpacing:1.5}}>{dayExs.length} EJERC · TAP PARA INICIAR</div>
-      </div>
-      <div style={{position:"absolute",bottom:14,left:"50%",transform:"translateX(-50%)",
-        background:"rgba(240,242,245,0.1)",backdropFilter:"blur(8px)",
-        border:"1px solid rgba(240,242,245,0.18)",padding:"6px 18px",borderRadius:20,
-        fontSize:10,fontFamily:"monospace",color:"rgba(255,255,255,0.85)",
-        letterSpacing:2,fontWeight:700,whiteSpace:"nowrap",pointerEvents:"none",zIndex:4,
-        animation:"pulse 2.2s ease-in-out infinite"}}>
-        ▶ INICIAR ENTRENO
-      </div>
-    </div>
-  );
-}
-
 function App(){
   const[lang,setLangS]=useState(()=>{
     try{return localStorage.getItem('fv8_lang')||null;}catch{return null;}
@@ -7606,7 +7323,6 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/RGBELoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/environments/RoomEnvironment.js"></script>
 <script>
 (function initDumbbell(){
   function tryInit(){
@@ -7855,7 +7571,167 @@ function BotChat({profile,routine,done,lang,mono}){
 
 </script>
 
+<script>
+(function initBot(){
+  const CDN="https://pub-28277a6ce79d49479afd0cb1bba27b44.r2.dev/bot-anims/";
+  const FY=-7.8, FOV=35, CZ=14, CAM_Y=-4.4;
 
+  // Una animación por estado — elegida al abrir la app
+  const MOOD_ANIMS={
+    victory:  [{a:"clapping",    walk:false}, {a:"twerkdance",   walk:false}, {a:"jogging",      walk:true}],
+    active:   [{a:"jogging",     walk:true},  {a:"walking_skin", walk:true},  {a:"drunkwalk",    walk:true}],
+    idle:     [{a:"fishing",     walk:false}, {a:"cowmilking",   walk:false}, {a:"rifleaiming",  walk:false}, {a:"gunplay", walk:false}],
+    low:      [{a:"plank",       walk:false}, {a:"laying",       walk:false}, {a:"situps",       walk:false}],
+    dead:     [{a:"laying",      walk:false}, {a:"jumpplank",    walk:false}],
+    normal:   [{a:"walking_skin",walk:true},  {a:"jogging",      walk:true},  {a:"drunkwalk",    walk:true}],
+  };
+
+  function getMood(){
+    try{
+      const done=JSON.parse(localStorage.getItem("fv8_done")||"{}");
+      const hist=JSON.parse(localStorage.getItem("fv8_hist")||"[]");
+      const today=new Date().toISOString().slice(0,10);
+      const DAY=86400000, days=new Set();
+      Object.keys(done).forEach(k=>{const p=k.split("-");if(p.length>=3)days.add(p.slice(0,3).join("-"));});
+      hist.forEach(h=>{if(h.date)days.add(h.date.slice(0,10));});
+      const sorted=[...days].sort().reverse();
+      if(!sorted.length) return "normal";
+      const daysSince=Math.floor((Date.now()-new Date(sorted[0]))/DAY);
+      if(sorted[0]===today) return "victory";
+      if(daysSince>=3) return "dead";
+      if(daysSince>=2) return "low";
+      let streak=0,prev=null;
+      for(const d of sorted){const dt=new Date(d);if(!prev){streak=1;prev=dt;continue;}if(Math.floor((prev-dt)/DAY)<=1){streak++;prev=dt;}else break;}
+      if(streak>=3) return "active";
+      return "idle";
+    }catch(e){}
+    return "normal";
+  }
+
+  let ren, scene, cam, clock, aid;
+  let model=null, mixer=null;
+  let ready=false;
+  let cx=-4, canWalk=true, currentAnim='';
+
+  function tryInit(){
+    const canvas=document.getElementById("forja-bot-canvas");
+    if(!canvas||canvas.dataset.bi) return;
+    if(!window.THREE||!window.THREE.GLTFLoader) return;
+    canvas.dataset.bi="1";
+    const W=canvas.offsetWidth||window.innerWidth||390, H=200;
+    canvas.width=W*devicePixelRatio; canvas.height=H*devicePixelRatio;
+    ren=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+    ren.setSize(W,H); ren.setPixelRatio(Math.min(devicePixelRatio,2));
+    ren.setClearColor(0,0);
+    scene=new THREE.Scene();
+    cam=new THREE.PerspectiveCamera(FOV,W/H,0.1,200);
+    cam.position.set(0,CAM_Y,CZ); cam.lookAt(0,CAM_Y,0);
+    scene.add(new THREE.AmbientLight(0xffffff,1.4));
+    const dl=new THREE.DirectionalLight(0xfff8f0,2.5); dl.position.set(3,8,5); scene.add(dl);
+    const dl2=new THREE.DirectionalLight(0x8090ff,0.6); dl2.position.set(-4,2,3); scene.add(dl2);
+    const floorGeo=new THREE.PlaneGeometry(40,40,20,20);
+    const floorMat=new THREE.MeshBasicMaterial({color:0x3a4f8a,wireframe:true,transparent:true,opacity:0.28});
+    const floorMesh=new THREE.Mesh(floorGeo,floorMat);
+    floorMesh.rotation.x=-Math.PI/2;
+    floorMesh.position.y=FY+0.05;
+    scene.add(floorMesh);
+    const glowGeo=new THREE.CircleGeometry(2.5,32);
+    const glowMat=new THREE.MeshBasicMaterial({color:0x8878a0,transparent:true,opacity:0.1,side:THREE.DoubleSide});
+    const glowDisk=new THREE.Mesh(glowGeo,glowMat);
+    glowDisk.rotation.x=-Math.PI/2;
+    glowDisk.position.y=FY+0.06;
+    scene.add(glowDisk);
+    window._botGlow=glowDisk;
+    clock=new THREE.Clock();
+
+    // Elegir animación según mood
+    const mood=getMood();
+    const opts=MOOD_ANIMS[mood]||MOOD_ANIMS.normal;
+    const chosen=opts[Math.floor(Math.random()*opts.length)];
+    canWalk=chosen.walk;
+    currentAnim=chosen.a;
+    console.log('BOT mood=',mood,'anim=',chosen.a);
+
+    fetch(CDN+chosen.a+".glb").then(r=>r.arrayBuffer()).then(buf=>{
+      new THREE.GLTFLoader().parse(buf, CDN, (gltf)=>{
+        model=gltf.scene;
+        const rm=[];
+        model.traverse(c=>{if(c.name==="Cube"||c.name==="default")rm.push(c);});
+        rm.forEach(c=>c.parent&&c.parent.remove(c));
+        model.traverse(c=>{
+          if(!(c.isMesh||c.isSkinnedMesh)) return;
+          const n=c.name||"";
+          if(n==="Mascara"||n==="polySurface3"){if(c.material)c.material.skinning=true; return;}
+          const col=n==="Cabeza"?0xeae6e0:n==="Cuerpo"||n==="Pierna"||n==="Pierna1"?0x3a3e4a:n==="Brazo"||n==="Brazo1"||n==="Dedos1"||n==="Dedos_Fin"?0xe4e0da:0x888898;
+          const mat=new THREE.MeshStandardMaterial({color:col,roughness:0.5,metalness:0.1});
+          if(c.isSkinnedMesh) mat.skinning=true;
+          c.material=mat;
+        });
+        model.scale.setScalar(36);
+        model.rotation.x=-0.15;
+        model.position.set(canWalk?cx:0, FY, 0);
+        scene.add(model);
+        mixer=new THREE.AnimationMixer(model);
+        if(gltf.animations[0]){
+          const clip=gltf.animations[0].clone();
+          if(canWalk) clip.tracks=clip.tracks.filter(t=>!(t.name.toLowerCase().includes('hip')&&t.name.toLowerCase().includes('position')));
+          const a=mixer.clipAction(clip);
+          a.setLoop(THREE.LoopRepeat); a.play();
+        }
+        ready=true;
+        animate();
+      }, e=>console.error('BOT parse:',e));
+    }).catch(e=>console.error('BOT fetch:',e));
+  }
+
+  function animate(){
+    aid=requestAnimationFrame(animate);
+    if(!ready||!model) return;
+    const dt=Math.min(clock.getDelta(),0.05);
+    mixer&&mixer.update(dt);
+
+    if(canWalk){
+      const EDGE=7, SPD=1.8;
+      if(!window._botDir){ window._botDir=1; window._botTurn=0; }
+      if(window._botTurn>0){
+        window._botTurn-=dt;
+        const t=1-Math.max(0,window._botTurn)/0.3;
+        const fromY=window._botDir>0?-Math.PI/2:Math.PI/2;
+        const toY=window._botDir>0?Math.PI/2:-Math.PI/2;
+        model.rotation.y=fromY+(toY-fromY)*t;
+      } else {
+        cx+=window._botDir*SPD*dt;
+        model.rotation.y=window._botDir>0?Math.PI/2:-Math.PI/2;
+        if(cx>=EDGE){ cx=EDGE; window._botDir=-1; window._botTurn=0.3; }
+        else if(cx<=-EDGE){ cx=-EDGE; window._botDir=1; window._botTurn=0.3; }
+      }
+      model.position.x=cx;
+    } else {
+      model.position.x=0;
+      model.rotation.y=(currentAnim==="laying"||currentAnim==="falling")?0:Math.PI/2;
+    }
+
+    cam.lookAt(0,CAM_Y,0);
+    ren.render(scene,cam);
+  }
+
+  document.addEventListener("visibilitychange",()=>{
+    if(document.hidden) cancelAnimationFrame(aid);
+    else{ clock=new THREE.Clock(); if(ready) animate(); }
+  });
+  window.addEventListener("resize",()=>{
+    const canvas=document.getElementById("forja-bot-canvas");
+    if(!canvas||!ren) return;
+    const W2=window.innerWidth||390;
+    canvas.width=W2*devicePixelRatio; canvas.height=200*devicePixelRatio;
+    ren.setSize(W2,200); cam.aspect=W2/200; cam.updateProjectionMatrix();
+  });
+  window.FORJA_BOT={ trigger(){} };
+
+  window.addEventListener("load",()=>setTimeout(tryInit,100));
+  setInterval(()=>{if(!ready)tryInit();},500);
+})();
+</script>
 <script>
 (function initMeditation(){
   const BASE="https://forjavideos.b-cdn.net/";
