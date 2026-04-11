@@ -4173,23 +4173,30 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
 
       <div style={{padding:"10px 18px 0",background:"rgba(8,10,14,0.95)",
         borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
-        <div style={{display:"flex",background:"rgba(255,255,255,0.05)",
-          borderRadius:12,padding:3,gap:0}}>
+        <div style={{
+          display:"flex",
+          background:"rgba(255,255,255,0.04)",
+          borderRadius:14,padding:4,gap:4,
+          border:"0.5px solid rgba(255,255,255,0.08)",
+        }}>
           {[{id:"train",l:(L[lang]||L.en).train,icon:"⚡"},{id:"body",l:lang==="es"||lang==="pt"?"CUERPO":lang==="fr"?"CORPS":lang==="it"?"CORPO":lang==="de"?"KÖRPER":"BODY",icon:"🫀"}].map(tb=>{
             const active=tab===tb.id;
             return(
             <button key={tb.id} data-tour={tb.id==="body"?"tab-body":undefined} onClick={()=>{setTab(tb.id);setAddEx(false);setAddF(false);}}
-              style={{flex:1,padding:"9px 0",border:"none",borderRadius:10,cursor:"pointer",
-                background:active?"rgba(255,255,255,0.13)":"transparent",
-                color:active?"#EEEAE3":"#b8c0d4",
+              style={{flex:1,padding:"11px 0",border:"none",borderRadius:10,cursor:"pointer",
+                background:active?"rgba(255,255,255,0.12)":"transparent",
+                color:active?"#EEEAE3":"rgba(255,255,255,0.3)",
                 fontSize:11,fontWeight:active?800:600,fontFamily:mono,letterSpacing:2,
                 transition:"all .2s",
-                boxShadow:active?"0 1px 12px rgba(0,0,0,.4)":"none",
+                boxShadow:active?"inset 0 1px 0 rgba(255,255,255,0.5),0 2px 12px rgba(0,0,0,0.3)":"none",
+                borderTop:active?"1px solid rgba(255,255,255,0.35)":"1px solid transparent",
                 display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-              <span style={{fontSize:13,opacity:active?1:0.7}}>{tb.icon}</span>
+              <span style={{fontSize:13,opacity:active?1:0.4}}>{tb.icon}</span>
               {tb.l}
             </button>
           );})}
+        </div>
+      </div>
         </div>
       </div>
       <div style={{padding:"14px 18px 90px"}}>
@@ -4227,18 +4234,47 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                   const LVL_NAMES=["IRON I","IRON II","IRON III","IRON IV","IRON V","IRON VI","IRON VII","IRON VIII","IRON IX","IRON X"];
                   const lvlName=LVL_NAMES[Math.min(9,lvl-1)];
 
-                  // Racha semanal
+                  // Racha semanal — días con todos los ejercicios completos ESTA semana
                   const now2=new Date();
                   const dow2=now2.getDay();
-                  const mondayOff2=dow2===0?-6:1-dow2;
+                  const todayDayIdx2=dow2===0?6:dow2-1;
                   let weekDone=0;
-                  for(let i=0;i<7;i++){
+                  let weekTotal=0;
+                  for(let i=0;i<=todayDayIdx2;i++){
                     const r=routine?routine[i]:null;
                     if(!r||!r.ex||r.ex.length===0) continue;
+                    weekTotal++;
                     const allDone=r.ex.every(x=>done[`${i}-${x.id}`]);
                     if(allDone) weekDone++;
                   }
-                  const weekTotal=(routine||[]).filter(d=>d&&d.ex&&d.ex.length>0).length;
+                  // Total días de entrenamiento de la semana completa (para el denominador del ring)
+                  const weekTotalFull=(routine||[]).filter(d=>d&&d.ex&&d.ex.length>0).length;
+
+                  // Racha de días consecutivos entrenados
+                  let streak=0;
+                  const allDoneKeys=Object.keys(done).filter(k=>done[k]);
+                  const trainedDays=new Set();
+                  // Para la racha usar los logs históricos
+                  const allLogEntries=Object.values(logs||{}).flat();
+                  allLogEntries.forEach(e=>{if(e&&e.d)trainedDays.add(e.d.slice(0,10));});
+                  // También contar días completados de esta semana
+                  const w2=wk(0);
+                  for(let i=0;i<7;i++){
+                    const r=routine?routine[i]:null;
+                    if(!r||!r.ex||r.ex.length===0) continue;
+                    const allD=r.ex.every(x=>done[`${i}-${x.id}`]);
+                    if(allD){
+                      const d2=new Date(now2); d2.setDate(now2.getDate()-(todayDayIdx2-i));
+                      trainedDays.add(d2.toISOString().slice(0,10));
+                    }
+                  }
+                  const sc=new Date(now2);
+                  while(true){
+                    const ds=sc.toISOString().slice(0,10);
+                    if(!trainedDays.has(ds)) break;
+                    streak++; sc.setDate(sc.getDate()-1);
+                    if(streak>365) break;
+                  }
 
                   // Último PR
                   let lastPRName="—", lastPRVal="";
@@ -4258,15 +4294,15 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                   const userName=profile?.name||"Atleta";
 
                   const glassCard={
-                    background:"rgba(255,255,255,0.07)",
-                    backdropFilter:"blur(60px) saturate(300%) brightness(1.12)",
-                    WebkitBackdropFilter:"blur(60px) saturate(300%) brightness(1.12)",
+                    background:"linear-gradient(135deg, rgba(20,35,80,0.85) 0%, rgba(12,20,50,0.9) 100%)",
+                    backdropFilter:"blur(60px) saturate(200%) brightness(1.1)",
+                    WebkitBackdropFilter:"blur(60px) saturate(200%) brightness(1.1)",
                     borderRadius:24,
-                    borderTop:"1.5px solid rgba(255,255,255,0.65)",
-                    borderLeft:"0.5px solid rgba(255,255,255,0.24)",
-                    borderRight:"0.5px solid rgba(255,255,255,0.24)",
+                    borderTop:"1.5px solid rgba(255,255,255,0.45)",
+                    borderLeft:"0.5px solid rgba(255,255,255,0.18)",
+                    borderRight:"0.5px solid rgba(255,255,255,0.18)",
                     borderBottom:"0.5px solid rgba(255,255,255,0.05)",
-                    boxShadow:"inset 0 1.5px 0 rgba(255,255,255,0.62),0 2px 8px rgba(0,0,0,0.16),0 16px 48px rgba(0,0,0,0.36)",
+                    boxShadow:"inset 0 1.5px 0 rgba(255,255,255,0.4),0 2px 8px rgba(0,0,0,0.3),0 16px 48px rgba(0,0,50,0.5)",
                     position:"relative",overflow:"hidden",
                     marginBottom:12,
                     padding:"20px 18px 18px",
@@ -4293,8 +4329,9 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                           borderBottom:"0.5px solid rgba(0,0,0,0.1)",
                           display:"flex",alignItems:"center",gap:6,
                         }}>
-                          <div style={{width:6,height:6,borderRadius:"50%",background:lvlColor,boxShadow:`0 0 8px ${lvlColor}`,flexShrink:0}}/>
-                          <span style={{fontSize:9,fontFamily:mono,letterSpacing:2,color:"rgba(185,215,255,0.92)",fontWeight:700}}>{lvlName}</span>
+                          <span style={{fontSize:13}}>⚡</span>
+                          <span style={{fontSize:13,fontWeight:700,color:"rgba(190,220,255,0.96)"}}>{streak}</span>
+                          <span style={{fontSize:8,fontFamily:mono,letterSpacing:1.5,color:"rgba(100,155,255,0.6)"}}>DÍAS</span>
                         </div>
                       </div>
 
@@ -4316,12 +4353,12 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                             <defs><linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="rgba(130,190,255,0.8)"/><stop offset="100%" stopColor="#4878ff"/></linearGradient></defs>
                             <circle cx="36" cy="36" r="29" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="6"/>
                             <circle cx="36" cy="36" r="29" fill="none" stroke="url(#ringGrad)" strokeWidth="6"
-                              strokeDasharray={`${weekTotal>0?(weekDone/weekTotal)*182.2:0} 182.2`}
+                              strokeDasharray={`${weekTotalFull>0?(weekDone/weekTotalFull)*182.2:0} 182.2`}
                               strokeLinecap="round" transform="rotate(-90 36 36)"
                               style={{animation:"ringPulse 3s ease-in-out infinite",filter:"drop-shadow(0 0 4px rgba(80,140,255,0.7))"}}/>
                           </svg>
                           <div style={{textAlign:"center",position:"relative",zIndex:1}}>
-                            <div style={{fontSize:15,fontWeight:800,color:"#fff",lineHeight:1,letterSpacing:-0.5}}>{weekDone}/{weekTotal}</div>
+                            <div style={{fontSize:15,fontWeight:800,color:"#fff",lineHeight:1,letterSpacing:-0.5}}>{weekDone}/{weekTotalFull}</div>
                             <div style={{fontSize:6,fontFamily:mono,letterSpacing:2,color:"rgba(255,255,255,0.28)",marginTop:2}}>SEM</div>
                           </div>
                         </div>
