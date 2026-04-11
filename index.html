@@ -29,26 +29,6 @@ input[type=number]{-moz-appearance:textfield;}
   0%{stroke-dashoffset:60}
   100%{stroke-dashoffset:0}
 }
-@keyframes forja-ob-logo{
-  0%{opacity:0;transform:translateY(20px) scale(0.95)}
-  100%{opacity:1;transform:translateY(0) scale(1)}
-}
-@keyframes forja-ob-sub{
-  0%{opacity:0;transform:translateY(12px)}
-  100%{opacity:1;transform:translateY(0)}
-}
-@keyframes forja-ob-cta{
-  0%{opacity:0;transform:translateY(16px)}
-  100%{opacity:1;transform:translateY(0)}
-}
-@keyframes forja-ob-in{
-  0%{opacity:0;transform:translateX(32px)}
-  100%{opacity:1;transform:translateX(0)}
-}
-@keyframes forja-ob-particle{
-  0%{transform:translateY(0) scale(1);opacity:0.4}
-  100%{transform:translateY(-20px) scale(1.5);opacity:0.8}
-}
 @keyframes pulse{0%,100%{opacity:0.6;transform:translateX(-50%) scale(1)}50%{opacity:1;transform:translateX(-50%) scale(1.04)}}
 @keyframes celebrate{0%{transform:scale(0.5);opacity:0}60%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
 @keyframes floatUp{0%{opacity:1;transform:translateY(0) rotate(0deg);}100%{opacity:0;transform:translateY(-100vh) rotate(180deg);}}
@@ -69,6 +49,211 @@ input[type=number]{-moz-appearance:textfield;}
    ════════════════════════════════════════════════════════ */
 </style>
 <style>
+/* ── FORJA Onboarding overlay ── */
+#forja-onboarding {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #06080f;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: 'DM Sans', 'SF Pro Display', system-ui, sans-serif;
+}
+#forja-onboarding.hidden {
+  display: none !important;
+}
+
+/* All onboarding sub-elements scoped */
+#forja-onboarding *, #forja-onboarding *::before, #forja-onboarding *::after {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Variables only inside onboarding */
+#forja-onboarding {
+  --ob-bg: #06080f;
+  --ob-bg2: #0d1120;
+  --ob-green: #3fcf8e;
+  --ob-gold: #f0b429;
+  --ob-white: #f0f2f8;
+  --ob-dim: rgba(240,242,248,0.35);
+  --ob-dimmer: rgba(240,242,248,0.15);
+  --ob-border: rgba(240,242,248,0.08);
+  --ob-mono: 'DM Mono', monospace;
+  --ob-display: 'Bebas Neue', sans-serif;
+  --ob-body: 'DM Sans', sans-serif;
+  --ob-r: 20px;
+}
+
+/* Noise grain */
+#forja-onboarding::before {
+  content: '';
+  position: absolute; inset: 0; z-index: 0;
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.012) 2px, rgba(255,255,255,0.012) 4px),
+    repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(255,255,255,0.006) 3px, rgba(255,255,255,0.006) 6px);
+  pointer-events: none;
+  animation: ob-grain 0.15s steps(1) infinite;
+}
+@keyframes ob-grain {
+  0%  { transform: translate(0,0); }
+  25% { transform: translate(-1px,1px); }
+  50% { transform: translate(1px,-1px); }
+  75% { transform: translate(-1px,-1px); }
+  100%{ transform: translate(1px,1px); }
+}
+
+/* Glow elements */
+#forja-onboarding .glow { position:absolute; border-radius:50%; pointer-events:none; z-index:0; transition:all 1.2s cubic-bezier(0.4,0,0.2,1); }
+#forja-onboarding .glow-1 { width:340px; height:340px; top:-80px; left:-60px; background:radial-gradient(circle, rgba(63,207,142,0.12) 0%, transparent 70%); }
+#forja-onboarding .glow-2 { width:260px; height:260px; bottom:60px; right:-80px; background:radial-gradient(circle, rgba(240,180,41,0.08) 0%, transparent 70%); }
+
+/* Progress bar */
+#forja-onboarding #progress-wrap { position:relative; z-index:10; padding:14px 24px 0; display:flex; gap:6px; }
+#forja-onboarding .prog-seg { flex:1; height:2px; background:var(--ob-border); border-radius:2px; overflow:hidden; }
+#forja-onboarding .prog-fill { height:100%; background:var(--ob-green); width:0%; transition:width 0.4s cubic-bezier(0.4,0,0.2,1); border-radius:2px; }
+
+/* Back button */
+#forja-onboarding #back-btn { position:absolute; top:14px; left:16px; z-index:20; width:36px; height:36px; display:flex; align-items:center; justify-content:center; background:var(--ob-border); border:1px solid rgba(255,255,255,0.06); border-radius:10px; cursor:pointer; opacity:0; pointer-events:none; transition:opacity 0.3s; backdrop-filter:blur(8px); }
+#forja-onboarding #back-btn.visible { opacity:1; pointer-events:all; }
+#forja-onboarding #back-btn svg { width:16px; height:16px; stroke:var(--ob-dim); fill:none; }
+
+/* Screens */
+#forja-onboarding #screens { position:relative; z-index:1; flex:1; overflow:hidden; display:flex; flex-direction:column; }
+#forja-onboarding .screen { position:absolute; inset:0; display:flex; flex-direction:column; padding:0 24px 40px; opacity:0; transform:translateX(48px); pointer-events:none; transition:opacity 0.42s cubic-bezier(0.4,0,0.2,1), transform 0.42s cubic-bezier(0.4,0,0.2,1); }
+#forja-onboarding .screen.active { opacity:1; transform:translateX(0); pointer-events:all; }
+#forja-onboarding .screen.exit { opacity:0; transform:translateX(-48px); }
+
+/* Screen animations */
+#forja-onboarding .screen.active .screen-title { animation:ob-titleReveal 0.5s cubic-bezier(0.16,1,0.3,1) both; }
+#forja-onboarding .screen.active .screen-sub { animation:ob-titleReveal 0.5s 0.06s cubic-bezier(0.16,1,0.3,1) both; }
+#forja-onboarding .screen.active .opts .opt:nth-child(1) { animation:ob-optIn 0.4s 0.08s cubic-bezier(0.16,1,0.3,1) both; }
+#forja-onboarding .screen.active .opts .opt:nth-child(2) { animation:ob-optIn 0.4s 0.13s cubic-bezier(0.16,1,0.3,1) both; }
+#forja-onboarding .screen.active .opts .opt:nth-child(3) { animation:ob-optIn 0.4s 0.18s cubic-bezier(0.16,1,0.3,1) both; }
+#forja-onboarding .screen.active .opts .opt:nth-child(4) { animation:ob-optIn 0.4s 0.23s cubic-bezier(0.16,1,0.3,1) both; }
+#forja-onboarding .screen.active .opts .opt:nth-child(5) { animation:ob-optIn 0.4s 0.28s cubic-bezier(0.16,1,0.3,1) both; }
+@keyframes ob-titleReveal { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+@keyframes ob-optIn { from{opacity:0;transform:translateY(16px) scale(0.97)} to{opacity:1;transform:translateY(0) scale(1)} }
+
+/* Header */
+#forja-onboarding .screen-top { padding-top:32px; flex-shrink:0; }
+#forja-onboarding .step-label { font-family:"DM Mono",monospace; font-size:10px; letter-spacing:3px; color:#3fcf8e; opacity:0.8; margin-bottom:12px; text-transform:uppercase; }
+#forja-onboarding .screen-title { font-family:"Bebas Neue",sans-serif; font-size:clamp(44px,12vw,56px); line-height:0.92; letter-spacing:-0.5px; color:#f0f2f8; margin-bottom:12px; }
+#forja-onboarding .screen-title em { color:var(--ob-green); font-style:normal; }
+#forja-onboarding .screen-sub { font-size:14px; font-weight:400; color:rgba(240,242,248,0.45); line-height:1.5; max-width:300px; }
+
+/* Options */
+#forja-onboarding .opts { flex:1; display:flex; flex-direction:column; gap:10px; padding-top:28px; overflow-y:auto; }
+#forja-onboarding .opt { position:relative; background:#0d1120; border:1.5px solid rgba(240,242,248,0.08); border-radius:20px; display:block !important; padding:16px 20px; cursor:pointer; transition:border-color 0.22s, background 0.22s, transform 0.18s cubic-bezier(0.34,1.56,0.64,1); overflow:hidden; -webkit-user-select:none; user-select:none; }
+#forja-onboarding .opt:active { transform:scale(0.97); }
+#forja-onboarding .opt.selected { border-color:var(--ob-green); background:rgba(63,207,142,0.07); }
+#forja-onboarding .opt.selected .opt-icon { color:var(--ob-green); }
+#forja-onboarding .opt.selected .opt-name { color:var(--ob-white); }
+#forja-onboarding .opt-icon { font-size:22px; margin-bottom:8px; display:block; line-height:1; color:rgba(240,242,248,0.55); transition:color 0.22s; }
+#forja-onboarding .opt-name { font-family:"DM Mono",monospace !important; font-size:12px !important; font-weight:600; letter-spacing:1.5px; color:rgba(240,242,248,0.65) !important; text-transform:uppercase; transition:color 0.22s; line-height:1.3; display:block !important; }
+#forja-onboarding .opt-desc { font-size:12px; color:rgba(240,242,248,0.3); margin-top:4px; line-height:1.4; }
+#forja-onboarding .opt-check { position:absolute; top:12px; right:12px; width:18px; height:18px; border-radius:50%; border:1.5px solid var(--ob-border); display:flex; align-items:center; justify-content:center; transition:border-color 0.22s, background 0.22s; }
+#forja-onboarding .opt.selected .opt-check { border-color:var(--ob-green); background:var(--ob-green); }
+#forja-onboarding .opt-check::after { content:''; width:6px; height:4px; border-left:1.5px solid #000; border-bottom:1.5px solid #000; transform:rotate(-45deg) translateY(-1px); opacity:0; transition:opacity 0.2s; }
+#forja-onboarding .opt.selected .opt-check::after { opacity:1; }
+
+/* Day selector */
+
+#forja-onboarding .day-pill { width:56px; height:68px; border-radius:14px; background:var(--ob-bg2); border:1.5px solid var(--ob-border); display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; transition:border-color 0.2s, background 0.2s, transform 0.15s; gap:4px; }
+#forja-onboarding .day-pill:active { transform:scale(0.94); }
+#forja-onboarding .day-pill.selected { border-color:var(--ob-green); background:rgba(63,207,142,0.08); }
+#forja-onboarding .day-num { font-family:"Bebas Neue",sans-serif; font-size:26px; line-height:1; color:rgba(240,242,248,0.35); transition:color 0.2s; }
+#forja-onboarding .day-pill.selected .day-num { color:var(--ob-green); }
+#forja-onboarding .day-label { font-family:"DM Mono",monospace; font-size:8px; letter-spacing:1px; color:rgba(240,242,248,0.3); text-transform:uppercase; transition:color 0.2s; }
+#forja-onboarding .day-pill.selected .day-label { color:var(--ob-dim); }
+#forja-onboarding .day-note { text-align:center; font-size:13px; color:rgba(240,242,248,0.4); padding-top:20px; font-style:italic; }
+
+/* Week-day grid */
+#forja-onboarding .week-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; padding-top:24px; }
+#forja-onboarding .wday { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:14px 4px; border-radius:14px; background:#0d1120; border:1.5px solid rgba(240,242,248,0.08); cursor:pointer; transition:border-color 0.2s, background 0.2s, transform 0.15s; }
+#forja-onboarding .wday:active { transform:scale(0.93); }
+#forja-onboarding .wday.selected { border-color:#3fcf8e; background:rgba(63,207,142,0.1); }
+#forja-onboarding .wday.selected .wday-name { color:#3fcf8e; }
+#forja-onboarding .wday-name { font-family:"Bebas Neue",sans-serif; font-size:20px; line-height:1; color:rgba(240,242,248,0.4); transition:color 0.2s; }
+#forja-onboarding .wday-num { font-family:"DM Mono",monospace; font-size:7px; letter-spacing:0.5px; color:rgba(240,242,248,0.25); text-transform:uppercase; }
+#forja-onboarding .wday.disabled { opacity:0.25; pointer-events:none; }
+
+/* s3b container */
+#forja-onboarding #s3b { flex:1; display:none; flex-direction:column; }
+#forja-onboarding #s3b.visible { display:flex; }
+#forja-onboarding #s3a { flex:1; display:flex; flex-direction:column; }
+#forja-onboarding #s3a.hidden { display:none; }
+
+/* Name input */
+#forja-onboarding .name-wrap { padding-top:28px; flex:1; }
+#forja-onboarding .name-input { width:100%; background:#0d1120; border:1.5px solid rgba(240,242,248,0.08); border-radius:16px; padding:20px; font-family:"Bebas Neue",sans-serif; font-size:32px; color:#f0f2f8; outline:none; transition:border-color 0.2s; caret-color:#3fcf8e; letter-spacing:1px; }
+#forja-onboarding .name-input::placeholder { color:var(--ob-border); }
+#forja-onboarding .name-input:focus { border-color:rgba(63,207,142,0.4) !important; }
+#forja-onboarding .name-hint { font-family:var(--ob-mono); font-size:9px; letter-spacing:2px; color:var(--ob-dimmer); padding-top:12px; padding-left:4px; text-transform:uppercase; }
+
+/* Splash */
+#forja-onboarding #screen-0 { align-items:center; justify-content:center; text-align:center; padding:40px 32px; }
+#forja-onboarding .splash-logo { font-family:"Bebas Neue",sans-serif; font-size:clamp(80px,22vw,100px); letter-spacing:8px; line-height:1; background:linear-gradient(145deg,#ffffff 30%,rgba(255,255,255,0.5) 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; margin-bottom:4px; }
+#forja-onboarding .splash-tagline { font-family:"DM Mono",monospace; font-size:11px; letter-spacing:4px; color:rgba(240,242,248,0.4); text-transform:uppercase; margin-bottom:32px; }
+#forja-onboarding .splash-cta-row { display:flex; flex-direction:column; gap:12px; width:100%; }
+
+/* Buttons */
+#forja-onboarding .btn-primary { width:100%; padding:18px; background:#3fcf8e; border:none; border-radius:16px; font-family:"DM Mono",monospace; font-size:13px; letter-spacing:3px; font-weight:500; color:#000; cursor:pointer; text-transform:uppercase; position:relative; overflow:hidden; transition:transform 0.15s; -webkit-user-select:none; user-select:none; }
+#forja-onboarding .btn-primary:active { transform:scale(0.97); }
+#forja-onboarding .btn-primary:disabled { opacity:0.3; pointer-events:none; }
+#forja-onboarding .btn-primary:not(:disabled):hover { box-shadow:0 4px 24px rgba(63,207,142,0.35); }
+#forja-onboarding .btn-ghost { background:none; border:none; font-family:"DM Mono",monospace; font-size:11px; letter-spacing:2px; color:rgba(240,242,248,0.25); cursor:pointer; padding:12px; text-transform:uppercase; transition:color 0.2s; }
+#forja-onboarding .btn-ghost:hover { color:var(--ob-dim); }
+
+/* Bottom area */
+#forja-onboarding .screen-bottom { flex-shrink:0; padding-top:20px; display:flex; flex-direction:column; gap:8px; }
+
+/* Done screen */
+#forja-onboarding #screen-5 { align-items:center; justify-content:flex-end; text-align:center; padding-bottom:52px; }
+#forja-onboarding .done-aura { position:absolute; top:50%; left:50%; transform:translate(-50%,-60%); width:280px; height:280px; border-radius:50%; background:radial-gradient(circle,rgba(63,207,142,0.2) 0%,transparent 70%); animation:ob-aura-pulse 3s ease-in-out infinite; }
+@keyframes ob-aura-pulse { 0%,100%{transform:translate(-50%,-60%) scale(1);opacity:1} 50%{transform:translate(-50%,-60%) scale(1.1);opacity:0.7} }
+#forja-onboarding #stick-cv { position:absolute; top:50%; left:50%; transform:translate(-50%,-58%); }
+#forja-onboarding .done-check { position:absolute; top:50%; left:50%; transform:translate(-50%,-65%); font-size:72px; color:#3fcf8e; animation:ob-check-float 3s ease-in-out infinite; }
+@keyframes ob-check-float { 0%,100%{transform:translate(-50%,-65%) translateY(0)} 50%{transform:translate(-50%,-65%) translateY(-12px)} }
+#forja-onboarding .done-title { font-family:"Bebas Neue",sans-serif; font-size:clamp(52px,14vw,68px); line-height:0.9; margin-bottom:16px; }
+#forja-onboarding .done-sub { font-size:15px; color:rgba(240,242,248,0.5); line-height:1.6; max-width:280px; margin-bottom:40px; }
+#forja-onboarding .done-name { color:var(--ob-green); }
+#forja-onboarding .chips { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-bottom:32px; }
+#forja-onboarding .chip { background:#0d1120; border:1px solid rgba(240,242,248,0.08); border-radius:100px; padding:6px 14px; font-family:"DM Mono",monospace; font-size:9px; letter-spacing:2px; color:rgba(240,242,248,0.4); text-transform:uppercase; }
+#forja-onboarding .chip.green { border-color:rgba(63,207,142,0.3); color:#3fcf8e; background:rgba(63,207,142,0.08); }
+
+/* Generating screen */
+#forja-onboarding #screen-generating { position:absolute; inset:0; z-index:30; background:var(--ob-bg); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:24px; opacity:0; pointer-events:none; transition:opacity 0.4s; }
+#forja-onboarding #screen-generating.active { opacity:1; pointer-events:all; }
+#forja-onboarding .gen-label { font-family:"DM Mono",monospace; font-size:11px; letter-spacing:3px; color:rgba(240,242,248,0.4); text-transform:uppercase; }
+#forja-onboarding .gen-bar { width:200px; height:2px; background:var(--ob-border); border-radius:2px; overflow:hidden; }
+#forja-onboarding .gen-fill { height:100%; width:0%; background:linear-gradient(90deg,var(--ob-green),var(--ob-gold)); border-radius:2px; transition:width 0.1s linear; }
+#forja-onboarding .gen-item { font-family:"DM Mono",monospace; font-size:10px; letter-spacing:2px; color:rgba(240,242,248,0.3); text-transform:uppercase; opacity:0; transform:translateY(4px); transition:opacity 0.4s, transform 0.4s; }
+#forja-onboarding .gen-item.show { opacity:1; transform:translateY(0); }
+#forja-onboarding .gen-item.done { color:var(--ob-green); }
+#forja-onboarding .gen-item.done::before { content:"✓  "; }
+
+/* Lang selector */
+#forja-onboarding .lang-row { display:flex; gap:6px; flex-wrap:nowrap; justify-content:center; align-items:center; margin-bottom:24px; width:100%; }
+#forja-onboarding .lang-pill { padding:6px 11px; border-radius:100px; border:1px solid var(--ob-border); background:transparent; font-family:var(--ob-mono); font-size:9px; letter-spacing:0.5px; color:var(--ob-dimmer); cursor:pointer; transition:border-color 0.2s, color 0.2s, background 0.2s; -webkit-user-select:none; user-select:none; white-space:nowrap; flex-shrink:0; }
+#forja-onboarding .lang-pill.selected { border-color:rgba(240,242,248,0.3); color:var(--ob-white); background:rgba(240,242,248,0.06); }
+
+/* ZZZ float */
+#forja-onboarding .fzzz { position:absolute; font-family:'SF Mono',monospace; font-weight:900; opacity:0; color:rgba(160,210,255,0.85); pointer-events:none; display:none; }
+#forja-onboarding .s-rest ~ .fzzz { display:block; }
+#forja-onboarding .fzzz.z1 { font-size:10px; top:12px; left:calc(50% + 20px); animation:ob-zzf 2.5s ease-in-out infinite; }
+#forja-onboarding .fzzz.z2 { font-size:13px; top:2px; left:calc(50% + 28px); animation:ob-zzf 2.5s ease-in-out 0.83s infinite; }
+#forja-onboarding .fzzz.z3 { font-size:16px; top:-10px; left:calc(50% + 36px); animation:ob-zzf 2.5s ease-in-out 1.66s infinite; }
+@keyframes ob-zzf { 0%{opacity:0;transform:translate(0,0) rotate(-5deg)} 20%{opacity:0.9} 80%{opacity:0.4} 100%{opacity:0;transform:translate(5px,-18px) rotate(8deg)} }
+
+/* Label */
+#forja-onboarding #fstick-lbl { position:absolute; bottom:-2px; left:50%; transform:translateX(-50%); font-family:'SF Mono','Fira Code',monospace; font-size:8px; letter-spacing:2px; font-weight:700; white-space:nowrap; pointer-events:none; opacity:0.8; }
+
+/* Safe area */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  #forja-onboarding .screen-bottom { padding-bottom: max(0px, env(safe-area-inset-bottom)); }
+}
 </style>
 
 <link rel="manifest" href="manifest.json"/>
@@ -85,7 +270,188 @@ input[type=number]{-moz-appearance:textfield;}
 <body>
 
 <!-- ══ FORJA ONBOARDING OVERLAY ══ -->
+<div id="forja-onboarding">
+  <div id="forja-onboarding-inner">
+  <div class="glow glow-1"></div>
+  <div class="glow glow-2"></div>
 
+  <!-- Progress bar (hidden on screen 0 and 5) -->
+  <div id="progress-wrap" style="opacity:0">
+    <div class="prog-seg"><div class="prog-fill" id="p1"></div></div>
+    <div class="prog-seg"><div class="prog-fill" id="p2"></div></div>
+    <div class="prog-seg"><div class="prog-fill" id="p3"></div></div>
+    <div class="prog-seg"><div class="prog-fill" id="p4"></div></div>
+  </div>
+
+  <!-- Back button -->
+  <div id="back-btn" onclick="goBack()">
+    <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="15 18 9 12 15 6"/>
+    </svg>
+  </div>
+
+  <!-- Generating overlay -->
+  <div id="screen-generating">
+    <div class="gen-label">Construyendo tu FORJA</div>
+    <div class="gen-bar"><div class="gen-fill" id="gen-fill"></div></div>
+    <div class="gen-items">
+      <div class="gen-item" id="gi1">Creando tu perfil</div>
+      <div class="gen-item" id="gi2">Armando tu rutina</div>
+      <div class="gen-item" id="gi3">Calibrando la intensidad</div>
+      <div class="gen-item" id="gi4">Tu FORJA está lista</div>
+    </div>
+  </div>
+
+  <!-- ── SCREEN 0: Splash ─────────────────────────────────── -->
+  <div class="screen active" id="screen-0">
+    <div class="splash-logo">FORJA</div>
+    <div class="splash-tagline" id="splash-tagline">La mejor rutina es la que realmente haces.</div>
+    <div class="lang-row">
+      <div class="lang-pill selected" data-lang="es" onclick="setLang(this)">🇪🇸 ES</div>
+      <div class="lang-pill" data-lang="en" onclick="setLang(this)">🇬🇧 EN</div>
+      <div class="lang-pill" data-lang="pt" onclick="setLang(this)">🇧🇷 PT</div>
+      <div class="lang-pill" data-lang="it" onclick="setLang(this)">🇮🇹 IT</div>
+      <div class="lang-pill" data-lang="fr" onclick="setLang(this)">🇫🇷 FR</div>
+      <div class="lang-pill" data-lang="de" onclick="setLang(this)">🇩🇪 DE</div>
+    </div>
+    <div class="splash-cta-row">
+      <button class="btn-primary" onclick="goNext()" id="btn-start">EMPEZAR</button>
+      <button class="btn-ghost" onclick="goNext()" id="btn-login">Ya tengo cuenta</button>
+    </div>
+  </div>
+
+  <!-- ── SCREEN 1: Nombre ─────────────────────────────────── -->
+  <div class="screen" id="screen-1">
+    <div class="screen-top">
+      <div class="step-label">Paso 1 de 4</div>
+      <div class="screen-title">¿CÓMO TE<br><em>LLAMAS?</em></div>
+      <div class="screen-sub">El que no tiene nombre no existe en el ranking.</div>
+    </div>
+    <div class="name-wrap">
+      <input class="name-input" type="text" id="name-input"
+        placeholder="Tu nombre" autocomplete="off" autocorrect="off"
+        maxlength="20" oninput="onNameChange()">
+      <div class="name-hint">Así te van a conocer cuando los dejes atrás.</div>
+    </div>
+    <div class="screen-bottom">
+      <button class="btn-primary" id="btn-name" onclick="goNext()" disabled>ESE SOY YO →</button>
+    </div>
+  </div>
+
+  <!-- ── SCREEN 2: Objetivo ───────────────────────────────── -->
+  <div class="screen" id="screen-2">
+    <div class="screen-top">
+      <div class="step-label">Paso 2 de 4</div>
+      <div class="screen-title">¿POR QUÉ<br><em>ENTRENAS?</em></div>
+      <div class="screen-sub">Sin filtros. Esto queda entre tú y la app.</div>
+    </div>
+    <div class="opts" id="opts-goal">
+      <div class="opt" data-val="muscle" onclick="selectOpt(this,'goal')">
+        <div class="opt-check"></div>
+        <span class="opt-icon">💪</span>
+        <div class="opt-name">Ganar músculo</div>
+        
+      </div>
+      <div class="opt" data-val="fat" onclick="selectOpt(this,'goal')">
+        <div class="opt-check"></div>
+        <span class="opt-icon">🔥</span>
+        <div class="opt-name">Perder grasa</div>
+        
+      </div>
+      <div class="opt" data-val="performance" onclick="selectOpt(this,'goal')">
+        <div class="opt-check"></div>
+        <span class="opt-icon">⚡</span>
+        <div class="opt-name">Más rendimiento</div>
+        
+      </div>
+      <div class="opt" data-val="active" onclick="selectOpt(this,'goal')">
+        <div class="opt-check"></div>
+        <span class="opt-icon">🧘</span>
+        <div class="opt-name">Mantenerme activo</div>
+        
+      </div>
+    </div>
+    <div class="screen-bottom">
+      <button class="btn-primary" id="btn-goal" onclick="goNext()" disabled>ESE ES MI OBJETIVO →</button>
+    </div>
+  </div>
+
+  <!-- ── SCREEN 3: Días ───────────────────────────────────── -->
+  <div class="screen" id="screen-3">
+    <div class="screen-top">
+      <div class="step-label">Paso 3 de 4</div>
+      <div class="screen-title">¿QUÉ<br><em>DÍAS</em> ENTRENAS?</div>
+      <div class="screen-sub">La mejor rutina es la que realmente haces.</div>
+    </div>
+    <div class="week-grid" id="week-grid">
+      <div class="wday" data-day="1" onclick="toggleWeekDay(this)"><span class="wday-name">LU</span><span class="wday-num">Lunes</span></div>
+      <div class="wday" data-day="2" onclick="toggleWeekDay(this)"><span class="wday-name">MA</span><span class="wday-num">Martes</span></div>
+      <div class="wday" data-day="3" onclick="toggleWeekDay(this)"><span class="wday-name">MI</span><span class="wday-num">Miérc.</span></div>
+      <div class="wday" data-day="4" onclick="toggleWeekDay(this)"><span class="wday-name">JU</span><span class="wday-num">Jueves</span></div>
+      <div class="wday" data-day="5" onclick="toggleWeekDay(this)"><span class="wday-name">VI</span><span class="wday-num">Viern.</span></div>
+      <div class="wday" data-day="6" onclick="toggleWeekDay(this)"><span class="wday-name">SA</span><span class="wday-num">Sábado</span></div>
+      <div class="wday" data-day="0" onclick="toggleWeekDay(this)"><span class="wday-name">DO</span><span class="wday-num">Domingo</span></div>
+    </div>
+    <div class="day-note" id="wday-note" style="opacity:0;padding-top:16px;text-align:center;"></div>
+    <div class="screen-bottom">
+      <button class="btn-primary" id="btn-days" onclick="goNext()" disabled>ASÍ VA A SER →</button>
+    </div>
+  </div>
+
+  <div class="screen" id="screen-4">
+    <div class="screen-top">
+      <div class="step-label">Paso 4 de 4</div>
+      <div class="screen-title">TU<br><em>MODO</em> FORJA</div>
+      <div class="screen-sub">¿Cómo vas a entrenar? Lo puedes cambiar cuando quieras.</div>
+    </div>
+    <div class="opts" id="opts-mode" style="padding-top:24px">
+      <div class="opt" data-val="auto" onclick="selectOpt(this,'mode')">
+        <div class="opt-check"></div>
+        <span class="opt-icon">⚡</span>
+        <div class="opt-name">FORJA me genera la rutina</div>
+        <div class="opt-desc">Según tu objetivo y días disponibles.</div>
+      </div>
+      <div class="opt" data-val="celebrity" onclick="selectOpt(this,'mode')">
+        <div class="opt-check"></div>
+        <span class="opt-icon">🏆</span>
+        <div class="opt-name">Modo Celebridad</div>
+        <div class="opt-desc">PUMP⚡ SIUUU⚽ CANT💀 ODIN🪓 4AM🪨</div>
+      </div>
+      <div class="opt" data-val="builder" onclick="selectOpt(this,'mode')">
+        <div class="opt-check"></div>
+        <span class="opt-icon">⚒️</span>
+        <div class="opt-name">Modo Constructor</div>
+        <div class="opt-desc">Tu estructura. Nadie te dice qué hacer.</div>
+      </div>
+      <div class="opt" data-val="challenge" onclick="selectOpt(this,'mode')">
+        <div class="opt-check"></div>
+        <span class="opt-icon">🤝</span>
+        <div class="opt-name">Modo Reto</div>
+        <div class="opt-desc">Lanza un reto. Desafía a tus amigos. Que se enteren.</div>
+      </div>
+    </div>
+    <div class="screen-bottom">
+      <button class="btn-primary" id="btn-mode" onclick="startGenerating()" disabled>ESTO ES LO QUE SOY →</button>
+    </div>
+  </div>
+
+  <!-- ── SCREEN 5: Done ───────────────────────────────────── -->
+  <div class="screen" id="screen-5">
+    <div class="done-aura"></div>
+    <div class="done-check">✓</div>
+    <div class="done-title">LISTA<br>TU <em style="color:#3fcf8e">FORJA</em></div>
+    <div class="done-sub">
+      <span class="done-name" id="done-name"></span>
+      <br>
+      <span id="done-sub-text">El primer rep es hoy.</span>
+    </div>
+    <div class="chips" id="done-chips"></div>
+    <div class="screen-bottom" style="width:100%">
+      <button class="btn-primary" onclick="finish()">IR A MI FORJA →</button>
+    </div>
+  </div>
+</div>
+</div>
 
 <div id="root"></div>
 <div id="forja-sync" title="sync"></div>
@@ -3608,686 +3974,6 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
   );
 }
 
-
-// ═══════════════════════════════════════════════════════════
-// FORJA ONBOARDING — React puro, sin HTML externo, sin bugs
-// ═══════════════════════════════════════════════════════════
-function ForjaOnboarding({onComplete,lang:initLang}){
-  const [step,setStep]=useState(0);
-  const [dir,setDir]=useState(1); // 1=forward -1=back
-  const [data,setData]=useState({
-    lang:initLang||"es",
-    name:"",
-    gender:null,
-    age:25,
-    goal:null,
-    level:null,
-    equipment:null,
-    daysCount:null,
-    selDays:[],
-    units:"metric",
-  });
-  const [nameInput,setNameInput]=useState("");
-  const [ageInput,setAgeInput]=useState("25");
-  const [generating,setGenerating]=useState(false);
-  const [genProgress,setGenProgress]=useState(0);
-  const [splashDone,setSplashDone]=useState(false);
-  const mono_="'SF Mono','Courier New',monospace";
-
-  // Auto-advance splash
-  React.useEffect(()=>{
-    if(step===0){
-      const t=setTimeout(()=>setSplashDone(true),1800);
-      return ()=>clearTimeout(t);
-    }
-  },[step]);
-
-  const go=(n)=>{
-    setDir(n>step?1:-1);
-    setStep(n);
-  };
-  const next=()=>go(step+1);
-  const back=()=>{ if(step>1) go(step-1); };
-  const set=(k,v)=>setData(d=>({...d,[k]:v}));
-
-  // Paleta
-  const G="#3fcf8e",A="#f0b429",W="rgba(240,242,245,1)";
-  const bg="#04080f",card="rgba(255,255,255,0.06)";
-  const dim="rgba(240,242,245,0.35)";
-
-  // Animación de entrada/salida
-  const slideIn={
-    animation:"forja-ob-in 0.42s cubic-bezier(0.16,1,0.3,1) both"
-  };
-
-  // ── STEP 0: Splash ─────────────────────────────────────────
-  if(step===0){
-    return (
-      <div style={{position:"fixed",inset:0,background:bg,zIndex:99999,
-        display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
-        overflow:"hidden"}}>
-        {/* Glow de fondo */}
-        <div style={{position:"absolute",top:"20%",left:"50%",transform:"translateX(-50%)",
-          width:400,height:400,borderRadius:"50%",
-          background:"radial-gradient(circle,rgba(63,207,142,0.08) 0%,transparent 70%)",
-          pointerEvents:"none"}}/>
-        <div style={{position:"absolute",bottom:"15%",right:"10%",
-          width:200,height:200,borderRadius:"50%",
-          background:"radial-gradient(circle,rgba(240,180,40,0.06) 0%,transparent 70%)",
-          pointerEvents:"none"}}/>
-
-        {/* Logo */}
-        <div style={{
-          fontFamily:"'Bebas Neue',cursive",
-          fontSize:"clamp(72px,22vw,96px)",
-          letterSpacing:8,lineHeight:1,
-          color:"#fff",
-          textShadow:"0 0 80px rgba(63,207,142,0.3),0 0 30px rgba(63,207,142,0.15)",
-          animation:"forja-ob-logo 0.9s cubic-bezier(0.16,1,0.3,1) both",
-        }}>FORJA</div>
-
-        <div style={{
-          fontFamily:mono_,fontSize:10,letterSpacing:4,
-          color:"rgba(63,207,142,0.7)",marginTop:12,
-          animation:"forja-ob-sub 0.6s 0.5s cubic-bezier(0.16,1,0.3,1) both",
-        }}>FORGE YOUR LEGACY</div>
-
-        {/* CTA */}
-        <div style={{
-          marginTop:64,
-          animation:"forja-ob-cta 0.5s 1.2s cubic-bezier(0.16,1,0.3,1) both",
-          opacity:splashDone?1:0,
-          transition:"opacity 0.4s ease",
-        }}>
-          <button onClick={next} style={{
-            padding:"16px 48px",borderRadius:999,
-            background:"linear-gradient(135deg,#3fcf8e,#2aad76)",
-            border:"none",cursor:"pointer",
-            fontFamily:mono_,fontSize:12,fontWeight:700,letterSpacing:3,
-            color:"#04080f",
-            boxShadow:"0 0 40px rgba(63,207,142,0.4),0 4px 20px rgba(0,0,0,0.3)",
-          }}>COMENZAR</button>
-        </div>
-
-        {/* Partículas decorativas */}
-        {[...Array(6)].map((_,i)=>(
-          <div key={i} style={{
-            position:"absolute",
-            width:2,height:2,borderRadius:"50%",
-            background:i%2===0?"rgba(63,207,142,0.6)":"rgba(240,180,40,0.4)",
-            left:(15+i*14)+"%",
-            top:(20+Math.sin(i)*40)+"%",
-            animation:"forja-ob-particle "+(2+i*0.3)+"s "+(i*0.2)+"s ease-in-out infinite alternate",
-          }}/>
-        ))}
-      </div>
-    );
-  }
-
-  // ── STEP 1: Idioma ─────────────────────────────────────────
-  if(step===1){
-    const langs=[
-      {code:"es",label:"Español",flag:"🇪🇸"},
-      {code:"en",label:"English",flag:"🇺🇸"},
-      {code:"pt",label:"Português",flag:"🇧🇷"},
-      {code:"fr",label:"Français",flag:"🇫🇷"},
-      {code:"it",label:"Italiano",flag:"🇮🇹"},
-      {code:"de",label:"Deutsch",flag:"🇩🇪"},
-    ];
-    return (
-      <div style={{position:"fixed",inset:0,background:bg,zIndex:99999,
-        display:"flex",flexDirection:"column",padding:"60px 28px 48px",overflow:"hidden"}}>
-        <ProgressBar step={1} total={7} color={G} mono={mono_}/>
-        <div style={{...slideIn,marginTop:40}}>
-          <div style={{fontFamily:mono_,fontSize:9,letterSpacing:4,color:G,marginBottom:12}}>01 / 07</div>
-          <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:"clamp(40px,11vw,52px)",
-            lineHeight:0.95,color:W,marginBottom:10,letterSpacing:0}}>
-            ¿En qué<br/><span style={{color:G}}>idioma</span><br/>entrenas?
-          </div>
-          <div style={{fontSize:13,color:dim,marginBottom:32}}>Lo puedes cambiar después.</div>
-        </div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,flex:1}}>
-          {langs.map(l=>(
-            <button key={l.code} onClick={()=>{set("lang",l.code);next();}}
-              style={{
-                padding:"18px 16px",borderRadius:20,
-                background:data.lang===l.code?"rgba(63,207,142,0.12)":card,
-                border:data.lang===l.code?"1.5px solid rgba(63,207,142,0.6)":"1px solid rgba(255,255,255,0.08)",
-                cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:8,
-                transition:"all 0.2s",
-                boxShadow:data.lang===l.code?"inset 0 1px 0 rgba(63,207,142,0.4)":"none",
-              }}>
-              <span style={{fontSize:28}}>{l.flag}</span>
-              <span style={{fontFamily:mono_,fontSize:10,letterSpacing:2,
-                color:data.lang===l.code?G:dim}}>{l.label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  // Labels por idioma
-  const TX={
-    es:{name:"¿Cómo te llamas?",nameSub:"Tu nombre aparecerá en la app.",namePh:"Tu nombre",
-      gender:"¿Cuál es tu sexo?",genderSub:"Para calcular métricas precisas.",
-      gM:"Masculino",gF:"Femenino",
-      age:"¿Cuántos años tienes?",ageSub:"Para tu Edad Cardiovascular NTNU.",
-      goal:"¿Cuál es tu objetivo?",goalSub:"Diseñamos tu programa en base a esto.",
-      g1:"💪 MÚSCULO",g1d:"Hipertrofia y masa muscular",
-      g2:"⚡ FUERZA",g2d:"Levantamientos pesados, 1RM",
-      g3:"🔥 DEFINICIÓN",g3d:"Perder grasa, mantener músculo",
-      g4:"⚖️ GENERAL",g4d:"Balance salud y composición",
-      level:"¿Cuál es tu nivel?",levelSub:"Sé honesto — ajusta tu programa.",
-      l1:"PRINCIPIANTE",l1d:"Menos de 1 año entrenando",
-      l2:"INTERMEDIO",l2d:"1-3 años con buena técnica",
-      l3:"AVANZADO",l3d:"3+ años, técnica sólida",
-      equip:"¿Dónde entrenas?",equipSub:"Ajustamos los ejercicios a tu equipo.",
-      e1:"🏋️ GYM",e1d:"Acceso completo a máquinas y barras",
-      e2:"🏠 CASA",e2d:"Mancuernas, bandas o poco equipo",
-      e3:"🤸 CALISTENIA",e3d:"Solo peso corporal",
-      days:"¿Cuántos días a la semana?",daysSub:"Elige los días que mejor te quedan.",
-      d3:"3 días",d4:"4 días",d5:"5 días",d6:"6 días",
-      dn:["LU","MA","MI","JU","VI","SA","DO"],
-      go:"FORJAR →",back:"← Atrás",units:"¿Qué unidades usas?",
-      kg:"Kilogramos (kg)",lb:"Libras (lb)",
-    },
-    en:{name:"What's your name?",nameSub:"Your name will appear in the app.",namePh:"Your name",
-      gender:"What's your sex?",genderSub:"For accurate metric calculations.",
-      gM:"Male",gF:"Female",
-      age:"How old are you?",ageSub:"For your NTNU Cardiovascular Age.",
-      goal:"What's your goal?",goalSub:"We design your program around this.",
-      g1:"💪 MUSCLE",g1d:"Hypertrophy and muscle mass",
-      g2:"⚡ STRENGTH",g2d:"Heavy lifts, 1RM focused",
-      g3:"🔥 CUT",g3d:"Lose fat, maintain muscle",
-      g4:"⚖️ GENERAL",g4d:"Health and body composition balance",
-      level:"What's your level?",levelSub:"Be honest — it shapes your program.",
-      l1:"BEGINNER",l1d:"Less than 1 year training",
-      l2:"INTERMEDIATE",l2d:"1-3 years with good technique",
-      l3:"ADVANCED",l3d:"3+ years, solid technique",
-      equip:"Where do you train?",equipSub:"We match exercises to your setup.",
-      e1:"🏋️ GYM",e1d:"Full access to machines and barbells",
-      e2:"🏠 HOME",e2d:"Dumbbells, bands or minimal gear",
-      e3:"🤸 CALISTHENICS",e3d:"Bodyweight only",
-      days:"Days per week?",daysSub:"Pick the days that work for you.",
-      d3:"3 days",d4:"4 days",d5:"5 days",d6:"6 days",
-      dn:["MO","TU","WE","TH","FR","SA","SU"],
-      go:"FORGE IT →",back:"← Back",units:"Which units do you use?",
-      kg:"Kilograms (kg)",lb:"Pounds (lb)",
-    },
-  };
-  const tx=TX[data.lang]||TX.es;
-
-  // ── STEP 2: Nombre ─────────────────────────────────────────
-  if(step===2){
-    return (
-      <div style={{position:"fixed",inset:0,background:bg,zIndex:99999,
-        display:"flex",flexDirection:"column",padding:"60px 28px 48px"}}>
-        <ProgressBar step={2} total={7} color={G} mono={mono_}/>
-        <BackBtn onBack={back} mono={mono_} tx={tx}/>
-        <div style={{...slideIn,flex:1,display:"flex",flexDirection:"column",justifyContent:"center"}}>
-          <div style={{fontFamily:mono_,fontSize:9,letterSpacing:4,color:G,marginBottom:16}}>02 / 07</div>
-          <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:"clamp(40px,11vw,52px)",
-            lineHeight:0.95,color:W,marginBottom:10}}>{tx.name}</div>
-          <div style={{fontSize:13,color:dim,marginBottom:40}}>{tx.nameSub}</div>
-          <input
-            autoFocus
-            value={nameInput}
-            onChange={e=>setNameInput(e.target.value)}
-            onKeyDown={e=>{if(e.key==="Enter"&&nameInput.trim()){set("name",nameInput.trim());next();}}}
-            placeholder={tx.namePh}
-            style={{
-              width:"100%",padding:"18px 20px",borderRadius:16,
-              background:"rgba(255,255,255,0.06)",
-              border:"1.5px solid rgba(255,255,255,0.15)",
-              color:W,fontSize:22,fontWeight:700,
-              outline:"none",fontFamily:"inherit",
-              caretColor:G,
-              transition:"border-color 0.2s",
-            }}
-          />
-          <button onClick={()=>{if(nameInput.trim()){set("name",nameInput.trim());next();}}}
-            disabled={!nameInput.trim()}
-            style={{
-              marginTop:24,padding:"16px",borderRadius:14,
-              background:nameInput.trim()?"linear-gradient(135deg,"+G+",#2aad76)":"rgba(255,255,255,0.06)",
-              border:"none",cursor:nameInput.trim()?"pointer":"default",
-              fontFamily:mono_,fontSize:12,fontWeight:700,letterSpacing:3,
-              color:nameInput.trim()?"#04080f":dim,
-              transition:"all 0.25s",
-            }}>CONTINUAR →</button>
-        </div>
-      </div>
-    );
-  }
-
-  // ── STEP 3: Género + Edad ──────────────────────────────────
-  if(step===3){
-    const genders=[
-      {id:"male",icon:"♂",label:tx.gM},
-      {id:"female",icon:"♀",label:tx.gF},
-    ];
-    const ageVal=parseInt(ageInput)||25;
-    const canContinue=data.gender&&ageVal>=13&&ageVal<=100;
-    return (
-      <div style={{position:"fixed",inset:0,background:bg,zIndex:99999,
-        display:"flex",flexDirection:"column",padding:"60px 28px 48px",overflow:"auto"}}>
-        <ProgressBar step={3} total={7} color={G} mono={mono_}/>
-        <BackBtn onBack={back} mono={mono_} tx={tx}/>
-        <div style={{...slideIn}}>
-          <div style={{fontFamily:mono_,fontSize:9,letterSpacing:4,color:G,marginBottom:16,marginTop:20}}>03 / 07</div>
-          <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:"clamp(36px,10vw,48px)",
-            lineHeight:0.95,color:W,marginBottom:8}}>{tx.gender}</div>
-          <div style={{fontSize:13,color:dim,marginBottom:28}}>{tx.genderSub}</div>
-        </div>
-        <div style={{display:"flex",gap:12,marginBottom:36}}>
-          {genders.map(g=>(
-            <button key={g.id} onClick={()=>set("gender",g.id)}
-              style={{
-                flex:1,padding:"24px 16px",borderRadius:20,
-                background:data.gender===g.id?"rgba(63,207,142,0.12)":card,
-                border:data.gender===g.id?"1.5px solid rgba(63,207,142,0.6)":"1px solid rgba(255,255,255,0.08)",
-                cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:10,
-                transition:"all 0.2s",
-              }}>
-              <span style={{fontSize:36,filter:data.gender===g.id?"none":"grayscale(0.5)"}}>{g.icon}</span>
-              <span style={{fontFamily:mono_,fontSize:11,letterSpacing:2,
-                color:data.gender===g.id?G:dim}}>{g.label}</span>
-            </button>
-          ))}
-        </div>
-
-        <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:"clamp(30px,9vw,42px)",
-          lineHeight:0.95,color:W,marginBottom:8}}>{tx.age}</div>
-        <div style={{fontSize:13,color:dim,marginBottom:20}}>{tx.ageSub}</div>
-
-        <div style={{display:"flex",alignItems:"center",gap:16,marginBottom:36}}>
-          <button onClick={()=>setAgeInput(String(Math.max(13,ageVal-1)))}
-            style={{width:48,height:48,borderRadius:"50%",background:card,
-              border:"1px solid rgba(255,255,255,0.1)",color:W,fontSize:22,cursor:"pointer"}}>−</button>
-          <div style={{flex:1,textAlign:"center"}}>
-            <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:64,color:G,lineHeight:1}}>{ageVal}</span>
-            <div style={{fontFamily:mono_,fontSize:9,letterSpacing:3,color:dim,marginTop:4}}>AÑOS</div>
-          </div>
-          <button onClick={()=>setAgeInput(String(Math.min(100,ageVal+1)))}
-            style={{width:48,height:48,borderRadius:"50%",background:card,
-              border:"1px solid rgba(255,255,255,0.1)",color:W,fontSize:22,cursor:"pointer"}}>+</button>
-        </div>
-
-        <button onClick={()=>{set("age",ageVal);next();}}
-          disabled={!canContinue}
-          style={{
-            padding:"16px",borderRadius:14,
-            background:canContinue?"linear-gradient(135deg,"+G+",#2aad76)":"rgba(255,255,255,0.06)",
-            border:"none",cursor:canContinue?"pointer":"default",
-            fontFamily:mono_,fontSize:12,fontWeight:700,letterSpacing:3,
-            color:canContinue?"#04080f":dim,transition:"all 0.25s",
-          }}>CONTINUAR →</button>
-      </div>
-    );
-  }
-
-  // ── STEP 4: Objetivo ───────────────────────────────────────
-  if(step===4){
-    const goals=[
-      {id:"muscle",  label:tx.g1, desc:tx.g1d, color:"#4898e8"},
-      {id:"strength",label:tx.g2, desc:tx.g2d, color:A},
-      {id:"lose",    label:tx.g3, desc:tx.g3d, color:"#e05555"},
-      {id:"general", label:tx.g4, desc:tx.g4d, color:G},
-    ];
-    return (
-      <div style={{position:"fixed",inset:0,background:bg,zIndex:99999,
-        display:"flex",flexDirection:"column",padding:"60px 28px 48px",overflow:"auto"}}>
-        <ProgressBar step={4} total={7} color={G} mono={mono_}/>
-        <BackBtn onBack={back} mono={mono_} tx={tx}/>
-        <div style={{...slideIn,marginTop:20}}>
-          <div style={{fontFamily:mono_,fontSize:9,letterSpacing:4,color:G,marginBottom:16}}>04 / 07</div>
-          <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:"clamp(36px,10vw,48px)",
-            lineHeight:0.95,color:W,marginBottom:8}}>{tx.goal}</div>
-          <div style={{fontSize:13,color:dim,marginBottom:28}}>{tx.goalSub}</div>
-        </div>
-        <div style={{display:"flex",flexDirection:"column",gap:10}}>
-          {goals.map(g=>{
-            const sel=data.goal===g.id;
-            return (
-              <button key={g.id} onClick={()=>{set("goal",g.id);setTimeout(next,180);}}
-                style={{
-                  padding:"18px 20px",borderRadius:18,textAlign:"left",
-                  background:sel?"rgba(255,255,255,0.07)":card,
-                  border:sel?"1.5px solid "+g.color+"99":"1px solid rgba(255,255,255,0.07)",
-                  cursor:"pointer",display:"flex",alignItems:"center",gap:16,
-                  transition:"all 0.22s cubic-bezier(0.34,1.56,0.64,1)",
-                  transform:sel?"scale(1.02)":"scale(1)",
-                  boxShadow:sel?"0 0 24px "+g.color+"22":"none",
-                }}>
-                <div style={{width:4,height:48,borderRadius:2,background:sel?g.color:"rgba(255,255,255,0.1)",
-                  transition:"background 0.2s",flexShrink:0}}/>
-                <div>
-                  <div style={{fontFamily:mono_,fontSize:11,fontWeight:700,letterSpacing:2,
-                    color:sel?g.color:dim,marginBottom:4}}>{g.label}</div>
-                  <div style={{fontSize:12,color:"rgba(255,255,255,0.4)"}}>{g.desc}</div>
-                </div>
-                {sel&&<div style={{marginLeft:"auto",width:8,height:8,borderRadius:"50%",
-                  background:g.color,boxShadow:"0 0 8px "+g.color}}/>}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
-
-  // ── STEP 5: Nivel + Equipo ─────────────────────────────────
-  if(step===5){
-    const levels=[
-      {id:"beg",label:tx.l1,desc:tx.l1d},
-      {id:"int",label:tx.l2,desc:tx.l2d},
-      {id:"adv",label:tx.l3,desc:tx.l3d},
-    ];
-    const equips=[
-      {id:"gym",  label:tx.e1, desc:tx.e1d},
-      {id:"home", label:tx.e2, desc:tx.e2d},
-      {id:"bw",   label:tx.e3, desc:tx.e3d},
-    ];
-    const canContinue=data.level&&data.equipment;
-    return (
-      <div style={{position:"fixed",inset:0,background:bg,zIndex:99999,
-        display:"flex",flexDirection:"column",padding:"60px 28px 48px",overflow:"auto"}}>
-        <ProgressBar step={5} total={7} color={G} mono={mono_}/>
-        <BackBtn onBack={back} mono={mono_} tx={tx}/>
-        <div style={{...slideIn,marginTop:20}}>
-          <div style={{fontFamily:mono_,fontSize:9,letterSpacing:4,color:G,marginBottom:16}}>05 / 07</div>
-          <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:"clamp(34px,9vw,44px)",
-            lineHeight:0.95,color:W,marginBottom:8}}>{tx.level}</div>
-          <div style={{fontSize:13,color:dim,marginBottom:20}}>{tx.levelSub}</div>
-        </div>
-        <div style={{display:"flex",gap:8,marginBottom:28}}>
-          {levels.map(l=>{
-            const sel=data.level===l.id;
-            return (
-              <button key={l.id} onClick={()=>set("level",l.id)}
-                style={{
-                  flex:1,padding:"16px 10px",borderRadius:16,
-                  background:sel?"rgba(63,207,142,0.1)":card,
-                  border:sel?"1.5px solid rgba(63,207,142,0.55)":"1px solid rgba(255,255,255,0.07)",
-                  cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:6,
-                  transition:"all 0.2s",
-                }}>
-                <span style={{fontFamily:mono_,fontSize:9,fontWeight:700,letterSpacing:1.5,
-                  color:sel?G:dim}}>{l.label}</span>
-                <span style={{fontSize:10,color:"rgba(255,255,255,0.3)",textAlign:"center",lineHeight:1.3}}>{l.desc}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:"clamp(30px,9vw,40px)",
-          lineHeight:0.95,color:W,marginBottom:8}}>{tx.equip}</div>
-        <div style={{fontSize:13,color:dim,marginBottom:20}}>{tx.equipSub}</div>
-        <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:28}}>
-          {equips.map(e=>{
-            const sel=data.equipment===e.id;
-            return (
-              <button key={e.id} onClick={()=>set("equipment",e.id)}
-                style={{
-                  padding:"14px 18px",borderRadius:16,textAlign:"left",
-                  background:sel?"rgba(63,207,142,0.08)":card,
-                  border:sel?"1.5px solid rgba(63,207,142,0.5)":"1px solid rgba(255,255,255,0.07)",
-                  cursor:"pointer",display:"flex",alignItems:"center",gap:14,
-                  transition:"all 0.2s",
-                }}>
-                <div style={{width:6,height:6,borderRadius:"50%",flexShrink:0,
-                  background:sel?G:"rgba(255,255,255,0.2)"}}/>
-                <div>
-                  <div style={{fontFamily:mono_,fontSize:10,fontWeight:700,letterSpacing:2,
-                    color:sel?G:dim}}>{e.label}</div>
-                  <div style={{fontSize:11,color:"rgba(255,255,255,0.35)",marginTop:2}}>{e.desc}</div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-
-        <button onClick={next} disabled={!canContinue}
-          style={{
-            padding:"16px",borderRadius:14,
-            background:canContinue?"linear-gradient(135deg,"+G+",#2aad76)":"rgba(255,255,255,0.06)",
-            border:"none",cursor:canContinue?"pointer":"default",
-            fontFamily:mono_,fontSize:12,fontWeight:700,letterSpacing:3,
-            color:canContinue?"#04080f":dim,transition:"all 0.25s",
-          }}>CONTINUAR →</button>
-      </div>
-    );
-  }
-
-  // ── STEP 6: Días ───────────────────────────────────────────
-  if(step===6){
-    const dayOptions=[3,4,5,6];
-    const dayNames=tx.dn||["LU","MA","MI","JU","VI","SA","DO"];
-    const toggleDay=(i)=>{
-      const cur=data.selDays;
-      if(cur.includes(i)){
-        if(cur.length>data.daysCount) setData(d=>({...d,selDays:cur.filter(x=>x!==i)}));
-        else if(cur.length>1) setData(d=>({...d,selDays:cur.filter(x=>x!==i)}));
-      } else {
-        if(cur.length<(data.daysCount||5)){
-          setData(d=>({...d,selDays:[...cur,i].sort((a,b)=>a-b)}));
-        }
-      }
-    };
-    const setDaysCount=(n)=>{
-      const auto=[1,2,3,4,5,6,0].slice(0,n);
-      setData(d=>({...d,daysCount:n,selDays:auto}));
-    };
-    const canContinue=data.selDays.length>0;
-    return (
-      <div style={{position:"fixed",inset:0,background:bg,zIndex:99999,
-        display:"flex",flexDirection:"column",padding:"60px 28px 48px",overflow:"auto"}}>
-        <ProgressBar step={6} total={7} color={G} mono={mono_}/>
-        <BackBtn onBack={back} mono={mono_} tx={tx}/>
-        <div style={{...slideIn,marginTop:20}}>
-          <div style={{fontFamily:mono_,fontSize:9,letterSpacing:4,color:G,marginBottom:16}}>06 / 07</div>
-          <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:"clamp(34px,9vw,44px)",
-            lineHeight:0.95,color:W,marginBottom:8}}>{tx.days}</div>
-          <div style={{fontSize:13,color:dim,marginBottom:24}}>{tx.daysSub}</div>
-        </div>
-
-        {/* Selector días por semana */}
-        <div style={{display:"flex",gap:8,marginBottom:28}}>
-          {dayOptions.map(n=>{
-            const sel=data.daysCount===n;
-            return (
-              <button key={n} onClick={()=>setDaysCount(n)}
-                style={{
-                  flex:1,padding:"16px 8px",borderRadius:14,
-                  background:sel?"rgba(63,207,142,0.12)":card,
-                  border:sel?"1.5px solid rgba(63,207,142,0.6)":"1px solid rgba(255,255,255,0.07)",
-                  cursor:"pointer",
-                  fontFamily:mono_,fontSize:11,fontWeight:700,letterSpacing:1,
-                  color:sel?G:dim,transition:"all 0.2s",
-                }}>
-                <div style={{fontSize:22,marginBottom:4}}>{n}</div>
-                <div style={{fontSize:8,letterSpacing:2,opacity:0.7}}>{data.lang==="es"?"DÍAS":"DAYS"}</div>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Selector días específicos */}
-        <div style={{fontFamily:mono_,fontSize:9,letterSpacing:3,color:dim,marginBottom:14}}>
-          {data.lang==="es"?"ELIGE TUS DÍAS":"PICK YOUR DAYS"}
-        </div>
-        <div style={{display:"flex",gap:6,marginBottom:32}}>
-          {dayNames.map((d,i)=>{
-            const sel=data.selDays.includes(i);
-            return (
-              <button key={i} onClick={()=>toggleDay(i)}
-                style={{
-                  flex:1,padding:"14px 4px",borderRadius:12,
-                  background:sel?"rgba(63,207,142,0.15)":card,
-                  border:sel?"1.5px solid rgba(63,207,142,0.6)":"1px solid rgba(255,255,255,0.07)",
-                  cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:6,
-                  transition:"all 0.18s cubic-bezier(0.34,1.56,0.64,1)",
-                  transform:sel?"scale(1.05)":"scale(1)",
-                }}>
-                <div style={{fontFamily:mono_,fontSize:8,letterSpacing:1,color:sel?G:dim}}>{d}</div>
-                <div style={{width:6,height:6,borderRadius:"50%",
-                  background:sel?G:"rgba(255,255,255,0.1)"}}/>
-              </button>
-            );
-          })}
-        </div>
-
-        <button onClick={next} disabled={!canContinue}
-          style={{
-            padding:"16px",borderRadius:14,
-            background:canContinue?"linear-gradient(135deg,"+G+",#2aad76)":"rgba(255,255,255,0.06)",
-            border:"none",cursor:canContinue?"pointer":"default",
-            fontFamily:mono_,fontSize:12,fontWeight:700,letterSpacing:3,
-            color:canContinue?"#04080f":dim,transition:"all 0.25s",
-          }}>CONTINUAR →</button>
-      </div>
-    );
-  }
-
-  // ── STEP 7: Unidades + Confirmar ──────────────────────────
-  if(step===7){
-    const goalColors={muscle:"#4898e8",strength:A,lose:"#e05555",general:G};
-    const goalColor=goalColors[data.goal]||G;
-    const summary=[
-      {icon:"👤",val:data.name,label:"nombre"},
-      {icon:data.gender==="male"?"♂":"♀",val:data.gender==="male"?(data.lang==="es"?"Masculino":"Male"):(data.lang==="es"?"Femenino":"Female"),label:data.lang==="es"?"sexo":"sex"},
-      {icon:"🎂",val:data.age+" "+(data.lang==="es"?"años":"years"),label:data.lang==="es"?"edad":"age"},
-      {icon:"🎯",val:data.goal,label:data.lang==="es"?"objetivo":"goal"},
-      {icon:"📊",val:data.level,label:data.lang==="es"?"nivel":"level"},
-      {icon:"📍",val:data.equipment,label:data.lang==="es"?"equipo":"equipment"},
-      {icon:"📅",val:data.selDays.length+" "+(data.lang==="es"?"días/sem":"days/wk"),label:data.lang==="es"?"frecuencia":"frequency"},
-    ];
-
-    if(generating){
-      return (
-        <div style={{position:"fixed",inset:0,background:bg,zIndex:99999,
-          display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:32}}>
-          <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:"clamp(40px,11vw,52px)",
-            color:W,marginBottom:8,textAlign:"center"}}>
-            {data.lang==="es"?"FORJANDO TU":"FORGING YOUR"}
-          </div>
-          <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:"clamp(40px,11vw,52px)",
-            color:G,marginBottom:40,textAlign:"center"}}>
-            {data.lang==="es"?"PROGRAMA":"PROGRAM"}
-          </div>
-          {/* Progress bar animada */}
-          <div style={{width:"100%",maxWidth:280,height:2,background:"rgba(255,255,255,0.08)",borderRadius:1,overflow:"hidden",marginBottom:16}}>
-            <div style={{height:"100%",background:"linear-gradient(90deg,"+G+",#2aad76)",
-              borderRadius:1,width:genProgress+"%",transition:"width 0.3s ease"}}/>
-          </div>
-          <div style={{fontFamily:mono_,fontSize:9,letterSpacing:3,color:dim}}>
-            {genProgress<30?"ANALIZANDO PERFIL...":genProgress<60?"CALCULANDO SPLITS...":genProgress<90?"OPTIMIZANDO EJERCICIOS...":"LISTO"}
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div style={{position:"fixed",inset:0,background:bg,zIndex:99999,
-        display:"flex",flexDirection:"column",padding:"60px 28px 48px",overflow:"auto"}}>
-        <ProgressBar step={7} total={7} color={G} mono={mono_}/>
-        <BackBtn onBack={back} mono={mono_} tx={tx}/>
-        <div style={{...slideIn,marginTop:20}}>
-          <div style={{fontFamily:mono_,fontSize:9,letterSpacing:4,color:G,marginBottom:16}}>07 / 07</div>
-          <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:"clamp(34px,9vw,44px)",
-            lineHeight:0.95,color:W,marginBottom:8}}>
-            {data.lang==="es"?"TODO":(data.lang==="en"?"ALL":(data.lang==="fr"?"TOUT":"TUTTO"))}<br/>
-            <span style={{color:G}}>{data.lang==="es"?"LISTO":(data.lang==="en"?"SET":(data.lang==="fr"?"PRÊT":"PRONTO"))}</span>
-          </div>
-          <div style={{fontSize:13,color:dim,marginBottom:24}}>
-            {data.lang==="es"?"Confirma tu perfil y forjamos tu rutina.":"Confirm your profile and we'll forge your routine."}
-          </div>
-        </div>
-
-        {/* Summary cards */}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:20}}>
-          {summary.map((s,i)=>(
-            <div key={i} style={{padding:"12px 14px",borderRadius:14,background:card,
-              border:"1px solid rgba(255,255,255,0.07)"}}>
-              <div style={{fontSize:16,marginBottom:4}}>{s.icon}</div>
-              <div style={{fontFamily:mono_,fontSize:8,letterSpacing:2,color:dim,marginBottom:2}}>{s.label.toUpperCase()}</div>
-              <div style={{fontFamily:mono_,fontSize:10,fontWeight:700,color:W,textTransform:"uppercase"}}>{s.val}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Unidades */}
-        <div style={{fontFamily:mono_,fontSize:9,letterSpacing:3,color:dim,marginBottom:12}}>
-          {tx.units.toUpperCase()}
-        </div>
-        <div style={{display:"flex",gap:8,marginBottom:28}}>
-          {[{id:"metric",label:tx.kg},{id:"imperial",label:tx.lb}].map(u=>(
-            <button key={u.id} onClick={()=>set("units",u.id)}
-              style={{
-                flex:1,padding:"12px",borderRadius:12,
-                background:data.units===u.id?"rgba(63,207,142,0.1)":card,
-                border:data.units===u.id?"1.5px solid rgba(63,207,142,0.5)":"1px solid rgba(255,255,255,0.07)",
-                cursor:"pointer",fontFamily:mono_,fontSize:10,letterSpacing:1,
-                color:data.units===u.id?G:dim,transition:"all 0.2s",
-              }}>{u.label}</button>
-          ))}
-        </div>
-
-        {/* CTA */}
-        <button onClick={()=>{
-          setGenerating(true);
-          // Simular progreso
-          let prog=0;
-          const iv=setInterval(()=>{
-            prog+=Math.random()*18+8;
-            if(prog>=100){prog=100;clearInterval(iv);
-              setTimeout(()=>onComplete(data),400);
-            }
-            setGenProgress(Math.min(100,Math.round(prog)));
-          },180);
-        }} style={{
-          padding:"18px",borderRadius:14,
-          background:"linear-gradient(135deg,"+G+",#2aad76)",
-          border:"none",cursor:"pointer",
-          fontFamily:mono_,fontSize:13,fontWeight:700,letterSpacing:3,
-          color:"#04080f",
-          boxShadow:"0 0 32px rgba(63,207,142,0.35),0 4px 16px rgba(0,0,0,0.3)",
-        }}>{tx.go}</button>
-      </div>
-    );
-  }
-
-  return null;
-}
-
-// Componentes helper del onboarding
-function ProgressBar({step,total,color,mono}){
-  return (
-    <div style={{display:"flex",gap:4,position:"absolute",top:16,left:28,right:28}}>
-      {Array(total).fill(0).map((_,i)=>(
-        <div key={i} style={{flex:1,height:2,borderRadius:1,overflow:"hidden",
-          background:"rgba(255,255,255,0.08)"}}>
-          <div style={{height:"100%",borderRadius:1,background:color,
-            width:i<step?"100%":"0%",transition:"width 0.4s ease"}}/>
-        </div>
-      ))}
-    </div>
-  );
-}
-function BackBtn({onBack,mono,tx}){
-  return (
-    <button onClick={onBack} style={{
-      position:"absolute",top:52,left:28,
-      background:"rgba(255,255,255,0.06)",
-      border:"1px solid rgba(255,255,255,0.1)",
-      borderRadius:10,width:36,height:36,
-      display:"flex",alignItems:"center",justifyContent:"center",
-      cursor:"pointer",color:"rgba(255,255,255,0.4)",fontSize:16,
-    }}>←</button>
-  );
-}
-
 function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk,showSet,setShowSet,setShowBotChat,mono,profile,tab,setTab,setSel,sel}){
   var e=React.createElement;
   var now=new Date();
@@ -4989,7 +4675,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
         {showSet&&(
           <div style={{position:"absolute",top:40,right:14,zIndex:20,background:"rgba(10,12,18,0.97)",border:"0.5px solid rgba(255,255,255,0.08)",borderRadius:12,padding:"8px 10px",display:"flex",flexWrap:"wrap",gap:6,maxWidth:260,backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)"}}>
             <button onClick={()=>{const ls=["es","en","fr","it","de","pt"];const nl=ls[(ls.indexOf(lang)+1)%ls.length];setLang(nl);sp({...profile,lang:nl});}} style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(255,255,255,0.08)",background:"transparent",color:"rgba(255,255,255,0.5)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>{lang.toUpperCase()}</button>
-            <button onClick={()=>{setStep(1);setShowSet(false);}} style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(255,255,255,0.08)",background:"transparent",color:"rgba(255,255,255,0.5)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>{t.reconfig.toUpperCase()}</button>
+            <button onClick={()=>{showForjaOnboarding();setShowSet(false);}} style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(255,255,255,0.08)",background:"transparent",color:"rgba(255,255,255,0.5)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>{t.reconfig.toUpperCase()}</button>
             <button onClick={()=>{try{localStorage.removeItem("fv8_toured");}catch{}setTourAskVisible(true);setTourStep(null);setShowSet(false);}} style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(255,255,255,0.08)",background:"transparent",color:"rgba(255,255,255,0.5)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>TUTORIAL</button>
             {isUserAnonymous()&&<button onClick={doGoogleSignIn} style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(66,133,244,0.3)",background:"rgba(66,133,244,0.08)",color:"rgba(66,133,244,0.8)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>GOOGLE</button>}
             {!isUserAnonymous()&&<button onClick={doSignOut} style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(63,207,142,0.2)",background:"transparent",color:"rgba(63,207,142,0.6)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>&#10003; {getUserEmail()?.split("@")[0]||"Google"}</button>}
@@ -6113,46 +5799,6 @@ function EqIcon({id,color}){
   return null;
 }
 function Onboard({lang,setLang,step,setStep,sp,sr}){
-  const handleComplete=(data)=>{
-    // Guardar lang
-    setLang(data.lang);
-    // Construir perfil
-    const goalMap={muscle:"muscle",strength:"strength",lose:"lose",general:"general"};
-    const levelMap={beg:"beg",int:"int",adv:"adv"};
-    const equipMap={gym:"gym",home:"home",bw:"bw"};
-    const days=data.selDays.length||data.daysCount||3;
-    const selDays=data.selDays.length>0?data.selDays:[0,1,2].slice(0,days);
-    // Generar rutina
-    const RAW_KEY=(equipMap[data.equipment]||"gym")+days+(levelMap[data.level]||"beg");
-    const splits=RAW[RAW_KEY]||RAW[Object.keys(RAW).find(k=>k.includes(String(days)))]||Object.values(RAW)[0];
-    const finalSplits=splits?splits.map((d,i)=>({
-      ...d,
-      ex:d.ex.map((x,j)=>({...x,id:String(selDays[i]||i)+j}))
-    })):[];
-    // Construir rutina completa 7 días
-    const routine=Array(7).fill(null).map((_,i)=>{
-      const idx=selDays.indexOf(i);
-      return idx>=0&&finalSplits[idx]?finalSplits[idx]:null;
-    });
-    const pf={
-      name:data.name||"Atleta",
-      goal:goalMap[data.goal]||"general",
-      level:levelMap[data.level]||"beg",
-      days:days,
-      selDays:selDays,
-      lang:data.lang||"es",
-      gender:data.gender||"male",
-      age:data.age||25,
-      units:data.units||"metric",
-      equipment:data.equipment||"gym",
-      mode:"auto",
-      toured:false,
-    };
-    FStore.saveProfile(pf,routine);
-    sp(pf);sr(routine);setStep(99);
-  };
-  return <ForjaOnboarding onComplete={handleComplete} lang={lang}/>;
-}){
   const[goal,setGoal]=useState("");
   const[level,setLevel]=useState("");
   const[days,setDays]=useState(0);
@@ -6363,7 +6009,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
     </div>
   );
   const handleBack=()=>{
-    if(step===25){setStep(1);return;}
+    if(step===25&&typeof showForjaOnboarding==='function'){showForjaOnboarding();return;}
     const map={1:0,15:1,2:15,3:2,4:3,5:4,6:5,7:6,8:7,9:8,10:9,20:2,21:20,22:21,23:21,26:25};
     if(map[step]!==undefined){setStep(map[step]);window.scrollTo({top:0,behavior:"instant"});}
   };
@@ -8974,6 +8620,552 @@ function _foIsOnboarded() {
 }
 function _foMarkOnboarded() {
   try { localStorage.setItem('forja_onboarded', '1'); } catch(e) {}
+}
+
+function showForjaOnboarding() {
+  localStorage.removeItem('forja_onboarded');
+  state = { name:'', goal:null, days:null, mode:null, selectedDays:[] };
+  currentScreen = 0;
+  var ov = document.getElementById('forja-onboarding');
+  if (!ov) return;
+  ov.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active','exit'); });
+  var s0 = document.getElementById('screen-0');
+  if (s0) s0.classList.add('active');
+  ['.opt.selected','.wday.selected','.day-pill.selected'].forEach(function(sel){document.querySelectorAll(sel).forEach(function(el){el.classList.remove('selected');});});
+  var wn = document.getElementById('wday-note'); if(wn) wn.style.opacity='0';
+  var bn = document.getElementById('btn-goal'); if(bn) bn.disabled=true;
+  var bm = document.getElementById('btn-mode'); if(bm) bm.disabled=true;
+  var bd = document.getElementById('btn-days'); if(bd) bd.disabled=true;
+  var bna = document.getElementById('btn-name'); if(bna) bna.disabled=true;
+  var ni = document.getElementById('name-input'); if(ni) ni.value='';
+  var pw = document.getElementById('progress-wrap');
+  if (pw) pw.style.opacity = '0';
+  ov.classList.remove('hidden');
+  ov.style.display = 'flex';
+  ov.style.opacity = '1';
+  if (typeof applyLang === 'function') applyLang();
+}
+
+
+// ── Init: show or hide onboarding on page load ──────────────────────────────
+window.addEventListener('load', function() {
+  var overlay = document.getElementById('forja-onboarding');
+  if (!overlay) return;
+  if (_foIsOnboarded()) {
+    overlay.classList.add('hidden');
+  } else {
+    overlay.style.display = 'flex';
+    applyLang(); // Apply default language
+  }
+});
+
+
+// ── State ──────────────────────────────────────────────────────────────────
+var state = { name:'', goal:null, days:null, mode:null };
+var currentScreen = 0;
+var TOTAL_STEPS = 4;
+
+var DAY_NOTES = {
+  '3': 'Perfecto para empezar. Lunes, miércoles y viernes.',
+  '4': 'El balance ideal entre descanso y progreso.',
+  '5': 'Alta frecuencia. Resultados más rápidos.',
+  '6': 'Modo bestia. Asegúrate de descansar bien.',
+};
+
+// ── Navigation ─────────────────────────────────────────────────────────────
+function goNext() {
+  if (currentScreen === 0) {
+    showProgressBar();
+  }
+  if (currentScreen < 5) {
+    transitionTo(currentScreen + 1);
+  }
+}
+
+function goBack() {
+  if (currentScreen > 1) {
+    transitionBack(currentScreen - 1);
+  }
+}
+
+function transitionTo(n) {
+  var old = document.getElementById('screen-' + currentScreen);
+  var next = document.getElementById('screen-' + n);
+
+  old.classList.remove('active');
+  old.classList.add('exit');
+  setTimeout(function() { old.classList.remove('exit'); }, 420);
+
+  next.style.transform = 'translateX(48px)';
+  next.style.opacity = '0';
+  // Force reflow so CSS animations retrigger
+  void next.offsetWidth;
+  requestAnimationFrame(function() {
+    next.style.transform = '';
+    next.style.opacity = '';
+    next.classList.add('active');
+  });
+
+  currentScreen = n;
+  updateProgress();
+  updateBackBtn();
+}
+
+function transitionBack(n) {
+  var old = document.getElementById('screen-' + currentScreen);
+  var prev = document.getElementById('screen-' + n);
+
+  old.style.transition = 'opacity 0.35s, transform 0.35s';
+  old.style.opacity = '0';
+  old.style.transform = 'translateX(48px)';
+  old.classList.remove('active');
+  setTimeout(function() {
+    old.style.transform = '';
+    old.style.opacity = '';
+    old.style.transition = '';
+  }, 360);
+
+  prev.style.transition = 'none';
+  prev.style.transform = 'translateX(-48px)';
+  prev.style.opacity = '0';
+  prev.classList.add('active');
+  requestAnimationFrame(function() {
+    prev.style.transition = '';
+    prev.style.transform = '';
+    prev.style.opacity = '';
+  });
+
+  currentScreen = n;
+  updateProgress();
+  updateBackBtn();
+}
+
+function showProgressBar() {
+  var el = document.getElementById('progress-wrap');
+  el.style.transition = 'opacity 0.4s';
+  el.style.opacity = '1';
+}
+
+function updateProgress() {
+  if (currentScreen === 0 || currentScreen === 5) {
+    document.getElementById('progress-wrap').style.opacity = '0';
+    return;
+  }
+  document.getElementById('progress-wrap').style.opacity = '1';
+  for (var i = 1; i <= TOTAL_STEPS; i++) {
+    var fill = document.getElementById('p' + i);
+    fill.style.width = (i < currentScreen) ? '100%' : (i === currentScreen ? '50%' : '0%');
+  }
+}
+
+function updateBackBtn() {
+  var btn = document.getElementById('back-btn');
+  btn.classList.toggle('visible', currentScreen > 1 && currentScreen < 5);
+}
+
+// ── Option selection ───────────────────────────────────────────────────────
+function selectOpt(el, group) {
+  var siblings = el.parentElement.querySelectorAll('.opt');
+  siblings.forEach(function(s) { s.classList.remove('selected'); });
+  el.classList.add('selected');
+  state[group] = el.dataset.val;
+
+  var btnMap = { goal: 'btn-goal', mode: 'btn-mode' };
+  var btn = document.getElementById(btnMap[group]);
+  if (btn) btn.disabled = false;
+}
+
+function toggleWeekDay(el) {
+  var day = parseInt(el.dataset.day);
+  var sel = state.selectedDays || [];
+  var idx = sel.indexOf(day);
+  if (idx > -1) {
+    sel.splice(idx, 1);
+    el.classList.remove('selected');
+  } else {
+    sel.push(day);
+    el.classList.add('selected');
+  }
+  state.selectedDays = sel;
+  state.days = String(sel.length);
+  updateWdayNote();
+  // Enable button only if at least 2 days selected (min meaningful routine)
+  var btn = document.getElementById('btn-days');
+  if (btn) btn.disabled = sel.length < 2;
+}
+
+
+function updateWdayNote() {
+  var sel = state.selectedDays || [];
+  var note = document.getElementById('wday-note');
+  if (!note) return;
+  var dayNames = {0:'Dom',1:'Lun',2:'Mar',3:'Mié',4:'Jue',5:'Vie',6:'Sáb'};
+  if (sel.length === 0) {
+    note.style.opacity = '0';
+    return;
+  }
+  var sorted = sel.slice().sort(function(a,b){return a-b;});
+  var names = sorted.map(function(d){return dayNames[d];}).join(' · ');
+  note.textContent = sel.length + ' días — ' + names;
+  note.style.opacity = '1';
+  note.style.transition = 'opacity 0.3s';
+}
+
+
+function onNameChange() {
+  var val = document.getElementById('name-input').value.trim();
+  state.name = val;
+  document.getElementById('btn-name').disabled = val.length < 2;
+}
+
+// ── Generating animation ───────────────────────────────────────────────────
+function startGenerating() {
+  var gen = document.getElementById('screen-generating');
+  gen.classList.add('active');
+
+  var fill = document.getElementById('gen-fill');
+  var pct = 0;
+  var step = 0;
+
+  var interval = setInterval(function() {
+    pct += 2;
+    fill.style.width = Math.min(pct, 100) + '%';
+
+    if (pct === 20 && step === 0) { showGenItem(0); step++; }
+    if (pct === 45 && step === 1) { showGenItem(1); step++; }
+    if (pct === 70 && step === 2) { showGenItem(2); step++; }
+    if (pct === 90 && step === 3) { showGenItem(3); step++; }
+
+    if (pct >= 100) {
+      clearInterval(interval);
+      setTimeout(function() {
+        gen.classList.remove('active');
+        // Celebrity mode: skip done screen, go directly to celebrity picker
+        if (state.mode === 'celebrity') {
+          finish();
+        } else {
+          showDoneScreen();
+        }
+      }, 600);
+    }
+  }, 30);
+}
+
+function showGenItem(idx) {
+  var ids = ['gi1','gi2','gi3','gi4'];
+  // Mark previous as done
+  if (idx > 0) {
+    var prev = document.getElementById(ids[idx-1]);
+    prev.classList.add('done');
+  }
+  var el = document.getElementById(ids[idx]);
+  el.classList.add('show');
+}
+
+// ── Done screen ────────────────────────────────────────────────────────────
+var GOAL_LABELS = { muscle:'Ganar músculo', fat:'Quemar grasa', performance:'Rendimiento', active:'Mantenerse activo' };
+var MODE_LABELS = { auto:'FORJA te genera la rutina ⚡', celebrity:'Modo Celebridad 🏆', builder:'Modo Constructor ⚒️', challenge:'Modo Reto 🤝' };
+
+function showDoneScreen() {
+  // Update name
+  var n = state.name || '';
+  var _dn = document.getElementById('done-name');
+  if(_dn) _dn.textContent = n ? n + '.' : '';
+
+  // Build chips
+  var chips = document.getElementById('done-chips');
+  chips.innerHTML = '';
+  var info = [
+    { text: state.days + ' días/semana', green: true },
+    { text: GOAL_LABELS[state.goal] || '' },
+    { text: MODE_LABELS[state.mode] || '' },
+  ];
+  info.forEach(function(c) {
+    if (!c.text) return;
+    var el = document.createElement('div');
+    el.className = 'chip' + (c.green ? ' green' : '');
+    el.textContent = c.text;
+    chips.appendChild(el);
+  });
+
+  transitionTo(5);
+}
+
+  window._forjaOnboardingState = {};
+
+function finish() {
+  _foMarkOnboarded();
+  // Map onboarding goal → FORJA goal
+  var goalMap = { muscle:'muscle', fat:'general', performance:'general', active:'general' };
+  var days = state.selectedDays ? state.selectedDays.length : parseInt(state.days || 3);
+  var selDays = state.selectedDays || [1,3,5];
+  var lang = (typeof LANG !== 'undefined' ? LANG : null) || 'es';
+  // Build profile object matching FORJA's schema
+  var profile = {
+    lang: lang,
+    goal: goalMap[state.goal] || 'general',
+    level: 'int',
+    days: days,
+    selDays: selDays,
+    mode: state.mode || 'auto',
+    name: state.name || '',
+    age: 25, weight: 75, height: 175, units: 'metric', gender: 'male'
+  };
+  // Pick default routine from RAW
+  var routineKey = days + 'int';
+  var routine = (typeof RAW !== 'undefined' && RAW[routineKey]) ? RAW[routineKey] : null;
+  // Save to FStore (localStorage + Supabase)
+  try {
+    if (typeof FStore !== 'undefined') {
+      FStore.saveProfile(profile, routine || []);
+    } else {
+      localStorage.setItem('fv8p', JSON.stringify(profile));
+      if (routine) localStorage.setItem('fv8r', JSON.stringify(routine));
+    }
+  } catch(e) {}
+  var targetStep = (state.mode === 'celebrity') ? 25 : 99;
+  if (typeof window.__forjaOnboardingDone === 'function') {
+    window.__forjaOnboardingDone(profile, routine, targetStep);
+  }
+  // Hide overlay — instant for celebrity (to show celeb picker immediately)
+  var ov = document.getElementById('forja-onboarding');
+  if (ov) {
+    if (state.mode === 'celebrity') {
+      ov.classList.add('hidden');
+    } else {
+      ov.style.transition = 'opacity 0.6s cubic-bezier(0.4,0,0.2,1)';
+      ov.style.opacity = '0';
+      setTimeout(function() {
+        ov.classList.add('hidden');
+        ov.style.opacity = '';
+        ov.style.transition = '';
+      }, 620);
+    }
+  }
+}
+
+// ── Language ───────────────────────────────────────────────────────────────
+var LANG = 'es';
+var I18N = {
+  es: {
+    tagline: 'La mejor rutina es la que realmente haces.',
+      start: 'EMPEZAR', login: 'Ya tengo cuenta',
+    s1title: '¿CÓMO TE<br><em>LLAMAS?</em>',
+    s1sub: 'El que no tiene nombre no existe en el ranking.',
+    s1hint: 'Así te van a conocer cuando los dejes atrás.',
+    s1btn: 'ESE SOY YO →',
+    s2title: '¿POR QUÉ<br><em>ENTRENAS?</em>',
+    s2sub: 'Sin filtros. Esto queda entre tú y la app.',
+    s2btn: 'ESE ES MI OBJETIVO →',
+    s3title: '¿QUÉ<br><em>DÍAS</em> ENTRENAS?',
+    s3sub: 'La mejor rutina es la que realmente haces.',
+    s3btn: 'ASÍ VA A SER →',
+    s4title: 'TU<br><em>MODO</em> FORJA',
+    s4sub: '¿Cómo prefieres entrenar? Lo puedes cambiar después.',
+    s4btn: 'ESTO ES LO QUE SOY →',
+    doneSub: 'El primer rep es hoy.',
+    doneBtn: 'IR A MI FORJA →',
+    genLabel: 'Construyendo tu FORJA',
+    gi: ['Creando tu perfil','Armando tu rutina','Calibrando la intensidad','Tu FORJA está lista'],
+    goal: ['Ganar músculo','Perder grasa','Más rendimiento','Mantenerme activo'],
+    days: {'3':'Lunes, miércoles y viernes.','4':'El balance ideal.','5':'Resultados más rápidos.','6':'Modo bestia.'},
+    mode: ['FORJA genera mi rutina','Modo Celebridad','Modo Constructor','Modo Reto'],
+    modeDesc: ['Según tu objetivo y días.','PUMP⚡ SIUUU⚽ CANT💀 ODIN🪓 4AM🪨','Tu estructura. Nadie te dice qué hacer.','Lanza un reto. Que se enteren.'],
+    step: ['Paso','de'],
+    chooseDays: 'Escoge tus',
+    daysOf: 'días de entrenamiento.',
+  },
+  en: {
+    tagline: "The best routine is the one you actually do.",
+      start: "START NOW", login: "I already have an account",
+    s1title: "WHAT'S<br>YOUR <em>NAME?</em>",
+    s1sub: 'No name, no ranking. Simple.',
+    s1hint: "This is how they'll know you when you pass them.",
+    s1btn: "THAT'S ME →",
+    s2title: 'WHY DO<br>YOU <em>TRAIN?</em>',
+    s2sub: 'No filter. Just between you and the app.',
+    s2btn: "THAT'S MY GOAL →",
+    s3title: 'WHAT<br><em>DAYS</em> DO YOU TRAIN?',
+    s3sub: 'The best routine is the one you actually do.',
+    s3btn: "THAT'S THE DEAL →",
+    s4title: 'YOUR<br><em>FORJA</em> MODE',
+    s4sub: 'How do you like to train? Change it anytime.',
+    s4btn: 'THIS IS WHO I AM →',
+    doneSub: 'First rep is today.',
+    doneBtn: 'GO TO MY FORJA →',
+    genLabel: 'Building your FORJA',
+    gi: ['Creating your profile','Building your routine','Calibrating intensity','Your FORJA is ready'],
+    goal: ['Build muscle','Lose fat','Performance','Stay active'],
+    days: {'3':'Mon, Wed, Fri. Classic.','4':'The perfect balance.','5':'Faster results.','6':'Beast mode.'},
+    mode: ['FORJA builds my routine','Celebrity Mode','Builder Mode','Challenge Mode'],
+    modeDesc: ['Based on your goal & days.','PUMP⚡ SIUUU⚽ CANT💀 ODIN🪓 4AM🪨','Your structure. Your rules.','Launch a challenge. Let them know.'],
+    step: ['Step','of'],
+    chooseDays: 'Choose your',
+    daysOf: 'training days.',
+  },
+  pt: {
+    tagline: 'A melhor rotina é a que você realmente faz.',
+      start: 'COMEÇAR', login: 'Já tenho conta',
+    s1title: 'QUAL É O<br>SEU <em>NOME?</em>',
+    s1sub: 'Sem nome, sem ranking. Simples assim.',
+    s1hint: 'É assim que vão te conhecer quando você passar por eles.',
+    s1btn: 'SOU EU →',
+    s2title: 'POR QUE<br>VOCÊ <em>TREINA?</em>',
+    s2sub: 'Sem filtro. Só entre você e o app.',
+    s2btn: 'ESSE É MEU OBJETIVO →',
+    s3title: 'QUAIS<br><em>DIAS</em> VOCÊ TREINA?',
+    s3sub: 'A melhor rotina é a que você realmente faz.',
+    s3btn: 'VAI SER ASSIM →',
+    s4title: 'SEU<br><em>MODO</em> FORJA',
+    s4sub: 'Como prefere treinar? Pode mudar depois.',
+    s4btn: 'É ISSO QUE SOU →',
+    doneSub: 'Primeiro rep é hoje.',
+    doneBtn: 'IR PARA MINHA FORJA →',
+    genLabel: 'Construindo sua FORJA',
+    gi: ['Criando seu perfil','Montando sua rotina','Calibrando intensidade','Sua FORJA está pronta'],
+    goal: ['Ganhar músculo','Perder gordura','Mais rendimento','Manter ativo'],
+    days: {'3':'Seg, Qua e Sex.','4':'O equilíbrio perfeito.','5':'Resultados mais rápidos.','6':'Modo fera.'},
+    mode: ['FORJA gera minha rotina','Modo Celebridade','Modo Construtor','Modo Desafio'],
+    modeDesc: ['Com base no seu objetivo.','PUMP⚡ SIUUU⚽ CANT💀 ODIN🪓 4AM🪨','Sua estrutura. Suas regras.','Lance um desafio. Que saibam.'],
+    step: ['Passo','de'],
+    chooseDays: 'Escolhe os teus',
+    daysOf: 'dias de treino.',
+  },
+};
+// Add remaining langs as aliases
+I18N.it = JSON.parse(JSON.stringify(I18N.en));
+I18N.fr = JSON.parse(JSON.stringify(I18N.en));
+I18N.de = JSON.parse(JSON.stringify(I18N.en));
+I18N.it.tagline = 'La migliore routine è quella che fai davvero.';
+I18N.it.start = 'INIZIA';
+I18N.fr.tagline = 'La meilleure routine est celle que tu fais vraiment.';
+I18N.fr.start = 'COMMENCER';
+I18N.de.tagline = 'Die beste Routine ist die, die du wirklich machst.';
+I18N.de.start = 'STARTEN';
+
+function setLang(el) {
+  document.querySelectorAll('.lang-pill').forEach(function(p){ p.classList.remove('selected'); });
+  el.classList.add('selected');
+  LANG = el.dataset.lang;
+  applyLang();
+}
+
+function applyLang() {
+  var t = I18N[LANG] || I18N.es;
+  // Splash
+  document.getElementById('splash-tagline').textContent = t.tagline;
+  document.getElementById('btn-start').textContent = t.start;
+  document.getElementById('btn-login').textContent = t.login;
+  // Screen 1
+  var _q7=document.querySelector('#screen-1 .screen-title'); if(_q7) _q7.innerHTML=t.s1title;
+  var _q8=document.querySelector('#screen-1 .screen-sub'); if(_q8) _q8.textContent=t.s1sub;
+  var _q9=document.querySelector('.name-hint'); if(_q9) _q9.textContent=t.s1hint;
+  document.getElementById('btn-name').textContent = t.s1btn;
+  // Screen 2
+  var _q12=document.querySelector('#screen-2 .screen-title'); if(_q12) _q12.innerHTML=t.s2title;
+  var _q13=document.querySelector('#screen-2 .screen-sub'); if(_q13) _q13.textContent=t.s2sub;
+  document.getElementById('btn-goal').textContent = t.s2btn;
+  var goalOpts = document.querySelectorAll('#opts-goal .opt');
+  goalOpts.forEach(function(opt, i){
+    var nm = opt.querySelector('.opt-name');
+    if (nm && t.goal && t.goal[i]) nm.textContent = t.goal[i];
+  });
+  // Screen 3
+  // Screen 3 — day selector (week grid, no sub-steps)
+  var _s3title = document.querySelector('#screen-3 .screen-title');
+  if (_s3title) _s3title.innerHTML = t.s3title || '¿QUÉ<br><em>DÍAS</em> ENTRENAS?';
+  var _s3sub = document.querySelector('#screen-3 .screen-sub');
+  if (_s3sub) _s3sub.textContent = t.s3sub || 'La mejor rutina es la que realmente haces.';
+  var _s3btn = document.getElementById('btn-days');
+  if (_s3btn) _s3btn.textContent = t.s3btn || 'ASÍ VA A SER →';
+    var _q25=document.querySelector('#screen-4 .screen-title'); if(_q25) _q25.innerHTML=t.s4title;
+  var _q26=document.querySelector('#screen-4 .screen-sub'); if(_q26) _q26.textContent=t.s4sub;
+  document.getElementById('btn-mode').textContent = t.s4btn;
+  var modeOpts = document.querySelectorAll('#opts-mode .opt');
+  modeOpts.forEach(function(opt, i){
+    var nm = opt.querySelector('.opt-name');
+    var desc = opt.querySelector('.opt-desc');
+    if (nm && t.mode && t.mode[i]) nm.textContent = t.mode[i];
+    if (desc && t.modeDesc && t.modeDesc[i]) desc.textContent = t.modeDesc[i];
+  });
+  // Step labels
+  document.querySelectorAll('.step-label').forEach(function(el, i){
+    el.textContent = t.step[0] + ' ' + (i+1) + ' ' + t.step[1] + ' 4';
+  });
+  // Done
+  var _doneSubEl = document.getElementById('done-sub-text'); if(_doneSubEl && t.doneSub) _doneSubEl.textContent = t.doneSub;
+  var _q41=document.querySelector('#screen-5 .btn-primary'); if(_q41) _q41.textContent=t.doneBtn;
+  // Generating
+  var _q43=document.querySelector('.gen-label'); if(_q43) _q43.textContent=t.genLabel;
+  t.gi.forEach(function(txt, i){
+    var el = document.getElementById('gi'+(i+1));
+    if(el) el.textContent = txt;
+  });
+  // Day notes
+  DAY_NOTES = t.days;
+  if(state.days) {
+    if(note) note.textContent = DAY_NOTES[state.days] || '';
+  }
+}
+
+// ── Victory stickman (canvas) ──────────────────────────────────────────────
+
+function stickLoop() {
+  if (currentScreen !== 5) return;
+  sT += 1/60;
+  requestAnimationFrame(stickLoop);
+
+  sCtx.clearRect(0, 0, 120, 120);
+
+  var jh = Math.max(0, Math.sin(sT * 1.5)) * 14;
+  var w  = Math.sin(sT * 1.5) * 0.15;
+  var CX = 60, GY = 95, SC = 1.0;
+  var col = '#3fcf8e';
+  var WC  = 'rgba(255,255,255,0.88)';
+  var LW  = 4.5 * SC;
+  var HR  = 8   * SC;
+
+  // Joints
+  var OX = CX, OY = GY;
+function sk(x,y){ return {x: OX+x, y: OY-y}; }
+
+  var joints = {
+    hd:  sk(0,   64 + jh),
+    nk:  sk(0,   50 + jh),
+    hp:  sk(0,   28 + jh),
+    ls:  sk(-11, 46 + jh),
+    rs:  sk(11,  46 + jh),
+    le:  sk(-20 + w*60, 58 + jh + w*40),
+    re:  sk( 20 - w*60, 58 + jh - w*40),
+    lh:  sk(-28 + w*80, 70 + jh + w*60),
+    rh:  sk( 28 - w*80, 70 + jh - w*60),
+    lhp: sk(-5,  28 + jh),
+    rhp: sk( 5,  28 + jh),
+    lk:  sk(-8,  14 + jh * 0.3),
+    rk:  sk( 8,  14 + jh * 0.3),
+    lf:  sk(-10, -2 + jh * 0.15),
+    rf:  sk( 10, -2 + jh * 0.15),
+  };
+
+  sCtx.lineCap = 'round'; sCtx.lineJoin = 'round';
+function bone(a, b, w2) {
+    var bw = w2 || LW;
+    sCtx.strokeStyle = WC;    sCtx.lineWidth = bw + 3.5;
+    sCtx.beginPath(); sCtx.moveTo(a.x,a.y); sCtx.lineTo(b.x,b.y); sCtx.stroke();
+    sCtx.strokeStyle = col;   sCtx.lineWidth = bw;
+    sCtx.beginPath(); sCtx.moveTo(a.x,a.y); sCtx.lineTo(b.x,b.y); sCtx.stroke();
+  }
+
+  bone(joints.lhp, joints.lk); bone(joints.lk, joints.lf);
+  bone(joints.rhp, joints.rk); bone(joints.rk, joints.rf);
+  bone(joints.nk,  joints.hp, LW*1.35);
+  bone(joints.ls,  joints.le); bone(joints.le, joints.lh);
+  bone(joints.rs,  joints.re); bone(joints.re, joints.rh);
+
+  sCtx.beginPath(); sCtx.arc(joints.hd.x, joints.hd.y, HR+2.5, 0, Math.PI*2);
+  sCtx.fillStyle = WC; sCtx.fill();
+  sCtx.beginPath(); sCtx.arc(joints.hd.x, joints.hd.y, HR, 0, Math.PI*2);
+  sCtx.fillStyle = col; sCtx.fill();
 }
 
 
