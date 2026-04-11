@@ -3942,7 +3942,7 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
   );
 }
 
-function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk,showSet,setShowSet,setShowBotChat,mono,profile,tab,setTab,setSel}){
+function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk,showSet,setShowSet,setShowBotChat,mono,profile,tab,setTab,setSel,sel}){
   var e=React.createElement;
   var now=new Date();
   var dow=now.getDay();
@@ -4613,7 +4613,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
           showSet={showSet} setShowSet={setShowSet}
           setShowBotChat={setShowBotChat}
           mono={mono} profile={profile}
-          tab={tab} setTab={setTabR} setSel={setSel}
+          tab={tab} setTab={setTabR} setSel={setSel} sel={sel}
         />
 
       </div>
