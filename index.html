@@ -3983,61 +3983,53 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
       e("div",{style:{position:"absolute",top:-42,left:-24,width:190,height:120,background:"radial-gradient(ellipse,rgba(255,255,255,0.12) 0%,transparent 68%)",transform:"rotate(-22deg)",pointerEvents:"none",zIndex:0}}),
       e("div",{style:{position:"absolute",inset:0,borderRadius:24,background:"linear-gradient(148deg,rgba(255,255,255,0.1) 0%,rgba(255,255,255,0.02) 22%,transparent 64%)",pointerEvents:"none",zIndex:0}}),
 
-      // Fila superior: texto izquierda + corazón derecha
-      e("div",{style:{display:"flex",alignItems:"flex-start",gap:8,marginBottom:14,position:"relative",zIndex:1}},
+      // Saludo + pill racha
+      e("div",{style:{display:"flex",alignItems:"flex-end",justifyContent:"space-between",marginBottom:14,position:"relative",zIndex:1}},
+        e("div",null,
+          e("div",{style:{fontSize:11,color:"rgba(255,255,255,0.32)",marginBottom:3,fontFamily:mono}},greeting),
+          e("div",{style:{fontSize:24,fontWeight:700,color:"#fff",letterSpacing:-0.5,lineHeight:1}},userName)
+        ),
+        e("div",{style:{padding:"5px 11px",borderRadius:20,background:"rgba(50,110,255,0.12)",border:"1px solid rgba(120,175,255,0.5)",display:"flex",alignItems:"center",gap:5}},
+          e("span",{style:{fontSize:13}},"⚡"),
+          e("span",{style:{fontSize:13,fontWeight:700,color:"rgba(190,220,255,0.96)"}},streak),
+          e("span",{style:{fontSize:8,fontFamily:mono,letterSpacing:1.5,color:"rgba(100,155,255,0.6)"}}," DÍAS")
+        )
+      ),
 
-        // Columna izquierda: saludo + pill racha
-        e("div",{style:{flex:1}},
-          e("div",{style:{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:10}},
-            e("div",null,
-              e("div",{style:{fontSize:11,color:"rgba(255,255,255,0.32)",marginBottom:3,fontFamily:mono}},greeting),
-              e("div",{style:{fontSize:24,fontWeight:700,color:"#fff",letterSpacing:-0.5,lineHeight:1}},userName)
-            ),
-            e("div",{style:{padding:"5px 11px",borderRadius:20,background:"rgba(50,110,255,0.12)",border:"1px solid rgba(120,175,255,0.5)",display:"flex",alignItems:"center",gap:5}},
-              e("span",{style:{fontSize:13}},"⚡"),
-              e("span",{style:{fontSize:13,fontWeight:700,color:"rgba(190,220,255,0.96)"}},streak),
-              e("span",{style:{fontSize:8,fontFamily:mono,letterSpacing:1.5,color:"rgba(100,155,255,0.6)"}}," DÍAS")
-            )
+      // Rectángulo HOY con corazón — igual al boceto
+      e(FrozenHeartBanner,{day:todayR,done:done,sel:tdi,lang:lang,mono:mono,compact:false,
+        onStart:function(){window.dispatchEvent(new CustomEvent("forja:startWorkout"));}}),
+
+      // Ring + XP + PR
+      e("div",{style:{display:"flex",alignItems:"center",gap:12,marginTop:14,position:"relative",zIndex:1}},
+        e("div",{style:{position:"relative",width:64,height:64,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}},
+          e("svg",{width:"64",height:"64",viewBox:"0 0 64 64",style:{position:"absolute",overflow:"visible"}},
+            e("defs",null,e("linearGradient",{id:"rg3",x1:"0%",y1:"0%",x2:"100%",y2:"100%"},e("stop",{offset:"0%",stopColor:"rgba(130,190,255,0.8)"}),e("stop",{offset:"100%",stopColor:"#4878ff"}))),
+            e("circle",{cx:"32",cy:"32",r:"26",fill:"none",stroke:"rgba(255,255,255,0.05)",strokeWidth:"5"}),
+            e("circle",{cx:"32",cy:"32",r:"26",fill:"none",stroke:"url(#rg3)",strokeWidth:"5",strokeDasharray:ringDash,strokeLinecap:"round",transform:"rotate(-90 32 32)",style:{filter:"drop-shadow(0 0 4px rgba(80,140,255,0.8))"}})
           ),
-
-          // Ring + XP + PR
-          e("div",{style:{display:"flex",alignItems:"center",gap:12}},
-            // Ring semanal
-            e("div",{style:{position:"relative",width:64,height:64,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}},
-              e("svg",{width:"64",height:"64",viewBox:"0 0 64 64",style:{position:"absolute",overflow:"visible"}},
-                e("defs",null,e("linearGradient",{id:"rg3",x1:"0%",y1:"0%",x2:"100%",y2:"100%"},e("stop",{offset:"0%",stopColor:"rgba(130,190,255,0.8)"}),e("stop",{offset:"100%",stopColor:"#4878ff"}))),
-                e("circle",{cx:"32",cy:"32",r:"26",fill:"none",stroke:"rgba(255,255,255,0.05)",strokeWidth:"5"}),
-                e("circle",{cx:"32",cy:"32",r:"26",fill:"none",stroke:"url(#rg3)",strokeWidth:"5",strokeDasharray:ringDash,strokeLinecap:"round",transform:"rotate(-90 32 32)",style:{filter:"drop-shadow(0 0 4px rgba(80,140,255,0.8))"}})
-              ),
-              e("div",{style:{textAlign:"center",position:"relative",zIndex:1}},
-                e("div",{style:{fontSize:13,fontWeight:800,color:"#fff",lineHeight:1}},trainDone+"/"+trainTotal),
-                e("div",{style:{fontSize:6,fontFamily:mono,letterSpacing:2,color:"rgba(255,255,255,0.28)",marginTop:2}},"SEM")
-              )
-            ),
-            // XP + PR
-            e("div",{style:{flex:1}},
-              e("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:4}},
-                e("div",{style:{display:"flex",alignItems:"center",gap:5}},
-                  e("span",{style:{fontSize:8,fontFamily:mono,letterSpacing:2,color:"rgba(185,215,255,0.65)",fontWeight:600}},lvlName),
-                  lvl<10?e("span",{style:{fontSize:8,color:"rgba(255,255,255,0.18)",fontFamily:mono}},"→ "+lvlNext):null
-                ),
-                e("span",{style:{fontSize:7,fontFamily:mono,color:"rgba(255,255,255,0.2)"}},xpPct+"%")
-              ),
-              e("div",{style:{height:2,borderRadius:1,overflow:"hidden",background:"rgba(255,255,255,0.06)",marginBottom:10}},
-                e("div",{style:{width:xpPct+"%",height:"100%",background:"linear-gradient(90deg,"+lvlColor+"88,"+lvlColor+")",borderRadius:1,boxShadow:"0 0 8px "+lvlColor+"88",transition:"width 0.8s ease"}})
-              ),
-              e("div",{style:{fontSize:7,fontFamily:mono,letterSpacing:2,color:"rgba(255,255,255,0.25)",marginBottom:2}},"ÚLTIMO PR"),
-              e("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between"}},
-                e("div",{style:{fontSize:11,fontWeight:700,color:"rgba(255,255,255,0.85)",maxWidth:90,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},lastPRName||(lang==="es"?"Sin registros":"No logs")),
-                lastPRVal?e("div",{style:{padding:"3px 8px",borderRadius:10,background:"rgba(255,215,0,0.08)",border:"1px solid rgba(255,215,0,0.35)"}},e("span",{style:{fontSize:9,fontWeight:700,color:"rgba(255,215,0,0.85)"}},"🏆 "+lastPRVal)):null
-              )
-            )
+          e("div",{style:{textAlign:"center",position:"relative",zIndex:1}},
+            e("div",{style:{fontSize:13,fontWeight:800,color:"#fff",lineHeight:1}},trainDone+"/"+trainTotal),
+            e("div",{style:{fontSize:6,fontFamily:mono,letterSpacing:2,color:"rgba(255,255,255,0.28)",marginTop:2}},"SEM")
           )
         ),
-
-        // Corazón frozen — derecha
-        e(FrozenHeartBanner,{day:todayR,done:done,sel:tdi,lang:lang,mono:mono,compact:true,
-          onStart:function(){window.dispatchEvent(new CustomEvent("forja:startWorkout"));}})
+        e("div",{style:{flex:1}},
+          e("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:4}},
+            e("div",{style:{display:"flex",alignItems:"center",gap:5}},
+              e("span",{style:{fontSize:8,fontFamily:mono,letterSpacing:2,color:"rgba(185,215,255,0.65)",fontWeight:600}},lvlName),
+              lvl<10?e("span",{style:{fontSize:8,color:"rgba(255,255,255,0.18)",fontFamily:mono}},"→ "+lvlNext):null
+            ),
+            e("span",{style:{fontSize:7,fontFamily:mono,color:"rgba(255,255,255,0.2)"}},xpPct+"%")
+          ),
+          e("div",{style:{height:2,borderRadius:1,overflow:"hidden",background:"rgba(255,255,255,0.06)",marginBottom:10}},
+            e("div",{style:{width:xpPct+"%",height:"100%",background:"linear-gradient(90deg,"+lvlColor+"88,"+lvlColor+")",borderRadius:1,boxShadow:"0 0 8px "+lvlColor+"88",transition:"width 0.8s ease"}})
+          ),
+          e("div",{style:{fontSize:7,fontFamily:mono,letterSpacing:2,color:"rgba(255,255,255,0.25)",marginBottom:2}},"ÚLTIMO PR"),
+          e("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between"}},
+            e("div",{style:{fontSize:11,fontWeight:700,color:"rgba(255,255,255,0.85)",maxWidth:90,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},lastPRName||(lang==="es"?"Sin registros":"No logs")),
+            lastPRVal?e("div",{style:{padding:"3px 8px",borderRadius:10,background:"rgba(255,215,0,0.08)",border:"1px solid rgba(255,215,0,0.35)"}},e("span",{style:{fontSize:9,fontWeight:700,color:"rgba(255,215,0,0.85)"}},"🏆 "+lastPRVal)):null
+          )
+        )
       )
     ),
 
