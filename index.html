@@ -4050,7 +4050,7 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
   fitnessAge=Math.max(userAge-15, Math.min(userAge+15, fitnessAge));
   ageDiff=userAge-fitnessAge;
 
-  var fitnessAgeColor=ageDiff>=3?"#3fcf8e":ageDiff>=1?"#6aafff":ageDiff>=-1?"rgba(255,255,255,0.5)":"#e8a020";
+  var fitnessAgeColor=weeklyDelta<0?"#3fcf8e":weeklyDelta>0?"#e8a020":"rgba(255,255,255,0.4)";
 
   return e("div",{style:{position:"relative",zIndex:1}},
 
