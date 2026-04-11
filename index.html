@@ -3879,17 +3879,11 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact}){
       overflow:"hidden",border:"0.5px solid rgba(255,255,255,0.08)",marginBottom:0}},
     React.createElement("canvas",{ref:canvasRef,style:{position:"absolute",inset:0,width:"100%",height:"100%",zIndex:1,pointerEvents:"none",borderRadius:16}}),
     React.createElement("canvas",{ref:fogRef,style:{position:"absolute",inset:0,width:"100%",height:"100%",zIndex:2,pointerEvents:"none",borderRadius:16}}),
-    React.createElement("div",{style:{position:"absolute",inset:0,zIndex:3,padding:"16px 18px",display:"flex",flexDirection:"column",justifyContent:"flex-end",pointerEvents:"none"}},
+    React.createElement("div",{style:{position:"absolute",inset:0,zIndex:3,padding:"16px 18px",display:"flex",flexDirection:"column",justifyContent:"center",pointerEvents:"none"}},
       React.createElement("div",{style:{fontFamily:"monospace",fontSize:9,color:"rgba(255,255,255,0.3)",letterSpacing:3,marginBottom:5}},"HOY"),
       React.createElement("div",{style:{fontFamily:"monospace",fontSize:22,fontWeight:800,color:"#fff",letterSpacing:-0.5,lineHeight:1,marginBottom:4}},day?day.l:"—"),
       React.createElement("div",{style:{fontFamily:"monospace",fontSize:8,color:"rgba(255,255,255,0.3)",letterSpacing:1.5}},dayExs.length+" EJERC · TAP PARA INICIAR")
-    ),
-    React.createElement("div",{style:{position:"absolute",bottom:14,left:"50%",transform:"translateX(-50%)",
-      background:"rgba(240,242,245,0.1)",backdropFilter:"blur(8px)",
-      border:"1px solid rgba(240,242,245,0.18)",padding:"6px 18px",borderRadius:20,
-      fontSize:10,fontFamily:"monospace",color:"rgba(255,255,255,0.85)",
-      letterSpacing:2,fontWeight:700,whiteSpace:"nowrap",pointerEvents:"none",zIndex:4,
-      animation:"pulse 2.2s ease-in-out infinite"}},"▶ INICIAR ENTRENO")
+    )
   );
 }
 
