@@ -3837,7 +3837,7 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact}){
     function fogLoop(){
       fogAnimIdRef.current=requestAnimationFrame(fogLoop);
       ft+=0.012;fctx.clearRect(0,0,W,H);
-      var cx=W*0.72,cy=H*0.5;
+      var cx=W*0.67,cy=H*0.5;
       if(isAliveRef.current){
         // Latido en canvas — sincronizado con la animación 3D
         var pulse=Math.pow(Math.max(0,Math.sin(ft*2.0)),3)+Math.pow(Math.max(0,Math.sin(ft*2.0-0.7)),4)*0.75;
