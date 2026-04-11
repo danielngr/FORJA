@@ -4673,20 +4673,22 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                 </div>
 
                 {day&&day.ex&&day.ex.length>0&&(
-                  <div onClick={()=>{setExpressGroup(null);setExpressTime(15);setShowExpress(true);}}
-                    style={{margin:"10px 0 4px",padding:"10px 14px",borderRadius:12,cursor:"pointer",
-                      background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",
-                      display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
-                    <div style={{width:28,height:28,borderRadius:8,flexShrink:0,
-                      background:"rgba(240,180,40,0.15)",border:"1px solid rgba(240,180,40,0.25)",
-                      display:"flex",alignItems:"center",justifyContent:"center",fontSize:14}}>⚡</div>
-                    <div style={{fontFamily:mono,fontSize:10,fontWeight:700,letterSpacing:1.5,
-                      color:"rgba(255,255,255,0.85)"}}>
-                      {lang==="es"||lang==="pt"?"ENTRENO EXPRESS":"EXPRESS WORKOUT"}
+                  <div style={{display:"flex",justifyContent:"flex-end",margin:"8px 0 0"}}>
+                    <div onClick={()=>{setExpressGroup(null);setExpressTime(15);setShowExpress(true);}}
+                      style={{display:"inline-flex",alignItems:"center",gap:6,
+                        padding:"5px 12px",borderRadius:20,cursor:"pointer",
+                        background:"rgba(240,180,40,0.08)",border:"1px solid rgba(240,180,40,0.2)"}}>
+                      <span style={{fontSize:10}}>⚡</span>
+                      <span style={{fontFamily:mono,fontSize:8,fontWeight:700,letterSpacing:1.5,
+                        color:"rgba(240,180,40,0.8)"}}>
+                        {lang==="es"||lang==="pt"?"EXPRESS":"EXPRESS"}
+                      </span>
                     </div>
                   </div>
                 )}
-                {tab==="train"&&(()=>{
+                <div style={{display:"flex",gap:8,marginTop:0,alignItems:"stretch"}}>
+                  <div style={{flex:1,minWidth:0}}>
+                    {tab==="train"&&(()=>{
                   const{acute,chronic,ratio}=acwr;
                   const hasData=(acute>=50||chronic>=50); // require meaningful training load (≥50kg)
                   const hasRatio=ratio>0; // true only when >= 7 days of history
@@ -4701,7 +4703,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                   }[zone];
                   const barW=ratio>0?Math.min(100,Math.round((ratio/2)*100)):0;
                   return(
-                    <div data-tour="carga-semanal" style={{marginTop:14,padding:"14px 16px",background:C.card,borderRadius:12,border:`1px solid ${hasData?zoneColor+"44":"rgba(255,255,255,0.06)"}`,marginBottom:4}}>
+                    <div data-tour="carga-semanal" style={{padding:"14px 16px",background:C.card,borderRadius:12,border:`1px solid ${hasData?zoneColor+"44":"rgba(255,255,255,0.06)"}`,}}>
                       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:hasData?10:0}}>
                         <div style={{display:"flex",alignItems:"center",gap:6}}>
                           <span style={{fontFamily:mono,fontSize:9,color:C.tx3,letterSpacing:2}}>// {lang==="es"||lang==="pt"?"CARGA SEMANAL":lang==="fr"?"CHARGE HEBDOMADAIRE":lang==="it"?"CARICO SETTIMANALE":lang==="de"?"WOCHENLAST":"WEEKLY LOAD"}</span>
@@ -4760,7 +4762,9 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                     </div>
                   );
                 })()}
-                {(()=>{
+                  </div>
+                  <div style={{flex:1,minWidth:0}}>
+                                    {(()=>{
                   const zoneToGroup={
                     pecho:lang==="es"||lang==="pt"?"Pecho":lang==="fr"?"Pectoraux":lang==="it"?"Petto":lang==="de"?"Brust":"Chest",
                     dorsal:lang==="es"||lang==="pt"?"Espalda":lang==="fr"?"Dos":lang==="it"?"Schiena":lang==="de"?"Rücken":"Back",
@@ -4849,7 +4853,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                   const entries=Object.entries(vol).sort((a,b)=>b[1]-a[1]);
                   const cap = (L[lang]||L.en).sets.toLowerCase();
                   return(
-                    <div data-tour="vol-weekly" style={{marginTop:14,padding:"14px 16px",background:C.card,borderRadius:12,border:`1px solid ${C.borderL}`}}>
+                    <div data-tour="vol-weekly" style={{padding:"14px 16px",background:C.card,borderRadius:12,border:`1px solid ${C.borderL}`}}>
                       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
                         <div style={{display:"flex",alignItems:"center",gap:6}}>
                           <div style={{fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:2}}>
@@ -4945,6 +4949,8 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                     </div>
                   );
                 })()}
+                  </div>
+                </div>
                 {!addEx?(
                   <button onClick={()=>setAddEx(true)} style={{width:"100%",padding:"13px 0",marginTop:12,borderRadius:10,border:`1.5px dashed ${C.border}`,background:"transparent",color:C.tx3,fontSize:10,fontFamily:mono,letterSpacing:2,cursor:"pointer"}}>{t.addEx}</button>
                 ):(
