@@ -4215,157 +4215,25 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
               </div>
             ):(
               <>
-                {(()=>{
-                  const totalXP=Object.values(muscleXP).reduce((s,z)=>s+(z&&z.xp?z.xp:0),0);
-                  const lvl=xpToLevel(totalXP);
-                  const lvlColor=xpLevelColor(lvl);
-                  const xpPrev=XP_THRESHOLDS[Math.max(0,lvl-2)]||0;
-                  const xpNext=XP_THRESHOLDS[lvl]||XP_THRESHOLDS[XP_THRESHOLDS.length-1];
-                  const xpPct=lvl>=10?100:Math.round(((totalXP-xpPrev)/Math.max(1,xpNext-xpPrev))*100);
-                  const LVL_NAMES=["IRON I","IRON II","IRON III","IRON IV","IRON V","IRON VI","IRON VII","IRON VIII","IRON IX","IRON X"];
-                  const lvlName=LVL_NAMES[Math.min(9,lvl-1)];
-                  const lvlNext=LVL_NAMES[Math.min(9,lvl)]||"";
-
-                  const dow2=new Date().getDay();
-                  const todayIdx=dow2===0?6:dow2-1;
-                  let weekDone=0;
-                  const weekTotalFull=(routine||[]).filter(d=>d&&d.ex&&d.ex.length>0).length;
-                  for(let i=0;i<=todayIdx;i++){
-                    const r2=routine?routine[i]:null;
-                    if(!r2||!r2.ex||r2.ex.length===0) continue;
-                    if(r2.ex.every(x=>done[i+"-"+x.id])) weekDone++;
-                  }
-
-                  const trainedDays=new Set();
-                  Object.values(logs||{}).flat().forEach(function(e){if(e&&e.d)trainedDays.add(e.d.slice(0,10));});
-                  for(let i=0;i<=todayIdx;i++){
-                    const r2=routine?routine[i]:null;
-                    if(!r2||!r2.ex||r2.ex.length===0) continue;
-                    if(r2.ex.every(x=>done[i+"-"+x.id])){
-                      const d2=new Date(); d2.setDate(d2.getDate()-(todayIdx-i));
-                      trainedDays.add(d2.toISOString().slice(0,10));
-                    }
-                  }
-                  let streak=0;
-                  const sc=new Date();
-                  while(streak<365){
-                    if(!trainedDays.has(sc.toISOString().slice(0,10))) break;
-                    streak++; sc.setDate(sc.getDate()-1);
-                  }
-
-                  let lastPRName="", lastPRVal="", bestDate="";
-                  Object.entries(logs||{}).forEach(function(kv){
-                    (kv[1]||[]).forEach(function(e){
-                      if(e.d&&e.d>bestDate&&e.rm>0){bestDate=e.d;lastPRName=e.exName||kv[0];lastPRVal=Math.round(e.rm)+"kg";}
-                    });
-                  });
-
-                  const hr=new Date().getHours();
-                  const greeting=lang==="es"||lang==="pt"?(hr<12?"Buenos días,":(hr<19?"Buenas tardes,":"Buenas noches,")):(hr<12?"Good morning,":(hr<19?"Good afternoon,":"Good evening,"));
-                  const userName=profile&&profile.name?profile.name:"Atleta";
-
-                  const ringDash=weekTotalFull>0?(weekDone/weekTotalFull)*182.2:0;
-
-                  return(
-                    <div style={{
-                      background:"linear-gradient(135deg,rgba(20,35,90,0.9) 0%,rgba(10,18,50,0.95) 100%)",
-                      borderRadius:24,
-                      borderTop:"1.5px solid rgba(255,255,255,0.45)",
-                      borderLeft:"0.5px solid rgba(255,255,255,0.18)",
-                      borderRight:"0.5px solid rgba(255,255,255,0.18)",
-                      borderBottom:"0.5px solid rgba(255,255,255,0.05)",
-                      boxShadow:"inset 0 1.5px 0 rgba(255,255,255,0.4),0 16px 48px rgba(0,0,30,0.6)",
-                      position:"relative",overflow:"hidden",
-                      marginBottom:12,padding:"20px 18px 18px",
-                    }}>
-                      <div style={{position:"absolute",top:-42,left:-24,width:190,height:120,
-                        background:"radial-gradient(ellipse,rgba(255,255,255,0.15) 0%,rgba(255,255,255,0.05) 38%,transparent 68%)",
-                        transform:"rotate(-22deg)",pointerEvents:"none",zIndex:0}}/>
-                      <div style={{position:"absolute",inset:0,borderRadius:24,
-                        background:"linear-gradient(148deg,rgba(255,255,255,0.12) 0%,rgba(255,255,255,0.03) 22%,transparent 64%)",
-                        pointerEvents:"none",zIndex:0}}/>
-
-                      <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",marginBottom:16,position:"relative",zIndex:1}}>
-                        <div>
-                          <div style={{fontSize:11,color:"rgba(255,255,255,0.32)",marginBottom:3,fontFamily:mono}}>{greeting}</div>
-                          <div style={{fontSize:26,fontWeight:700,color:"#fff",letterSpacing:-1,lineHeight:1}}>{userName}</div>
-                        </div>
-                        <div style={{padding:"5px 12px",borderRadius:20,background:"rgba(50,110,255,0.12)",
-                          border:"1px solid rgba(120,175,255,0.5)",
-                          display:"flex",alignItems:"center",gap:6}}>
-                          <span style={{fontSize:14}}>⚡</span>
-                          <span style={{fontSize:14,fontWeight:700,color:"rgba(190,220,255,0.96)"}}>{streak}</span>
-                          <span style={{fontSize:8,fontFamily:mono,letterSpacing:1.5,color:"rgba(100,155,255,0.6)"}}>DÍAS</span>
-                        </div>
-                      </div>
-
-                      <FrozenHeartBanner
-                        day={day} done={done} sel={sel} lang={lang} mono={mono}
-                        onStart={()=>{if(day&&day.ex&&day.ex.length)setInWorkout(true);}}
-                      />
-
-                      <div style={{display:"flex",alignItems:"center",gap:16,marginTop:16,position:"relative",zIndex:1}}>
-                        <div style={{position:"relative",width:72,height:72,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                          <svg width="72" height="72" viewBox="0 0 72 72" style={{position:"absolute",overflow:"visible"}}>
-                            <defs>
-                              <linearGradient id="rg2" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" stopColor="rgba(130,190,255,0.8)"/>
-                                <stop offset="100%" stopColor="#4878ff"/>
-                              </linearGradient>
-                            </defs>
-                            <circle cx="36" cy="36" r="29" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="6"/>
-                            <circle cx="36" cy="36" r="29" fill="none" stroke="url(#rg2)" strokeWidth="6"
-                              strokeDasharray={ringDash+" 182.2"}
-                              strokeLinecap="round" transform="rotate(-90 36 36)"
-                              style={{filter:"drop-shadow(0 0 4px rgba(80,140,255,0.8))"}}/>
-                          </svg>
-                          <div style={{textAlign:"center",position:"relative",zIndex:1}}>
-                            <div style={{fontSize:15,fontWeight:800,color:"#fff",lineHeight:1,letterSpacing:-0.5}}>{weekDone+"/"+weekTotalFull}</div>
-                            <div style={{fontSize:6,fontFamily:mono,letterSpacing:2,color:"rgba(255,255,255,0.28)",marginTop:2}}>SEM</div>
-                          </div>
-                        </div>
-
-                        <div style={{flex:1,display:"flex",flexDirection:"column",gap:10}}>
-                          <div>
-                            <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
-                              <div style={{display:"flex",alignItems:"center",gap:5}}>
-                                <span style={{fontSize:8,fontFamily:mono,letterSpacing:2,color:"rgba(185,215,255,0.65)",fontWeight:600}}>{lvlName}</span>
-                                {lvl<10&&<span style={{fontSize:8,color:"rgba(255,255,255,0.18)",fontFamily:mono}}>{"→ "+lvlNext}</span>}
-                              </div>
-                              <span style={{fontSize:7,fontFamily:mono,color:"rgba(255,255,255,0.2)"}}>{xpPct+"%"}</span>
-                            </div>
-                            <div style={{height:2,borderRadius:1,overflow:"hidden",background:"rgba(255,255,255,0.06)"}}>
-                              <div style={{width:xpPct+"%",height:"100%",
-                                background:"linear-gradient(90deg,"+lvlColor+"88,"+lvlColor+")",
-                                borderRadius:1,
-                                boxShadow:"0 0 8px "+lvlColor+"88",
-                                transition:"width 0.8s ease"}}/>
-                            </div>
-                          </div>
-                          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                            <div>
-                              <div style={{fontSize:7,fontFamily:mono,letterSpacing:2,color:"rgba(255,255,255,0.25)",marginBottom:2}}>ÚLTIMO PR</div>
-                              <div style={{fontSize:12,fontWeight:700,color:"rgba(255,255,255,0.85)",maxWidth:100,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-                                {lastPRName||lang==="es"||lang==="pt"?"Sin registros":"No logs"}
-                              </div>
-                            </div>
-                            {lastPRVal&&(
-                              <div style={{padding:"4px 10px",borderRadius:12,
-                                background:"rgba(255,215,0,0.08)",
-                                border:"1px solid rgba(255,215,0,0.35)"}}>
-                                <span style={{fontSize:10,fontWeight:700,color:"rgba(255,215,0,0.85)"}}>{"🏆 "+lastPRVal}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })()}
-
+                <div style={{marginBottom:12,padding:"16px 16px 0"}}>
+                  <div style={{fontSize:11,color:"rgba(255,255,255,0.3)",marginBottom:3,fontFamily:mono}}>
+                    {new Date().getHours()<12?"Buenos días,":new Date().getHours()<19?"Buenas tardes,":"Buenas noches,"}
+                  </div>
+                  <div style={{fontSize:24,fontWeight:700,color:"#fff",letterSpacing:-0.5}}>
+                    {profile&&profile.name?profile.name:"Atleta"}
+                  </div>
+                </div>
+                <FrozenHeartBanner
+                  day={day}
+                  done={done}
+                  sel={sel}
+                  lang={lang}
+                  mono={mono}
+                  onStart={()=>{if(day&&day.ex&&day.ex.length)setInWorkout(true);}}
+                />
                 {day&&day.ex&&day.ex.length>0&&(
                   <div onClick={()=>{setExpressGroup(null);setExpressTime(15);setShowExpress(true);}}
-                    style={{marginBottom:12,padding:"10px 14px",borderRadius:14,cursor:"pointer",
+                    style={{margin:"10px 0 4px",padding:"10px 14px",borderRadius:12,cursor:"pointer",
                       background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",
                       display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
                     <div style={{width:28,height:28,borderRadius:8,flexShrink:0,
