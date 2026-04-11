@@ -10,7 +10,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-html,body{height:100%;background:#0d0f14;}
+html,body{height:100%;background:#04080f;}
 body{overscroll-behavior:none;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right);}
 input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;}
 input[type=number]{-moz-appearance:textfield;}
@@ -253,14 +253,14 @@ input[type=number]{-moz-appearance:textfield;}
 </style>
 
 <link rel="manifest" href="manifest.json"/>
-<meta name="theme-color" content="#0d0f14"/>
+<meta name="theme-color" content="#04080f"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="FORJA"/>
 <link rel="apple-touch-icon" href="icons/icon-192.png"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,700&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230d0f14'/><text y='.9em' font-size='72' font-family='Arial Black,sans-serif' font-weight='900' fill='%23BFA98A' x='50%' text-anchor='middle' dominant-baseline='hanging'>F</text></svg>"/>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%2304080f'/><text y='.9em' font-size='72' font-family='Arial Black,sans-serif' font-weight='900' fill='%23BFA98A' x='50%' text-anchor='middle' dominant-baseline='hanging'>F</text></svg>"/>
 <script>if('serviceWorker' in navigator && location.hostname==='danielngr.github.io'){window.addEventListener('load',()=>navigator.serviceWorker.register('/FORJA/sw.js').catch(()=>{}));}</script>
 </head>
 <body>
@@ -2700,7 +2700,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
     return()=>{clearTimeout(t1);clearTimeout(t2);};
   },[tourStep]);
   const exs=day.ex;
-  const C2={bg:"#0d0f14",bgD:"#080a0e",card:"#131720",border:"#1e2535",borderL:"#19202e",
+  const C2={bg:"#04080f",bgD:"#04080f",card:"#131720",border:"#1e2535",borderL:"#19202e",
     tx:"#F0F2F5",tx2:"#b8c2d4",tx3:"#8892a8",
     green:"#3fcf8e",blue:"#4f8ef7",yellow:"#f0b429",red:"#e05555",purple:"#8b6cf7",white:"#FFFFFF"};
   const[sets,setSets]=useState(()=>exs.map(ex=>{
@@ -3146,7 +3146,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                             const x=pad+(hist.length>1?(i/(hist.length-1))*(W-pad*2):W/2);
                             const y=pad+H-((h.rm-minRM)/range)*H;
                             return<g key={i}>
-                              <circle cx={x} cy={y} r="4" fill="#BFA98A" stroke="#0d0f14" strokeWidth="2"/>
+                              <circle cx={x} cy={y} r="4" fill="#BFA98A" stroke="#04080f" strokeWidth="2"/>
                               {i===hist.length-1&&<text x={x} y={y-8} textAnchor="middle" fill="#BFA98A" fontSize="9" fontFamily="monospace">{Math.round(h.rm)}kg</text>}
                             </g>;
                           })}
@@ -4593,7 +4593,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
     </div>
   );}
   return(<>
-      <div style={{background:"#08090e",borderBottom:"0.5px solid rgba(255,255,255,0.06)",position:"relative",overflow:"hidden"}}>
+      <div style={{background:"#04080f",borderBottom:"0.5px solid rgba(255,255,255,0.06)",position:"relative",overflow:"hidden"}}>
 
         {showSet&&(
           <div style={{position:"absolute",top:40,right:14,zIndex:20,background:"rgba(10,12,18,0.97)",border:"0.5px solid rgba(255,255,255,0.08)",borderRadius:12,padding:"8px 10px",display:"flex",flexWrap:"wrap",gap:6,maxWidth:260,backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)"}}>
@@ -8085,7 +8085,7 @@ function BotChat({profile,routine,done,lang,mono}){
     const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
     renderer.setSize(W,H);
     renderer.setPixelRatio(Math.min(devicePixelRatio,2));
-    renderer.setClearColor(0x0d0f14,1); // mismo color que C.bg de FORJA
+    renderer.setClearColor(0x04080f,1); // mismo color que C.bg de FORJA
 
     const scene=new THREE.Scene();
     const camera=new THREE.PerspectiveCamera(44,aspect,0.1,500);
