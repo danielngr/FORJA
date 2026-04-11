@@ -3706,14 +3706,190 @@ function translateMuscle(name, lang){
   }
   return name; // fallback: return original
 }
-function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk,showSet,setShowSet,setShowBotChat,mono,profile}){
-  const now=new Date();
-  const dow=now.getDay();
-  const tdi=dow===0?6:dow-1;
-  const todayR=routine?routine[tdi]:null;
-  const dc2=todayR?todayR.ex.filter(function(x){return done[tdi+"-"+x.id];}).length:0;
-  const tot2=todayR?todayR.ex.length:0;
+function FrozenHeartBanner({day,done,sel,lang,mono,onStart}){
+  var canvasRef=React.useRef(null);
+  var fogRef=React.useRef(null);
+  var tRef=React.useRef(0);
+  var beatTRef=React.useRef(0);
+  var animIdRef=React.useRef(null);
+  var fogAnimIdRef=React.useRef(null);
+  var heartModelRef=React.useRef(null);
+  var iceMeshRef=React.useRef(null);
+  var isAliveRef=React.useRef(false);
 
+  var dayExs=day?(day.ex||[]):[];
+  var doneCount=dayExs.filter(function(x){return done[sel+"-"+x.id];}).length;
+  var isAlive=dayExs.length>0&&doneCount===dayExs.length;
+  isAliveRef.current=isAlive;
+
+  React.useEffect(function(){
+    var canvas=canvasRef.current;
+    var fogCanvas=fogRef.current;
+    if(!canvas||!fogCanvas||!window.THREE||!window.THREE.GLTFLoader) return;
+    var card=canvas.parentElement;
+    var W=card.offsetWidth;
+    var H=160;
+    var dpr=Math.min(window.devicePixelRatio||1,2);
+
+    var renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:true,alpha:true});
+    renderer.setSize(W,H);renderer.setPixelRatio(dpr);
+    renderer.setClearColor(0x000000,0);
+    renderer.physicallyCorrectLights=true;
+    renderer.toneMapping=THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure=1.4;
+    renderer.outputEncoding=THREE.sRGBEncoding;
+
+    var scene=new THREE.Scene();
+    var cam=new THREE.PerspectiveCamera(28,W/H,0.1,100);
+    cam.position.set(12.5,1.1,26);cam.lookAt(8.0,1.1,0);
+
+    var envTexture=null;
+    if(window.THREE.RoomEnvironment){
+      var pmrem=new THREE.PMREMGenerator(renderer);
+      pmrem.compileCubemapShader();
+      envTexture=pmrem.fromScene(new THREE.RoomEnvironment()).texture;
+      scene.environment=envTexture;
+    }
+
+    scene.add(new THREE.AmbientLight(0x6688bb,2.5));
+    var key=new THREE.DirectionalLight(0xaaccff,2.5);key.position.set(2,5,4);scene.add(key);
+    var fill=new THREE.DirectionalLight(0x4488ff,3);fill.position.set(-3,2,3);scene.add(fill);
+    var cold=new THREE.DirectionalLight(0x88bbff,2.5);cold.position.set(0,-2,-3);scene.add(cold);
+    var iceLight=new THREE.PointLight(0x88ccff,8,6);iceLight.position.set(2.0,0.5,2.5);scene.add(iceLight);
+    var botLight=new THREE.PointLight(0x4488cc,3,5);botLight.position.set(1.5,-2,2);scene.add(botLight);
+
+    new THREE.GLTFLoader().load(
+      "https://pub-28277a6ce79d49479afd0cb1bba27b44.r2.dev/HEARTS/frozen_heart.glb",
+      function(gltf){
+        var model=gltf.scene;
+        heartModelRef.current=model;
+        var box=new THREE.Box3().setFromObject(model);
+        var center=box.getCenter(new THREE.Vector3());
+        var size=box.getSize(new THREE.Vector3());
+        var scale=0.6/Math.max(size.x,size.y,size.z);
+        model.scale.setScalar(scale);
+        model.position.set(15.5-center.x*scale,-center.y*scale,-center.z*scale);
+        var meshes=[];
+        model.traverse(function(c){if(c.isMesh)meshes.push(c);});
+        meshes.forEach(function(child,idx){
+          var m=child.material;
+          if(envTexture){m.envMap=envTexture;m.envMapIntensity=2.5;}
+          if(idx===1){
+            m.transparent=false;m.opacity=1.0;m.depthWrite=true;
+            child.renderOrder=0;m.needsUpdate=true;
+          } else {
+            iceMeshRef.current=child;
+            child.material=new THREE.MeshPhysicalMaterial({
+              color:new THREE.Color(0.65,0.85,1.0),
+              roughness:0.0,metalness:0.0,transmission:0.94,thickness:1.8,
+              transparent:true,ior:1.31,clearcoat:1.0,clearcoatRoughness:0.0,
+              reflectivity:1.0,envMap:envTexture,envMapIntensity:5.0,
+              attenuationColor:new THREE.Color(0.3,0.6,1.0),attenuationDistance:1.2,
+              side:THREE.DoubleSide,depthWrite:false,
+            });
+            child.renderOrder=1;
+          }
+        });
+        scene.add(model);
+      }
+    );
+
+    function animate(){
+      animIdRef.current=requestAnimationFrame(animate);
+      tRef.current+=0.008;
+      var t=tRef.current;
+      var alive=isAliveRef.current;
+      var model=heartModelRef.current;
+      var iceMesh=iceMeshRef.current;
+      if(model){
+        model.rotation.y=t*0.6;
+        model.rotation.x=Math.sin(t*0.4)*0.12;
+        if(alive){
+          beatTRef.current+=0.05;
+          var bt=beatTRef.current;
+          var b1=Math.pow(Math.max(0,Math.sin(bt*1.8)),3);
+          var b2=Math.pow(Math.max(0,Math.sin(bt*1.8-0.8)),3)*0.6;
+          var beat=b1+b2;var s=1+beat*0.1;
+          model.scale.set(s,s,s);
+          iceLight.intensity=5+beat*10;botLight.intensity=2+beat*5;
+          iceLight.color.set(0xff2244);botLight.color.set(0xff1133);
+          if(iceMesh)iceMesh.visible=false;
+        } else {
+          model.scale.set(1,1,1);
+          iceLight.intensity=8+Math.sin(t*1.2)*2.5;botLight.intensity=3;
+          iceLight.color.set(0x88ccff);botLight.color.set(0x4488cc);
+          if(iceMesh)iceMesh.visible=true;
+        }
+      }
+      renderer.render(scene,cam);
+    }
+    animate();
+
+    fogCanvas.width=W*dpr;fogCanvas.height=H*dpr;
+    fogCanvas.style.width=W+"px";fogCanvas.style.height=H+"px";
+    var fctx=fogCanvas.getContext("2d");fctx.scale(dpr,dpr);
+    var ft=0;
+    function fogLoop(){
+      fogAnimIdRef.current=requestAnimationFrame(fogLoop);
+      ft+=0.012;fctx.clearRect(0,0,W,H);
+      if(isAliveRef.current)return;
+      var cx=W*0.72,cy=H*0.5;
+      var a2=fctx.createRadialGradient(cx,cy,H*0.05,cx,cy,W*0.9);
+      a2.addColorStop(0,"rgba(100,180,255,"+(0.12+Math.sin(ft*.6)*.04)+")");
+      a2.addColorStop(.5,"rgba(50,120,220,"+(0.06+Math.sin(ft*.4)*.02)+")");
+      a2.addColorStop(1,"rgba(0,0,0,0)");
+      fctx.fillStyle=a2;fctx.fillRect(0,0,W,H);
+      var a1=fctx.createRadialGradient(cx,cy,4,cx,cy,H*0.65);
+      a1.addColorStop(0,"rgba(140,210,255,"+(0.28+Math.sin(ft*.8)*.08)+")");
+      a1.addColorStop(.35,"rgba(70,150,255,"+(0.12+Math.sin(ft*.6)*.03)+")");
+      a1.addColorStop(1,"rgba(0,0,0,0)");
+      fctx.fillStyle=a1;fctx.fillRect(0,0,W,H);
+      var rim=fctx.createLinearGradient(0,0,W,0);
+      rim.addColorStop(0,"rgba(180,220,255,0)");
+      rim.addColorStop(.25,"rgba(200,235,255,"+(0.35+Math.sin(ft*.6)*.1)+")");
+      rim.addColorStop(.5,"rgba(220,245,255,"+(0.55+Math.sin(ft*.8)*.15)+")");
+      rim.addColorStop(.75,"rgba(200,235,255,"+(0.35+Math.sin(ft*.6)*.1)+")");
+      rim.addColorStop(1,"rgba(180,220,255,0)");
+      fctx.fillStyle=rim;fctx.fillRect(0,0,W,1.5);
+    }
+    fogLoop();
+
+    return function(){
+      if(animIdRef.current)cancelAnimationFrame(animIdRef.current);
+      if(fogAnimIdRef.current)cancelAnimationFrame(fogAnimIdRef.current);
+      renderer.dispose();
+    };
+  },[]);
+
+  return React.createElement("div",{
+    onClick:onStart,
+    style:{width:"100%",height:160,borderRadius:16,position:"relative",cursor:"pointer",
+      background:isAlive?"#180408":"#04080f",transition:"background 0.8s ease",
+      overflow:"hidden",border:"0.5px solid rgba(255,255,255,0.08)",marginBottom:0}},
+    React.createElement("canvas",{ref:canvasRef,style:{position:"absolute",inset:0,width:"100%",height:"100%",zIndex:1,pointerEvents:"none",borderRadius:16}}),
+    React.createElement("canvas",{ref:fogRef,style:{position:"absolute",inset:0,width:"100%",height:"100%",zIndex:2,pointerEvents:"none",borderRadius:16}}),
+    React.createElement("div",{style:{position:"absolute",inset:0,zIndex:3,padding:"16px 18px",display:"flex",flexDirection:"column",justifyContent:"flex-end",pointerEvents:"none"}},
+      React.createElement("div",{style:{fontFamily:"monospace",fontSize:9,color:"rgba(255,255,255,0.3)",letterSpacing:3,marginBottom:5}},"HOY"),
+      React.createElement("div",{style:{fontFamily:"monospace",fontSize:22,fontWeight:800,color:"#fff",letterSpacing:-0.5,lineHeight:1,marginBottom:4}},day?day.l:"—"),
+      React.createElement("div",{style:{fontFamily:"monospace",fontSize:8,color:"rgba(255,255,255,0.3)",letterSpacing:1.5}},dayExs.length+" EJERC · TAP PARA INICIAR")
+    ),
+    React.createElement("div",{style:{position:"absolute",bottom:14,left:"50%",transform:"translateX(-50%)",
+      background:"rgba(240,242,245,0.1)",backdropFilter:"blur(8px)",
+      border:"1px solid rgba(240,242,245,0.18)",padding:"6px 18px",borderRadius:20,
+      fontSize:10,fontFamily:"monospace",color:"rgba(255,255,255,0.85)",
+      letterSpacing:2,fontWeight:700,whiteSpace:"nowrap",pointerEvents:"none",zIndex:4,
+      animation:"pulse 2.2s ease-in-out infinite"}},"▶ INICIAR ENTRENO")
+  );
+}
+
+function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk,showSet,setShowSet,setShowBotChat,mono,profile,tab,setTab}){
+  var e=React.createElement;
+  var now=new Date();
+  var dow=now.getDay();
+  var tdi=dow===0?6:dow-1;
+  var todayR=routine?routine[tdi]:null;
+
+  // Racha
   var streak=0;
   for(var si=0;si<365;si++){
     var ds=new Date(today);ds.setDate(ds.getDate()-si);
@@ -3727,32 +3903,32 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
     streak++;
   }
 
+  // XP y nivel
   var totalXP=muscleXP?Object.values(muscleXP).reduce(function(a,v){return a+(v.xp||0);},0):0;
   var currentLevel=xpToLevel(totalXP);
   var nextThresh=xpForNextLevel(currentLevel);
   var prevThresh=XP_THRESHOLDS[currentLevel-1]||0;
   var xpPct=nextThresh===Infinity?1:Math.min(1,(totalXP-prevThresh)/(nextThresh-prevThresh));
-  var LNAMES=["IRON","BRONZE","SILVER","GOLD","PLATINUM","DIAMOND","ELITE","MASTER","LEGEND","APEX"];
-  var LCOLORS=["#a0a8b8","#e8a050","#d8d8e8","#ffd700","#e8e4ff","#60e8ff","#ff6b35","#c060ff","#ff4040","#00ff88"];
-  var LGRADS=["rgba(160,168,184,","rgba(232,160,80,","rgba(216,216,232,","rgba(255,215,0,","rgba(232,228,255,","rgba(96,232,255,","rgba(255,107,53,","rgba(192,96,255,","rgba(255,64,64,","rgba(0,255,136,"];
-  var LROMAN=["I","II","III"];
-  var lvlName=LNAMES[Math.min(9,currentLevel-1)]+" "+LROMAN[(currentLevel-1)%3];
-  var lvlColor=LCOLORS[Math.min(9,currentLevel-1)];
-  var lvlGrad=LGRADS[Math.min(9,currentLevel-1)];
-  var nextLvlName=LNAMES[Math.min(9,currentLevel)]+" "+LROMAN[currentLevel%3];
+  var xpPctRound=Math.round(xpPct*100);
+  var LNAMES=["IRON I","IRON II","IRON III","IRON IV","IRON V","IRON VI","IRON VII","IRON VIII","IRON IX","IRON X"];
+  var lvlName=LNAMES[Math.min(9,currentLevel-1)];
+  var lvlNext=LNAMES[Math.min(9,currentLevel)]||"MAX";
+  var lvlColor=xpLevelColor(currentLevel);
 
-  var now2=new Date(),dow2=now2.getDay(),mo2=dow2===0?-6:1-dow2;
-  var mon2=new Date(now2);mon2.setDate(now2.getDate()+mo2+weekOff*7);
+  // Semana
+  var mo2=dow===0?-6:1-dow;
+  var mon2=new Date(now);mon2.setDate(now.getDate()+mo2+weekOff*7);
+  var sun2=new Date(mon2);sun2.setDate(mon2.getDate()+6);
   var weekDays=Array(7).fill(0).map(function(_,i){return new Date(mon2.getTime()+i*86400000);});
+  var trainingDays=weekDays.filter(function(_,i){return routine&&routine[i]&&routine[i].ex&&routine[i].ex.length>0;}).length;
   var doneThisWeek=weekDays.filter(function(d,i){
-    var r=routine?routine[i]:null;if(!r)return false;
+    var r=routine?routine[i]:null;if(!r||!r.ex||!r.ex.length)return false;
     var wkOff3=Math.round((new Date(today)-d)/(7*24*3600*1000))*-1;
     var sd=FStore.loadDone(wk(wkOff3));
-    return r.ex.some(function(x){return sd[i+"-"+x.id]||done[i+"-"+x.id];});
+    return r.ex.every(function(x){return sd[i+"-"+x.id]||done[i+"-"+x.id];});
   }).length;
-  var trainingDays=weekDays.filter(function(_,i){return routine&&routine[i];}).length;
 
-  var sun2=new Date(mon2);sun2.setDate(mon2.getDate()+6);
+  // Label semana
   var MONTHS=["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
   var fmtD=function(d){return d.getDate()+" "+MONTHS[d.getMonth()];};
   var weekLabel=weekOff===0
@@ -3760,104 +3936,154 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
     :weekOff===-1?(lang==="es"?"SEMANA PASADA":"LAST WEEK")
     :(fmtD(mon2)+" – "+fmtD(sun2));
 
-  var xpPctRound=Math.round(xpPct*100);
-  var isRestDay=!todayR;
-  var perfectWeek=doneThisWeek===trainingDays&&trainingDays>0;
-  var todayLabel=todayR?todayR.l:(lang==="es"?"DESCANSO":lang==="it"?"RIPOSO":"REST");
-  var streakFire=streak>=7?"🔥":streak>=3?"⚡":"";
+  var ringDash=trainingDays>0?(doneThisWeek/trainingDays)*182.2:0;
+  var ringDashStr=ringDash.toFixed(1)+" 182.2";
 
-  return React.createElement("div",{style:{padding:"14px 20px 0",position:"relative",zIndex:1,overflow:"hidden"}},
+  var hr=now.getHours();
+  var greeting=lang==="es"||lang==="pt"?(hr<12?"Buenos días,":(hr<19?"Buenas tardes,":"Buenas noches,")):(hr<12?"Good morning,":(hr<19?"Good afternoon,":"Good evening,"));
+  var userName=profile&&profile.name?profile.name:"Atleta";
 
-    // Glow accent top-right basado en nivel
-    React.createElement("div",{style:{position:"absolute",top:-60,right:-40,width:220,height:180,
-      background:"radial-gradient(ellipse,"+lvlGrad+"0.12) 0%,transparent 65%)",
-      pointerEvents:"none",zIndex:0}}),
-    // Glow verde si semana perfecta
-    perfectWeek&&React.createElement("div",{style:{position:"absolute",bottom:0,left:-20,width:180,height:120,
-      background:"radial-gradient(ellipse,rgba(63,207,142,0.08) 0%,transparent 70%)",
-      pointerEvents:"none",zIndex:0}}),
+  // Último PR
+  var lastPRName="", lastPRVal="", bestDate="";
+  try{
+    var storedLogs=JSON.parse(localStorage.getItem("fv8l")||"{}");
+    Object.entries(storedLogs).forEach(function(kv){
+      (kv[1]||[]).forEach(function(en){
+        if(en.d&&en.d>bestDate&&en.rm>0){bestDate=en.d;lastPRName=en.exName||kv[0];lastPRVal=Math.round(en.rm)+"kg";}
+      });
+    });
+  }catch(_){}
 
-    // Row 1: semana nav + settings
-    React.createElement("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14,position:"relative",zIndex:1}},
-      React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6}},
-        React.createElement("button",{onClick:function(){setWeekOff(function(p){return Math.max(-12,p-1);});},
-          style:{background:"none",border:"none",color:"rgba(255,255,255,0.25)",fontSize:18,cursor:"pointer",padding:"0 2px",lineHeight:1}},"‹"),
-        React.createElement("span",{style:{fontSize:7,fontFamily:mono,letterSpacing:3,color:"rgba(255,255,255,0.35)",fontWeight:600}},weekLabel),
-        React.createElement("button",{onClick:function(){setWeekOff(function(p){return Math.min(0,p+1);});},
-          style:{background:"none",border:"none",color:weekOff===0?"rgba(255,255,255,0.08)":"rgba(255,255,255,0.25)",fontSize:18,cursor:weekOff===0?"default":"pointer",padding:"0 2px",lineHeight:1}},"›")
+  return e("div",{style:{position:"relative",zIndex:1}},
+
+    // ── ROW NAV: ESTA SEMANA + ⚙ ──
+    e("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 18px 0"}},
+      e("div",{style:{display:"flex",alignItems:"center",gap:4}},
+        e("button",{onClick:function(){setWeekOff(function(p){return Math.max(-12,p-1);});},
+          style:{background:"none",border:"none",color:"rgba(255,255,255,0.25)",fontSize:18,cursor:"pointer",padding:"0 4px",lineHeight:1}},"‹"),
+        e("span",{style:{fontSize:7,fontFamily:mono,letterSpacing:3,color:"rgba(255,255,255,0.35)",fontWeight:600}},weekLabel),
+        e("button",{onClick:function(){setWeekOff(function(p){return Math.min(0,p+1);});},
+          style:{background:"none",border:"none",color:weekOff===0?"rgba(255,255,255,0.08)":"rgba(255,255,255,0.25)",fontSize:18,cursor:weekOff===0?"default":"pointer",padding:"0 4px",lineHeight:1}},"›")
       ),
-      React.createElement("button",{onClick:function(){setShowSet(!showSet);},
-        style:{width:28,height:28,borderRadius:8,border:"0.5px solid rgba(255,255,255,0.12)",
-          background:"rgba(255,255,255,0.05)",cursor:"pointer",
-          color:"rgba(255,255,255,0.4)",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center"}},"⚙")
+      e("div",{style:{display:"flex",alignItems:"center",gap:8}},
+        e("button",{onClick:function(){setShowSet(!showSet);},
+          style:{width:26,height:26,borderRadius:8,border:"0.5px solid rgba(255,255,255,0.1)",
+            background:"rgba(255,255,255,0.05)",cursor:"pointer",
+            color:"rgba(255,255,255,0.4)",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center"}},"⚙")
+      )
     ),
 
-    // Row 2: número grande + side stats
-    React.createElement("div",{style:{display:"flex",alignItems:"flex-end",justifyContent:"space-between",marginBottom:16,position:"relative",zIndex:1}},
+    // ── CARD GLASS PRINCIPAL ──
+    e("div",{style:{
+      margin:"12px 18px 0",
+      background:"linear-gradient(135deg,rgba(20,35,90,0.92) 0%,rgba(10,18,50,0.95) 100%)",
+      borderRadius:24,
+      borderTop:"1.5px solid rgba(255,255,255,0.45)",
+      borderLeft:"0.5px solid rgba(255,255,255,0.18)",
+      borderRight:"0.5px solid rgba(255,255,255,0.18)",
+      borderBottom:"0.5px solid rgba(255,255,255,0.05)",
+      boxShadow:"inset 0 1.5px 0 rgba(255,255,255,0.4),0 16px 48px rgba(0,0,30,0.6)",
+      overflow:"hidden",padding:"18px 16px 16px",position:"relative",
+    }},
+      // Brillo esquina
+      e("div",{style:{position:"absolute",top:-42,left:-24,width:190,height:120,
+        background:"radial-gradient(ellipse,rgba(255,255,255,0.12) 0%,transparent 68%)",
+        transform:"rotate(-22deg)",pointerEvents:"none",zIndex:0}}),
+      e("div",{style:{position:"absolute",inset:0,borderRadius:24,
+        background:"linear-gradient(148deg,rgba(255,255,255,0.1) 0%,rgba(255,255,255,0.02) 22%,transparent 64%)",
+        pointerEvents:"none",zIndex:0}}),
 
-      // Racha — protagonista
-      React.createElement("div",null,
-        React.createElement("div",{style:{display:"flex",alignItems:"baseline",gap:8}},
-          React.createElement("div",{style:{
-            fontSize:72,fontWeight:900,lineHeight:1,letterSpacing:"-4px",
-            color:"#fff",
-            textShadow:"0 0 60px rgba(255,255,255,0.15),0 0 20px rgba(255,255,255,0.1)"
-          }},streak),
-          streak>0&&React.createElement("div",{style:{fontSize:20,marginBottom:4}},streakFire)
+      // Saludo + pill racha
+      e("div",{style:{display:"flex",alignItems:"flex-end",justifyContent:"space-between",marginBottom:14,position:"relative",zIndex:1}},
+        e("div",null,
+          e("div",{style:{fontSize:11,color:"rgba(255,255,255,0.32)",marginBottom:3,fontFamily:mono}},greeting),
+          e("div",{style:{fontSize:24,fontWeight:700,color:"#fff",letterSpacing:-0.5,lineHeight:1}},userName)
         ),
-        React.createElement("div",{style:{fontSize:7,fontFamily:mono,letterSpacing:3,
-          color:"rgba(255,255,255,0.3)",marginTop:2,fontWeight:600}},
-          lang==="es"||lang==="pt"?"DÍAS DE RACHA":lang==="it"?"GIORNI SERIE":"DAY STREAK")
+        e("div",{style:{padding:"5px 12px",borderRadius:20,background:"rgba(50,110,255,0.12)",
+          border:"1px solid rgba(120,175,255,0.5)",display:"flex",alignItems:"center",gap:5}},
+          e("span",{style:{fontSize:14}},"⚡"),
+          e("span",{style:{fontSize:14,fontWeight:700,color:"rgba(190,220,255,0.96)"}},streak),
+          e("span",{style:{fontSize:8,fontFamily:mono,letterSpacing:1.5,color:"rgba(100,155,255,0.6)"}}," DÍAS")
+        )
       ),
 
-      // Side stats
-      React.createElement("div",{style:{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:10,paddingBottom:6}},
-        // Semana
-        React.createElement("div",{style:{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:1}},
-          React.createElement("div",{style:{fontSize:22,fontWeight:800,lineHeight:1,
-            color:perfectWeek?"#3fcf8e":"rgba(255,255,255,0.9)"}},
-            doneThisWeek+"/"+trainingDays),
-          React.createElement("div",{style:{fontSize:7,fontFamily:mono,letterSpacing:2,
-            color:perfectWeek?"rgba(63,207,142,0.6)":"rgba(255,255,255,0.25)"}},
-            lang==="es"?"SEMANA":lang==="it"?"SETTIMANA":"WEEK")
+      // FrozenHeartBanner placeholder — se renderiza en el tab train
+      // Aquí solo el ring + XP + PR
+      e("div",{style:{display:"flex",alignItems:"center",gap:14,position:"relative",zIndex:1}},
+        // Ring semanal
+        e("div",{style:{position:"relative",width:68,height:68,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}},
+          e("svg",{width:"68",height:"68",viewBox:"0 0 68 68",style:{position:"absolute",overflow:"visible"}},
+            e("defs",null,
+              e("linearGradient",{id:"rg3",x1:"0%",y1:"0%",x2:"100%",y2:"100%"},
+                e("stop",{offset:"0%",stopColor:"rgba(130,190,255,0.8)"}),
+                e("stop",{offset:"100%",stopColor:"#4878ff"})
+              )
+            ),
+            e("circle",{cx:"34",cy:"34",r:"27",fill:"none",stroke:"rgba(255,255,255,0.05)",strokeWidth:"5"}),
+            e("circle",{cx:"34",cy:"34",r:"27",fill:"none",stroke:"url(#rg3)",strokeWidth:"5",
+              strokeDasharray:ringDashStr,strokeLinecap:"round",transform:"rotate(-90 34 34)",
+              style:{filter:"drop-shadow(0 0 4px rgba(80,140,255,0.8))"}})
+          ),
+          e("div",{style:{textAlign:"center",position:"relative",zIndex:1}},
+            e("div",{style:{fontSize:14,fontWeight:800,color:"#fff",lineHeight:1,letterSpacing:-0.5}},doneThisWeek+"/"+trainingDays),
+            e("div",{style:{fontSize:6,fontFamily:mono,letterSpacing:2,color:"rgba(255,255,255,0.28)",marginTop:2}},"SEM")
+          )
         ),
-        // Hoy
-        React.createElement("div",{style:{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:2}},
-          React.createElement("div",{style:{
-            fontSize:todayR?14:10,fontWeight:800,lineHeight:1,
-            color:todayR?"rgba(255,255,255,0.95)":"rgba(255,255,255,0.25)",
-            letterSpacing:todayR?0.5:2
-          }},todayLabel),
-          todayR&&tot2>0&&React.createElement("div",{style:{
-            fontSize:8,fontFamily:mono,letterSpacing:1.5,
-            color:dc2===tot2?"#3fcf8e":"rgba(255,255,255,0.3)",fontWeight:600
-          }},dc2+"/"+tot2+" "+(lang==="es"?"EJERC":"EX"))
+
+        // XP + PR
+        e("div",{style:{flex:1,display:"flex",flexDirection:"column",gap:10}},
+          // XP bar
+          e("div",null,
+            e("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:4}},
+              e("div",{style:{display:"flex",alignItems:"center",gap:5}},
+                e("span",{style:{fontSize:8,fontFamily:mono,letterSpacing:2,color:"rgba(185,215,255,0.65)",fontWeight:600}},lvlName),
+                currentLevel<10&&e("span",{style:{fontSize:8,color:"rgba(255,255,255,0.18)",fontFamily:mono}},"→ "+lvlNext)
+              ),
+              e("span",{style:{fontSize:7,fontFamily:mono,color:"rgba(255,255,255,0.2)"}},xpPctRound+"%")
+            ),
+            e("div",{style:{height:2,borderRadius:1,overflow:"hidden",background:"rgba(255,255,255,0.06)"}},
+              e("div",{style:{width:xpPctRound+"%",height:"100%",
+                background:"linear-gradient(90deg,"+lvlColor+"88,"+lvlColor+")",
+                borderRadius:1,boxShadow:"0 0 8px "+lvlColor+"88",transition:"width 0.8s ease"}})
+            )
+          ),
+          // Último PR
+          e("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between"}},
+            e("div",null,
+              e("div",{style:{fontSize:7,fontFamily:mono,letterSpacing:2,color:"rgba(255,255,255,0.25)",marginBottom:2}},"ÚLTIMO PR"),
+              e("div",{style:{fontSize:12,fontWeight:700,color:"rgba(255,255,255,0.85)",maxWidth:110,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},
+                lastPRName||(lang==="es"?"Sin registros":"No logs"))
+            ),
+            lastPRVal&&e("div",{style:{padding:"4px 10px",borderRadius:12,
+              background:"rgba(255,215,0,0.08)",border:"1px solid rgba(255,215,0,0.35)"}},
+              e("span",{style:{fontSize:10,fontWeight:700,color:"rgba(255,215,0,0.85)"}},"🏆 "+lastPRVal)
+            )
+          )
         )
       )
     ),
 
-    // Row 3: nivel + XP bar
-    React.createElement("div",{style:{marginBottom:2,position:"relative",zIndex:1}},
-      React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}},
-        React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6}},
-          React.createElement("div",{style:{
-            fontSize:8,fontFamily:mono,letterSpacing:2,fontWeight:700,
-            color:lvlColor,
-            textShadow:"0 0 12px "+lvlColor
-          }},lvlName),
-          React.createElement("div",{style:{fontSize:8,color:"rgba(255,255,255,0.2)",fontFamily:mono}},"→"),
-          React.createElement("div",{style:{fontSize:8,fontFamily:mono,letterSpacing:1.5,color:"rgba(255,255,255,0.35)"}},nextLvlName)
-        ),
-        React.createElement("div",{style:{fontSize:7,fontFamily:mono,color:"rgba(255,255,255,0.25)",letterSpacing:1}},xpPctRound+"%")
-      ),
-      // XP bar
-      React.createElement("div",{style:{height:2,background:"rgba(255,255,255,0.07)",borderRadius:1,overflow:"hidden",position:"relative"}},
-        React.createElement("div",{style:{
-          position:"absolute",inset:0,
-          background:"linear-gradient(90deg,"+lvlGrad+"0.3) 0%,"+lvlColor+" 100%)",
-          width:xpPctRound+"%",borderRadius:1,
-          boxShadow:"0 0 8px "+lvlColor
-        }})
+    // ── TABS ENTRENO / CUERPO ──
+    e("div",{style:{padding:"10px 18px 0"}},
+      e("div",{style:{display:"flex",background:"rgba(255,255,255,0.04)",borderRadius:14,padding:4,gap:4,
+        border:"0.5px solid rgba(255,255,255,0.08)"}},
+        [{id:"train",l:lang==="es"||lang==="pt"?"ENTRENO":lang==="fr"?"ENTRAÎNEMENT":lang==="it"?"ALLENAMENTO":lang==="de"?"TRAINING":"WORKOUT",icon:"⚡"},
+         {id:"body",l:lang==="es"||lang==="pt"?"CUERPO":lang==="fr"?"CORPS":lang==="it"?"CORPO":lang==="de"?"KÖRPER":"BODY",icon:"🫀"}
+        ].map(function(tb){
+          var active=tab===tb.id;
+          return e("button",{key:tb.id,onClick:function(){setTab(tb.id);},
+            style:{flex:1,padding:"11px 0",border:"none",borderRadius:10,cursor:"pointer",
+              background:active?"rgba(255,255,255,0.12)":"transparent",
+              color:active?"#EEEAE3":"rgba(255,255,255,0.3)",
+              fontSize:11,fontWeight:active?800:600,fontFamily:mono,letterSpacing:2,
+              transition:"all .2s",
+              boxShadow:active?"inset 0 1px 0 rgba(255,255,255,0.5),0 2px 12px rgba(0,0,0,0.3)":"none",
+              borderTop:active?"1px solid rgba(255,255,255,0.35)":"1px solid transparent",
+              display:"flex",alignItems:"center",justifyContent:"center",gap:6}},
+            e("span",{style:{fontSize:13,opacity:active?1:0.4}},tb.icon),
+            tb.l
+          );
+        })
       )
     )
   );
@@ -4213,6 +4439,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
           showSet={showSet} setShowSet={setShowSet}
           setShowBotChat={setShowBotChat}
           mono={mono} profile={profile}
+          tab={tab} setTab={setTabR}
         />
 
         <div style={{display:"flex",gap:0,borderTop:"0.5px solid rgba(255,255,255,0.04)"}}>
@@ -4270,27 +4497,6 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
         </div>
       </div>
 
-      <div style={{padding:"10px 20px 0",background:"rgba(8,10,14,0.95)",
-        borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
-        <div style={{display:"flex",background:"rgba(255,255,255,0.05)",
-          borderRadius:12,padding:3,gap:0}}>
-          {[{id:"train",l:(L[lang]||L.en).train,icon:"⚡"},{id:"body",l:lang==="es"||lang==="pt"?"CUERPO":lang==="fr"?"CORPS":lang==="it"?"CORPO":lang==="de"?"KÖRPER":"BODY",icon:"🫀"}].map(tb=>{
-            const active=tab===tb.id;
-            return(
-            <button key={tb.id} data-tour={tb.id==="body"?"tab-body":undefined} onClick={()=>{setTab(tb.id);setAddEx(false);}}
-              style={{flex:1,padding:"9px 0",border:"none",borderRadius:10,cursor:"pointer",
-                background:active?"rgba(255,255,255,0.13)":"transparent",
-                color:active?"#EEEAE3":"#b8c0d4",
-                fontSize:11,fontWeight:active?800:600,fontFamily:mono,letterSpacing:2,
-                transition:"all .2s",
-                boxShadow:active?"0 1px 12px rgba(0,0,0,.4)":"none",
-                display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-              <span style={{fontSize:13,opacity:active?1:0.7}}>{tb.icon}</span>
-              {tb.l}
-            </button>
-          );})}
-        </div>
-      </div>
       <div style={{padding:"14px 18px 90px"}}>
         {tab==="train"&&(
           <div>
@@ -4315,20 +4521,10 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
               </div>
             ):(
               <>
-                <div id="forja-dumbbell-wrap" data-tour="start-workout" style={{width:"100%",height:180,borderRadius:16,overflow:"hidden",position:"relative",background:C.bg,cursor:"pointer"}}
-                  onClick={()=>{if(day&&day.ex&&day.ex.length)setInWorkout(true);}}
-                >
-                  <canvas id="forja-dumbbell-canvas" style={{width:"100%",height:"100%",display:"block"}}></canvas>
-                  <div style={{position:"absolute",bottom:16,left:"50%",transform:"translateX(-50%)",
-                    background:"rgba(240,242,245,0.12)",backdropFilter:"blur(8px)",
-                    border:"1px solid rgba(240,242,245,0.20)",
-                    padding:"7px 20px",borderRadius:20,
-                    fontSize:10,fontFamily:"monospace",color:C.tx,letterSpacing:2,fontWeight:700,
-                    whiteSpace:"nowrap",pointerEvents:"none",
-                    animation:"pulse 2.2s ease-in-out infinite"}}>
-                    ▶ {t.startWorkout}
-                  </div>
-                </div>
+                <FrozenHeartBanner
+                  day={day} done={done} sel={sel} lang={lang} mono={mono}
+                  onStart={()=>{if(day&&day.ex&&day.ex.length)setInWorkout(true);}}
+                />
                 {day&&day.ex&&day.ex.length>0&&(
                   <div onClick={()=>{setExpressGroup(null);setExpressTime(15);setShowExpress(true);}}
                     style={{margin:"10px 0 4px",padding:"10px 14px",borderRadius:12,cursor:"pointer",
@@ -7323,6 +7519,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/RGBELoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/environments/RoomEnvironment.js"></script>
 <script>
 (function initDumbbell(){
   function tryInit(){
