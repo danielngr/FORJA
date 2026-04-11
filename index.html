@@ -25,6 +25,10 @@ input[type=number]{-moz-appearance:textfield;}
 }
 @keyframes fu{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fogIn{from{opacity:0;filter:blur(6px)}to{opacity:1;filter:blur(0)}}
+@keyframes ecgMove{
+  0%{stroke-dashoffset:60}
+  100%{stroke-dashoffset:0}
+}
 @keyframes pulse{0%,100%{opacity:0.6;transform:translateX(-50%) scale(1)}50%{opacity:1;transform:translateX(-50%) scale(1.04)}}
 @keyframes celebrate{0%{transform:scale(0.5);opacity:0}60%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
 @keyframes floatUp{0%{opacity:1;transform:translateY(0) rotate(0deg);}100%{opacity:0;transform:translateY(-100vh) rotate(180deg);}}
@@ -3943,11 +3947,15 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
       ),
       fitnessAge?React.createElement("div",{style:{display:"flex",alignItems:"flex-end",justifyContent:"space-between"}},
         React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6}},
-          React.createElement("svg",{width:28,height:14,viewBox:"0 0 28 14",fill:"none"},
+          React.createElement("svg",{width:36,height:16,viewBox:"0 0 36 16",fill:"none",style:{overflow:"visible"}},
             React.createElement("polyline",{
-              points:"0,7 4,7 6,1 9,13 12,7 15,7 17,4 19,7 28,7",
-              stroke:isAlive?"rgba(255,255,255,0.5)":"rgba(100,180,255,0.35)",
-              strokeWidth:"1.4",strokeLinecap:"round",strokeLinejoin:"round"
+              points:"0,8 4,8 6,1 9,15 12,8 16,8 18,4 20,8 36,8",
+              stroke:isAlive?"#e05555":"rgba(100,180,255,0.35)",
+              strokeWidth:isAlive?"1.8":"1.2",
+              strokeLinecap:"round",strokeLinejoin:"round",
+              strokeDasharray:"60",
+              strokeDashoffset:"0",
+              style:isAlive?{animation:"ecgMove 0.8s linear infinite"}:{},
             })
           ),
           React.createElement("div",null,
