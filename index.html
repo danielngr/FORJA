@@ -4134,88 +4134,99 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
       )
     ),
 
-    // Cuadro de días — entre card glass y tabs
+    // Cuadro de días — liquid glass bubble
     e("div",{style:{
       margin:"10px 18px 0",
       background:"rgba(255,255,255,0.06)",
-      backdropFilter:"blur(48px) saturate(280%) brightness(1.1)",
-      WebkitBackdropFilter:"blur(48px) saturate(280%) brightness(1.1)",
-      borderRadius:22,
-      borderTop:"1px solid rgba(255,255,255,0.58)",
-      borderLeft:"0.5px solid rgba(255,255,255,0.2)",
-      borderRight:"0.5px solid rgba(255,255,255,0.2)",
-      borderBottom:"0.5px solid rgba(255,255,255,0.04)",
-      boxShadow:"inset 0 1px 0 rgba(255,255,255,0.54),0 8px 32px rgba(0,0,0,0.28)",
-      padding:"14px 10px",
+      backdropFilter:"blur(40px) saturate(200%)",
+      WebkitBackdropFilter:"blur(40px) saturate(200%)",
+      borderRadius:999,
+      borderTop:"1px solid rgba(255,255,255,0.45)",
+      borderLeft:"0.5px solid rgba(255,255,255,0.15)",
+      borderRight:"0.5px solid rgba(255,255,255,0.15)",
+      borderBottom:"0.5px solid rgba(255,255,255,0.05)",
+      boxShadow:"inset 0 1px 0 rgba(255,255,255,0.35),0 4px 24px rgba(0,0,0,0.2)",
+      padding:"6px",
+      position:"relative",
     }},
-      e("div",{style:{display:"flex",alignItems:"center",gap:0,width:"100%",justifyContent:"space-between"}},
+      e("div",{style:{
+        display:"flex",alignItems:"center",
+        position:"relative",
+      }},
         (function(){
           var DN2={es:["LU","MA","MI","JU","VI","SA","DO"],en:["MO","TU","WE","TH","FR","SA","SU"],fr:["LU","MA","ME","JE","VE","SA","DI"],it:["LU","MA","ME","GI","VE","SA","DO"],de:["MO","DI","MI","DO","FR","SA","SO"],pt:["SE","TE","QU","QU","SE","SA","DO"]};
           var dow3=now.getDay();
           var todayIdx3=dow3===0?6:dow3-1;
           var mondayOff3=dow3===0?-6:1-dow3;
-          return Array(7).fill(0).map(function(_,i){
+          var days=Array(7).fill(0).map(function(_,i){
             var r=routine?routine[i]:null;
             var de=r?r.ex:[];
             var dd=de.filter(function(x){return done[i+"-"+x.id];}).length;
             var cp=de.length>0&&dd===de.length;
+            var isSel=sel===i;
             var isToday=weekOff===0&&i===todayIdx3;
             var isFuture=weekOff===0&&i>todayIdx3;
             var isRest=!r||r.ex.length===0;
             var dayDate=new Date(now);dayDate.setDate(now.getDate()+mondayOff3+i+weekOff*7);
-
-            // Dot styles
-            var dotStyle={
-              width:38,height:38,borderRadius:"50%",
-              display:"flex",alignItems:"center",justifyContent:"center",
-              position:"relative",cursor:"pointer",
-              flexShrink:0,
-            };
-            if(cp){
-              dotStyle.background="rgba(50,195,130,0.13)";
-              dotStyle.border="1px solid rgba(63,207,142,0.58)";
-              dotStyle.boxShadow="inset 0 1px 0 rgba(63,207,142,0.5),0 0 18px rgba(63,207,142,0.12)";
-            } else if(isToday){
-              dotStyle.background="rgba(255,255,255,0.11)";
-              dotStyle.border="1.5px solid rgba(255,255,255,0.75)";
-              dotStyle.boxShadow="inset 0 1.5px 0 rgba(255,255,255,0.68)";
-            } else if(isRest||isFuture){
-              dotStyle.background="rgba(255,255,255,0.02)";
-              dotStyle.border="0.5px solid rgba(255,255,255,0.06)";
-            } else {
-              dotStyle.background="rgba(255,255,255,0.04)";
-              dotStyle.border="0.5px solid rgba(255,255,255,0.1)";
-            }
-
-            var inner;
-            if(cp){
-              inner=e("svg",{width:14,height:14,viewBox:"0 0 14 14",fill:"none"},
-                e("path",{d:"M2.5 7l3 3 6-6",stroke:"#3fcf8e",strokeWidth:"1.8",strokeLinecap:"round",strokeLinejoin:"round"})
-              );
-            } else if(isToday){
-              inner=e("span",{style:{fontSize:13,fontWeight:800,color:"rgba(255,255,255,0.97)"}},dayDate.getDate());
-            } else {
-              inner=e("span",{style:{fontSize:11,fontWeight:600,color:"rgba(255,255,255,0.6)"}},isRest?"·":dayDate.getDate());
-            }
-
-            var labelColor=cp?"#3fcf8e":isToday?"#fff":"rgba(255,255,255,0.55)";
-
             return e("div",{key:i,
-              style:{display:"flex",flexDirection:"column",alignItems:"center",gap:6,opacity:isFuture&&!isToday?0.6:1},
               onClick:(function(dayIdx){return function(){
                 if(setSel)setSel(dayIdx);
                 if(setTab)setTab("train");
-              };})(i)},
-              e("div",{style:dotStyle},inner),
-              e("span",{style:{fontSize:7,letterSpacing:1.5,color:labelColor,fontFamily:mono}},
-                (DN2[lang]||DN2.es)[i])
+              };})(i),
+              style:{
+                flex:1,display:"flex",flexDirection:"column",alignItems:"center",
+                gap:3,padding:"8px 2px",cursor:"pointer",
+                position:"relative",zIndex:1,
+                opacity:isFuture?0.45:1,
+                transition:"opacity .2s",
+              }},
+              // Número
+              e("div",{style:{
+                fontSize:13,fontWeight:isSel?800:isToday?700:500,
+                color:isSel?"#fff":cp?"#3fcf8e":isToday?"rgba(255,255,255,0.9)":"rgba(255,255,255,0.45)",
+                lineHeight:1,transition:"color .25s",
+                textShadow:isSel?"0 1px 8px rgba(0,0,0,0.4)":"none",
+              }},dayDate.getDate()),
+              // Label día
+              e("div",{style:{
+                fontSize:7,fontFamily:mono,letterSpacing:1.5,
+                color:isSel?"rgba(255,255,255,0.7)":cp?"rgba(63,207,142,0.7)":isToday?"rgba(255,255,255,0.5)":"rgba(255,255,255,0.25)",
+                transition:"color .25s",
+                fontWeight:isSel?700:400,
+              }},(DN2[lang]||DN2.es)[i]),
+              // Dot completado
+              cp&&!isSel?e("div",{style:{
+                width:3,height:3,borderRadius:"50%",
+                background:"#3fcf8e",
+                marginTop:1,
+              }}):null
             );
           });
+          // Burbuja liquid glass — se mueve con CSS transform
+          var selIdx=sel!==undefined?sel:todayIdx3;
+          var bubble=e("div",{style:{
+            position:"absolute",
+            top:0,bottom:0,
+            width:"calc(100% / 7)",
+            left:"calc("+selIdx+" * 100% / 7)",
+            transition:"left 0.35s cubic-bezier(0.34,1.56,0.64,1)",
+            borderRadius:999,
+            background:"rgba(255,255,255,0.15)",
+            backdropFilter:"blur(20px) saturate(180%)",
+            WebkitBackdropFilter:"blur(20px) saturate(180%)",
+            borderTop:"1px solid rgba(255,255,255,0.6)",
+            borderLeft:"0.5px solid rgba(255,255,255,0.3)",
+            borderRight:"0.5px solid rgba(255,255,255,0.3)",
+            borderBottom:"0.5px solid rgba(255,255,255,0.1)",
+            boxShadow:"inset 0 1.5px 0 rgba(255,255,255,0.55),0 4px 16px rgba(0,0,0,0.25)",
+            pointerEvents:"none",zIndex:0,
+          }});
+          return [bubble].concat(days);
         })()
       )
     ),
 
-    // Tabs ENTRENO / CUERPO
+        // Tabs ENTRENO / CUERPO
     e("div",{style:{padding:"10px 18px 0"}},
       e("div",{style:{display:"flex",background:"rgba(255,255,255,0.04)",borderRadius:14,padding:4,gap:4,border:"0.5px solid rgba(255,255,255,0.08)"}},
         [{id:"train",l:lang==="es"||lang==="pt"?"ENTRENO":lang==="fr"?"ENTRAÎNEMENT":lang==="it"?"ALLENAMENTO":lang==="de"?"TRAINING":"WORKOUT",icon:"⚡"},
