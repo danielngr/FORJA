@@ -1228,8 +1228,8 @@ const FORJA_TO_ZONE={
 };
 const {useState,useEffect,useCallback,useRef}=React;
 const C={
-  bg:"#383e4e",bgDeep:"#2c3040",card:"#424858",cardDim:"#3a4050",
-  border:"#525a6e",borderL:"#4a5264",
+  bg:"#04080f",bgDeep:"#030710",card:"#080d1a",cardDim:"#060b15",
+  border:"#1a2540",borderL:"#162035",
   tx:"#F0F2F5",tx2:"#D4D9E8",tx3:"#9aa3b8",
   accent:"#F0F2F5",
   red:"#e05555",green:"#3fcf8e",blue:"#6a8fc0",purple:"#8878c0",yellow:"#f0b429",
@@ -2700,7 +2700,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
     return()=>{clearTimeout(t1);clearTimeout(t2);};
   },[tourStep]);
   const exs=day.ex;
-  const C2={bg:"#04080f",bgD:"#04080f",card:"#131720",border:"#1e2535",borderL:"#19202e",
+  const C2={bg:"#04080f",bgD:"#04080f",card:"#080d1a",border:"#1a2540",borderL:"#162035",
     tx:"#F0F2F5",tx2:"#b8c2d4",tx3:"#8892a8",
     green:"#3fcf8e",blue:"#4f8ef7",yellow:"#f0b429",red:"#e05555",purple:"#8b6cf7",white:"#FFFFFF"};
   const[sets,setSets]=useState(()=>exs.map(ex=>{
