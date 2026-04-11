@@ -4242,7 +4242,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                     const r=routine?routine[i]:null;
                     if(!r||!r.ex||r.ex.length===0) continue;
                     weekTotal++;
-                    const allDone=r.ex.every(x=>done[`${i}-${x.id}`]);
+                    const allDone=r.ex.every(x=>done[i+"-"+x.id]);
                     if(allDone) weekDone++;
                   }
                   // Total días de entrenamiento de la semana completa (para el denominador del ring)
@@ -4260,7 +4260,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                   for(let i=0;i<7;i++){
                     const r=routine?routine[i]:null;
                     if(!r||!r.ex||r.ex.length===0) continue;
-                    const allD=r.ex.every(x=>done[`${i}-${x.id}`]);
+                    const allD=r.ex.every(x=>done[i+"-"+x.id]);
                     if(allD){
                       const d2=new Date(now2); d2.setDate(now2.getDate()-(todayDayIdx2-i));
                       trainedDays.add(d2.toISOString().slice(0,10));
