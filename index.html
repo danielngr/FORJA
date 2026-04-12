@@ -2526,24 +2526,25 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
     const confettiColors=["#3fcf8e","#6a8fc0","#f0b429","#8878c0","#F0F2F5","#e05555"];
     return(
       <div style={{position:"fixed",inset:0,background:"#080a0e",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:"sans-serif",overflow:"hidden"}}>
-        
-        <div style={{width:80,height:80,borderRadius:22,
-          background:"rgba(72,120,255,0.1)",
-          border:"1px solid rgba(72,120,255,0.35)",
-          borderTop:"1px solid rgba(130,175,255,0.6)",
-          display:"flex",alignItems:"center",justifyContent:"center",
-          boxShadow:"0 0 48px rgba(72,120,255,0.2)",
-          marginBottom:24,animation:"celebrate .6s cubic-bezier(.34,1.56,.64,1) both"}}>
-          <svg width="36" height="36" viewBox="0 0 40 40" fill="none"><path d="M7 20L16 29L33 11" stroke="rgba(130,175,255,0.95)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        <div style={{position:"absolute",inset:0,pointerEvents:"none",overflow:"hidden"}}>
+          {confettiPieces.map((p,i)=>(
+            <div key={i} style={{
+              position:"absolute",
+              left:`${p.left}%`,
+              top:`${p.top}%`,
+              width:p.w, height:p.h,
+              borderRadius:p.br,
+              background:p.bg,
+              transform:`rotate(${p.rot}deg)`,
+              animation:`floatUp ${p.dur}s ease-out ${p.delay}s infinite`,
+              opacity:p.op,
+            }}/>
+          ))}
         </div>
-        <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:42,letterSpacing:1,lineHeight:0.92,color:"rgba(240,242,245,0.95)",textAlign:"center",padding:"0 24px",animation:"fu .5s .25s both",whiteSpace:"pre-line"}}>
-          {lang==="es"?"SESIÓN
-COMPLETADA":lang==="fr"?"SÉANCE
-TERMINÉE":lang==="it"?"SESSIONE
-COMPLETATA":lang==="de"?"SESSION
-ABGESCHLOSSEN":"SESSION
-COMPLETE"}
+        <div style={{width:88,height:88,borderRadius:"50%",background:C2.green,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:`0 0 48px ${C2.green}55`,marginBottom:22,animation:"celebrate .6s cubic-bezier(.34,1.56,.64,1) both"}}>
+          <svg width="40" height="40" viewBox="0 0 40 40" fill="none"><path d="M7 20L16 29L33 11" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
         </div>
+        <div style={{fontSize:28,fontWeight:900,letterSpacing:-1,color:C2.tx,textAlign:"center",padding:"0 32px",animation:"fu .5s .25s both"}}>{celebMsg}</div>
         <div style={{fontFamily:"'SF Mono','Courier New',monospace",fontSize:9,color:C2.tx3,letterSpacing:2,marginTop:8,animation:"fu .5s .4s both"}}>
           {lang==="es"?"EL TRABAJO DE HOY FORJA EL ATLETA DE MAÑANA":lang==="fr"?"LE TRAVAIL D'AUJOURD'HUI FORGE L'ATHLÈTE DE DEMAIN":lang==="it"?"IL LAVORO DI OGGI FORGIA L'ATLETA DI DOMANI":lang==="de"?"DIE ARBEIT VON HEUTE SCHMIEDET DEN ATHLETEN VON MORGEN":lang==="pt"?"O TRABALHO DE HOJE FORJA O ATLETA DE AMANHÃ":"TODAY'S WORK BUILDS TOMORROW'S ATHLETE"}
         </div>
