@@ -6713,11 +6713,11 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               </span>
             </button>
             <div style={{display:"flex",alignItems:"center",gap:8}}>
-              <div style={{flex:1,height:"0.5px",background:"rgba(255,255,255,0.08)"}}/>
+              <div style={{flex:1,height:1,background:"rgba(255,255,255,0.08)"}}></div>
               <span style={{fontFamily:MN,fontSize:8,color:"rgba(255,255,255,0.2)",letterSpacing:2}}>
                 {lang==="en"?"OR":"O"}
               </span>
-              <div style={{flex:1,height:"0.5px",background:"rgba(255,255,255,0.08)"}}/>
+              <div style={{flex:1,height:1,background:"rgba(255,255,255,0.08)"}}></div>
             </div>
             <button onClick={doFinish} disabled={!canNext} style={{
             flex:1,padding:"16px",borderRadius:14,border:"none",cursor:canNext?"pointer":"default",
