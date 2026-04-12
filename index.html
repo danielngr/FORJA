@@ -6466,14 +6466,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
         }
 
         // Número / check debajo del planeta
-        const labelY=proj.sy+R+14;
-        if(labelY>0&&labelY<CH&&R>6){
-          ctx.fillStyle=isActive?"rgba(130,175,255,0.9)":
-            isDone?"rgba(72,120,255,0.5)":"rgba(255,255,255,0.1)";
-          ctx.font=(isActive?"bold 9px ":"7px ")+MN;
-          ctx.textAlign="center";
-          ctx.fillText(isDone?"✓":String(idx+1),proj.sx,labelY);
-        }
+
       });
 
       // Nombre del usuario sobre el planeta activo
