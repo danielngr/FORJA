@@ -6216,12 +6216,12 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
   const set=(k,v)=>setOb(d=>({...d,[k]:v}));
 
   const fireBurst=()=>{
-    // Posición real del planeta en el canvas solar
     const solarCanvas=canvasRef.current;
-    const solarRect=solarCanvas?solarCanvas.getBoundingClientRect():{top:0,left:0};
+    const rect=solarCanvas?solarCanvas.getBoundingClientRect():{top:0,left:0};
     const pos=activePlanetPos.current;
-    const cx=solarRect.left+pos.x;
-    const cy=solarRect.top+pos.y;
+    // pos.x/y en coords CSS del canvas, rect.left/top offset del canvas en pantalla
+    const cx=rect.left+pos.x;
+    const cy=rect.top+pos.y;
     const N=120;
     const newPts=Array.from({length:N},()=>{
       const angle=Math.random()*Math.PI*2;
@@ -6445,6 +6445,9 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
           ctx.fillStyle="rgba("+r2+","+g2+","+b2+","+Math.min(1,alpha).toFixed(2)+")";
           ctx.fill();
         });
+
+        // Guardar posición real del planeta activo
+        if(isActive) activePlanetPos.current={x:proj.sx,y:proj.sy};
 
         // Glow del planeta activo
         if(isActive&&R>8){
