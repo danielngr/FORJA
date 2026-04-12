@@ -3921,9 +3921,226 @@ function ModeSelectorBar({profile,lang,mono,onShowAthletes}){
 }
 
 
-function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk,showSet,setShowSet,setShowBotChat,mono,profile,tab,setTab,setSel,sel,sp,sr}){
+function ProfileSheet({show,onClose,profile,lang,mono,sp,setStep,doGoogleSignIn,doSignOut,isUserAnonymous,getUserEmail}){
+  const BN="'Bebas Neue',cursive";
+  const MN=mono||"'SF Mono','Courier New',monospace";
+  const[closing,setClosing]=React.useState(false);
+  if(!show&&!closing) return null;
+
+  const close=()=>{setClosing(true);setTimeout(()=>{setClosing(false);onClose();},260);};
+  const W="rgba(240,242,245,0.9)";
+  const dim="rgba(240,242,245,0.38)";
+  const card="rgba(255,255,255,0.04)";
+  const border="rgba(255,255,255,0.07)";
+
+  const Row=({icon,label,value,onClick,color,danger})=>(
+    <div onClick={onClick} style={{
+      display:"flex",alignItems:"center",gap:14,
+      padding:"14px 20px",cursor:onClick?"pointer":"default",
+      borderBottom:"0.5px solid rgba(255,255,255,0.05)",
+      transition:"background 0.15s",
+      background:"transparent",
+    }}
+    onTouchStart={e=>{if(onClick)e.currentTarget.style.background="rgba(255,255,255,0.04)";}}
+    onTouchEnd={e=>{e.currentTarget.style.background="transparent";}}>
+      <div style={{
+        width:36,height:36,borderRadius:10,flexShrink:0,
+        background:danger?"rgba(220,50,50,0.1)":color?"rgba("+color+",0.1)":"rgba(255,255,255,0.06)",
+        border:"1px solid "+(danger?"rgba(220,50,50,0.2)":color?"rgba("+color+",0.2)":"rgba(255,255,255,0.08)"),
+        display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,
+      }}>{icon}</div>
+      <div style={{flex:1}}>
+        <div style={{fontSize:14,color:danger?"rgba(220,80,80,0.9)":W,fontWeight:500}}>{label}</div>
+        {value&&<div style={{fontFamily:MN,fontSize:9,color:dim,marginTop:2,letterSpacing:1}}>{value}</div>}
+      </div>
+      {onClick&&<div style={{fontSize:16,color:"rgba(255,255,255,0.2)"}}>›</div>}
+    </div>
+  );
+
+  const Section=({title,children})=>(
+    <div style={{marginBottom:8}}>
+      <div style={{fontFamily:MN,fontSize:8,letterSpacing:4,
+        color:"rgba(255,255,255,0.2)",padding:"12px 20px 8px"}}>{title}</div>
+      <div style={{background:"rgba(255,255,255,0.03)",
+        border:"0.5px solid rgba(255,255,255,0.07)",
+        borderRadius:16,overflow:"hidden",margin:"0 16px"}}>
+        {children}
+      </div>
+    </div>
+  );
+
+  const isAnon=isUserAnonymous?isUserAnonymous():true;
+  const email=getUserEmail?getUserEmail():null;
+  const userName=profile&&profile.name?profile.name:"Atleta";
+  const goalMap={muscle:"💪 Músculo",strength:"⚡ Fuerza",lose:"🔥 Definición",general:"⚖️ General"};
+  const levelMap={beg:"Principiante",int:"Intermedio",adv:"Avanzado"};
+  const langNames={es:"Español",en:"English",fr:"Français",it:"Italiano",de:"Deutsch",pt:"Português"};
+
+  const handleSignOut=()=>{
+    if(window.confirm(lang==="en"?"Sign out of FORJA?":"¿Cerrar sesión en FORJA?")){
+      doSignOut&&doSignOut();
+      close();
+    }
+  };
+
+  const handleDeleteData=()=>{
+    if(window.confirm(lang==="en"?"Delete all your data? This cannot be undone.":"¿Eliminar todos tus datos? No se puede deshacer.")){
+      try{
+        Object.keys(localStorage).filter(k=>k.startsWith('fv8')).forEach(k=>localStorage.removeItem(k));
+        window.location.reload();
+      }catch(e){}
+    }
+  };
+
+  return(
+    <div onClick={e=>{if(e.target===e.currentTarget)close();}}
+      style={{position:"fixed",inset:0,zIndex:9500,background:"rgba(0,0,0,0.7)",
+        display:"flex",flexDirection:"column",justifyContent:"flex-end",
+        opacity:closing?0:1,transition:"opacity 0.26s ease"}}>
+      <div style={{
+        background:"#080d1a",borderRadius:"24px 24px 0 0",
+        borderTop:"1px solid rgba(255,255,255,0.1)",
+        maxHeight:"90vh",display:"flex",flexDirection:"column",
+        transform:closing?"translateY(48px)":"translateY(0)",
+        transition:"transform 0.28s cubic-bezier(0.34,1.56,0.64,1)",
+      }}>
+        {/* Handle */}
+        <div style={{padding:"12px 0 0",display:"flex",justifyContent:"center",flexShrink:0}}>
+          <div onClick={close} style={{width:36,height:4,borderRadius:2,
+            background:"rgba(255,255,255,0.15)",cursor:"pointer"}}/>
+        </div>
+
+        {/* Header — avatar y nombre */}
+        <div style={{padding:"16px 20px 20px",flexShrink:0,
+          borderBottom:"0.5px solid rgba(255,255,255,0.06)"}}>
+          <div style={{display:"flex",alignItems:"center",gap:14}}>
+            <div style={{
+              width:52,height:52,borderRadius:16,flexShrink:0,
+              background:"linear-gradient(135deg,rgba(72,120,255,0.3),rgba(40,80,200,0.2))",
+              border:"1px solid rgba(72,120,255,0.3)",
+              display:"flex",alignItems:"center",justifyContent:"center",
+              fontFamily:BN,fontSize:22,color:"rgba(130,175,255,0.9)",letterSpacing:1,
+            }}>{userName.charAt(0).toUpperCase()}</div>
+            <div style={{flex:1}}>
+              <div style={{fontFamily:BN,fontSize:22,color:W,letterSpacing:1,lineHeight:1}}>
+                {userName.toUpperCase()}
+              </div>
+              <div style={{fontFamily:MN,fontSize:9,color:dim,marginTop:4,letterSpacing:1}}>
+                {isAnon
+                  ?"SIN CUENTA · DATOS LOCALES"
+                  :(email||"").split("@")[0].toUpperCase()+" · GOOGLE"}
+              </div>
+            </div>
+            {/* Pro badge */}
+            <div style={{padding:"5px 10px",borderRadius:8,
+              background:"rgba(72,120,255,0.12)",
+              border:"1px solid rgba(72,120,255,0.3)"}}>
+              <div style={{fontFamily:MN,fontSize:8,fontWeight:700,letterSpacing:2,
+                color:"rgba(130,175,255,0.9)"}}>PRO</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Scroll content */}
+        <div style={{overflowY:"auto",paddingBottom:40}}>
+
+          {/* CUENTA */}
+          <Section title={lang==="en"?"ACCOUNT":"CUENTA"}>
+            {isAnon?(
+              <Row icon="🔑"
+                label={lang==="en"?"Sign in with Google":"Iniciar sesión con Google"}
+                value={lang==="en"?"Sync your data across devices":"Sincroniza tus datos en todos tus dispositivos"}
+                onClick={()=>{doGoogleSignIn&&doGoogleSignIn();close();}}
+                color="66,133,244"/>
+            ):(
+              <Row icon="✓" label={lang==="en"?"Google Account":"Cuenta Google"}
+                value={email||""} color="63,207,142"/>
+            )}
+            <Row icon="🌍"
+              label={lang==="en"?"Language":"Idioma"}
+              value={langNames[lang]||lang}
+              onClick={()=>{close();setTimeout(()=>setStep(1),300);}}/>
+          </Section>
+
+          {/* PROGRAMA */}
+          <Section title={lang==="en"?"PROGRAM":"PROGRAMA"}>
+            <Row icon="⚡"
+              label={lang==="en"?"Change routine":"Cambiar rutina"}
+              value={lang==="en"?"Goal · Level · Days":"Objetivo · Nivel · Días"}
+              onClick={()=>{close();setTimeout(()=>setStep(1),300);}}/>
+            <Row icon="📊"
+              label={lang==="en"?"Profile data":"Datos de perfil"}
+              value={[
+                goalMap[profile&&profile.goal]||"—",
+                levelMap[profile&&profile.level]||"—",
+                (profile&&profile.selDays?profile.selDays.length:0)+" días/sem",
+              ].join(" · ")}/>
+            <Row icon="⚖️"
+              label={lang==="en"?"Units":"Unidades"}
+              value={profile&&profile.units==="imperial"?"lbs / inches":"kg / cm"}
+              onClick={()=>{
+                const newUnits=profile&&profile.units==="imperial"?"metric":"imperial";
+                sp&&sp({...profile,units:newUnits});
+                close();
+              }}/>
+          </Section>
+
+          {/* FORJA PRO */}
+          <Section title="FORJA PRO">
+            <Row icon="🏆"
+              label={lang==="en"?"Athlete Programs":"Programas de Atletas"}
+              value={lang==="en"?"18 athletes unlocked":"18 atletas desbloqueados"}
+              color="72,120,255"/>
+            <Row icon="🧬"
+              label={lang==="en"?"Muscle Heatmap":"Mapa Muscular 3D"}
+              value={lang==="en"?"Recovery tracking by zone":"Recuperación por zona muscular"}
+              color="72,120,255"/>
+            <Row icon="❤️"
+              label={lang==="en"?"Cardiovascular Age":"Edad Cardiovascular"}
+              value={lang==="en"?"NTNU scientific model":"Modelo científico NTNU"}
+              color="72,120,255"/>
+          </Section>
+
+          {/* APP */}
+          <Section title={lang==="en"?"APP":"APLICACIÓN"}>
+            <Row icon="🎯"
+              label="TUTORIAL"
+              value={lang==="en"?"Retake the app tour":"Repetir el tour de la app"}
+              onClick={()=>{
+                try{localStorage.removeItem("fv8_toured");}catch{}
+                close();
+                setTimeout(()=>window.location.reload(),300);
+              }}/>
+            <Row icon="📱"
+              label={lang==="en"?"Version":"Versión"}
+              value="FORJA v1.0 — PWA"/>
+          </Section>
+
+          {/* PELIGRO */}
+          <Section title={lang==="en"?"DANGER ZONE":"ZONA DE PELIGRO"}>
+            {!isAnon&&(
+              <Row icon="🚪"
+                label={lang==="en"?"Sign out":"Cerrar sesión"}
+                onClick={handleSignOut}
+                danger/>
+            )}
+            <Row icon="🗑️"
+              label={lang==="en"?"Delete all data":"Eliminar todos los datos"}
+              value={lang==="en"?"Clears local storage and resets app":"Borra datos locales y reinicia la app"}
+              onClick={handleDeleteData}
+              danger/>
+          </Section>
+
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk,showSet,setShowSet,setShowBotChat,mono,profile,tab,setTab,setSel,sel,sp,sr,setStep}){
   var e=React.createElement;
   var[showAthletes,setShowAthletes]=React.useState(false);
+  var[showProfile,setShowProfile]=React.useState(false);
   var now=new Date();
   var dow=now.getDay();
   var tdi=dow===0?6:dow-1;
@@ -4049,7 +4266,7 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
         e("span",{style:{fontSize:7,fontFamily:mono,letterSpacing:3,color:"rgba(255,255,255,0.35)",fontWeight:600}},weekLabel),
         e("button",{onClick:function(){setWeekOff(function(p){return Math.min(0,p+1);});},style:{background:"none",border:"none",color:weekOff===0?"rgba(255,255,255,0.08)":"rgba(255,255,255,0.25)",fontSize:18,cursor:weekOff===0?"default":"pointer",padding:"0 4px",lineHeight:1}},"›")
       ),
-      e("button",{onClick:function(){setShowSet(!showSet);},style:{width:26,height:26,borderRadius:8,border:"0.5px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.05)",cursor:"pointer",color:"rgba(255,255,255,0.4)",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center"}},"⚙")
+      e("button",{onClick:function(){setShowProfile(true);},style:{width:26,height:26,borderRadius:8,border:"0.5px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.05)",cursor:"pointer",color:"rgba(255,255,255,0.4)",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center"}},"⚙")
     ),
 
     // Mode selector — AUTO / ATLETAS
@@ -4277,6 +4494,31 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
       onClose:function(){setShowAthletes(false);},
       lang:lang,mono:mono,profile:profile,
       sp:sp,sr:sr,
+    }),
+    showProfile&&e(ProfileSheet,{
+      show:showProfile,
+      onClose:function(){setShowProfile(false);},
+      profile:profile,lang:lang,mono:mono,sp:sp,
+      setStep:setStep,
+      doGoogleSignIn:function(){
+        var btn=document.querySelector("[data-google-signin]");
+        if(btn) btn.click();
+        else if(typeof doGoogleSignIn==="function") doGoogleSignIn();
+      },
+      doSignOut:function(){
+        var sb=typeof getSB==="function"?getSB():null;
+        if(sb) sb.auth.signOut().then(function(){window.location.reload();});
+      },
+      isUserAnonymous:function(){
+        try{
+          var sb=typeof getSB==="function"?getSB():null;
+          if(!sb) return true;
+          return false;
+        }catch(e){return true;}
+      },
+      getUserEmail:function(){
+        try{return null;}catch(e){return null;}
+      },
     })
   );
 }
@@ -4639,15 +4881,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   return(<>
       <div style={{background:"#04080f",position:"relative",overflow:"hidden"}}>
 
-        {showSet&&(
-          <div style={{position:"absolute",top:40,right:14,zIndex:20,background:"rgba(10,12,18,0.97)",border:"0.5px solid rgba(255,255,255,0.08)",borderRadius:12,padding:"8px 10px",display:"flex",flexWrap:"wrap",gap:6,maxWidth:260,backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)"}}>
-            <button onClick={()=>{const ls=["es","en","fr","it","de","pt"];const nl=ls[(ls.indexOf(lang)+1)%ls.length];setLang(nl);sp({...profile,lang:nl});}} style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(255,255,255,0.08)",background:"transparent",color:"rgba(255,255,255,0.5)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>{lang.toUpperCase()}</button>
-            <button onClick={()=>{setStep(1);setShowSet(false);}} style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(255,255,255,0.08)",background:"transparent",color:"rgba(255,255,255,0.5)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>{t.reconfig.toUpperCase()}</button>
-            <button onClick={()=>{try{localStorage.removeItem("fv8_toured");}catch{}setTourAskVisible(true);setTourStep(null);setShowSet(false);}} style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(255,255,255,0.08)",background:"transparent",color:"rgba(255,255,255,0.5)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>TUTORIAL</button>
-            {isUserAnonymous()&&<button onClick={doGoogleSignIn} style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(66,133,244,0.3)",background:"rgba(66,133,244,0.08)",color:"rgba(66,133,244,0.8)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>GOOGLE</button>}
-            {!isUserAnonymous()&&<button onClick={doSignOut} style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(63,207,142,0.2)",background:"transparent",color:"rgba(63,207,142,0.6)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>&#10003; {getUserEmail()?.split("@")[0]||"Google"}</button>}
-          </div>
-        )}
+        {}
 
         <BannerDashboard
           routine={routine} done={done} muscleXP={muscleXP} lang={lang}
@@ -4656,7 +4890,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
           setShowBotChat={setShowBotChat}
           mono={mono} profile={profile}
           tab={tab} setTab={setTabR} setSel={setSel} sel={sel}
-          sp={sp} sr={sr}
+          sp={sp} sr={sr} setStep={setStep}
         />
 
       </div>
