@@ -3132,7 +3132,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
         const M_="'SF Mono','Fira Code',monospace";
         const S_="'DM Sans',sans-serif";
         const es=lang==="es"||lang==="pt";
-        const TOTAL=12;
+        const TOTAL=14;
         const WS_START=4;
         const wsIdx=wsTourStep-WS_START;
         if(wsIdx<0||wsIdx>3) return null;
@@ -4693,7 +4693,7 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
          {id:"body",l:lang==="es"||lang==="pt"?"CUERPO":lang==="fr"?"CORPS":lang==="it"?"CORPO":lang==="de"?"KÖRPER":"BODY",icon:"🫀"}
         ].map(function(tb){
           var active=tab===tb.id;
-          return e("button",{key:tb.id,"data-tour":tb.id==="body"?"tab-body":undefined,onClick:function(){setTab(tb.id);},
+          return e("button",{key:tb.id,"data-tour":tb.id==="body"?"tab-body":null,onClick:function(){setTab(tb.id);},
             style:{flex:1,padding:"11px 0",border:"none",borderRadius:10,cursor:"pointer",
               background:active?"rgba(255,255,255,0.12)":"transparent",
               color:active?"#EEEAE3":"rgba(255,255,255,0.3)",
@@ -5672,14 +5672,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
               it:"Il cuore 3D batte quando completi l'intera giornata. L'età cardiovascolare usa il tuo VO2max secondo il modello NTNU.",
               de:"Das 3D-Herz schlägt wenn du den ganzen Tag abschließt. Kardiovaskuläres Alter per NTNU-Modell."},
            pad:12},
-          {id:"cal-day",
-           t:{es:"Registra tu entreno",en:"Log your workout",fr:"Enregistre ton entraînement",it:"Registra il tuo allenamento",de:"Training erfassen"},
-           x:{es:"Toca cualquier día para ver tu rutina y abre la sesión. Registra pesos y reps — FORJA calcula tu 1RM con la fórmula Epley automáticamente.",
-              en:"Tap any day to see your routine and open the session. Log weights and reps — FORJA auto-calculates your 1RM with the Epley formula.",
-              fr:"Touche n'importe quel jour pour voir ta routine et ouvrir la session. FORJA calcule ton 1RM (Epley).",
-              it:"Tocca qualsiasi giorno per vedere la routine e aprire la sessione. FORJA calcola il 1RM (Epley).",
-              de:"Tippe auf einen Tag um die Routine zu sehen. FORJA berechnet dein 1WM (Epley)."},
-           pad:10},
+          
           {id:"vol-weekly",
            t:{es:"Volumen muscular",en:"Muscle volume",fr:"Volume musculaire",it:"Volume muscolare",de:"Muskelvolumen"},
            x:{es:"Barras de cuántos sets hiciste por músculo vs. el rango recomendado. Verde = perfecto, rojo = trabaja más esa zona.",
@@ -5741,7 +5734,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
         ];
 
         // Mapeo tourStep → índice en TOUR_STEPS
-        const T_MAP={0:0,1:1,2:2,3:3,8:4,9:5,10:6,11:7,12:8,13:9};
+        const T_MAP={0:0,1:1,3:2,8:3,9:4,10:5,11:6,12:7,13:8};
         const si_=T_MAP[tourStep];
         const step_=si_!==undefined?TOUR_STEPS[si_]:null;
         const lang_=lang||"es";
@@ -5750,23 +5743,36 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
 
         // Obtener bounds del elemento
         const el_=step_?document.querySelector('[data-tour="'+step_.id+'"]'):null;
-        const rawB=el_?el_.getBoundingClientRect():null;
+        const rawB_=el_?el_.getBoundingClientRect():null;
         const pad_=step_?step_.pad||8:8;
         const vh_=window.innerHeight;
         const vw_=window.innerWidth;
+        // Limitar el height del bounds para no partir de un elemento gigante
+        const MAX_EL_H=Math.round(vh_*0.38);
+        const rawB=rawB_?{
+          top:rawB_.top,
+          left:rawB_.left,
+          right:rawB_.right,
+          width:rawB_.width,
+          height:Math.min(rawB_.height,MAX_EL_H),
+          bottom:Math.min(rawB_.bottom, rawB_.top+MAX_EL_H),
+        }:null;
 
         // Calcular posición del tooltip — inteligente
-        const tooltipH=200;
+        const tooltipH=220;
         const spaceBelow=rawB?(vh_-rawB.bottom-pad_):0;
         const spaceAbove=rawB?(rawB.top-pad_):0;
-        const tipPos=rawB?(spaceBelow>=tooltipH+16?
-          {top:Math.round(rawB.bottom+pad_+8)}:
+        // Siempre dejar al menos 80px de margen en la parte inferior para el botón
+        const minBottom=90;
+        const tipPos=rawB?(
+          spaceBelow>=tooltipH+16?
+            {top:Math.min(Math.round(rawB.bottom+pad_+8), vh_-tooltipH-minBottom)}:
           spaceAbove>=tooltipH+16?
-          {bottom:Math.round(vh_-rawB.top+pad_+8)}:
-          {bottom:24}):
-          {bottom:24};
+            {bottom:Math.round(vh_-rawB.top+pad_+8)}:
+            {bottom:minBottom}
+        ):{bottom:minBottom};
 
-        const totalSteps=10;
+        const totalSteps=9;
         const displayStep=si_!==undefined?si_+1:1;
 
         const endTour_=()=>{
@@ -5777,7 +5783,9 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
         };
 
         const nextStep_=()=>{
-          const ns=tourStep+1;
+          // Saltar tourStep 2 — ya no existe en T_MAP
+          var ns=tourStep+1;
+          if(ns===2) ns=3;
           if(ns>=14){endTour_();return;}
           // tourStep 4-7: WorkoutScreen
           if(ns===4){
