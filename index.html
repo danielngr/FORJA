@@ -6696,7 +6696,30 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
           }}>{tx.back}</button>
         )}
         {obStep===6?(
-          <button onClick={doFinish} disabled={!canNext} style={{
+          <div style={{flex:1,display:"flex",flexDirection:"column",gap:10}}>
+            <button onClick={()=>{
+              if(typeof window.doGoogleSignIn==="function") window.doGoogleSignIn();
+            }} style={{
+              width:"100%",padding:"13px",borderRadius:12,cursor:"pointer",
+              background:"rgba(66,133,244,0.08)",
+              border:"1px solid rgba(66,133,244,0.25)",
+              borderTop:"1px solid rgba(100,160,255,0.3)",
+              display:"flex",alignItems:"center",justifyContent:"center",gap:10,
+            }}>
+              <span style={{fontSize:16}}>G</span>
+              <span style={{fontFamily:MN,fontSize:10,fontWeight:700,letterSpacing:2,
+                color:"rgba(130,175,255,0.85)"}}>
+                {lang==="en"?"SAVE WITH GOOGLE":"GUARDAR CON GOOGLE"}
+              </span>
+            </button>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <div style={{flex:1,height:"0.5px",background:"rgba(255,255,255,0.08)"}}/>
+              <span style={{fontFamily:MN,fontSize:8,color:"rgba(255,255,255,0.2)",letterSpacing:2}}>
+                {lang==="en"?"OR":"O"}
+              </span>
+              <div style={{flex:1,height:"0.5px",background:"rgba(255,255,255,0.08)"}}/>
+            </div>
+            <button onClick={doFinish} disabled={!canNext} style={{
             flex:1,padding:"16px",borderRadius:14,border:"none",cursor:canNext?"pointer":"default",
             background:canNext?"linear-gradient(180deg,rgba(90,140,255,0.95),rgba(60,100,220,0.9))":"rgba(255,255,255,0.05)",
             borderTop:canNext?"1px solid rgba(180,210,255,0.45)":"1px solid rgba(255,255,255,0.05)",
@@ -6705,6 +6728,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             boxShadow:canNext?"0 0 32px rgba(72,120,255,0.35),inset 0 1px 0 rgba(200,220,255,0.2)":"none",
             transition:"all 0.3s",
           }}>{tx.finish}</button>
+          </div>
         ):[0,3,4,5].includes(obStep)?null:(
           <button onClick={()=>{
             if(obStep===1)set("name",nameVal.trim());
