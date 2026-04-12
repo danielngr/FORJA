@@ -3888,76 +3888,97 @@ function AthleteSheet({show,onClose,onSelect,lang,mono,profile,setProfile,sr,sp}
         ),
         // Lista de atletas
         React.createElement("div",{style:{overflowY:"auto",padding:"0 20px 32px",flex:1}},
-          // Separación H/M
-        (()=>{
-          const groups=[
-            {key:"M",label:lang==="en"?"MEN":"HOMBRES",celebs:CELEB_LIST.filter(c=>c.gender==="M")},
-            {key:"F",label:lang==="en"?"WOMEN":"MUJERES",celebs:CELEB_LIST.filter(c=>c.gender==="F")},
-          ];
-          return groups.map(group=>
-            React.createElement("div",{key:group.key},
-              React.createElement("div",{style:{
-                fontFamily:MN,fontSize:8,letterSpacing:4,
-                color:"rgba(255,255,255,0.25)",marginBottom:8,marginTop:8,
-              }},group.label),
-              group.celebs.map((celeb,i)=>{
-                const free=isFree(celeb.id);
-                const unlocked=free||isPro();
-                const active=isActive(celeb.id);
+          // Lista de atletas por género
+        React.createElement("div",{key:"men"},
+          React.createElement("div",{style:{fontFamily:MN,fontSize:8,letterSpacing:4,
+            color:"rgba(255,255,255,0.2)",marginBottom:8,marginTop:4}},
+            lang==="en"?"MEN":"HOMBRES"),
+          CELEB_LIST.filter(function(c){return c.gender==="M";}).map(function(celeb){
+            var free=isFree(celeb.id);
+            var unlocked=free||isPro();
+            var active=isActive(celeb.id);
+            var rgb=hexToRgb(celeb.ac);
             return React.createElement("div",{
               key:celeb.id,
-              onClick:()=>unlocked?activate(celeb):null,
+              onClick:function(){if(unlocked)activate(celeb);},
               style:{
                 display:"flex",alignItems:"center",gap:12,
-                padding:"12px 14px",borderRadius:14,marginBottom:8,
-                background:active?"rgba("+hexToRgb(celeb.ac)+",0.12)":
-                  unlocked?"rgba(255,255,255,0.03)":"rgba(255,255,255,0.02)",
-                border:"1px solid "+(active?"rgba("+hexToRgb(celeb.ac)+",0.45)":
-                  "rgba(255,255,255,0.07)"),
-                borderTop:"1px solid "+(active?"rgba("+hexToRgb(celeb.ac)+",0.6)":
-                  "rgba(255,255,255,0.12)"),
+                padding:"11px 14px",borderRadius:14,marginBottom:7,
+                background:active?"rgba("+rgb+",0.12)":unlocked?"rgba(255,255,255,0.03)":"rgba(255,255,255,0.02)",
+                border:"1px solid "+(active?"rgba("+rgb+",0.45)":"rgba(255,255,255,0.07)"),
+                borderTop:"1px solid "+(active?"rgba("+rgb+",0.6)":"rgba(255,255,255,0.12)"),
                 cursor:unlocked?"pointer":"default",
                 opacity:unlocked?1:0.45,
                 transition:"all 0.2s",
               }},
-              // Emoji avatar
               React.createElement("div",{style:{
-                width:42,height:42,borderRadius:12,flexShrink:0,
-                background:"rgba("+hexToRgb(celeb.ac)+",0.12)",
-                border:"1px solid rgba("+hexToRgb(celeb.ac)+",0.25)",
-                display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,
+                width:40,height:40,borderRadius:12,flexShrink:0,
+                background:"rgba("+rgb+",0.12)",
+                border:"1px solid rgba("+rgb+",0.25)",
+                display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,
               }},celeb.em),
-              // Info
               React.createElement("div",{style:{flex:1,minWidth:0}},
-                React.createElement("div",{style:{fontFamily:BN,fontSize:17,
-                  color:active?"rgba(240,242,245,1)":"rgba(240,242,245,0.85)",
-                  letterSpacing:1,lineHeight:1,marginBottom:3}},celeb.label),
+                React.createElement("div",{style:{fontFamily:"'Bebas Neue',cursive",fontSize:16,
+                  color:"rgba(240,242,245,0.9)",letterSpacing:1,lineHeight:1,marginBottom:3}},celeb.label),
                 React.createElement("div",{style:{fontFamily:MN,fontSize:8,letterSpacing:1,
                   color:"rgba(255,255,255,0.35)"}},
-                  celeb.days+(lang==="en"?" days":" días")+" · "+(celeb.lvl[langKey]||celeb.lvl.es)+" · "+celeb.badge
-                )
+                  celeb.days+(lang==="en"?" days":" días")+" · "+(celeb.lvl[lang==="en"?"en":"es"]||celeb.lvl.es)+" · "+celeb.badge)
               ),
-              // Badge free / lock / active
-              active?
-                React.createElement("div",{style:{fontFamily:MN,fontSize:7,letterSpacing:1,
-                  color:"rgba("+hexToRgb(celeb.ac)+",0.9)",
-                  border:"1px solid rgba("+hexToRgb(celeb.ac)+",0.4)",
-                  padding:"4px 8px",borderRadius:8,flexShrink:0}},
-                  lang==="en"?"ACTIVE":"ACTIVO"
-                )
-              :free?
-                React.createElement("div",{style:{fontFamily:MN,fontSize:7,letterSpacing:1,
-                  color:"rgba(63,207,142,0.9)",
-                  border:"1px solid rgba(63,207,142,0.35)",
-                  padding:"4px 8px",borderRadius:8,flexShrink:0}},
-                  "FREE"
-                )
-              :
-                React.createElement("div",{style:{fontSize:12,opacity:0.4,flexShrink:0}},"🔒")
+              active?React.createElement("div",{style:{fontFamily:MN,fontSize:7,letterSpacing:1,
+                color:"rgba("+rgb+",0.9)",border:"1px solid rgba("+rgb+",0.4)",
+                padding:"4px 8px",borderRadius:8,flexShrink:0}},lang==="en"?"ACTIVE":"ACTIVO")
+              :free?React.createElement("div",{style:{fontFamily:MN,fontSize:7,letterSpacing:1,
+                color:"rgba(63,207,142,0.9)",border:"1px solid rgba(63,207,142,0.35)",
+                padding:"4px 8px",borderRadius:8,flexShrink:0}},"FREE")
+              :React.createElement("div",{style:{fontSize:12,opacity:0.4,flexShrink:0}},"🔒")
             );
-          }))
-          );
-        })(),
+          })
+        ),
+        React.createElement("div",{key:"women",style:{marginTop:8}},
+          React.createElement("div",{style:{fontFamily:MN,fontSize:8,letterSpacing:4,
+            color:"rgba(255,255,255,0.2)",marginBottom:8,marginTop:8}},
+            lang==="en"?"WOMEN":"MUJERES"),
+          CELEB_LIST.filter(function(c){return c.gender==="F";}).map(function(celeb){
+            var free=isFree(celeb.id);
+            var unlocked=free||isPro();
+            var active=isActive(celeb.id);
+            var rgb=hexToRgb(celeb.ac);
+            return React.createElement("div",{
+              key:celeb.id,
+              onClick:function(){if(unlocked)activate(celeb);},
+              style:{
+                display:"flex",alignItems:"center",gap:12,
+                padding:"11px 14px",borderRadius:14,marginBottom:7,
+                background:active?"rgba("+rgb+",0.12)":unlocked?"rgba(255,255,255,0.03)":"rgba(255,255,255,0.02)",
+                border:"1px solid "+(active?"rgba("+rgb+",0.45)":"rgba(255,255,255,0.07)"),
+                borderTop:"1px solid "+(active?"rgba("+rgb+",0.6)":"rgba(255,255,255,0.12)"),
+                cursor:unlocked?"pointer":"default",
+                opacity:unlocked?1:0.45,
+                transition:"all 0.2s",
+              }},
+              React.createElement("div",{style:{
+                width:40,height:40,borderRadius:12,flexShrink:0,
+                background:"rgba("+rgb+",0.12)",
+                border:"1px solid rgba("+rgb+",0.25)",
+                display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,
+              }},celeb.em),
+              React.createElement("div",{style:{flex:1,minWidth:0}},
+                React.createElement("div",{style:{fontFamily:"'Bebas Neue',cursive",fontSize:16,
+                  color:"rgba(240,242,245,0.9)",letterSpacing:1,lineHeight:1,marginBottom:3}},celeb.label),
+                React.createElement("div",{style:{fontFamily:MN,fontSize:8,letterSpacing:1,
+                  color:"rgba(255,255,255,0.35)"}},
+                  celeb.days+(lang==="en"?" days":" días")+" · "+(celeb.lvl[lang==="en"?"en":"es"]||celeb.lvl.es)+" · "+celeb.badge)
+              ),
+              active?React.createElement("div",{style:{fontFamily:MN,fontSize:7,letterSpacing:1,
+                color:"rgba("+rgb+",0.9)",border:"1px solid rgba("+rgb+",0.4)",
+                padding:"4px 8px",borderRadius:8,flexShrink:0}},lang==="en"?"ACTIVE":"ACTIVO")
+              :free?React.createElement("div",{style:{fontFamily:MN,fontSize:7,letterSpacing:1,
+                color:"rgba(63,207,142,0.9)",border:"1px solid rgba(63,207,142,0.35)",
+                padding:"4px 8px",borderRadius:8,flexShrink:0}},"FREE")
+              :React.createElement("div",{style:{fontSize:12,opacity:0.4,flexShrink:0}},"🔒")
+            );
+          })
+        ),
           // Paywall CTA
           React.createElement("div",{style:{
             marginTop:16,padding:"16px",borderRadius:16,
