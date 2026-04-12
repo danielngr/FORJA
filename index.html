@@ -3683,10 +3683,19 @@ function CelebCard({celeb,lang,mono,profile,onActivate}){
         border:"1px solid "+(isActive?("rgba("+rgb+",0.5)"):"rgba(255,255,255,0.08)"),
         cursor:unlocked?"pointer":"default",transition:"all 0.2s",
       }}>
-      <div style={{width:40,height:40,borderRadius:12,flexShrink:0,
+      <div style={{width:44,height:44,borderRadius:12,flexShrink:0,overflow:"hidden",
         background:"rgba("+rgb+",0.12)",border:"1px solid rgba("+rgb+",0.25)",
-        display:"flex",alignItems:"center",justifyContent:"center",fontSize:20}}>
-        {celeb.em}
+        position:"relative"}}>
+        {IMGS_C[celeb.id]?(
+          <img src={IMGS_C[celeb.id]} alt={celeb.label}
+            style={{width:"100%",height:"100%",objectFit:"cover",
+              opacity:isActive?1:0.85}}/>
+        ):(
+          <div style={{width:"100%",height:"100%",display:"flex",
+            alignItems:"center",justifyContent:"center",fontSize:20}}>
+            {celeb.em}
+          </div>
+        )}
       </div>
       <div style={{flex:1,minWidth:0}}>
         <div style={{fontFamily:BN,fontSize:17,color:"rgba(240,242,245,0.92)",
