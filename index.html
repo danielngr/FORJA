@@ -6244,7 +6244,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               }}>
               <span style={{fontSize:18}}>{l.flag}</span>
               <span style={{fontFamily:MN,fontSize:9,letterSpacing:2,
-                color:ob.lang===l.code?BLUE:dim}}>{l.l}</span>
+                color:ob.lang===l.code?BLUE:"rgba(240,242,245,0.8)"}}>{l.l}</span>
             </button>
           ))}
         </div>
@@ -6282,7 +6282,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             }}>
               <span style={{fontSize:34,opacity:ob.gender===g.id?1:0.4}}>{g.icon}</span>
               <span style={{fontFamily:MN,fontSize:9,letterSpacing:2,
-                color:ob.gender===g.id?BLUE:dim}}>{g.label}</span>
+                color:ob.gender===g.id?BLUE:"rgba(240,242,245,0.75)"}}>{g.label}</span>
             </button>
           ))}
         </div>
@@ -6321,8 +6321,8 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             <span style={{fontSize:20,opacity:ob.goal===g.id?1:0.45}}>{g.em}</span>
             <div>
               <div style={{fontFamily:MN,fontSize:10,fontWeight:700,letterSpacing:2,
-                color:ob.goal===g.id?BLUE:dim,marginBottom:2}}>{g.label}</div>
-              <div style={{fontSize:11,color:"rgba(255,255,255,0.28)"}}>{g.desc}</div>
+                color:ob.goal===g.id?BLUE:"rgba(240,242,245,0.75)",marginBottom:2}}>{g.label}</div>
+              <div style={{fontSize:11,color:"rgba(240,242,245,0.5)"}}>{g.desc}</div>
             </div>
             {ob.goal===g.id&&<div style={{marginLeft:"auto",width:6,height:6,
               borderRadius:"50%",background:"#4878ff",boxShadow:"0 0 8px #4878ff"}}/>}
@@ -6345,8 +6345,8 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               width:30,textAlign:"center",lineHeight:1}}>0{i+1}</div>
             <div>
               <div style={{fontFamily:MN,fontSize:10,fontWeight:700,letterSpacing:2,
-                color:ob.level===l.id?BLUE:dim,marginBottom:2}}>{l.label}</div>
-              <div style={{fontSize:11,color:"rgba(255,255,255,0.28)"}}>{l.desc}</div>
+                color:ob.level===l.id?BLUE:"rgba(240,242,245,0.75)",marginBottom:2}}>{l.label}</div>
+              <div style={{fontSize:11,color:"rgba(240,242,245,0.5)"}}>{l.desc}</div>
             </div>
           </Opt>
         ))}
@@ -6366,8 +6366,8 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             <span style={{fontSize:22,opacity:ob.equipment===e.id?1:0.45}}>{e.em}</span>
             <div>
               <div style={{fontFamily:MN,fontSize:10,fontWeight:700,letterSpacing:2,
-                color:ob.equipment===e.id?BLUE:dim,marginBottom:2}}>{e.label}</div>
-              <div style={{fontSize:11,color:"rgba(255,255,255,0.28)"}}>{e.desc}</div>
+                color:ob.equipment===e.id?BLUE:"rgba(240,242,245,0.75)",marginBottom:2}}>{e.label}</div>
+              <div style={{fontSize:11,color:"rgba(240,242,245,0.5)"}}>{e.desc}</div>
             </div>
           </Opt>
         ))}
@@ -6391,7 +6391,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                 }}>
                 <div style={{fontFamily:BN,fontSize:26,color:sel?BLUE:"rgba(255,255,255,0.25)",lineHeight:1}}>{n}</div>
                 <div style={{fontFamily:MN,fontSize:7,letterSpacing:2,
-                  color:sel?"rgba(130,175,255,0.6)":dim,marginTop:4}}>
+                  color:sel?"rgba(130,175,255,0.9)":"rgba(240,242,245,0.5)",marginTop:4}}>
                   {ob.lang==="es"?"DÍAS":"DAYS"}
                 </div>
               </button>
@@ -6418,7 +6418,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                   transform:sel?"scale(1.08)":"scale(1)",
                 }}>
                 <span style={{fontFamily:MN,fontSize:7,letterSpacing:1,
-                  color:sel?BLUE:dim}}>{d}</span>
+                  color:sel?BLUE:"rgba(240,242,245,0.6)"}}>{d}</span>
                 <div style={{width:5,height:5,borderRadius:"50%",
                   background:sel?"#4878ff":"rgba(255,255,255,0.1)"}}/>
               </button>
@@ -6436,7 +6436,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               border:"1px solid "+(ob.units===u.id?BLUE_BD:"rgba(255,255,255,0.06)"),
               borderTop:"1px solid "+(ob.units===u.id?"rgba(180,210,255,0.3)":"rgba(255,255,255,0.1)"),
               fontFamily:MN,fontSize:10,letterSpacing:1,
-              color:ob.units===u.id?BLUE:dim,transition:"all 0.2s",
+              color:ob.units===u.id?BLUE:"rgba(240,242,245,0.7)",transition:"all 0.2s",
             }}>{u.label}</button>
           ))}
         </div>
@@ -6454,23 +6454,23 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
 
       {/* Título del step */}
       <div style={{
-        padding:"4px 28px 14px",flexShrink:0,
+        padding:"4px 28px 14px",flexShrink:0,textAlign:"center",
         opacity:visible?1:0,
         transform:visible?"translateY(0)":"translateY(6px)",
         transition:"opacity 0.28s ease, transform 0.28s ease",
       }}>
-        <div style={{fontFamily:MN,fontSize:8,letterSpacing:4,
-          color:"rgba(72,120,255,0.7)",marginBottom:8}}>
+        <div style={{fontFamily:MN,fontSize:9,letterSpacing:4,
+          color:"rgba(100,150,255,0.9)",marginBottom:10}}>
           {String(obStep+1).padStart(2,"0")} / {String(TOTAL).padStart(2,"0")} · {(tx.steps||[])[obStep]||""}
         </div>
-        <div style={{fontFamily:BN,fontSize:"clamp(28px,8vw,40px)",
-          lineHeight:0.93,color:W,whiteSpace:"pre-line"}}>
+        <div style={{fontFamily:BN,fontSize:"clamp(32px,9vw,44px)",
+          lineHeight:0.93,color:"rgba(240,242,245,1)",whiteSpace:"pre-line"}}>
           {[tx.s0,tx.s1,tx.s2,tx.s3,tx.s4,tx.s5,tx.s6][obStep]}
         </div>
       </div>
 
       {/* Contenido */}
-      <div style={{flex:1,overflowY:"auto",padding:"0 28px"}}>
+      <div style={{flex:1,overflowY:"auto",padding:"0 28px",display:"flex",flexDirection:"column"}}>
         {renderContent()}
       </div>
 
