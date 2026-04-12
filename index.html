@@ -3422,8 +3422,8 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
     renderer.outputEncoding=THREE.sRGBEncoding;
 
     var scene=new THREE.Scene();
-    var cam=new THREE.PerspectiveCamera(28,W/H,0.1,100);
-    cam.position.set(12.5,1.1,26);cam.lookAt(8.0,1.1,0);
+    var cam=new THREE.PerspectiveCamera(22,W/H,0.1,100);
+    cam.position.set(12.5,1.1,34);cam.lookAt(8.0,1.1,0);
 
     var envTexture=null;
     if(window.THREE.RoomEnvironment){
