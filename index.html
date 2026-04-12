@@ -4493,7 +4493,7 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
       onShowAthletes:function(){setShowAthletes(true);}}),
 
     // Card glass principal
-    e("div",{style:{
+    e("div",{"data-tour":"day-progress",style:{
       margin:"12px 18px 0",
       background:"linear-gradient(135deg,rgba(20,35,90,0.92) 0%,rgba(10,18,50,0.95) 100%)",
       borderRadius:24,
@@ -4594,7 +4594,7 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
     ),
 
     // Cuadro de días — liquid glass bubble
-    e("div",{style:{
+    e("div",{"data-tour":"cal-day",style:{
       margin:"10px 18px 0",
       background:"rgba(255,255,255,0.06)",
       backdropFilter:"blur(40px) saturate(200%)",
@@ -4693,7 +4693,7 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
          {id:"body",l:lang==="es"||lang==="pt"?"CUERPO":lang==="fr"?"CORPS":lang==="it"?"CORPO":lang==="de"?"KÖRPER":"BODY",icon:"🫀"}
         ].map(function(tb){
           var active=tab===tb.id;
-          return e("button",{key:tb.id,onClick:function(){setTab(tb.id);},
+          return e("button",{key:tb.id,"data-tour":tb.id==="body"?"tab-body":undefined,onClick:function(){setTab(tb.id);},
             style:{flex:1,padding:"11px 0",border:"none",borderRadius:10,cursor:"pointer",
               background:active?"rgba(255,255,255,0.12)":"transparent",
               color:active?"#EEEAE3":"rgba(255,255,255,0.3)",
@@ -5129,7 +5129,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
             ):(
               <>
                 {/* Mancuerna */}
-                <div id="forja-dumbbell-wrap" data-tour="start-workout"
+                <div id="forja-dumbbell-wrap"
                   style={{width:"100%",height:260,borderRadius:16,overflow:"hidden",position:"relative",background:C.bg,cursor:"pointer",marginBottom:10}}
                   onClick={()=>{if(day&&day.ex&&day.ex.length)setInWorkout(true);}}
                 >
@@ -5672,14 +5672,14 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
               it:"Il cuore 3D batte quando completi l'intera giornata. L'età cardiovascolare usa il tuo VO2max secondo il modello NTNU.",
               de:"Das 3D-Herz schlägt wenn du den ganzen Tag abschließt. Kardiovaskuläres Alter per NTNU-Modell."},
            pad:12},
-          {id:"start-workout",
+          {id:"cal-day",
            t:{es:"Registra tu entreno",en:"Log your workout",fr:"Enregistre ton entraînement",it:"Registra il tuo allenamento",de:"Training erfassen"},
-           x:{es:"Toca aquí para abrir tu sesión. Registra pesos y reps en tiempo real — FORJA guarda todo y calcula tu 1RM automáticamente.",
-              en:"Tap here to open your session. Log weights and reps in real time — FORJA saves everything and auto-calculates your 1RM.",
-              fr:"Touche ici pour ouvrir ta session. Enregistre poids et reps — FORJA calcule ton 1RM automatiquement.",
-              it:"Tocca qui per aprire la sessione. Registra pesi e rip — FORJA calcola il tuo 1RM automaticamente.",
-              de:"Hier tippen um die Session zu öffnen. Gewichte erfassen — FORJA berechnet dein 1WM automatisch."},
-           pad:8},
+           x:{es:"Toca cualquier día para ver tu rutina y abre la sesión. Registra pesos y reps — FORJA calcula tu 1RM con la fórmula Epley automáticamente.",
+              en:"Tap any day to see your routine and open the session. Log weights and reps — FORJA auto-calculates your 1RM with the Epley formula.",
+              fr:"Touche n'importe quel jour pour voir ta routine et ouvrir la session. FORJA calcule ton 1RM (Epley).",
+              it:"Tocca qualsiasi giorno per vedere la routine e aprire la sessione. FORJA calcola il 1RM (Epley).",
+              de:"Tippe auf einen Tag um die Routine zu sehen. FORJA berechnet dein 1WM (Epley)."},
+           pad:10},
           {id:"vol-weekly",
            t:{es:"Volumen muscular",en:"Muscle volume",fr:"Volume musculaire",it:"Volume muscolare",de:"Muskelvolumen"},
            x:{es:"Barras de cuántos sets hiciste por músculo vs. el rango recomendado. Verde = perfecto, rojo = trabaja más esa zona.",
@@ -5779,12 +5779,17 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
         const nextStep_=()=>{
           const ns=tourStep+1;
           if(ns>=14){endTour_();return;}
+          // tourStep 4-7: WorkoutScreen
           if(ns===4){
             if(day&&day.ex&&day.ex.length){setInWorkout(true);setTourStep(ns);}
             else{setTabR("train");setTourStep(8);}
             return;
           }
+          // tourStep 8: volver a BannerDashboard tab train
           if(ns===8){setInWorkout(false);setTabR("train");}
+          // tourStep 3: vol-weekly necesita tab train
+          if(ns===3){setTabR("train");}
+          // tourStep 10-13: tab cuerpo
           if(ns>=10&&ns<=13){setTabR("body");}
           const nextDef=T_MAP[ns]!==undefined?TOUR_STEPS[T_MAP[ns]]:null;
           if(nextDef&&nextDef.onEnter) nextDef.onEnter();
