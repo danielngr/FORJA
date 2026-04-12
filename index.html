@@ -3920,221 +3920,295 @@ function ProfileSheet({show,onClose,profile,lang,mono,sp,setStep}){
   var close=function(){setClosing(true);setTimeout(function(){setClosing(false);onClose();},260);};
   var l=lang==="en"?"en":"es";
   var W="rgba(240,242,245,0.95)";
-  var dim="rgba(240,242,245,0.35)";
-  var BLUE="rgba(72,120,255,1)";
-  var BLUE_DIM="rgba(72,120,255,0.15)";
 
   var userName=profile&&profile.name?profile.name:"Atleta";
-  var goalLabels={muscle:l==="en"?"Hypertrophy":"Hipertrofia",strength:l==="en"?"Strength":"Fuerza",lose:l==="en"?"Cut":"Definición",general:"General"};
-  var levelLabels={beg:l==="en"?"Beginner":"Principiante",int:l==="en"?"Intermediate":"Intermedio",adv:l==="en"?"Advanced":"Avanzado"};
-  var equipLabels={gym:l==="en"?"Gym":"Gym",home:l==="en"?"Home":"Casa",bw:l==="en"?"Calisthenics":"Calistenia"};
-  var langNames={es:"Español",en:"English",fr:"Français",it:"Italiano",de:"Deutsch",pt:"Português"};
+  var goalLabels={muscle:"MÚSCULO",strength:"FUERZA",lose:"DEFINICIÓN",general:"GENERAL"};
+  var levelLabels={beg:"01",int:"02",adv:"03"};
+  var levelNames={beg:"PRINCIPIANTE",int:"INTERMEDIO",adv:"AVANZADO"};
+  var equipLabels={gym:"GYM",home:"CASA",bw:"CALISTENIA"};
+  var langNames={es:"ES",en:"EN",fr:"FR",it:"IT",de:"DE",pt:"PT"};
+  var langFull={es:"Español",en:"English",fr:"Français",it:"Italiano",de:"Deutsch",pt:"Português"};
 
   var goal=goalLabels[profile&&profile.goal]||"—";
-  var level=levelLabels[profile&&profile.level]||"—";
+  var levelNum=levelLabels[profile&&profile.level]||"—";
+  var levelName=levelNames[profile&&profile.level]||"—";
   var equip=equipLabels[profile&&profile.equipment]||"—";
   var days=(profile&&profile.selDays?profile.selDays.length:0);
-  var units=profile&&profile.units==="imperial"?"lbs":"kg";
-
-  // Stats pill
-  var StatPill=function(val,lbl){
-    return e("div",{style:{
-      flex:1,padding:"12px 8px",borderRadius:14,textAlign:"center",
-      background:"rgba(255,255,255,0.04)",
-      border:"0.5px solid rgba(255,255,255,0.08)",
-      borderTop:"1px solid rgba(255,255,255,0.12)",
-    }},
-      e("div",{style:{fontFamily:BN,fontSize:22,color:W,lineHeight:1,marginBottom:4}},val),
-      e("div",{style:{fontFamily:MN,fontSize:7,letterSpacing:2,color:dim}},lbl)
-    );
-  };
-
-  // Row con glassmorphism
-  var Row=function(icon,label,sub,onClick,accent){
-    var ac=accent||"255,255,255";
-    return e("div",{
-      onClick:onClick||undefined,
-      style:{
-        display:"flex",alignItems:"center",gap:14,
-        padding:"15px 18px",cursor:onClick?"pointer":"default",
-        borderBottom:"0.5px solid rgba(255,255,255,0.04)",
-        transition:"background 0.15s",
-      }},
-      e("div",{style:{
-        width:38,height:38,borderRadius:12,flexShrink:0,
-        background:"rgba("+ac+",0.08)",
-        border:"1px solid rgba("+ac+",0.15)",
-        borderTop:"1px solid rgba("+ac+",0.25)",
-        display:"flex",alignItems:"center",justifyContent:"center",
-        fontSize:17,
-      }},icon),
-      e("div",{style:{flex:1,minWidth:0}},
-        e("div",{style:{fontSize:14,color:W,fontWeight:500,letterSpacing:0.2}},label),
-        sub?e("div",{style:{fontFamily:MN,fontSize:9,color:dim,marginTop:3,letterSpacing:0.5,
-          overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},sub):null
-      ),
-      onClick?e("div",{style:{
-        fontSize:18,color:"rgba(255,255,255,0.15)",flexShrink:0,
-        fontWeight:300,
-      }},"\u203a"):null
-    );
-  };
-
-  var Divider=function(){
-    return e("div",{style:{height:"0.5px",background:"rgba(255,255,255,0.05)",margin:"0 18px"}});
-  };
-
-  var SectionLabel=function(txt){
-    return e("div",{style:{
-      fontFamily:MN,fontSize:8,letterSpacing:4,
-      color:"rgba(255,255,255,0.18)",
-      padding:"20px 20px 10px",
-    }},txt.toUpperCase());
-  };
-
-  var Card=function(children){
-    return e("div",{style:{
-      margin:"0 16px",
-      background:"rgba(255,255,255,0.03)",
-      border:"0.5px solid rgba(255,255,255,0.07)",
-      borderTop:"1px solid rgba(255,255,255,0.1)",
-      borderRadius:18,overflow:"hidden",
-    }},children);
-  };
+  var age=profile&&profile.age?profile.age:"—";
+  var units=profile&&profile.units==="imperial"?"LBS":"KG";
 
   return e("div",{
     onClick:function(ev){if(ev.target===ev.currentTarget)close();},
     style:{
       position:"fixed",inset:0,zIndex:9500,
-      background:"rgba(0,0,5,0.75)",
-      backdropFilter:"blur(4px)",WebkitBackdropFilter:"blur(4px)",
+      background:"rgba(0,0,0,0.85)",
       display:"flex",flexDirection:"column",justifyContent:"flex-end",
-      opacity:closing?0:1,transition:"opacity 0.26s ease",
+      opacity:closing?0:1,transition:"opacity 0.3s ease",
     }},
     e("div",{style:{
-      background:"linear-gradient(180deg,#0c1120 0%,#080d1a 100%)",
-      borderRadius:"24px 24px 0 0",
-      borderTop:"1px solid rgba(255,255,255,0.12)",
-      boxShadow:"0 -24px 80px rgba(0,0,20,0.8)",
-      maxHeight:"88vh",display:"flex",flexDirection:"column",
+      background:"#04080f",
+      borderRadius:"28px 28px 0 0",
+      border:"1px solid rgba(255,255,255,0.07)",
+      borderBottom:"none",
+      maxHeight:"92vh",
+      display:"flex",flexDirection:"column",
       transform:closing?"translateY(60px)":"translateY(0)",
-      transition:"transform 0.3s cubic-bezier(0.34,1.56,0.64,1)",
+      transition:"transform 0.32s cubic-bezier(0.34,1.56,0.64,1)",
+      overflow:"hidden",
     }},
 
-      // Handle
-      e("div",{style:{padding:"14px 0 0",display:"flex",justifyContent:"center",flexShrink:0}},
-        e("div",{onClick:close,style:{width:40,height:4,borderRadius:2,
-          background:"rgba(255,255,255,0.12)",cursor:"pointer"}})
+      // ── TOP GLOW DECORATION ──
+      e("div",{style:{
+        position:"absolute",top:-80,left:"50%",transform:"translateX(-50%)",
+        width:300,height:300,borderRadius:"50%",
+        background:"radial-gradient(circle,rgba(72,120,255,0.08) 0%,transparent 70%)",
+        pointerEvents:"none",
+      }}),
+
+      // ── HANDLE ──
+      e("div",{style:{padding:"14px 0 0",display:"flex",justifyContent:"center",flexShrink:0,position:"relative",zIndex:1}},
+        e("div",{onClick:close,style:{width:44,height:4,borderRadius:2,
+          background:"rgba(255,255,255,0.1)",cursor:"pointer"}})
       ),
 
-      // Hero — avatar + nombre + stats
-      e("div",{style:{padding:"16px 20px 20px",flexShrink:0}},
-        e("div",{style:{display:"flex",alignItems:"center",gap:16,marginBottom:20}},
-          // Avatar con initial
-          e("div",{style:{
-            width:58,height:58,borderRadius:18,flexShrink:0,
-            background:"linear-gradient(135deg,rgba(72,120,255,0.35),rgba(40,60,180,0.25))",
-            border:"1px solid rgba(72,120,255,0.35)",
-            borderTop:"1px solid rgba(130,175,255,0.4)",
-            boxShadow:"0 0 24px rgba(72,120,255,0.2)",
-            display:"flex",alignItems:"center",justifyContent:"center",
-            fontFamily:BN,fontSize:26,color:"rgba(150,195,255,0.95)",
-          }},userName.charAt(0).toUpperCase()),
-          e("div",{style:{flex:1}},
-            e("div",{style:{fontFamily:BN,fontSize:26,color:W,
-              letterSpacing:1,lineHeight:1,marginBottom:5}},
-              userName.toUpperCase()),
-            e("div",{style:{
-              display:"inline-flex",alignItems:"center",gap:6,
-              padding:"4px 10px",borderRadius:8,
-              background:"rgba(72,120,255,0.12)",
-              border:"1px solid rgba(72,120,255,0.3)",
+      // ── HERO ──
+      e("div",{style:{
+        padding:"20px 24px 24px",
+        position:"relative",zIndex:1,flexShrink:0,
+      }},
+        // Nombre grande estilo FORJA
+        e("div",{style:{
+          fontFamily:BN,
+          fontSize:"clamp(48px,13vw,64px)",
+          lineHeight:0.88,letterSpacing:2,
+          color:"rgba(240,242,245,0.08)",
+          position:"absolute",top:16,right:20,
+          pointerEvents:"none",
+          userSelect:"none",
+        }},userName.toUpperCase().slice(0,6)),
+
+        e("div",{style:{
+          fontFamily:MN,fontSize:8,letterSpacing:5,
+          color:"rgba(72,120,255,0.7)",marginBottom:10,
+        }},l==="en"?"// ATHLETE PROFILE":"// PERFIL ATLETA"),
+
+        e("div",{style:{
+          fontFamily:BN,fontSize:"clamp(36px,10vw,48px)",
+          letterSpacing:1,lineHeight:0.92,
+          color:W,marginBottom:20,
+        }},userName.toUpperCase()),
+
+        // Métricas en línea horizontal
+        e("div",{style:{display:"flex",gap:0,overflow:"hidden",borderRadius:14,
+          border:"1px solid rgba(255,255,255,0.07)"}},
+          [
+            {val:goal,lbl:l==="en"?"GOAL":"OBJETIVO"},
+            {val:levelNum,lbl:levelName},
+            {val:days+"d",lbl:l==="en"?"WEEK":"SEM"},
+            {val:age,lbl:l==="en"?"AGE":"EDAD"},
+            {val:units,lbl:l==="en"?"UNITS":"UNID"},
+          ].map(function(s,i){
+            return e("div",{key:i,style:{
+              flex:1,padding:"12px 4px",textAlign:"center",
+              borderRight:i<4?"1px solid rgba(255,255,255,0.07)":"none",
+              background:i===0?"rgba(72,120,255,0.06)":"rgba(255,255,255,0.02)",
             }},
-              e("div",{style:{width:5,height:5,borderRadius:"50%",
-                background:BLUE,boxShadow:"0 0 6px "+BLUE}}),
-              e("span",{style:{fontFamily:MN,fontSize:8,fontWeight:700,
-                letterSpacing:2,color:"rgba(130,175,255,0.9)"}},
-                "FORJA "+(l==="en"?"ATHLETE":"ATLETA"))
-            )
+              e("div",{style:{fontFamily:BN,fontSize:18,color:i===0?"rgba(130,175,255,0.9)":W,
+                lineHeight:1,marginBottom:3}},s.val),
+              e("div",{style:{fontFamily:MN,fontSize:6,letterSpacing:1.5,
+                color:"rgba(255,255,255,0.25)"}},s.lbl)
+            );
+          })
+        )
+      ),
+
+      // ── SCROLL ──
+      e("div",{style:{overflowY:"auto",flex:1,paddingBottom:48,position:"relative",zIndex:1}},
+
+        // Separador con label
+        e("div",{style:{display:"flex",alignItems:"center",gap:12,padding:"4px 24px 16px"}},
+          e("div",{style:{flex:1,height:"0.5px",background:"rgba(255,255,255,0.06)"}}),
+          e("div",{style:{fontFamily:MN,fontSize:7,letterSpacing:4,color:"rgba(255,255,255,0.15)"}},
+            l==="en"?"SETTINGS":"AJUSTES"),
+          e("div",{style:{flex:1,height:"0.5px",background:"rgba(255,255,255,0.06)"}})
+        ),
+
+        // ── CAMBIAR RUTINA ──
+        e("div",{
+          onClick:function(){close();setTimeout(function(){setStep&&setStep(1);},300);},
+          style:{
+            margin:"0 16px 8px",padding:"18px 20px",
+            borderRadius:18,cursor:"pointer",
+            background:"rgba(72,120,255,0.07)",
+            border:"1px solid rgba(72,120,255,0.2)",
+            borderTop:"1px solid rgba(130,175,255,0.25)",
+            display:"flex",alignItems:"center",gap:16,
+            transition:"all 0.2s",
+          }},
+          e("div",{style:{
+            width:44,height:44,borderRadius:14,flexShrink:0,
+            background:"rgba(72,120,255,0.15)",
+            border:"1px solid rgba(72,120,255,0.3)",
+            display:"flex",alignItems:"center",justifyContent:"center",
+            fontFamily:BN,fontSize:20,color:"rgba(130,175,255,0.9)",
+          }},"⚡"),
+          e("div",{style:{flex:1}},
+            e("div",{style:{fontFamily:BN,fontSize:20,color:W,letterSpacing:1,lineHeight:1,
+              marginBottom:4}},l==="en"?"CHANGE ROUTINE":"CAMBIAR RUTINA"),
+            e("div",{style:{fontFamily:MN,fontSize:9,color:"rgba(255,255,255,0.35)",letterSpacing:1}},
+              goal+" · "+levelName+" · "+equip+" · "+days+"d")
+          ),
+          e("div",{style:{fontSize:20,color:"rgba(72,120,255,0.5)"}},"\u203a")
+        ),
+
+        // ── IDIOMA ──
+        e("div",{
+          onClick:function(){close();setTimeout(function(){setStep&&setStep(1);},300);},
+          style:{
+            margin:"0 16px 8px",padding:"16px 20px",
+            borderRadius:18,cursor:"pointer",
+            background:"rgba(255,255,255,0.03)",
+            border:"1px solid rgba(255,255,255,0.07)",
+            borderTop:"1px solid rgba(255,255,255,0.1)",
+            display:"flex",alignItems:"center",gap:16,
+          }},
+          e("div",{style:{
+            width:44,height:44,borderRadius:14,flexShrink:0,
+            background:"rgba(255,255,255,0.05)",
+            border:"1px solid rgba(255,255,255,0.1)",
+            display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,
+          }},"🌍"),
+          e("div",{style:{flex:1}},
+            e("div",{style:{fontFamily:BN,fontSize:20,color:W,letterSpacing:1,lineHeight:1,
+              marginBottom:4}},l==="en"?"LANGUAGE":"IDIOMA"),
+            e("div",{style:{fontFamily:MN,fontSize:9,color:"rgba(255,255,255,0.35)",letterSpacing:1}},
+              langFull[lang]||lang)
+          ),
+          e("div",{style:{
+            fontFamily:MN,fontSize:9,fontWeight:700,letterSpacing:2,
+            color:"rgba(255,255,255,0.4)",
+            padding:"4px 10px",borderRadius:8,
+            border:"1px solid rgba(255,255,255,0.1)",
+          }},langNames[lang]||lang)
+        ),
+
+        // ── UNIDADES ──
+        e("div",{
+          onClick:function(){
+            if(sp&&profile){
+              var nu=profile.units==="imperial"?"metric":"imperial";
+              sp(Object.assign({},profile,{units:nu}));
+            }
+          },
+          style:{
+            margin:"0 16px 24px",padding:"16px 20px",
+            borderRadius:18,cursor:"pointer",
+            background:"rgba(255,255,255,0.03)",
+            border:"1px solid rgba(255,255,255,0.07)",
+            borderTop:"1px solid rgba(255,255,255,0.1)",
+            display:"flex",alignItems:"center",gap:16,
+          }},
+          e("div",{style:{
+            width:44,height:44,borderRadius:14,flexShrink:0,
+            background:"rgba(255,255,255,0.05)",
+            border:"1px solid rgba(255,255,255,0.1)",
+            display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,
+          }},"⚖️"),
+          e("div",{style:{flex:1}},
+            e("div",{style:{fontFamily:BN,fontSize:20,color:W,letterSpacing:1,lineHeight:1,
+              marginBottom:4}},l==="en"?"UNITS":"UNIDADES"),
+            e("div",{style:{fontFamily:MN,fontSize:9,color:"rgba(255,255,255,0.35)",letterSpacing:1}},
+              l==="en"?"Tap to switch":"Toca para cambiar")
+          ),
+          // Toggle visual
+          e("div",{style:{
+            display:"flex",borderRadius:10,overflow:"hidden",
+            border:"1px solid rgba(255,255,255,0.1)",
+          }},
+            e("div",{style:{
+              padding:"6px 10px",fontFamily:MN,fontSize:9,fontWeight:700,letterSpacing:1,
+              background:profile&&profile.units==="imperial"?"rgba(255,255,255,0.04)":"rgba(72,120,255,0.2)",
+              color:profile&&profile.units==="imperial"?"rgba(255,255,255,0.25)":"rgba(130,175,255,0.9)",
+              borderRight:"1px solid rgba(255,255,255,0.08)",
+            }},"KG"),
+            e("div",{style:{
+              padding:"6px 10px",fontFamily:MN,fontSize:9,fontWeight:700,letterSpacing:1,
+              background:profile&&profile.units==="imperial"?"rgba(72,120,255,0.2)":"rgba(255,255,255,0.04)",
+              color:profile&&profile.units==="imperial"?"rgba(130,175,255,0.9)":"rgba(255,255,255,0.25)",
+            }},"LBS")
           )
         ),
-        // Stats row
-        e("div",{style:{display:"flex",gap:8}},
-          StatPill(goal,l==="en"?"GOAL":"OBJETIVO"),
-          StatPill(level,l==="en"?"LEVEL":"NIVEL"),
-          StatPill(days+"d",l==="en"?"DAYS/WK":"DÍAS/SEM"),
-          StatPill(units,l==="en"?"UNITS":"UNID.")
-        )
-      ),
 
-      // Scroll content
-      e("div",{style:{overflowY:"auto",paddingBottom:48}},
-
-        // PROGRAMA
-        e("div",null,
-          SectionLabel(l==="en"?"Program":"Programa"),
-          Card(e("div",null,
-            Row("⚡",l==="en"?"Change Routine":"Cambiar Rutina",
-              l==="en"?"Goal · Level · Equipment · Days":"Objetivo · Nivel · Equipo · Días",
-              function(){close();setTimeout(function(){setStep&&setStep(1);},300);},"72,120,255"),
-            Row("🌍",l==="en"?"Language":"Idioma",
-              langNames[lang]||lang,
-              function(){close();setTimeout(function(){setStep&&setStep(1);},300);},"255,255,255"),
-            Row("⚖️",l==="en"?"Units":"Unidades",
-              profile&&profile.units==="imperial"?"Imperial (lbs/in)":"Métrico (kg/cm)",
-              function(){
-                if(sp&&profile){
-                  var nu=profile.units==="imperial"?"metric":"imperial";
-                  sp(Object.assign({},profile,{units:nu}));
-                }
-                close();
-              },"255,255,255")
-          ))
+        // ── PRO BANNER ──
+        e("div",{style:{
+          margin:"0 16px 24px",padding:"20px",
+          borderRadius:18,
+          background:"linear-gradient(135deg,rgba(72,120,255,0.12),rgba(40,60,200,0.06))",
+          border:"1px solid rgba(72,120,255,0.2)",
+          borderTop:"1px solid rgba(130,175,255,0.3)",
+          position:"relative",overflow:"hidden",
+        }},
+          e("div",{style:{
+            position:"absolute",top:-30,right:-20,
+            fontFamily:BN,fontSize:80,color:"rgba(72,120,255,0.05)",
+            lineHeight:1,pointerEvents:"none",userSelect:"none",letterSpacing:2,
+          }},"PRO"),
+          e("div",{style:{fontFamily:MN,fontSize:8,letterSpacing:4,
+            color:"rgba(130,175,255,0.6)",marginBottom:8}},"FORJA PRO"),
+          e("div",{style:{fontFamily:BN,fontSize:26,color:"rgba(150,195,255,0.95)",
+            letterSpacing:1,lineHeight:1,marginBottom:12}},
+            l==="en"?"ALL FEATURES ACTIVE":"TODAS LAS FUNCIONES ACTIVAS"),
+          e("div",{style:{display:"flex",flexDirection:"column",gap:6}},
+            ["🏆 "+(l==="en"?"18 Athlete Programs":"18 Programas de Atletas"),
+             "🧬 "+(l==="en"?"Muscle Heatmap 3D":"Mapa Muscular 3D"),
+             "❤️ "+(l==="en"?"Cardiovascular Age (NTNU)":"Edad Cardiovascular NTNU"),
+            ].map(function(txt,i){
+              return e("div",{key:i,style:{
+                fontFamily:MN,fontSize:10,color:"rgba(130,175,255,0.7)",
+                letterSpacing:0.5,display:"flex",alignItems:"center",gap:8,
+              }},
+                e("div",{style:{width:4,height:4,borderRadius:"50%",
+                  background:"rgba(72,120,255,0.6)",flexShrink:0}}),
+                txt
+              );
+            })
+          )
         ),
 
-        // FORJA PRO
-        e("div",null,
-          SectionLabel("FORJA PRO"),
-          Card(e("div",null,
-            e("div",{style:{
-              padding:"16px 18px",
-              background:"linear-gradient(135deg,rgba(72,120,255,0.12),rgba(40,60,180,0.08))",
-              borderBottom:"0.5px solid rgba(255,255,255,0.05)",
+        // ── VERSION + RESET ──
+        e("div",{style:{margin:"0 16px",display:"flex",gap:8}},
+          e("div",{style:{
+            flex:1,padding:"14px 16px",borderRadius:14,
+            background:"rgba(255,255,255,0.02)",
+            border:"1px solid rgba(255,255,255,0.06)",
+            textAlign:"center",
+          }},
+            e("div",{style:{fontFamily:BN,fontSize:18,color:"rgba(255,255,255,0.3)",
+              letterSpacing:1,marginBottom:2}},"FORJA"),
+            e("div",{style:{fontFamily:MN,fontSize:7,letterSpacing:2,
+              color:"rgba(255,255,255,0.15)"}},l==="en"?"v1.0 · PWA":"v1.0 · PWA")
+          ),
+          e("div",{
+            onClick:function(){
+              var keys=[];
+              for(var k in localStorage){if(k.indexOf("fv8")===0)keys.push(k);}
+              keys.forEach(function(k){localStorage.removeItem(k);});
+              window.location.reload();
+            },
+            style:{
+              flex:1,padding:"14px 16px",borderRadius:14,cursor:"pointer",
+              background:"rgba(220,50,50,0.05)",
+              border:"1px solid rgba(220,50,50,0.12)",
+              textAlign:"center",
+              transition:"all 0.2s",
             }},
-              e("div",{style:{fontFamily:BN,fontSize:20,color:"rgba(150,195,255,0.95)",
-                letterSpacing:1,marginBottom:4}},
-                l==="en"?"ALL FEATURES UNLOCKED":"TODAS LAS FUNCIONES ACTIVAS"),
-              e("div",{style:{fontFamily:MN,fontSize:9,color:"rgba(130,175,255,0.6)",
-                letterSpacing:1}},
-                "FORJA PRO · MVP")
-            ),
-            Row("🏆",l==="en"?"18 Athlete Programs":"18 Programas de Atletas",
-              l==="en"?"The Rock, Arnold, Hemsworth + 15 more":"The Rock, Arnold, Hemsworth + 15 más",
-              null,"240,180,40"),
-            Row("🧬",l==="en"?"Muscle Heatmap":"Mapa Muscular 3D",
-              l==="en"?"Recovery tracking by muscle zone":"Recuperación por zona muscular",
-              null,"72,120,255"),
-            Row("❤️",l==="en"?"Cardiovascular Age":"Edad Cardiovascular",
-              l==="en"?"NTNU scientific model":"Modelo científico NTNU",
-              null,"220,80,80")
-          ))
-        ),
-
-        // DATOS
-        e("div",null,
-          SectionLabel(l==="en"?"Data":"Datos"),
-          Card(e("div",null,
-            Row("📱","FORJA","v1.0 · PWA · danielngr.github.io",null,"255,255,255"),
-            Row("🔄",l==="en"?"Reset App":"Reiniciar App",
-              l==="en"?"Clears local data and restarts":"Borra datos locales y reinicia",
-              function(){
-                var keys=[];
-                for(var k in localStorage){if(k.indexOf("fv8")===0)keys.push(k);}
-                keys.forEach(function(k){localStorage.removeItem(k);});
-                window.location.reload();
-              },"220,60,60")
-          ))
+            e("div",{style:{fontFamily:BN,fontSize:18,color:"rgba(220,80,80,0.7)",
+              letterSpacing:1,marginBottom:2}},l==="en"?"RESET":"RESET"),
+            e("div",{style:{fontFamily:MN,fontSize:7,letterSpacing:2,
+              color:"rgba(220,80,80,0.4)"}},l==="en"?"clear data":"borrar datos")
+          )
         )
+
       )
     )
   );
