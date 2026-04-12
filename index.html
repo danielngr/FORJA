@@ -6936,10 +6936,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
         transform:visible?"translateY(0)":"translateY(6px)",
         transition:"opacity 0.28s ease, transform 0.28s ease",
       }}>
-        <div style={{fontFamily:MN,fontSize:9,letterSpacing:4,
-          color:"rgba(100,150,255,0.9)",marginBottom:10}}>
-          {String(obStep+1).padStart(2,"0")} / {String(TOTAL).padStart(2,"0")} · {(tx.steps||[])[obStep]||""}
-        </div>
+
         <div style={{fontFamily:BN,fontSize:"clamp(32px,9vw,44px)",
           lineHeight:0.93,color:"rgba(240,242,245,1)",whiteSpace:"pre-line"}}>
           {[tx.s0,tx.s1,tx.s2,tx.s3,tx.s4,tx.s5,tx.s6][obStep]}
