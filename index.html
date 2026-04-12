@@ -5837,9 +5837,16 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
   const particlesRef=React.useRef([]);
   const mouseRef=React.useRef({x:0,y:0});
   const progressRef=React.useRef(0);
+  const burstRef=React.useRef(0); // timestamp del último burst
 
   const set=(k,v)=>setOb(d=>({...d,[k]:v}));
-  const markDone=(s)=>setDone(d=>d.includes(s)?d:[...d,s]);
+  const markDone=(s)=>{
+    setDone(d=>{
+      if(d.includes(s)) return d;
+      burstRef.current=Date.now(); // dispara burst visual
+      return [...d,s];
+    });
+  };
 
   // ── Esfera de partículas 2D en Canvas (sin Three.js) ───────
   React.useEffect(()=>{
@@ -5883,7 +5890,9 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
       const cosX=Math.cos(my+Math.sin(t*0.08)*0.1);
       const sinX=Math.sin(my+Math.sin(t*0.08)*0.1);
       // Pulso de progreso
-      const pulse=Math.abs(Math.sin(t*1.5))*prog;
+      const timeSinceBurst=(Date.now()-burstRef.current)/1000;
+      const burstPulse=timeSinceBurst<0.8?Math.sin(timeSinceBurst*Math.PI/0.8)*0.5:0;
+      const pulse=Math.abs(Math.sin(t*1.5))*prog*0.5+burstPulse;
       const sorted=pts.map(p=>{
         const wave=Math.sin(t*1.4+p.phase)*0.06;
         const sc=1+wave+pulse*0.12;
@@ -5900,12 +5909,21 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
         const depth=(p.z+1)/2; // 0=atrás 1=frente
         const alpha=0.2+depth*0.7;
         const size=p.s*(0.5+depth*0.8)*(1+pulse*0.3);
-        // Color: verde base, más brillante con progreso
-        const gv=Math.floor(181+prog*50);
+        // Color: verde FORJA — con variación sutil por profundidad
+        const r=Math.floor(40+depth*30);
+        const g=Math.floor(200+depth*40+prog*15);
+        const b=Math.floor(80+depth*20);
         ctx.beginPath();
         ctx.arc(p.sx,p.sy,size,0,Math.PI*2);
-        ctx.fillStyle="rgba(63,"+gv+",142,"+alpha.toFixed(2)+")";
+        ctx.fillStyle="rgba("+r+","+g+","+b+","+alpha.toFixed(2)+")";
         ctx.fill();
+        // Halo en partículas frontales
+        if(depth>0.75&&size>2){
+          ctx.beginPath();
+          ctx.arc(p.sx,p.sy,size*2.2,0,Math.PI*2);
+          ctx.fillStyle="rgba(63,207,130,"+(alpha*0.08).toFixed(3)+")";
+          ctx.fill();
+        }
       });
     };
     animate();
@@ -5932,6 +5950,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
   // Actualizar progreso de la esfera
   React.useEffect(()=>{
     progressRef.current=done.length/7;
+    if(done.length>0) burstRef.current=Date.now();
   },[done]);
 
   // Actualizar colores de la esfera según selección
