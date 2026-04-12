@@ -5651,7 +5651,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
         const M_="'SF Mono','Fira Code',monospace";
         const S_="'DM Sans',sans-serif";
         const es=lang==="es"||lang==="pt";
-        const TOTAL=10;
+        const TOTAL=14;
         const STEPS=[
           {id:"cal-day", pad:8,
            tES:"Tu semana",         tEN:"Your week",          tFR:"Ta semaine",       tIT:"La tua settimana",  tDE:"Deine Woche",
@@ -5726,7 +5726,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
            xIT:"FORJA calcola automaticamente il tuo 1RM stimato (formula Epley). Vedi i tuoi record e la progressione.",
            xDE:"FORJA berechnet automatisch dein geschätztes 1WM (Epley-Formel). Sieh deine Bestleistungen und Progression."},
         ];
-        const STEP_MAP={0:0,1:1,2:2,3:3,8:4,9:5,10:6,11:7,12:8,13:9,14:10,15:11};
+        const STEP_MAP={0:0,1:1,2:2,3:3,8:4,9:5,10:6,11:7,12:8,13:9};
         const si=STEP_MAP[tourStep];
         if(tourAskVisible&&tourReady&&tourStep===null) return(
           <div style={{position:"fixed",inset:0,zIndex:9000,
@@ -5795,7 +5795,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
           if(ns>=TOTAL){endTour();return;}
           if(ns===4){ if(day&&day.ex&&day.ex.length){ setInWorkout(true); setTourStep(ns); } else { setTabR('train'); setTourStep(8); } return; }
           if(ns===8){ setInWorkout(false); setTabR("train"); }
-          if(ns>=10&&ns<=15){
+          if(ns>=10&&ns<=13){
             setTabR('body');
           }
           const nextStepDef=STEPS[STEP_MAP[ns]];
