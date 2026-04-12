@@ -4580,23 +4580,7 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
       padding:"6px",
       position:"relative",
     }},
-      // Flecha izquierda — semana anterior
-      e("button",{onClick:function(){setWeekOff(function(p){return Math.max(-12,p-1);});},
-        style:{
-          position:"absolute",left:-28,top:"50%",transform:"translateY(-50%)",
-          background:"none",border:"none",cursor:"pointer",
-          color:"rgba(255,255,255,0.2)",fontSize:18,padding:4,
-          lineHeight:1,zIndex:2,
-        }},"‹"),
-      // Flecha derecha — semana siguiente
-      e("button",{onClick:function(){setWeekOff(function(p){return Math.min(0,p+1);});},
-        style:{
-          position:"absolute",right:-28,top:"50%",transform:"translateY(-50%)",
-          background:"none",border:"none",
-          cursor:weekOff===0?"default":"pointer",
-          color:weekOff===0?"rgba(255,255,255,0.06)":"rgba(255,255,255,0.2)",
-          fontSize:18,padding:4,lineHeight:1,zIndex:2,
-        }},"›"),
+
       e("div",{style:{
         display:"flex",alignItems:"center",
         position:"relative",
