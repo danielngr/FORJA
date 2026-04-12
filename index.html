@@ -2525,16 +2525,16 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
   if(allDone){
     const confettiColors=["#3fcf8e","#6a8fc0","#f0b429","#8878c0","#F0F2F5","#e05555"];
     return(
-      <div style={{position:"fixed",inset:0,background:"#080a0e",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:"sans-serif",overflow:"hidden"}}>
+      <div style={{position:"fixed",inset:0,background:"#04080f",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:"sans-serif",overflow:"hidden"}}>
         
-        <div style={{width:88,height:88,borderRadius:"50%",background:C2.green,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:`0 0 48px ${C2.green}55`,marginBottom:22,animation:"celebrate .6s cubic-bezier(.34,1.56,.64,1) both"}}>
-          <svg width="40" height="40" viewBox="0 0 40 40" fill="none"><path d="M7 20L16 29L33 11" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        <div style={{width:80,height:80,borderRadius:20,background:"rgba(72,120,255,0.08)",border:"1px solid rgba(72,120,255,0.4)",borderTop:"1px solid rgba(130,175,255,0.6)",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 0 48px rgba(72,120,255,0.18)",marginBottom:24,animation:"celebrate .6s cubic-bezier(.34,1.56,.64,1) both"}}>
+          <svg width="40" height="40" viewBox="0 0 40 40" fill="none"><path d="M7 20L16 29L33 11" stroke="rgba(130,175,255,0.95)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
         </div>
-        <div style={{fontSize:28,fontWeight:900,letterSpacing:-1,color:C2.tx,textAlign:"center",padding:"0 32px",animation:"fu .5s .25s both"}}>{celebMsg}</div>
-        <div style={{fontFamily:"'SF Mono','Courier New',monospace",fontSize:9,color:C2.tx3,letterSpacing:2,marginTop:8,animation:"fu .5s .4s both"}}>
+        <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:48,letterSpacing:1,color:"rgba(240,242,245,0.95)",textAlign:"center",padding:"0 28px",animation:"fu .5s .25s both"}}>{celebMsg}</div>
+        <div style={{fontFamily:"'SF Mono','Courier New',monospace",fontSize:9,color:"rgba(72,120,255,0.65)",letterSpacing:3,marginTop:10,animation:"fu .5s .4s both"}}>
           {lang==="es"?"EL TRABAJO DE HOY FORJA EL ATLETA DE MAÑANA":lang==="fr"?"LE TRAVAIL D'AUJOURD'HUI FORGE L'ATHLÈTE DE DEMAIN":lang==="it"?"IL LAVORO DI OGGI FORGIA L'ATLETA DI DOMANI":lang==="de"?"DIE ARBEIT VON HEUTE SCHMIEDET DEN ATHLETEN VON MORGEN":lang==="pt"?"O TRABALHO DE HOJE FORJA O ATLETA DE AMANHÃ":"TODAY'S WORK BUILDS TOMORROW'S ATHLETE"}
         </div>
-        <div style={{display:"flex",gap:24,marginTop:28,animation:"fu .5s .55s both"}}>
+        <div style={{display:"flex",gap:10,marginTop:32,padding:"0 24px",animation:"fu .5s .55s both"}}>
           {[{v:exs.length,l:lang==="es"||lang==="pt"?"EJERCICIOS":lang==="fr"?"EXERCICES":lang==="it"?"ESERCIZI":lang==="de"?"ÜBUNGEN":"EXERCISES",c:C2.tx},
             {v:doneSets,l:(L[lang]||L.en).sets,c:C2.green},
             {v:fmtSess(),l:lang==="es"||lang==="pt"?"DURACIÓN":lang==="fr"?"DURÉE":lang==="it"?"DURATA":lang==="de"?"DAUER":"DURATION",c:C2.blue}
@@ -2548,7 +2548,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
             </React.Fragment>
           ))}
         </div>
-        <button onClick={onBack} style={{marginTop:36,padding:"14px 42px",background:C2.tx,color:C2.bgD,border:"none",borderRadius:12,fontFamily:"'SF Mono','Courier New',monospace",fontSize:11,fontWeight:700,letterSpacing:2,cursor:"pointer",animation:"fu .5s .7s both"}}>
+        <button onClick={onBack} style={{marginTop:36,padding:"15px 0",width:"80%",background:"linear-gradient(180deg,rgba(72,120,255,0.9),rgba(50,90,200,0.85))",color:"#fff",border:"none",borderTop:"1px solid rgba(130,175,255,0.4)",borderRadius:14,fontFamily:"'SF Mono','Courier New',monospace",fontSize:11,fontWeight:700,letterSpacing:3,cursor:"pointer",animation:"fu .5s .7s both",boxShadow:"0 0 28px rgba(72,120,255,0.25)"}}>
           {"← "+(L[lang]||L.en).back}
         </button>
       </div>
