@@ -3589,7 +3589,7 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
             React.createElement("div",{style:{display:"flex",alignItems:"baseline",gap:3}},
               React.createElement("span",{style:{fontFamily:"monospace",fontSize:18,fontWeight:800,color:deltaColor||"rgba(255,255,255,0.7)",lineHeight:1}},fitnessAge!==null?fitnessAge:"—"),
               React.createElement("span",{style:{fontFamily:"monospace",fontSize:7,color:"rgba(255,255,255,0.25)"}}," años"),
-              weeklyDelta!==undefined?React.createElement("span",{style:{fontFamily:"monospace",fontSize:8,fontWeight:700,color:deltaColor,marginLeft:2}},
+              weeklyDelta!==null&&weeklyDelta!==undefined&&deltaAbs?React.createElement("span",{style:{fontFamily:"monospace",fontSize:8,fontWeight:700,color:deltaColor,marginLeft:2}},
                 deltaSign+" "+deltaAbs+"/sem"
               ):null
             )
@@ -4020,11 +4020,13 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
   fitnessAge=Math.max(userAge-15, Math.min(userAge+15, fitnessAge));
   ageDiff=userAge-fitnessAge;
 
-  // Color y flecha: solo dependen del estado vivo/congelado
+  // Delta solo si hay historial real (3+ entrenos)
+  var _lh={}; try{_lh=JSON.parse(localStorage.getItem("fv8l")||"{}");}catch(_){}
+  var hasHistory=Object.keys(_lh).length>=3;
   var deltaSign=heartAlive?"↓":"↑";
   var deltaColor=heartAlive?"#3fcf8e":"#e8a020";
-  var deltaAbs="0.1";
-  var weeklyDelta=heartAlive?-0.1:+0.1;
+  var deltaAbs=hasHistory?"0.1":null;
+  var weeklyDelta=hasHistory?(heartAlive?-0.1:+0.1):null;
   var fitnessAgeColor=heartAlive?"#3fcf8e":"#e8a020";
 
   return e("div",{style:{position:"relative",zIndex:1}},
