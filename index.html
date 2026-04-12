@@ -5468,7 +5468,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
             trapecio:'TRAPECIO',espalda_baja:'LUMBAR',
             antebrazo_izq:'ANTEBRAZO',antebrazo_der:'ANTEBRAZO'};
           const label=ZLBL[zk]||zk.toUpperCase().replace(/_IZQ|_DER/,'');
-          const sideLabel=zk.endsWith('_izq')?(lang==='es'?' · IZQ':' · LEFT'):zk.endsWith('_der')?(lang==='es'?' · DER':' · RIGHT'):'';
+          const sideLabel='';
           return(
             <div onClick={()=>setShowXPTooltip(null)} style={{
               position:'fixed',bottom:90,left:16,right:16,zIndex:500,
