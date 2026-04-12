@@ -3,12 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
-<title>FORJA — Forge Your Legacy</title>
-  <meta name="description" content="Premium fitness app with AI-generated routines, celebrity programs, and muscle recovery tracking.">
-  <meta property="og:title" content="FORJA — Forge Your Legacy">
-  <meta property="og:description" content="Train like The Rock. Track your recovery. Forge your legacy.">
-  <meta name="theme-color" content="#04080f">
-  <meta name="mobile-web-app-capable" content="yes">
+<title>FORJA</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -88,7 +83,7 @@ input[type=number]{-moz-appearance:textfield;}
 <div id="root" style="opacity:0;transition:opacity 0.2s"></div>
 <div id="forja-sync" title="sync"></div>
 <script>
-
+console.log('FORJA JS inicio');
 // ===============================================================
 // FORJA SUPABASE LAYER v1.0
 // Hybrid: localStorage instant + Supabase async sync
@@ -181,7 +176,7 @@ function signInWithGoogle(){
   const sb=getSB();
   if(!sb){console.error('Supabase not available');return;}
   const redirectTo='https://danielngr.github.io/FORJA/';
-  
+  console.log('Starting Google OAuth, redirectTo:', redirectTo);
   sb.auth.signInWithOAuth({
     provider:'google',
     options:{redirectTo,scopes:'email profile'}
@@ -215,10 +210,10 @@ function getUserEmail(){
 function doGoogleSignIn(){
   const sb=getSB();
   if(!sb){ console.error('FORJA: Supabase not available'); return; }
-  
+  console.log('FORJA: Signing out anonymous session before Google OAuth...');
   // Must sign out anonymous session first — otherwise Supabase ignores the OAuth response
   sb.auth.signOut().finally(function(){
-    
+    console.log('FORJA: Starting Google OAuth...');
     sb.auth.signInWithOAuth({
       provider:'google',
       options:{
@@ -227,7 +222,7 @@ function doGoogleSignIn(){
       }
     }).then(function(result){
       if(result.error) console.error('FORJA: OAuth error:', result.error.message);
-      else 
+      else console.log('FORJA: OAuth redirecting to Google...');
     }).catch(function(e){ console.error('FORJA: OAuth catch:', e.message); });
   });
 }
@@ -2263,7 +2258,9 @@ const getVid=name=>{
   if(!name) return null;
   const low=name.toLowerCase().trim();
   const result=VID[low]||VID[ES_TO_META[low]]||null;
-  if(!result)   else   return result;
+  if(!result) console.log("[FORJA] No video for:",JSON.stringify(low));
+  else console.log("[FORJA] Video found:",low,"→",result.slice(-40));
+  return result;
 };
 const epley=(w,r)=>r===1?+w:Math.round(+w*(1+0.0333*+r));
 const ARC_C=2*Math.PI*18; // circumference r=18
@@ -7256,7 +7253,7 @@ function App(){
       });
       setTimeout(()=>{
         if(!authChecked){
-          
+          console.log('FORJA: OAuth timeout, showing login screen');
           window.history.replaceState(null,'',window.location.pathname);
           setReady(true);
           setAuthChecked(true);
@@ -7270,7 +7267,7 @@ function App(){
             const isGoogle=session.user.email && 
               session.user.app_metadata?.provider==='google';
             if(isGoogle){
-              
+              console.log('FORJA: Returning Google user detected:', session.user.email);
             }
           }
           loadAndRoute(false);
@@ -7627,7 +7624,8 @@ function BotChat({profile,routine,done,lang,mono}){
     const chosen=opts[Math.floor(Math.random()*opts.length)];
     canWalk=chosen.walk;
     currentAnim=chosen.a;
-    
+    console.log('BOT mood=',mood,'anim=',chosen.a);
+
     fetch(CDN+chosen.a+".glb").then(r=>r.arrayBuffer()).then(buf=>{
       new THREE.GLTFLoader().parse(buf, CDN, (gltf)=>{
         model=gltf.scene;
