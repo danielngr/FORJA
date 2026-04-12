@@ -3751,7 +3751,7 @@ function AthleteSheet({show,onClose,lang,mono,profile,sp,sr}){
       const routine=buildCelebRoutine(celeb,eqArr,sd.slice(0,celeb.days));
       const np=Object.assign({},profile,{mode:"celebrity",celebrity:celeb.id,celebAc:celeb.ac});
       FStore.saveProfile(np,routine);sp(np);sr(routine);close();
-    }catch(e){console.error(e);}
+    }catch(e){console.error('[FORJA]',e);setGenerating(false);}
   };
 
   const deactivate=()=>{
@@ -3765,7 +3765,7 @@ function AthleteSheet({show,onClose,lang,mono,profile,sp,sr}){
       const routine=buildRoutine7(filtered,sd,(profile&&profile.goal)||"general",eqArr);
       const np=Object.assign({},profile,{mode:"auto",celebrity:null,celebAc:null});
       FStore.saveProfile(np,routine);sp(np);sr(routine);close();
-    }catch(e){console.error(e);}
+    }catch(e){console.error('[FORJA]',e);setGenerating(false);}
   };
 
   const men=CELEB_LIST.filter(c=>c.gender==="M");
@@ -6117,7 +6117,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               equipment:ob.equipment||"gym",name:ob.name||"Atleta",mode:"auto",toured:false};
             FStore.saveProfile(pf,routine);
             sp(pf);sr(routine);setStep(99);
-          }catch(e){console.error(e);}
+          }catch(e){console.error('[FORJA]',e);setGenerating(false);}
         },400);
       } else setGenPct(Math.round(p));
     },190);
