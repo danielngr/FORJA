@@ -5879,105 +5879,168 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
     });
   },[]);
 
-  // Canvas del sistema solar
+  // Canvas del sistema solar — vuelo hacia adelante en Z
   React.useEffect(()=>{
     const canvas=canvasRef.current;
     if(!canvas) return;
-    const W2=window.innerWidth||375;
-    const H2=260;
+    const CW=window.innerWidth||375;
+    const CH=260;
     const dpr=Math.min(window.devicePixelRatio||1,2);
-    canvas.width=W2*dpr; canvas.height=H2*dpr;
-    canvas.style.width=W2+"px"; canvas.style.height=H2+"px";
+    canvas.width=CW*dpr; canvas.height=CH*dpr;
+    canvas.style.width=CW+"px"; canvas.style.height=CH+"px";
     const ctx=canvas.getContext("2d");
     ctx.scale(dpr,dpr);
+    const cx=CW/2, cy=CH/2;
 
-    // Posiciones X de cada planeta en el canvas
-    const planetX=(i)=>W2/2+(i-stepRef.current)*W2*0.85;
-    const planetY=H2/2;
+    // Distribución 3D de planetas en profundidad Z
+    // Planeta activo está en Z=0, los demás distribuidos detrás
+    const SPREAD=420; // distancia entre planetas en Z
+    const phi=Math.PI*(3-Math.sqrt(5));
 
     // Partículas de cada planeta
-    const phi=Math.PI*(3-Math.sqrt(5));
-    const planetPts=PLANETS.map(pl=>{
-      return Array.from({length:pl.nParticles},(_,i)=>{
+    const planetPts=PLANETS.map(pl=>
+      Array.from({length:pl.nParticles},(_,i)=>{
         const y=1-2*(i/(pl.nParticles-1));
         const r=Math.sqrt(Math.max(0,1-y*y));
         const theta=phi*i;
-        return{
-          ox:Math.cos(theta)*r,
-          oy:y,
-          oz:Math.sin(theta)*r,
-          s:0.6+Math.random()*1.8,
-          phase:Math.random()*Math.PI*2,
-        };
-      });
-    });
+        return{ox:Math.cos(theta)*r,oy:y,oz:Math.sin(theta)*r,
+          s:0.7+Math.random()*1.6,phase:Math.random()*Math.PI*2};
+      })
+    );
+    const rots=PLANETS.map(()=>({y:Math.random()*Math.PI*2,x:0,vy:0.008,vx:0}));
 
-    // Rotaciones individuales de cada planeta
-    const rotations=PLANETS.map(()=>({y:Math.random()*Math.PI*2,x:0,vy:0,vx:0}));
+    // Cámara en Z — anima hacia el planeta activo
+    let camZ=0;        // posición actual
+    let targetCamZ=0;  // posición objetivo
+    let smoothMx=0, smoothMy=0;
+
+    // Estrellas de fondo para dar sensación de vuelo
+    const stars=Array.from({length:180},()=>({
+      x:(Math.random()-0.5)*CW*3,
+      y:(Math.random()-0.5)*CH*3,
+      z:Math.random()*SPREAD*TOTAL,
+      s:Math.random()*1.2+0.3,
+    }));
 
     let t=0;
-    let smoothMx=0,smoothMy=0;
-    let cameraX=0,targetCameraX=0; // animación de cámara
-
     const draw=()=>{
       animRef.current=requestAnimationFrame(draw);
       t+=0.008;
 
       // Lerp mouse
-      smoothMx+=(mouseRef.current.x*0.15-smoothMx)*0.05;
-      smoothMy+=(-mouseRef.current.y*0.08-smoothMy)*0.05;
+      smoothMx+=(mouseRef.current.x*0.2-smoothMx)*0.05;
+      smoothMy+=(-mouseRef.current.y*0.12-smoothMy)*0.05;
 
-      // Cámara se mueve al planeta activo
-      targetCameraX=0; // siempre centrado en el planeta activo
-      cameraX+=(targetCameraX-cameraX)*0.08;
+      // Cámara vuela hacia el planeta activo
+      targetCamZ=stepRef.current*SPREAD;
+      camZ+=(targetCamZ-camZ)*0.07;
 
-      // Fade trail
-      ctx.fillStyle="rgba(4,8,15,0.22)";
-      ctx.fillRect(0,0,W2,H2);
+      // Fade con color espacio
+      ctx.fillStyle="rgba(4,8,15,0.25)";
+      ctx.fillRect(0,0,CW,CH);
 
-      PLANETS.forEach((pl,idx)=>{
-        const cx=planetX(idx)+cameraX;
-        const cy=planetY;
+      // Perspectiva focal
+      const FL=320; // focal length
 
-        // Solo renderizar planetas visibles
-        if(cx<-pl.r*3||cx>W2+pl.r*3) return;
+      const project=(x,y,z)=>{
+        const relZ=z-camZ;
+        if(relZ<=10) return null; // detrás de la cámara
+        const scale=FL/relZ;
+        return{
+          sx:cx+x*scale+smoothMx*30*(1-Math.min(1,relZ/800)),
+          sy:cy+y*scale+smoothMy*20*(1-Math.min(1,relZ/800)),
+          scale,
+          depth:1/relZ,
+        };
+      };
 
-        const dist=Math.abs(idx-stepRef.current);
+      // Renderizar estrellas de fondo
+      stars.forEach(s=>{
+        const relZ=s.z-camZ;
+        if(relZ<=20||relZ>SPREAD*TOTAL*1.2) return;
+        const scale=FL/relZ;
+        const sx=cx+s.x*scale;
+        const sy=cy+s.y*scale;
+        if(sx<0||sx>CW||sy<0||sy>CH) return;
+        const alpha=Math.min(0.7,200/relZ);
+        const size=s.s*(FL/relZ)*0.8;
+        ctx.beginPath();
+        ctx.arc(sx,sy,Math.max(0.2,size),0,Math.PI*2);
+        ctx.fillStyle="rgba(180,210,255,"+alpha.toFixed(2)+")";
+        ctx.fill();
+      });
+
+      // Líneas entre planetas (en perspectiva)
+      for(let i=0;i<TOTAL-1;i++){
+        const zA=i*SPREAD, zB=(i+1)*SPREAD;
+        const pA=project(0,0,zA), pB=project(0,0,zB);
+        if(!pA||!pB) continue;
+        const isDone=i<stepRef.current;
+        ctx.beginPath();
+        ctx.moveTo(pA.sx,pA.sy);
+        ctx.lineTo(pB.sx,pB.sy);
+        ctx.strokeStyle=isDone?"rgba(72,120,255,0.3)":"rgba(255,255,255,0.05)";
+        ctx.lineWidth=isDone?1.5:0.5;
+        ctx.setLineDash(isDone?[]:[3,8]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      // Renderizar planetas — del más lejano al más cercano
+      const order=[...Array(TOTAL).keys()].sort((a,b)=>{
+        return(b*SPREAD-camZ)-(a*SPREAD-camZ);
+      });
+
+      order.forEach(idx=>{
+        const pl=PLANETS[idx];
+        const plZ=idx*SPREAD;
+        const proj=project(0,0,plZ);
+        if(!proj) return;
+
+        const relZ=plZ-camZ;
         const isActive=idx===stepRef.current;
-        const scale=isActive?1:Math.max(0.25,1-dist*0.28);
-        const globalAlpha=isActive?1:Math.max(0.15,1-dist*0.35);
-        const R=pl.r*scale;
+        const isDone=idx<stepRef.current;
 
-        // Actualizar rotación del planeta con inercia
-        const rot=rotations[idx];
-        rot.vy+=(pl.speed+(isActive?smoothMx*0.008:0)-rot.vy)*0.03;
-        rot.vx+=((isActive?smoothMy*0.005:0)-rot.vx)*0.03;
+        // Tamaño proyectado
+        const R=pl.r*proj.scale*1.8;
+        if(R<1||R>CW) return;
+
+        // Alpha por distancia
+        const maxDist=SPREAD*2.5;
+        const globalAlpha=relZ>maxDist?0:Math.max(0.08,1-relZ/maxDist);
+
+        // Actualizar rotación
+        const rot=rots[idx];
+        const targetVY=pl.speed+(isActive?smoothMx*0.01:0);
+        const targetVX=isActive?smoothMy*0.006:0;
+        rot.vy+=(targetVY-rot.vy)*0.04;
+        rot.vx+=(targetVX-rot.vx)*0.04;
         rot.y+=rot.vy;
         rot.x+=rot.vx;
 
         const cY=Math.cos(rot.y),sY=Math.sin(rot.y);
         const cX=Math.cos(rot.x),sX=Math.sin(rot.x);
 
-        // Proyectar y ordenar partículas
+        // Proyectar partículas del planeta
         const sorted=planetPts[idx].map(p=>{
-          const w=Math.sin(t*0.6+p.phase)*0.03;
-          const sc=1+w;
-          let x=p.ox*sc,y2=p.oy*sc,z=p.oz*sc;
+          const w=Math.sin(t*0.7+p.phase)*0.025;
+          let x=p.ox*(1+w),y2=p.oy*(1+w),z=p.oz*(1+w);
           const x2=x*cY+z*sY, z2=-x*sY+z*cY;
           const y3=y2*cX-z2*sX, z3=y2*sX+z2*cX;
-          return{sx:cx+x2*R,sy:cy+y3*R,z:z3,s:p.s};
+          return{
+            sx:proj.sx+x2*R,
+            sy:proj.sy+y3*R,
+            z:z3,s:p.s,
+          };
         }).sort((a,b)=>a.z-b.z);
 
         sorted.forEach(p=>{
           const depth=(p.z+1)/2;
           const alpha=(0.1+depth*0.6)*globalAlpha;
-          const size=p.s*(0.25+depth*0.85)*scale;
-
-          // Azul frío con variación por planeta
-          const r2=Math.floor(30+depth*65+idx*2);
-          const g2=Math.floor(75+depth*100);
-          const b2=Math.floor(195+depth*60);
-
+          const size=p.s*(0.3+depth*0.85)*(isActive?1:0.7);
+          const r2=Math.floor(30+depth*65);
+          const g2=Math.floor(80+depth*95);
+          const b2=Math.floor(200+depth*55);
           ctx.beginPath();
           ctx.arc(p.sx,p.sy,Math.max(0.15,size),0,Math.PI*2);
           ctx.fillStyle="rgba("+r2+","+g2+","+b2+","+Math.min(1,alpha).toFixed(2)+")";
@@ -5985,48 +6048,35 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
         });
 
         // Glow del planeta activo
-        if(isActive){
-          const glow=ctx.createRadialGradient(cx,cy,0,cx,cy,R*1.4);
-          glow.addColorStop(0,"rgba(72,120,255,0.06)");
+        if(isActive&&R>8){
+          const glow=ctx.createRadialGradient(proj.sx,proj.sy,0,proj.sx,proj.sy,R*1.6);
+          glow.addColorStop(0,"rgba(72,120,255,0.08)");
           glow.addColorStop(1,"rgba(72,120,255,0)");
           ctx.beginPath();
-          ctx.arc(cx,cy,R*1.4,0,Math.PI*2);
+          ctx.arc(proj.sx,proj.sy,R*1.6,0,Math.PI*2);
           ctx.fillStyle=glow;
           ctx.fill();
         }
 
-        // Línea orbital entre planetas
-        if(idx<TOTAL-1){
-          const nextX=planetX(idx+1)+cameraX;
-          const isDone=idx<stepRef.current;
-          ctx.beginPath();
-          ctx.moveTo(cx+R*0.7,cy);
-          ctx.lineTo(nextX-PLANETS[idx+1].r*scale*0.7,cy);
-          ctx.strokeStyle=isDone?"rgba(72,120,255,0.25)":"rgba(255,255,255,0.04)";
-          ctx.lineWidth=isDone?1.5:0.5;
-          ctx.setLineDash(isDone?[]:[4,8]);
-          ctx.stroke();
-          ctx.setLineDash([]);
-        }
-
-        // Número del paso debajo del planeta
-        if(dist<2){
-          const isCompleted=idx<stepRef.current;
+        // Número / check debajo del planeta
+        const labelY=proj.sy+R+14;
+        if(labelY>0&&labelY<CH&&R>6){
           ctx.fillStyle=isActive?"rgba(130,175,255,0.9)":
-            isCompleted?"rgba(72,120,255,0.5)":"rgba(255,255,255,0.12)";
-          ctx.font="bold "+(isActive?9:7)+"px "+MN;
+            isDone?"rgba(72,120,255,0.5)":"rgba(255,255,255,0.1)";
+          ctx.font=(isActive?"bold 9px ":"7px ")+MN;
           ctx.textAlign="center";
-          ctx.fillText(isCompleted?"✓":String(idx+1),cx,cy+R+16*scale);
+          ctx.fillText(isDone?"✓":String(idx+1),proj.sx,labelY);
         }
       });
 
       // Nombre del usuario sobre el planeta activo
-      if(ob.name){
-        const acx=planetX(stepRef.current)+cameraX;
-        ctx.fillStyle="rgba(255,255,255,0.5)";
-        ctx.font="bold 11px "+BN;
+      const activeProj=project(0,0,stepRef.current*SPREAD);
+      if(activeProj&&ob.name){
+        const R=PLANETS[stepRef.current].r*activeProj.scale*1.8;
+        ctx.fillStyle="rgba(255,255,255,0.45)";
+        ctx.font="bold 10px "+BN;
         ctx.textAlign="center";
-        ctx.fillText(ob.name.toUpperCase(),acx,planetY-PLANETS[stepRef.current].r-12);
+        ctx.fillText(ob.name.toUpperCase(),activeProj.sx,activeProj.sy-R-10);
       }
     };
     draw();
@@ -6038,14 +6088,11 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
         y:(e.clientY-(rect.top+rect.height/2))/(rect.height/2),
       };
     };
-    const decayI=setInterval(()=>{
-      mouseRef.current.x*=0.92;
-      mouseRef.current.y*=0.92;
-    },50);
+    const decay=setInterval(()=>{mouseRef.current.x*=0.92;mouseRef.current.y*=0.92;},50);
     window.addEventListener('mousemove',onMouse,{passive:true});
     return()=>{
       cancelAnimationFrame(animRef.current);
-      clearInterval(decayI);
+      clearInterval(decay);
       window.removeEventListener('mousemove',onMouse);
     };
   },[PLANETS]);
