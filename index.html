@@ -2035,7 +2035,52 @@ function pickExpressCircuit(groupId, targetMins){
     isExpress:true,
   }));
 }
-function isPro(){ return true;
+// Cache de estado Pro — se actualiza al login y al canjear código
+var _isProCache=null;
+var _isProChecked=false;
+
+async function checkProStatus(){
+  try{
+    const sb=getSB();
+    const user=await ensureAuth();
+    if(!sb||!user) return false;
+    // Verificar en tabla pro_users
+    const{data,error}=await sb.from('pro_users')
+      .select('id,expires_at')
+      .eq('user_id',user.id)
+      .maybeSingle();
+    if(error||!data) return false;
+    // Si tiene expires_at, verificar que no haya expirado
+    if(data.expires_at&&new Date(data.expires_at)<new Date()) return false;
+    return true;
+  }catch(_){return false;}
+}
+
+async function redeemProCode(code){
+  try{
+    const sb=getSB();
+    const user=await ensureAuth();
+    if(!sb||!user) return {ok:false,msg:'Sin conexión'};
+    const codeUpper=code.trim().toUpperCase();
+    // Buscar el código
+    const{data:cd,error:ce}=await sb.from('promo_codes')
+      .select('*')
+      .eq('code',codeUpper)
+      .maybeSingle();
+    if(ce||!cd) return {ok:false,msg:'Código inválido'};
+    if(cd.used_by&&cd.used_by!==user.id) return {ok:false,msg:'Código ya usado'};
+    if(cd.expires_at&&new Date(cd.expires_at)<new Date()) return {ok:false,msg:'Código expirado'};
+    // Marcar código como usado
+    await sb.from('promo_codes').update({used_by:user.id,used_at:new Date().toISOString()}).eq('code',codeUpper);
+    // Activar Pro
+    const{error:pe}=await sb.from('pro_users').upsert({user_id:user.id,granted_by:'promo',granted_at:new Date().toISOString(),expires_at:null},{onConflict:'user_id'});
+    if(pe) return {ok:false,msg:'Error activando Pro'};
+    _isProCache=true;_isProChecked=true;
+    return {ok:true,msg:'¡Pro activado!'};
+  }catch(e){return {ok:false,msg:'Error: '+e.message};}
+}
+
+function isPro(){ return true; // temporal hasta que implementemos paywall
   try{ return localStorage.getItem('fv8_pro')==='1'; }catch{ return false; }
 }
 const wk=(off=0)=>{const d=new Date();d.setDate(d.getDate()+off*7);const y=d.getFullYear(),s=new Date(y,0,1);return`${y}W${Math.ceil(((d-s)/864e5+s.getDay()+1)/7)}`;};
@@ -4704,7 +4749,12 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   const[done,setDone]=useState({});
   const[logs,setLogs]=useState({});
   const[inWorkout,setInWorkout]=useState(false);
-  const[showProModal,setShowProModal]=useState(false); /* isPro=true so never shown */
+  const[showProModal,setShowProModal]=useState(false);
+  const[proStatus,setProStatus]=useState(true); // true mientras isPro()=true
+  const[showPromoModal,setShowPromoModal]=useState(false);
+  const[promoCode,setPromoCode]=useState('');
+  const[promoMsg,setPromoMsg]=useState('');
+  const[promoLoading,setPromoLoading]=useState(false);
   const[showExpress,setShowExpress]=useState(false);
   const[expressGroup,setExpressGroup]=useState(null);
   const[expressTime,setExpressTime]=useState(15);
@@ -5057,6 +5107,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
             <button onClick={()=>{const ls=["es","en","fr","it","de","pt"];const nl=ls[(ls.indexOf(lang)+1)%ls.length];setLang(nl);sp({...profile,lang:nl});}} style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(255,255,255,0.08)",background:"transparent",color:"rgba(255,255,255,0.5)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>{lang.toUpperCase()}</button>
             <button onClick={()=>{setStep(1);setShowSet(false);}} style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(255,255,255,0.08)",background:"transparent",color:"rgba(255,255,255,0.5)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>{t.reconfig.toUpperCase()}</button>
             <button onClick={()=>{try{localStorage.removeItem("fv8_toured");}catch{}setTourAskVisible(true);setTourStep(null);setShowSet(false);}} style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(255,255,255,0.08)",background:"transparent",color:"rgba(255,255,255,0.5)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>TUTORIAL</button>
+            <button onClick={()=>{setShowPromoModal(true);setShowSet(false);}} style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(191,169,138,0.3)",background:"rgba(191,169,138,0.06)",color:"rgba(191,169,138,0.8)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>PRO CODE</button>
             {isUserAnonymous()&&<button onClick={doGoogleSignIn} style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(66,133,244,0.3)",background:"rgba(66,133,244,0.08)",color:"rgba(66,133,244,0.8)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>GOOGLE</button>}
             {!isUserAnonymous()&&<button onClick={doSignOut} style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(63,207,142,0.2)",background:"transparent",color:"rgba(63,207,142,0.6)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>&#10003; {getUserEmail()?.split("@")[0]||"Google"}</button>}
           </div>
@@ -7708,6 +7759,42 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
         e("div",{style:{width:8,height:8,borderRadius:1.5,background:"rgba(95,170,136,1)"}}),
         e("span",{style:{fontSize:7,fontFamily:mono,color:C.tx3}},es?"más":lang==="fr"?"plus":lang==="it"?"più":lang==="de"?"mehr":"more")
       )
+    )
+
+      {showPromoModal&&(
+        <div style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(0,0,0,0.75)",display:"flex",alignItems:"center",justifyContent:"center",padding:"24px"}}
+          onClick={()=>{setShowPromoModal(false);setPromoMsg("");setPromoCode("");}}>
+          <div style={{background:"#0a0e1a",border:"1px solid rgba(191,169,138,0.25)",borderRadius:20,padding:28,width:"100%",maxWidth:320}}
+            onClick={e=>e.stopPropagation()}>
+            <div style={{fontFamily:mono,fontSize:9,letterSpacing:3,color:"rgba(191,169,138,0.6)",marginBottom:6}}>CÓDIGO PRO</div>
+            <div style={{fontSize:18,fontWeight:700,color:"#fff",marginBottom:20}}>Activa tu acceso Pro</div>
+            <input
+              value={promoCode}
+              onChange={e=>setPromoCode(e.target.value.toUpperCase())}
+              placeholder="FORJA-XXXX-XXXX"
+              style={{width:"100%",padding:"12px 14px",borderRadius:10,border:"1px solid rgba(191,169,138,0.3)",
+                background:"rgba(255,255,255,0.04)",color:"#fff",fontSize:13,fontFamily:mono,
+                letterSpacing:2,marginBottom:12,outline:"none",boxSizing:"border-box"}}
+            />
+            {promoMsg&&<div style={{fontSize:11,color:promoMsg.includes("activado")?"#3fcf8e":"#e8a020",marginBottom:12,fontFamily:mono,letterSpacing:1}}>{promoMsg}</div>}
+            <button
+              onClick={async()=>{
+                if(!promoCode.trim())return;
+                setPromoLoading(true);setPromoMsg("");
+                const res=await redeemProCode(promoCode);
+                setPromoMsg(res.msg);
+                setPromoLoading(false);
+                if(res.ok)setTimeout(()=>setShowPromoModal(false),1500);
+              }}
+              disabled={promoLoading||!promoCode.trim()}
+              style={{width:"100%",padding:"13px 0",borderRadius:12,border:"none",cursor:"pointer",
+                background:promoLoading?"rgba(191,169,138,0.08)":"rgba(191,169,138,0.15)",
+                color:"rgba(191,169,138,0.9)",fontSize:11,fontFamily:mono,letterSpacing:2,fontWeight:700}}>
+              {promoLoading?"VERIFICANDO...":"CANJEAR CÓDIGO"}
+            </button>
+          </div>
+        </div>
+      )}
     )
   );
 }
