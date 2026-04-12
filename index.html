@@ -3742,8 +3742,17 @@ function AthleteSheet({show,onClose,onSelect,lang,mono,profile,setProfile,sr,sp}
         ),
         // Lista de atletas
         React.createElement("div",{style:{overflowY:"auto",padding:"0 20px 32px",flex:1}},
-          CELEB_LIST.map((celeb,i)=>{
-            const free=isFree(celeb.id);
+          [
+          ...CELEB_LIST.filter(c=>c.gender==="M").reduce((acc,celeb,i)=>{
+            if(i===0) acc.push(React.createElement("div",{key:"hdr-m",style:{fontFamily:MN,fontSize:8,letterSpacing:4,color:"rgba(255,255,255,0.22)",marginBottom:6,marginTop:4}},lang==="en"?"MEN":"HOMBRES"));
+            acc.push(celeb); return acc;},[]),
+          ...CELEB_LIST.filter(c=>c.gender==="F").reduce((acc,celeb,i)=>{
+            if(i===0) acc.push(React.createElement("div",{key:"hdr-f",style:{fontFamily:MN,fontSize:8,letterSpacing:4,color:"rgba(255,255,255,0.22)",marginBottom:6,marginTop:12}},lang==="en"?"WOMEN":"MUJERES"));
+            acc.push(celeb); return acc;},[]),
+        ].map((item)=>{
+          if(React.isValidElement(item)) return item;
+          const celeb=item;
+          const free=isFree(celeb.id);
             const unlocked=free||isPro();
             const active=isActive(celeb.id);
             return React.createElement("div",{
