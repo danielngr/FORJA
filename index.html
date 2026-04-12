@@ -5814,17 +5814,15 @@ function EqIcon({id,color}){
   if(id==="resistance_band") return <svg viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={W} strokeLinecap="round" style={S}><path d="M4 12 Q4 6 12 6 Q20 6 20 12 Q20 18 12 18 Q4 18 4 12"/><line x1="2" y1="12" x2="6" y2="12" strokeWidth="2"/><line x1="18" y1="12" x2="22" y2="12" strokeWidth="2"/></svg>;
   return null;
 }
+
 function Onboard({lang,setLang,step,setStep,sp,sr}){
   const BN="'Bebas Neue',cursive";
   const MN="'SF Mono','Courier New',monospace";
-  // Azul frío — misma paleta del main
-  const BLUE="#4878ff";
-  const BLUE_L="rgba(130,175,255,0.8)";
   const bg="#04080f";
   const W="rgba(240,242,245,0.95)";
   const dim="rgba(240,242,245,0.32)";
 
-  const TOTAL_STEPS=7;
+  const TOTAL=7;
   const[obStep,setObStep]=useState(0);
   const[ob,setOb]=useState({
     lang:lang||"es",name:"",gender:null,age:25,
@@ -5833,235 +5831,284 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
   });
   const[nameVal,setNameVal]=useState("");
   const[ageVal,setAgeVal]=useState(25);
-  const[animDir,setAnimDir]=useState(1);
   const[visible,setVisible]=useState(true);
+  const[animDir,setAnimDir]=useState(1);
   const[generating,setGenerating]=useState(false);
   const[genPct,setGenPct]=useState(0);
+
   const canvasRef=React.useRef(null);
   const animRef=React.useRef(null);
   const mouseRef=React.useRef({x:0,y:0});
   const stepRef=React.useRef(0);
-  const burstRef=React.useRef(0);
+  const transitRef=React.useRef(0); // 0-1 animación de vuelo entre planetas
+  const transitDirRef=React.useRef(1);
+  const transitFromRef=React.useRef(0);
 
   const set=(k,v)=>setOb(d=>({...d,[k]:v}));
 
   const goTo=(n)=>{
-    if(n===obStep) return;
+    if(n===obStep||n<0||n>=TOTAL) return;
+    transitDirRef.current=n>obStep?1:-1;
+    transitFromRef.current=obStep;
+    transitRef.current=0;
     setAnimDir(n>obStep?1:-1);
     setVisible(false);
-    burstRef.current=Date.now();
-    setTimeout(()=>{stepRef.current=n;setObStep(n);setVisible(true);},280);
+    stepRef.current=n;
+    setTimeout(()=>{setObStep(n);setVisible(true);},320);
   };
   const next=()=>goTo(obStep+1);
-  const back=()=>{ if(obStep>0) goTo(obStep-1); };
+  const back=()=>goTo(obStep-1);
 
-  // ── Esfera de partículas azul ───────────────────────────────
+  // Configuración de planetas
+  const PLANETS=React.useMemo(()=>{
+    // Cada planeta tiene radio, velocidad de rotación, color y posición en órbita
+    return Array.from({length:TOTAL},(_,i)=>{
+      const hues=[210,195,225,200,215,205,220]; // azules fríos
+      const sizes=[38,44,36,50,40,42,46];
+      const speeds=[0.012,0.009,0.015,0.008,0.011,0.013,0.010];
+      const nCounts=[280,350,260,420,300,320,370];
+      return{
+        idx:i,
+        r:sizes[i],
+        speed:speeds[i],
+        nParticles:nCounts[i],
+        hue:hues[i],
+        orbitR:60+i*18, // radio de la órbita de sus propias partículas
+      };
+    });
+  },[]);
+
+  // Canvas del sistema solar
   React.useEffect(()=>{
     const canvas=canvasRef.current;
     if(!canvas) return;
-    const S=260;
+    const W2=window.innerWidth||375;
+    const H2=260;
     const dpr=Math.min(window.devicePixelRatio||1,2);
-    canvas.width=S*dpr; canvas.height=S*dpr;
-    canvas.style.width=S+"px"; canvas.style.height=S+"px";
+    canvas.width=W2*dpr; canvas.height=H2*dpr;
+    canvas.style.width=W2+"px"; canvas.style.height=H2+"px";
     const ctx=canvas.getContext("2d");
     ctx.scale(dpr,dpr);
-    const cx=S/2,cy=S/2,R=95;
-    const N=700;
+
+    // Posiciones X de cada planeta en el canvas
+    const planetX=(i)=>W2/2+(i-stepRef.current)*W2*0.85;
+    const planetY=H2/2;
+
+    // Partículas de cada planeta
     const phi=Math.PI*(3-Math.sqrt(5));
-    const pts=Array.from({length:N},(_,i)=>{
-      const y=1-2*(i/(N-1));
-      const r=Math.sqrt(Math.max(0,1-y*y));
-      const theta=phi*i;
-      return{
-        ox:Math.cos(theta)*r,
-        oy:y,
-        oz:Math.sin(theta)*r,
-        s:0.8+Math.random()*2.4,
-        phase:Math.random()*Math.PI*2,
-      };
+    const planetPts=PLANETS.map(pl=>{
+      return Array.from({length:pl.nParticles},(_,i)=>{
+        const y=1-2*(i/(pl.nParticles-1));
+        const r=Math.sqrt(Math.max(0,1-y*y));
+        const theta=phi*i;
+        return{
+          ox:Math.cos(theta)*r,
+          oy:y,
+          oz:Math.sin(theta)*r,
+          s:0.6+Math.random()*1.8,
+          phase:Math.random()*Math.PI*2,
+        };
+      });
     });
 
-    // Rotación suavizada con inercia
+    // Rotaciones individuales de cada planeta
+    const rotations=PLANETS.map(()=>({y:Math.random()*Math.PI*2,x:0,vy:0,vx:0}));
+
     let t=0;
-    let rotY=0,rotX=0,velY=0,velX=0;
     let smoothMx=0,smoothMy=0;
+    let cameraX=0,targetCameraX=0; // animación de cámara
 
     const draw=()=>{
       animRef.current=requestAnimationFrame(draw);
       t+=0.008;
 
-      // Suavizado del mouse con lerp
-      smoothMx+=(mouseRef.current.x*0.28-smoothMx)*0.06;
-      smoothMy+=(-mouseRef.current.y*0.18-smoothMy)*0.06;
+      // Lerp mouse
+      smoothMx+=(mouseRef.current.x*0.15-smoothMx)*0.05;
+      smoothMy+=(-mouseRef.current.y*0.08-smoothMy)*0.05;
 
-      // Inercia de rotación
-      velY+=(0.0012+smoothMx*0.004-velY)*0.04;
-      velX+=(smoothMy*0.003-velX)*0.04;
-      rotY+=velY;
-      rotX+=velX;
+      // Cámara se mueve al planeta activo
+      targetCameraX=0; // siempre centrado en el planeta activo
+      cameraX+=(targetCameraX-cameraX)*0.08;
 
-      const timeSinceBurst=(Date.now()-burstRef.current)/1000;
-      const burst=timeSinceBurst<0.9?Math.pow(Math.sin(timeSinceBurst*Math.PI/0.9),1.5)*0.18:0;
+      // Fade trail
+      ctx.fillStyle="rgba(4,8,15,0.22)";
+      ctx.fillRect(0,0,W2,H2);
 
-      const cY=Math.cos(rotY),sY=Math.sin(rotY);
-      const cX=Math.cos(rotX),sX=Math.sin(rotX);
+      PLANETS.forEach((pl,idx)=>{
+        const cx=planetX(idx)+cameraX;
+        const cy=planetY;
 
-      // Fade trail en vez de clear total — da efecto glow suave
-      ctx.fillStyle="rgba(4,8,15,0.18)";
-      ctx.fillRect(0,0,S,S);
+        // Solo renderizar planetas visibles
+        if(cx<-pl.r*3||cx>W2+pl.r*3) return;
 
-      const sorted=pts.map(p=>{
-        // Ondulación orgánica muy suave
-        const w=Math.sin(t*0.7+p.phase)*0.03+Math.sin(t*0.4+p.phase*1.3)*0.02;
-        const sc=1+w+burst*0.8;
-        let x=p.ox*sc,y2=p.oy*sc,z=p.oz*sc;
-        const x2=x*cY+z*sY, z2=-x*sY+z*cY;
-        const y3=y2*cX-z2*sX, z3=y2*sX+z2*cX;
-        return{sx:cx+x2*R,sy:cy+y3*R,z:z3,s:p.s,phase:p.phase};
-      }).sort((a,b)=>a.z-b.z);
+        const dist=Math.abs(idx-stepRef.current);
+        const isActive=idx===stepRef.current;
+        const scale=isActive?1:Math.max(0.25,1-dist*0.28);
+        const globalAlpha=isActive?1:Math.max(0.15,1-dist*0.35);
+        const R=pl.r*scale;
 
-      sorted.forEach(p=>{
-        const depth=(p.z+1)/2;
-        const alpha=(0.12+depth*0.55)*(1+burst*0.3);
-        const size=p.s*(0.3+depth*0.9)*(1+burst*0.4);
+        // Actualizar rotación del planeta con inercia
+        const rot=rotations[idx];
+        rot.vy+=(pl.speed+(isActive?smoothMx*0.008:0)-rot.vy)*0.03;
+        rot.vx+=((isActive?smoothMy*0.005:0)-rot.vx)*0.03;
+        rot.y+=rot.vy;
+        rot.x+=rot.vx;
 
-        // Gradiente de color por profundidad — azul frío premium
-        const r2=Math.floor(30+depth*70);
-        const g2=Math.floor(80+depth*95);
-        const b2=Math.floor(200+depth*55);
+        const cY=Math.cos(rot.y),sY=Math.sin(rot.y);
+        const cX=Math.cos(rot.x),sX=Math.sin(rot.x);
 
-        ctx.beginPath();
-        ctx.arc(p.sx,p.sy,Math.max(0.2,size),0,Math.PI*2);
-        ctx.fillStyle="rgba("+r2+","+g2+","+b2+","+Math.min(1,alpha).toFixed(2)+")";
-        ctx.fill();
+        // Proyectar y ordenar partículas
+        const sorted=planetPts[idx].map(p=>{
+          const w=Math.sin(t*0.6+p.phase)*0.03;
+          const sc=1+w;
+          let x=p.ox*sc,y2=p.oy*sc,z=p.oz*sc;
+          const x2=x*cY+z*sY, z2=-x*sY+z*cY;
+          const y3=y2*cX-z2*sX, z3=y2*sX+z2*cX;
+          return{sx:cx+x2*R,sy:cy+y3*R,z:z3,s:p.s};
+        }).sort((a,b)=>a.z-b.z);
 
-        // Halo solo en partículas muy al frente
-        if(depth>0.85&&size>2){
-          const grad=ctx.createRadialGradient(p.sx,p.sy,0,p.sx,p.sy,size*3);
-          grad.addColorStop(0,"rgba(100,160,255,"+(alpha*0.12).toFixed(3)+")");
-          grad.addColorStop(1,"rgba(100,160,255,0)");
+        sorted.forEach(p=>{
+          const depth=(p.z+1)/2;
+          const alpha=(0.1+depth*0.6)*globalAlpha;
+          const size=p.s*(0.25+depth*0.85)*scale;
+
+          // Azul frío con variación por planeta
+          const r2=Math.floor(30+depth*65+idx*2);
+          const g2=Math.floor(75+depth*100);
+          const b2=Math.floor(195+depth*60);
+
           ctx.beginPath();
-          ctx.arc(p.sx,p.sy,size*3,0,Math.PI*2);
-          ctx.fillStyle=grad;
+          ctx.arc(p.sx,p.sy,Math.max(0.15,size),0,Math.PI*2);
+          ctx.fillStyle="rgba("+r2+","+g2+","+b2+","+Math.min(1,alpha).toFixed(2)+")";
           ctx.fill();
+        });
+
+        // Glow del planeta activo
+        if(isActive){
+          const glow=ctx.createRadialGradient(cx,cy,0,cx,cy,R*1.4);
+          glow.addColorStop(0,"rgba(72,120,255,0.06)");
+          glow.addColorStop(1,"rgba(72,120,255,0)");
+          ctx.beginPath();
+          ctx.arc(cx,cy,R*1.4,0,Math.PI*2);
+          ctx.fillStyle=glow;
+          ctx.fill();
+        }
+
+        // Línea orbital entre planetas
+        if(idx<TOTAL-1){
+          const nextX=planetX(idx+1)+cameraX;
+          const isDone=idx<stepRef.current;
+          ctx.beginPath();
+          ctx.moveTo(cx+R*0.7,cy);
+          ctx.lineTo(nextX-PLANETS[idx+1].r*scale*0.7,cy);
+          ctx.strokeStyle=isDone?"rgba(72,120,255,0.25)":"rgba(255,255,255,0.04)";
+          ctx.lineWidth=isDone?1.5:0.5;
+          ctx.setLineDash(isDone?[]:[4,8]);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+
+        // Número del paso debajo del planeta
+        if(dist<2){
+          const isCompleted=idx<stepRef.current;
+          ctx.fillStyle=isActive?"rgba(130,175,255,0.9)":
+            isCompleted?"rgba(72,120,255,0.5)":"rgba(255,255,255,0.12)";
+          ctx.font="bold "+(isActive?9:7)+"px "+MN;
+          ctx.textAlign="center";
+          ctx.fillText(isCompleted?"✓":String(idx+1),cx,cy+R+16*scale);
         }
       });
 
-      // Glow central suave
-      const glowR=ctx.createRadialGradient(cx,cy,0,cx,cy,R*0.6);
-      glowR.addColorStop(0,"rgba(72,120,255,"+(0.03+burst*0.06).toFixed(3)+")");
-      glowR.addColorStop(1,"rgba(72,120,255,0)");
-      ctx.beginPath();
-      ctx.arc(cx,cy,R*0.6,0,Math.PI*2);
-      ctx.fillStyle=glowR;
-      ctx.fill();
+      // Nombre del usuario sobre el planeta activo
+      if(ob.name){
+        const acx=planetX(stepRef.current)+cameraX;
+        ctx.fillStyle="rgba(255,255,255,0.5)";
+        ctx.font="bold 11px "+BN;
+        ctx.textAlign="center";
+        ctx.fillText(ob.name.toUpperCase(),acx,planetY-PLANETS[stepRef.current].r-12);
+      }
     };
     draw();
 
-    // Solo seguir mouse en desktop, touch solo en el canvas
-    const onMouseMove=(e)=>{
+    const onMouse=(e)=>{
       const rect=canvas.getBoundingClientRect();
       mouseRef.current={
         x:(e.clientX-(rect.left+rect.width/2))/(rect.width/2),
         y:(e.clientY-(rect.top+rect.height/2))/(rect.height/2),
       };
     };
-    const onTouchMove=(e)=>{
-      const rect=canvas.getBoundingClientRect();
-      const t=e.touches[0];
-      // Solo reacciona si el touch está sobre el canvas
-      if(t.clientX>=rect.left&&t.clientX<=rect.right&&
-         t.clientY>=rect.top&&t.clientY<=rect.bottom){
-        mouseRef.current={
-          x:(t.clientX-(rect.left+rect.width/2))/(rect.width/2),
-          y:(t.clientY-(rect.top+rect.height/2))/(rect.height/2),
-        };
-      }
-    };
-    // Mouse suavemente vuelve al centro cuando no hay interacción
-    const decayMouse=setInterval(()=>{
-      mouseRef.current={
-        x:mouseRef.current.x*0.92,
-        y:mouseRef.current.y*0.92,
-      };
+    const decayI=setInterval(()=>{
+      mouseRef.current.x*=0.92;
+      mouseRef.current.y*=0.92;
     },50);
-    window.addEventListener('mousemove',onMouseMove,{passive:true});
-    canvas.addEventListener('touchmove',onTouchMove,{passive:true});
+    window.addEventListener('mousemove',onMouse,{passive:true});
     return()=>{
       cancelAnimationFrame(animRef.current);
-      clearInterval(decayMouse);
-      window.removeEventListener('mousemove',onMouseMove);
-      canvas.removeEventListener('touchmove',onTouchMove);
+      clearInterval(decayI);
+      window.removeEventListener('mousemove',onMouse);
     };
-  },[]);
+  },[PLANETS]);
 
-  // ── Textos ──────────────────────────────────────────────────
+  // Actualizar stepRef cuando obStep cambia
+  React.useEffect(()=>{stepRef.current=obStep;},[obStep]);
+
   const TX={
     es:{
       dn:["LU","MA","MI","JU","VI","SA","DO"],
       steps:["IDIOMA","NOMBRE","SOBRE TI","OBJETIVO","NIVEL","EQUIPO","DÍAS"],
       s0:"¿En qué idioma\nentrenas?",
       s1:"¿Cómo te\nllamamos?",s1ph:"Tu nombre",
-      s2:"Cuéntanos\nsobre ti",
-      s2gM:"MASCULINO",s2gF:"FEMENINO",
+      s2:"Cuéntanos\nsobre ti",s2gM:"MASCULINO",s2gF:"FEMENINO",
       s3:"Tu objetivo",
       g1:"MÚSCULO",g1d:"Hipertrofia y masa",
       g2:"FUERZA",g2d:"Levantamientos pesados",
       g3:"DEFINICIÓN",g3d:"Perder grasa",
       g4:"GENERAL",g4d:"Balance total",
       s4:"Tu nivel",
-      l1:"PRINCIPIANTE",l1d:"< 1 año",
-      l2:"INTERMEDIO",l2d:"1–3 años",
-      l3:"AVANZADO",l3d:"3+ años",
+      l1:"PRINCIPIANTE",l1d:"< 1 año",l2:"INTERMEDIO",l2d:"1–3 años",l3:"AVANZADO",l3d:"3+ años",
       s5:"¿Dónde entrenas?",
-      e1:"GYM",e1d:"Equipo completo",
-      e2:"CASA",e2d:"Equipo básico",
-      e3:"CALISTENIA",e3d:"Peso corporal",
+      e1:"GYM",e1d:"Equipo completo",e2:"CASA",e2d:"Equipo básico",e3:"CALISTENIA",e3d:"Peso corporal",
       s6:"Días a la semana",
-      finish:"FORJAR MI RUTINA →",
-      cont:"CONTINUAR →",back:"← ATRÁS",
+      finish:"FORJAR MI RUTINA →",cont:"CONTINUAR →",back:"← ATRÁS",
       units:"UNIDADES",kg:"kg",lb:"lb",
-      gen:"FORJANDO TU RUTINA",
-      g0:"ANALIZANDO...",g1m:"CALCULANDO...",g2m:"GENERANDO...",g3m:"LISTO",
+      gen:"FORJANDO","g0":"ANALIZANDO...","g1m":"CALCULANDO...","g2m":"GENERANDO...","g3m":"LISTO",
     },
     en:{
       dn:["MO","TU","WE","TH","FR","SA","SU"],
       steps:["LANGUAGE","NAME","ABOUT YOU","GOAL","LEVEL","EQUIPMENT","DAYS"],
       s0:"Which language\ndo you train in?",
       s1:"What should\nwe call you?",s1ph:"Your name",
-      s2:"Tell us\nabout you",
-      s2gM:"MALE",s2gF:"FEMALE",
+      s2:"Tell us\nabout you",s2gM:"MALE",s2gF:"FEMALE",
       s3:"Your goal",
-      g1:"MUSCLE",g1d:"Hypertrophy & mass",
-      g2:"STRENGTH",g2d:"Heavy lifts",
-      g3:"CUT",g3d:"Lose fat",
-      g4:"GENERAL",g4d:"Total balance",
+      g1:"MUSCLE",g1d:"Hypertrophy",g2:"STRENGTH",g2d:"Heavy lifts",
+      g3:"CUT",g3d:"Lose fat",g4:"GENERAL",g4d:"Balance",
       s4:"Your level",
-      l1:"BEGINNER",l1d:"< 1 year",
-      l2:"INTERMEDIATE",l2d:"1–3 years",
-      l3:"ADVANCED",l3d:"3+ years",
+      l1:"BEGINNER",l1d:"< 1 year",l2:"INTERMEDIATE",l2d:"1–3 years",l3:"ADVANCED",l3d:"3+ years",
       s5:"Where do you train?",
-      e1:"GYM",e1d:"Full equipment",
-      e2:"HOME",e2d:"Basic gear",
-      e3:"CALISTHENICS",e3d:"Bodyweight",
+      e1:"GYM",e1d:"Full equipment",e2:"HOME",e2d:"Basic gear",e3:"CALISTHENICS",e3d:"Bodyweight",
       s6:"Days per week",
-      finish:"FORGE MY ROUTINE →",
-      cont:"CONTINUE →",back:"← BACK",
+      finish:"FORGE MY ROUTINE →",cont:"CONTINUE →",back:"← BACK",
       units:"UNITS",kg:"kg",lb:"lb",
-      gen:"FORGING YOUR ROUTINE",
-      g0:"ANALYZING...",g1m:"CALCULATING...",g2m:"GENERATING...",g3m:"DONE",
+      gen:"FORGING","g0":"ANALYZING...","g1m":"CALCULATING...","g2m":"GENERATING...","g3m":"DONE",
     },
   };
   const tx=TX[ob.lang]||TX.es;
+  const dn=tx.dn;
+  const BLUE="rgba(130,175,255,0.9)";
+  const BLUE_BG="rgba(72,120,255,0.12)";
+  const BLUE_BD="rgba(72,120,255,0.5)";
 
-  // ── Pantalla de generación ──────────────────────────────────
+  const canNext=[
+    true,!!nameVal.trim(),!!ob.gender,!!ob.goal,!!ob.level,!!ob.equipment,ob.selDays.length>0
+  ][obStep];
+
   const doFinish=()=>{
     setGenerating(true);
     let p=0;
     const iv=setInterval(()=>{
       p+=Math.random()*14+8;
       if(p>=100){
-        p=100; clearInterval(iv); setGenPct(100);
+        p=100;clearInterval(iv);setGenPct(100);
         setTimeout(()=>{
           try{
             const days=ob.selDays.length||ob.daysCount||4;
@@ -6070,8 +6117,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             const sd=ob.selDays.length>0?ob.selDays:[0,1,2,3].slice(0,days);
             const eqArr=ob.equipment==="gym"?["barbell","dumbbell","cable","machine","pullup_bar"]:
               ob.equipment==="home"?["dumbbell","pullup_bar","resistance_band"]:["pullup_bar"];
-            const filtered=splits?splits.map(d=>({...d,
-              ex:d.ex.map(ex=>({...ex,e:canDoAuto(ex.e,eqArr)}))})):[];
+            const filtered=splits?splits.map(d=>({...d,ex:d.ex.map(ex=>({...ex,e:canDoAuto(ex.e,eqArr)}))})):[];
             const routine=buildRoutine7(filtered,sd,ob.goal||"general",eqArr);
             const pf={lang:ob.lang,goal:ob.goal||"general",level:ob.level||"beg",
               days,selDays:sd,gender:ob.gender||"male",age:ob.age||25,
@@ -6085,20 +6131,21 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
     },190);
   };
 
+  // Pantalla generando
   if(generating){
     const mi=genPct<30?tx.g0:genPct<65?tx.g1m:genPct<90?tx.g2m:tx.g3m;
     return(
       <div style={{position:"fixed",inset:0,background:bg,zIndex:99999,
-        display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:0}}>
-        <canvas ref={canvasRef} style={{width:260,height:260}}/>
+        display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+        <canvas ref={canvasRef} style={{width:"100%",height:260}}/>
         <div style={{fontFamily:BN,fontSize:38,color:W,letterSpacing:2,
-          textAlign:"center",marginTop:-16,lineHeight:1}}>
+          textAlign:"center",marginTop:8,lineHeight:1}}>
           {ob.lang==="es"?"FORJANDO":"FORGING"}<br/>
-          <span style={{color:BLUE_L}}>{ob.lang==="es"?"TU RUTINA":"YOUR ROUTINE"}</span>
+          <span style={{color:BLUE}}>{ob.lang==="es"?"TU RUTINA":"YOUR ROUTINE"}</span>
         </div>
-        <div style={{width:180,height:1.5,background:"rgba(255,255,255,0.08)",
+        <div style={{width:200,height:1.5,background:"rgba(255,255,255,0.08)",
           borderRadius:1,margin:"28px 0 12px",overflow:"hidden"}}>
-          <div style={{height:"100%",background:"linear-gradient(90deg,"+BLUE+","+BLUE_L+")",
+          <div style={{height:"100%",background:"linear-gradient(90deg,#4878ff,rgba(130,175,255,0.9))",
             width:genPct+"%",transition:"width 0.35s ease"}}/>
         </div>
         <div style={{fontFamily:MN,fontSize:9,letterSpacing:4,color:dim}}>{mi}</div>
@@ -6106,72 +6153,50 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
     );
   }
 
-  // ── LAYOUT: Esfera + Órbita + Contenido ────────────────────
-  const stepLabels=tx.steps||[];
-
-  // Ángulos de cada step en la órbita (solo mostramos los adyacentes)
-  const ORBIT_R=118; // radio de la órbita en px desde el centro
-  const CENTER=150;  // centro del contenedor cuadrado
-
   // Contenido de cada step
-  const langs=[
-    {code:"es",flag:"🇪🇸",label:"ES"},{code:"en",flag:"🇺🇸",label:"EN"},
-    {code:"pt",flag:"🇧🇷",label:"PT"},{code:"fr",flag:"🇫🇷",label:"FR"},
-    {code:"it",flag:"🇮🇹",label:"IT"},{code:"de",flag:"🇩🇪",label:"DE"},
-  ];
-  const goals=[
-    {id:"muscle",em:"💪",label:tx.g1,desc:tx.g1d},
-    {id:"strength",em:"⚡",label:tx.g2,desc:tx.g2d},
-    {id:"lose",em:"🔥",label:tx.g3,desc:tx.g3d},
-    {id:"general",em:"⚖️",label:tx.g4,desc:tx.g4d},
-  ];
-  const levels=[
-    {id:"beg",label:tx.l1,desc:tx.l1d},
-    {id:"int",label:tx.l2,desc:tx.l2d},
-    {id:"adv",label:tx.l3,desc:tx.l3d},
-  ];
-  const equips=[
-    {id:"gym",em:"🏋️",label:tx.e1,desc:tx.e1d},
-    {id:"home",em:"🏠",label:tx.e2,desc:tx.e2d},
-    {id:"bw",em:"🤸",label:tx.e3,desc:tx.e3d},
-  ];
-  const dn=tx.dn;
+  const slideStyle={
+    opacity:visible?1:0,
+    transform:visible?"translateX(0)":"translateX("+(animDir*24)+"px)",
+    transition:"opacity 0.28s ease, transform 0.28s ease",
+  };
 
-  // Validación por step
-  const canNext=[
-    true, // idioma — auto-avanza
-    !!nameVal.trim(),
-    !!ob.gender,
-    !!ob.goal,
-    !!ob.level,
-    !!ob.equipment,
-    ob.selDays.length>0,
-  ][obStep];
+  const Opt=({sel,onClick,children})=>(
+    <button onClick={onClick} style={{
+      width:"100%",padding:"15px 18px",borderRadius:16,marginBottom:8,
+      textAlign:"left",cursor:"pointer",display:"flex",alignItems:"center",gap:14,
+      background:sel?BLUE_BG:"rgba(255,255,255,0.03)",
+      border:"1px solid "+(sel?BLUE_BD:"rgba(255,255,255,0.06)"),
+      borderTop:"1px solid "+(sel?"rgba(180,210,255,0.35)":"rgba(255,255,255,0.1)"),
+      boxShadow:sel?"inset 0 1px 0 rgba(180,210,255,0.12),0 0 16px rgba(72,120,255,0.1)":"none",
+      transition:"all 0.22s cubic-bezier(0.34,1.56,0.64,1)",
+      transform:sel?"scale(1.02)":"scale(1)",
+    }}>{children}</button>
+  );
 
-  // Contenido del step actual
-  const renderStepContent=()=>{
-    const base={
-      opacity:visible?1:0,
-      transform:visible?"translateX(0)":"translateX("+(animDir*32)+"px)",
-      transition:"opacity 0.28s ease, transform 0.28s ease",
-    };
+  const renderContent=()=>{
+    const langs=[
+      {code:"es",flag:"🇪🇸",l:"Español"},{code:"en",flag:"🇺🇸",l:"English"},
+      {code:"pt",flag:"🇧🇷",l:"Português"},{code:"fr",flag:"🇫🇷",l:"Français"},
+      {code:"it",flag:"🇮🇹",l:"Italiano"},{code:"de",flag:"🇩🇪",l:"Deutsch"},
+    ];
 
     if(obStep===0) return(
-      <div style={base}>
-        <div style={{display:"flex",flexWrap:"wrap",gap:8,justifyContent:"center"}}>
+      <div style={slideStyle}>
+        <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
           {langs.map(l=>(
             <button key={l.code}
-              onClick={()=>{set("lang",l.code);setLang(l.code);setTimeout(next,160);}}
+              onClick={()=>{set("lang",l.code);setLang(l.code);setTimeout(next,180);}}
               style={{
                 padding:"10px 16px",borderRadius:999,cursor:"pointer",
                 display:"flex",alignItems:"center",gap:8,
-                background:ob.lang===l.code?"rgba(72,120,255,0.15)":"rgba(255,255,255,0.05)",
-                border:"1.5px solid "+(ob.lang===l.code?"rgba(72,120,255,0.7)":"rgba(255,255,255,0.08)"),
+                background:ob.lang===l.code?BLUE_BG:"rgba(255,255,255,0.04)",
+                border:"1px solid "+(ob.lang===l.code?BLUE_BD:"rgba(255,255,255,0.07)"),
+                borderTop:"1px solid "+(ob.lang===l.code?"rgba(180,210,255,0.35)":"rgba(255,255,255,0.12)"),
                 transition:"all 0.2s",
               }}>
               <span style={{fontSize:18}}>{l.flag}</span>
               <span style={{fontFamily:MN,fontSize:9,letterSpacing:2,
-                color:ob.lang===l.code?BLUE_L:dim}}>{l.label}</span>
+                color:ob.lang===l.code?BLUE:dim}}>{l.l}</span>
             </button>
           ))}
         </div>
@@ -6179,35 +6204,37 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
     );
 
     if(obStep===1) return(
-      <div style={base}>
+      <div style={slideStyle}>
         <input autoFocus value={nameVal}
           onChange={e=>setNameVal(e.target.value)}
           onKeyDown={e=>{if(e.key==="Enter"&&nameVal.trim()){set("name",nameVal.trim());next();}}}
           placeholder={tx.s1ph} maxLength={24}
           style={{
             width:"100%",padding:"18px 20px",borderRadius:16,
-            background:"rgba(255,255,255,0.05)",
-            border:"1.5px solid "+(nameVal?"rgba(72,120,255,0.5)":"rgba(255,255,255,0.1)"),
+            background:"rgba(255,255,255,0.04)",
+            border:"1px solid "+(nameVal?"rgba(72,120,255,0.45)":"rgba(255,255,255,0.08)"),
+            borderTop:"1px solid "+(nameVal?"rgba(180,210,255,0.35)":"rgba(255,255,255,0.14)"),
             color:W,fontSize:22,fontWeight:700,outline:"none",
-            fontFamily:"inherit",caretColor:BLUE_L,transition:"border-color 0.2s",
+            fontFamily:"inherit",caretColor:BLUE,transition:"border-color 0.2s",
           }}/>
       </div>
     );
 
     if(obStep===2) return(
-      <div style={base}>
+      <div style={slideStyle}>
         <div style={{display:"flex",gap:10,marginBottom:24}}>
           {[{id:"male",label:tx.s2gM,icon:"♂"},{id:"female",label:tx.s2gF,icon:"♀"}].map(g=>(
             <button key={g.id} onClick={()=>set("gender",g.id)} style={{
               flex:1,padding:"20px 12px",borderRadius:18,cursor:"pointer",
               display:"flex",flexDirection:"column",alignItems:"center",gap:10,
-              background:ob.gender===g.id?"rgba(72,120,255,0.12)":"rgba(255,255,255,0.04)",
-              border:"1.5px solid "+(ob.gender===g.id?"rgba(72,120,255,0.55)":"rgba(255,255,255,0.07)"),
+              background:ob.gender===g.id?BLUE_BG:"rgba(255,255,255,0.03)",
+              border:"1px solid "+(ob.gender===g.id?BLUE_BD:"rgba(255,255,255,0.06)"),
+              borderTop:"1px solid "+(ob.gender===g.id?"rgba(180,210,255,0.35)":"rgba(255,255,255,0.12)"),
               transition:"all 0.22s",
             }}>
               <span style={{fontSize:34,opacity:ob.gender===g.id?1:0.4}}>{g.icon}</span>
               <span style={{fontFamily:MN,fontSize:9,letterSpacing:2,
-                color:ob.gender===g.id?BLUE_L:dim}}>{g.label}</span>
+                color:ob.gender===g.id?BLUE:dim}}>{g.label}</span>
             </button>
           ))}
         </div>
@@ -6216,106 +6243,91 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
         </div>
         <div style={{display:"flex",alignItems:"center",gap:16}}>
           <button onClick={()=>setAgeVal(v=>Math.max(13,v-1))} style={{
-            width:44,height:44,borderRadius:"50%",border:"1px solid rgba(255,255,255,0.1)",
-            background:"rgba(255,255,255,0.05)",color:W,fontSize:24,cursor:"pointer",flexShrink:0,
+            width:44,height:44,borderRadius:"50%",
+            border:"1px solid rgba(255,255,255,0.1)",borderTop:"1px solid rgba(255,255,255,0.2)",
+            background:"rgba(255,255,255,0.04)",color:W,fontSize:24,cursor:"pointer",flexShrink:0,
           }}>−</button>
           <div style={{flex:1,textAlign:"center"}}>
-            <span style={{fontFamily:BN,fontSize:64,color:BLUE_L,lineHeight:1}}>{ageVal}</span>
+            <span style={{fontFamily:BN,fontSize:64,color:BLUE,lineHeight:1}}>{ageVal}</span>
           </div>
           <button onClick={()=>setAgeVal(v=>Math.min(100,v+1))} style={{
-            width:44,height:44,borderRadius:"50%",border:"1px solid rgba(255,255,255,0.1)",
-            background:"rgba(255,255,255,0.05)",color:W,fontSize:24,cursor:"pointer",flexShrink:0,
+            width:44,height:44,borderRadius:"50%",
+            border:"1px solid rgba(255,255,255,0.1)",borderTop:"1px solid rgba(255,255,255,0.2)",
+            background:"rgba(255,255,255,0.04)",color:W,fontSize:24,cursor:"pointer",flexShrink:0,
           }}>+</button>
         </div>
       </div>
     );
 
+    const goals=[
+      {id:"muscle",em:"💪",label:tx.g1,desc:tx.g1d},
+      {id:"strength",em:"⚡",label:tx.g2,desc:tx.g2d},
+      {id:"lose",em:"🔥",label:tx.g3,desc:tx.g3d},
+      {id:"general",em:"⚖️",label:tx.g4,desc:tx.g4d},
+    ];
     if(obStep===3) return(
-      <div style={base}>
-        {goals.map(g=>{
-          const sel=ob.goal===g.id;
-          return(
-            <button key={g.id}
-              onClick={()=>{set("goal",g.id);setTimeout(next,180);}}
-              style={{
-                width:"100%",padding:"14px 18px",borderRadius:16,marginBottom:8,
-                textAlign:"left",cursor:"pointer",display:"flex",alignItems:"center",gap:14,
-                background:sel?"rgba(72,120,255,0.12)":"rgba(255,255,255,0.03)",
-                border:"1px solid "+(sel?"rgba(130,175,255,0.5)":"rgba(255,255,255,0.06)"),
-                borderTop:sel?"1px solid rgba(180,210,255,0.4)":"1px solid rgba(255,255,255,0.1)",
-                boxShadow:sel?"inset 0 1px 0 rgba(180,210,255,0.15),0 0 20px rgba(72,120,255,0.12)":"none",
-                transition:"all 0.22s cubic-bezier(0.34,1.56,0.64,1)",
-                transform:sel?"scale(1.02)":"scale(1)",
-              }}>
-              <span style={{fontSize:20,opacity:sel?1:0.5}}>{g.em}</span>
-              <div>
-                <div style={{fontFamily:MN,fontSize:10,fontWeight:700,letterSpacing:2,
-                  color:sel?BLUE_L:dim,marginBottom:2}}>{g.label}</div>
-                <div style={{fontSize:11,color:"rgba(255,255,255,0.3)"}}>{g.desc}</div>
-              </div>
-              {sel&&<div style={{marginLeft:"auto",width:7,height:7,borderRadius:"50%",
-                background:BLUE,boxShadow:"0 0 8px "+BLUE}}/>}
-            </button>
-          );
-        })}
+      <div style={slideStyle}>
+        {goals.map(g=>(
+          <Opt key={g.id} sel={ob.goal===g.id}
+            onClick={()=>{set("goal",g.id);setTimeout(next,200);}}>
+            <span style={{fontSize:20,opacity:ob.goal===g.id?1:0.45}}>{g.em}</span>
+            <div>
+              <div style={{fontFamily:MN,fontSize:10,fontWeight:700,letterSpacing:2,
+                color:ob.goal===g.id?BLUE:dim,marginBottom:2}}>{g.label}</div>
+              <div style={{fontSize:11,color:"rgba(255,255,255,0.28)"}}>{g.desc}</div>
+            </div>
+            {ob.goal===g.id&&<div style={{marginLeft:"auto",width:6,height:6,
+              borderRadius:"50%",background:"#4878ff",boxShadow:"0 0 8px #4878ff"}}/>}
+          </Opt>
+        ))}
       </div>
     );
 
+    const levels=[
+      {id:"beg",label:tx.l1,desc:tx.l1d},
+      {id:"int",label:tx.l2,desc:tx.l2d},
+      {id:"adv",label:tx.l3,desc:tx.l3d},
+    ];
     if(obStep===4) return(
-      <div style={base}>
-        {levels.map((l,i)=>{
-          const sel=ob.level===l.id;
-          return(
-            <button key={l.id}
-              onClick={()=>{set("level",l.id);setTimeout(next,180);}}
-              style={{
-                width:"100%",padding:"14px 18px",borderRadius:16,marginBottom:8,
-                textAlign:"left",cursor:"pointer",display:"flex",alignItems:"center",gap:14,
-                background:sel?"rgba(72,120,255,0.1)":"rgba(255,255,255,0.04)",
-                border:"1.5px solid "+(sel?"rgba(72,120,255,0.55)":"rgba(255,255,255,0.07)"),
-                transition:"all 0.22s",
-              }}>
-              <div style={{fontFamily:BN,fontSize:28,color:sel?BLUE_L:"rgba(255,255,255,0.1)",
-                width:32,textAlign:"center",lineHeight:1}}>0{i+1}</div>
-              <div>
-                <div style={{fontFamily:MN,fontSize:10,fontWeight:700,letterSpacing:2,
-                  color:sel?BLUE_L:dim,marginBottom:2}}>{l.label}</div>
-                <div style={{fontSize:11,color:"rgba(255,255,255,0.3)"}}>{l.desc}</div>
-              </div>
-            </button>
-          );
-        })}
+      <div style={slideStyle}>
+        {levels.map((l,i)=>(
+          <Opt key={l.id} sel={ob.level===l.id}
+            onClick={()=>{set("level",l.id);setTimeout(next,200);}}>
+            <div style={{fontFamily:BN,fontSize:26,color:ob.level===l.id?BLUE:"rgba(255,255,255,0.1)",
+              width:30,textAlign:"center",lineHeight:1}}>0{i+1}</div>
+            <div>
+              <div style={{fontFamily:MN,fontSize:10,fontWeight:700,letterSpacing:2,
+                color:ob.level===l.id?BLUE:dim,marginBottom:2}}>{l.label}</div>
+              <div style={{fontSize:11,color:"rgba(255,255,255,0.28)"}}>{l.desc}</div>
+            </div>
+          </Opt>
+        ))}
       </div>
     );
 
+    const equips=[
+      {id:"gym",em:"🏋️",label:tx.e1,desc:tx.e1d},
+      {id:"home",em:"🏠",label:tx.e2,desc:tx.e2d},
+      {id:"bw",em:"🤸",label:tx.e3,desc:tx.e3d},
+    ];
     if(obStep===5) return(
-      <div style={base}>
-        {equips.map(e=>{
-          const sel=ob.equipment===e.id;
-          return(
-            <button key={e.id}
-              onClick={()=>{set("equipment",e.id);setTimeout(next,180);}}
-              style={{
-                width:"100%",padding:"14px 18px",borderRadius:16,marginBottom:8,
-                textAlign:"left",cursor:"pointer",display:"flex",alignItems:"center",gap:12,
-                background:sel?"rgba(72,120,255,0.1)":"rgba(255,255,255,0.04)",
-                border:"1.5px solid "+(sel?"rgba(72,120,255,0.55)":"rgba(255,255,255,0.07)"),
-                transition:"all 0.2s",
-              }}>
-              <span style={{fontSize:22,opacity:sel?1:0.5}}>{e.em}</span>
-              <div>
-                <div style={{fontFamily:MN,fontSize:10,fontWeight:700,letterSpacing:2,
-                  color:sel?BLUE_L:dim,marginBottom:2}}>{e.label}</div>
-                <div style={{fontSize:11,color:"rgba(255,255,255,0.3)"}}>{e.desc}</div>
-              </div>
-            </button>
-          );
-        })}
+      <div style={slideStyle}>
+        {equips.map(e=>(
+          <Opt key={e.id} sel={ob.equipment===e.id}
+            onClick={()=>{set("equipment",e.id);setTimeout(next,200);}}>
+            <span style={{fontSize:22,opacity:ob.equipment===e.id?1:0.45}}>{e.em}</span>
+            <div>
+              <div style={{fontFamily:MN,fontSize:10,fontWeight:700,letterSpacing:2,
+                color:ob.equipment===e.id?BLUE:dim,marginBottom:2}}>{e.label}</div>
+              <div style={{fontSize:11,color:"rgba(255,255,255,0.28)"}}>{e.desc}</div>
+            </div>
+          </Opt>
+        ))}
       </div>
     );
 
     if(obStep===6) return(
-      <div style={base}>
+      <div style={slideStyle}>
         <div style={{display:"flex",gap:8,marginBottom:16}}>
           {[3,4,5,6].map(n=>{
             const sel=ob.daysCount===n;
@@ -6324,11 +6336,12 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                 onClick={()=>{set("daysCount",n);set("selDays",[1,2,3,4,5,6,0].slice(0,n));}}
                 style={{
                   flex:1,padding:"14px 6px",borderRadius:14,cursor:"pointer",
-                  background:sel?"rgba(72,120,255,0.12)":"rgba(255,255,255,0.04)",
-                  border:"1.5px solid "+(sel?"rgba(72,120,255,0.55)":"rgba(255,255,255,0.07)"),
+                  background:sel?BLUE_BG:"rgba(255,255,255,0.03)",
+                  border:"1px solid "+(sel?BLUE_BD:"rgba(255,255,255,0.06)"),
+                  borderTop:"1px solid "+(sel?"rgba(180,210,255,0.35)":"rgba(255,255,255,0.12)"),
                   transition:"all 0.2s",
                 }}>
-                <div style={{fontFamily:BN,fontSize:26,color:sel?BLUE_L:"rgba(255,255,255,0.3)",lineHeight:1}}>{n}</div>
+                <div style={{fontFamily:BN,fontSize:26,color:sel?BLUE:"rgba(255,255,255,0.25)",lineHeight:1}}>{n}</div>
                 <div style={{fontFamily:MN,fontSize:7,letterSpacing:2,
                   color:sel?"rgba(130,175,255,0.6)":dim,marginTop:4}}>
                   {ob.lang==="es"?"DÍAS":"DAYS"}
@@ -6337,7 +6350,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             );
           })}
         </div>
-        <div style={{display:"flex",gap:6,marginBottom:20}}>
+        <div style={{display:"flex",gap:5,marginBottom:20}}>
           {dn.map((d,i)=>{
             const sel=ob.selDays.includes(i);
             return(
@@ -6348,201 +6361,114 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
                   else if(cur.length<ob.daysCount)set("selDays",[...cur,i].sort((a,b)=>a-b));
                 }}
                 style={{
-                  flex:1,padding:"12px 3px",borderRadius:10,cursor:"pointer",
+                  flex:1,padding:"11px 3px",borderRadius:10,cursor:"pointer",
                   display:"flex",flexDirection:"column",alignItems:"center",gap:5,
-                  background:sel?"rgba(72,120,255,0.14)":"rgba(255,255,255,0.04)",
-                  border:"1.5px solid "+(sel?"rgba(72,120,255,0.55)":"rgba(255,255,255,0.07)"),
+                  background:sel?BLUE_BG:"rgba(255,255,255,0.03)",
+                  border:"1px solid "+(sel?BLUE_BD:"rgba(255,255,255,0.06)"),
+                  borderTop:"1px solid "+(sel?"rgba(180,210,255,0.3)":"rgba(255,255,255,0.1)"),
                   transition:"all 0.18s cubic-bezier(0.34,1.56,0.64,1)",
                   transform:sel?"scale(1.08)":"scale(1)",
                 }}>
                 <span style={{fontFamily:MN,fontSize:7,letterSpacing:1,
-                  color:sel?BLUE_L:dim}}>{d}</span>
+                  color:sel?BLUE:dim}}>{d}</span>
                 <div style={{width:5,height:5,borderRadius:"50%",
-                  background:sel?BLUE:"rgba(255,255,255,0.1)"}}/>
+                  background:sel?"#4878ff":"rgba(255,255,255,0.1)"}}/>
               </button>
             );
           })}
         </div>
-        {/* Unidades + confirmar en el último step */}
         <div style={{fontFamily:MN,fontSize:8,letterSpacing:3,color:dim,marginBottom:10}}>
           {tx.units}
         </div>
-        <div style={{display:"flex",gap:8,marginBottom:20}}>
+        <div style={{display:"flex",gap:8}}>
           {[{id:"metric",label:tx.kg},{id:"imperial",label:tx.lb}].map(u=>(
             <button key={u.id} onClick={()=>set("units",u.id)} style={{
               flex:1,padding:"10px",borderRadius:10,cursor:"pointer",
-              background:ob.units===u.id?"rgba(72,120,255,0.1)":"rgba(255,255,255,0.04)",
-              border:"1.5px solid "+(ob.units===u.id?"rgba(72,120,255,0.45)":"rgba(255,255,255,0.07)"),
+              background:ob.units===u.id?BLUE_BG:"rgba(255,255,255,0.03)",
+              border:"1px solid "+(ob.units===u.id?BLUE_BD:"rgba(255,255,255,0.06)"),
+              borderTop:"1px solid "+(ob.units===u.id?"rgba(180,210,255,0.3)":"rgba(255,255,255,0.1)"),
               fontFamily:MN,fontSize:10,letterSpacing:1,
-              color:ob.units===u.id?BLUE_L:dim,transition:"all 0.2s",
+              color:ob.units===u.id?BLUE:dim,transition:"all 0.2s",
             }}>{u.label}</button>
           ))}
         </div>
       </div>
     );
-
     return null;
   };
 
-  // ── RENDER PRINCIPAL ────────────────────────────────────────
   return(
     <div style={{position:"fixed",inset:0,background:bg,zIndex:99999,
       display:"flex",flexDirection:"column",overflow:"hidden"}}>
 
-      {/* ── Zona de la esfera con órbita ── */}
+      {/* Sistema solar */}
+      <canvas ref={canvasRef} style={{width:"100%",height:260,flexShrink:0}}/>
+
+      {/* Título del step */}
       <div style={{
-        position:"relative",
-        width:"100%",height:320,flexShrink:0,
-        display:"flex",alignItems:"center",justifyContent:"center",
-      }}>
-        {/* Esfera */}
-        <canvas ref={canvasRef} style={{
-          position:"absolute",
-          width:260,height:260,
-          zIndex:1,cursor:"crosshair",
-        }}/>
-
-        {/* Órbita — círculo guía sutil */}
-        <div style={{
-          position:"absolute",
-          width:ORBIT_R*2+40,height:ORBIT_R*2+40,
-          borderRadius:"50%",
-          border:"1px solid rgba(72,120,255,0.08)",
-          zIndex:0,
-        }}/>
-
-        {/* Nodos orbitales — centrados en el canvas */}
-        {Array.from({length:TOTAL_STEPS},(_,i)=>{
-          const angle=((i/TOTAL_STEPS)*Math.PI*2)-Math.PI/2;
-          const isActive=i===obStep;
-          const isDone=i<obStep;
-          const isNext=i===obStep+1;
-          return(
-            <div key={i}
-              onClick={()=>{if(isDone||isNext)goTo(i);}}
-              style={{
-                position:"absolute",
-                left:"calc(50% + "+(ORBIT_R*Math.cos(angle)-14)+"px)",
-                top:"calc(50% + "+(ORBIT_R*Math.sin(angle)-14)+"px)",
-                width:28,height:28,
-                borderRadius:"50%",
-                zIndex:2,
-                cursor:isDone||isNext?"pointer":"default",
-                display:"flex",alignItems:"center",justifyContent:"center",
-                background:isActive
-                  ?"rgba(72,120,255,0.25)"
-                  :isDone?"rgba(72,120,255,0.12)":"rgba(255,255,255,0.04)",
-                border:isActive
-                  ?"2px solid rgba(130,175,255,0.9)"
-                  :isDone?"1.5px solid rgba(72,120,255,0.45)":"1px solid rgba(255,255,255,0.08)",
-                boxShadow:isActive
-                  ?"0 0 20px rgba(72,120,255,0.5),inset 0 0 8px rgba(130,175,255,0.2)":"none",
-                transition:"all 0.35s cubic-bezier(0.34,1.56,0.64,1)",
-                transform:isActive?"scale(1.25)":"scale(1)",
-              }}>
-              <span style={{
-                fontFamily:MN,fontSize:isActive?9:8,fontWeight:700,
-                color:isActive?BLUE_L:isDone?"rgba(130,175,255,0.6)":"rgba(255,255,255,0.2)",
-              }}>{isDone?"✓":i+1}</span>
-              {/* Label del step */}
-              {(isActive||isDone)&&(
-                <div style={{
-                  position:"absolute",
-                  fontSize:6,fontFamily:MN,letterSpacing:1.5,
-                  whiteSpace:"nowrap",
-                  color:isActive?BLUE_L:"rgba(130,175,255,0.4)",
-                  top: i<4 ? -18 : "auto",
-                  bottom: i>=4 ? -18 : "auto",
-                  left:"50%",transform:"translateX(-50%)",
-                }}>
-                  {stepLabels[i]||""}
-                </div>
-              )}
-            </div>
-          );
-        })}
-
-        {/* Nombre del usuario flotando en la esfera */}
-        {ob.name&&(
-          <div style={{
-            position:"absolute",zIndex:3,
-            fontFamily:BN,fontSize:20,letterSpacing:3,
-            color:"rgba(255,255,255,0.6)",
-            textShadow:"0 0 20px rgba(72,120,255,0.5)",
-            pointerEvents:"none",
-            animation:"ob_name_in 0.4s cubic-bezier(0.16,1,0.3,1) both",
-          }}>{ob.name.toUpperCase()}</div>
-        )}
-      </div>
-
-      {/* ── Título del step actual ── */}
-      <div style={{
-        padding:"0 28px 16px",
+        padding:"4px 28px 14px",flexShrink:0,
         opacity:visible?1:0,
-        transform:visible?"translateY(0)":"translateY(8px)",
+        transform:visible?"translateY(0)":"translateY(6px)",
         transition:"opacity 0.28s ease, transform 0.28s ease",
-        flexShrink:0,
       }}>
         <div style={{fontFamily:MN,fontSize:8,letterSpacing:4,
           color:"rgba(72,120,255,0.7)",marginBottom:8}}>
-          {String(obStep+1).padStart(2,"0")} / {String(TOTAL_STEPS).padStart(2,"0")}
+          {String(obStep+1).padStart(2,"0")} / {String(TOTAL).padStart(2,"0")} · {(tx.steps||[])[obStep]||""}
         </div>
-        <div style={{fontFamily:BN,fontSize:"clamp(30px,9vw,42px)",
+        <div style={{fontFamily:BN,fontSize:"clamp(28px,8vw,40px)",
           lineHeight:0.93,color:W,whiteSpace:"pre-line"}}>
           {[tx.s0,tx.s1,tx.s2,tx.s3,tx.s4,tx.s5,tx.s6][obStep]}
         </div>
       </div>
 
-      {/* ── Contenido del step ── */}
+      {/* Contenido */}
       <div style={{flex:1,overflowY:"auto",padding:"0 28px"}}>
-        {renderStepContent()}
+        {renderContent()}
       </div>
 
-      {/* ── Botones nav ── */}
-      <div style={{padding:"12px 28px 40px",flexShrink:0,display:"flex",gap:10}}>
+      {/* Nav */}
+      <div style={{padding:"10px 28px 44px",flexShrink:0,display:"flex",gap:10}}>
         {obStep>0&&(
           <button onClick={back} style={{
-            padding:"14px 20px",borderRadius:14,
-            background:"rgba(255,255,255,0.04)",
-            border:"0.5px solid rgba(255,255,255,0.1)",
-            borderTop:"1px solid rgba(255,255,255,0.18)",
-            color:"rgba(255,255,255,0.4)",
-            fontFamily:MN,fontSize:9,letterSpacing:2,cursor:"pointer",
-            backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",
+            padding:"14px 20px",borderRadius:14,cursor:"pointer",
+            background:"rgba(255,255,255,0.03)",
+            border:"1px solid rgba(255,255,255,0.08)",
+            borderTop:"1px solid rgba(255,255,255,0.15)",
+            color:"rgba(255,255,255,0.35)",
+            fontFamily:MN,fontSize:9,letterSpacing:2,
           }}>{tx.back}</button>
         )}
         {obStep===6?(
           <button onClick={doFinish} disabled={!canNext} style={{
-            flex:1,padding:"16px",borderRadius:14,border:"none",
-            background:canNext?"linear-gradient(135deg,rgba(72,120,255,0.9),rgba(100,150,255,0.95))":"rgba(255,255,255,0.05)",
+            flex:1,padding:"16px",borderRadius:14,border:"none",cursor:canNext?"pointer":"default",
+            background:canNext?"linear-gradient(180deg,rgba(90,140,255,0.95),rgba(60,100,220,0.9))":"rgba(255,255,255,0.05)",
+            borderTop:canNext?"1px solid rgba(180,210,255,0.45)":"1px solid rgba(255,255,255,0.05)",
             color:canNext?"#fff":dim,
             fontFamily:MN,fontSize:11,fontWeight:700,letterSpacing:3,
-            cursor:canNext?"pointer":"default",
-            borderTop:canNext?"1px solid rgba(180,210,255,0.4)":"1px solid rgba(255,255,255,0.05)",
-            boxShadow:canNext?"0 0 40px rgba(72,120,255,0.4),inset 0 1px 0 rgba(180,210,255,0.3)":"none",
-            transition:"all 0.3s cubic-bezier(0.34,1.56,0.64,1)",
+            boxShadow:canNext?"0 0 32px rgba(72,120,255,0.35),inset 0 1px 0 rgba(200,220,255,0.2)":"none",
+            transition:"all 0.3s",
           }}>{tx.finish}</button>
         ):[0,3,4,5].includes(obStep)?null:(
           <button onClick={()=>{
-            if(obStep===1){set("name",nameVal.trim());}
-            if(obStep===2){set("age",ageVal);}
+            if(obStep===1)set("name",nameVal.trim());
+            if(obStep===2)set("age",ageVal);
             next();
           }} disabled={!canNext} style={{
-            flex:1,padding:"16px",borderRadius:14,border:"none",
-            background:canNext?"linear-gradient(135deg,rgba(72,120,255,0.9),rgba(100,150,255,0.95))":"rgba(255,255,255,0.05)",
+            flex:1,padding:"16px",borderRadius:14,border:"none",cursor:canNext?"pointer":"default",
+            background:canNext?"linear-gradient(180deg,rgba(90,140,255,0.95),rgba(60,100,220,0.9))":"rgba(255,255,255,0.05)",
+            borderTop:canNext?"1px solid rgba(180,210,255,0.45)":"1px solid rgba(255,255,255,0.05)",
             color:canNext?"#fff":dim,
             fontFamily:MN,fontSize:11,fontWeight:700,letterSpacing:3,
-            cursor:canNext?"pointer":"default",
-            borderTop:canNext?"1px solid rgba(180,210,255,0.4)":"1px solid rgba(255,255,255,0.05)",
-            boxShadow:canNext?"0 0 32px rgba(72,120,255,0.3),inset 0 1px 0 rgba(180,210,255,0.3)":"none",
-            transition:"all 0.3s cubic-bezier(0.34,1.56,0.64,1)",
-            transform:canNext?"scale(1)":"scale(0.98)",
+            boxShadow:canNext?"0 0 28px rgba(72,120,255,0.3),inset 0 1px 0 rgba(200,220,255,0.2)":"none",
+            transition:"all 0.3s",
           }}>{tx.cont}</button>
         )}
       </div>
     </div>
   );
 }
+
+
 
 
 
