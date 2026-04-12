@@ -3910,9 +3910,166 @@ function ModeSelectorBar({profile,lang,mono,onShowAthletes}){
 }
 
 
-function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk,showSet,setShowSet,setShowBotChat,mono,profile,tab,setTab,setSel,sel,sp,sr}){
+function ProfileSheet({show,onClose,profile,lang,mono,sp,setStep}){
+  var MN=mono||"'SF Mono','Courier New',monospace";
+  var BN="'Bebas Neue',cursive";
+  var e=React.createElement;
+  var[closing,setClosing]=React.useState(false);
+  if(!show&&!closing) return null;
+
+  var close=function(){
+    setClosing(true);
+    setTimeout(function(){setClosing(false);onClose();},260);
+  };
+
+  var W="rgba(240,242,245,0.9)";
+  var dim="rgba(240,242,245,0.35)";
+  var l=lang==="en"?"en":"es";
+
+  var userName=profile&&profile.name?profile.name:"Atleta";
+  var goalMap={muscle:"💪 Músculo",strength:"⚡ Fuerza",lose:"🔥 Definición",general:"⚖️ General"};
+  var levelMap={beg:"Principiante",int:"Intermedio",adv:"Avanzado"};
+  var langNames={es:"Español",en:"English",fr:"Français",it:"Italiano",de:"Deutsch",pt:"Português"};
+
+  var rowStyle={
+    display:"flex",alignItems:"center",gap:14,
+    padding:"14px 20px",
+    borderBottom:"0.5px solid rgba(255,255,255,0.05)",
+  };
+  var iconBoxStyle=function(color){return{
+    width:36,height:36,borderRadius:10,flexShrink:0,
+    background:"rgba("+color+",0.1)",
+    border:"1px solid rgba("+color+",0.2)",
+    display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,
+  };};
+
+  var Row=function(icon,label,value,onClick,color){
+    return e("div",{
+      onClick:onClick||undefined,
+      style:Object.assign({},rowStyle,{cursor:onClick?"pointer":"default"}),
+    },
+      e("div",{style:iconBoxStyle(color||"255,255,255")},icon),
+      e("div",{style:{flex:1}},
+        e("div",{style:{fontSize:14,color:W,fontWeight:500}},label),
+        value?e("div",{style:{fontFamily:MN,fontSize:9,color:dim,marginTop:2,letterSpacing:1}},value):null
+      ),
+      onClick?e("div",{style:{fontSize:16,color:"rgba(255,255,255,0.2)"}},"\u203a"):null
+    );
+  };
+
+  var Section=function(title,rows){
+    return e("div",{style:{marginBottom:8}},
+      e("div",{style:{fontFamily:MN,fontSize:8,letterSpacing:4,
+        color:"rgba(255,255,255,0.2)",padding:"12px 20px 8px"}},title),
+      e("div",{style:{background:"rgba(255,255,255,0.03)",
+        border:"0.5px solid rgba(255,255,255,0.07)",
+        borderRadius:16,overflow:"hidden",margin:"0 16px"}},
+        rows
+      )
+    );
+  };
+
+  var profileInfo=[
+    goalMap[profile&&profile.goal]||"—",
+    levelMap[profile&&profile.level]||"—",
+    (profile&&profile.selDays?profile.selDays.length:0)+" días/sem",
+  ].join(" · ");
+
+  return e("div",{
+    onClick:function(ev){if(ev.target===ev.currentTarget)close();},
+    style:{
+      position:"fixed",inset:0,zIndex:9500,
+      background:"rgba(0,0,0,0.7)",
+      display:"flex",flexDirection:"column",justifyContent:"flex-end",
+      opacity:closing?0:1,transition:"opacity 0.26s ease",
+    }},
+    e("div",{style:{
+      background:"#080d1a",
+      borderRadius:"24px 24px 0 0",
+      borderTop:"1px solid rgba(255,255,255,0.1)",
+      maxHeight:"88vh",display:"flex",flexDirection:"column",
+      transform:closing?"translateY(48px)":"translateY(0)",
+      transition:"transform 0.28s cubic-bezier(0.34,1.56,0.64,1)",
+    }},
+      // Handle
+      e("div",{style:{padding:"12px 0 0",display:"flex",justifyContent:"center",flexShrink:0}},
+        e("div",{onClick:close,style:{width:36,height:4,borderRadius:2,
+          background:"rgba(255,255,255,0.15)",cursor:"pointer"}})
+      ),
+      // Header
+      e("div",{style:{padding:"16px 20px 20px",flexShrink:0,
+        borderBottom:"0.5px solid rgba(255,255,255,0.06)"}},
+        e("div",{style:{display:"flex",alignItems:"center",gap:14}},
+          e("div",{style:{
+            width:52,height:52,borderRadius:16,flexShrink:0,
+            background:"linear-gradient(135deg,rgba(72,120,255,0.3),rgba(40,80,200,0.2))",
+            border:"1px solid rgba(72,120,255,0.3)",
+            display:"flex",alignItems:"center",justifyContent:"center",
+            fontFamily:BN,fontSize:22,color:"rgba(130,175,255,0.9)",
+          }},userName.charAt(0).toUpperCase()),
+          e("div",{style:{flex:1}},
+            e("div",{style:{fontFamily:BN,fontSize:22,color:W,letterSpacing:1,lineHeight:1}},
+              userName.toUpperCase()),
+            e("div",{style:{fontFamily:MN,fontSize:9,color:dim,marginTop:4,letterSpacing:1}},
+              l==="en"?"FORJA ATHLETE":"ATLETA FORJA")
+          )
+        )
+      ),
+      // Scroll content
+      e("div",{style:{overflowY:"auto",paddingBottom:40}},
+
+        Section(l==="en"?"PROGRAM":"PROGRAMA",[
+          Row("⚡",l==="en"?"Change routine":"Cambiar rutina",
+            l==="en"?"Goal · Level · Days":"Objetivo · Nivel · Días",
+            function(){close();setTimeout(function(){setStep&&setStep(1);},300);},"72,120,255"),
+          Row("📊",l==="en"?"Profile":"Perfil",profileInfo,null,"255,255,255"),
+          Row("⚖️",l==="en"?"Units":"Unidades",
+            profile&&profile.units==="imperial"?"lbs / inches":"kg / cm",
+            function(){
+              if(sp&&profile){
+                var nu=profile.units==="imperial"?"metric":"imperial";
+                sp(Object.assign({},profile,{units:nu}));
+              }
+              close();
+            },"255,255,255"),
+          Row("🌍",l==="en"?"Language":"Idioma",
+            langNames[lang]||lang,
+            function(){close();setTimeout(function(){setStep&&setStep(1);},300);},"255,255,255"),
+        ]),
+
+        Section("FORJA PRO",[
+          Row("🏆",l==="en"?"Athlete Programs":"Programas de Atletas",
+            l==="en"?"18 programs unlocked":"18 programas desbloqueados",null,"72,120,255"),
+          Row("🧬",l==="en"?"Muscle Heatmap":"Mapa Muscular 3D",
+            l==="en"?"Recovery by zone":"Recuperación por zona",null,"72,120,255"),
+          Row("❤️",l==="en"?"Cardiovascular Age":"Edad Cardiovascular",
+            "NTNU model",null,"72,120,255"),
+        ]),
+
+        Section(l==="en"?"APP":"APLICACIÓN",[
+          Row("📱","FORJA","v1.0 · PWA",null,"255,255,255"),
+        ]),
+
+        Section(l==="en"?"DATA":"DATOS",[
+          Row("🗑️",
+            l==="en"?"Reset app":"Reiniciar app",
+            l==="en"?"Clears all local data":"Borra datos locales y reinicia",
+            function(){
+              var keys=[];
+              for(var k in localStorage){if(k.startsWith("fv8"))keys.push(k);}
+              keys.forEach(function(k){localStorage.removeItem(k);});
+              window.location.reload();
+            },"220,50,50"),
+        ])
+      )
+    )
+  );
+}
+
+function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk,showSet,setShowSet,setShowBotChat,mono,profile,tab,setTab,setSel,sel,sp,sr,setStep}){
   var e=React.createElement;
   var[showAthletes,setShowAthletes]=React.useState(false);
+  var[showProfile,setShowProfile]=React.useState(false);
   var now=new Date();
   var dow=now.getDay();
   var tdi=dow===0?6:dow-1;
@@ -4038,7 +4195,7 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
         e("span",{style:{fontSize:7,fontFamily:mono,letterSpacing:3,color:"rgba(255,255,255,0.35)",fontWeight:600}},weekLabel),
         e("button",{onClick:function(){setWeekOff(function(p){return Math.min(0,p+1);});},style:{background:"none",border:"none",color:weekOff===0?"rgba(255,255,255,0.08)":"rgba(255,255,255,0.25)",fontSize:18,cursor:weekOff===0?"default":"pointer",padding:"0 4px",lineHeight:1}},"›")
       ),
-      e("button",{onClick:function(){setShowSet(!showSet);},style:{width:26,height:26,borderRadius:8,border:"0.5px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.05)",cursor:"pointer",color:"rgba(255,255,255,0.4)",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center"}},"⚙")
+      e("button",{onClick:function(){setShowProfile(true);},style:{width:26,height:26,borderRadius:8,border:"0.5px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.05)",cursor:"pointer",color:"rgba(255,255,255,0.4)",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center"}},"⚙")
     ),
 
     // Mode selector — AUTO / ATLETAS
@@ -4261,6 +4418,11 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
       )
     )
 ,
+    showProfile&&e(ProfileSheet,{
+      show:showProfile,
+      onClose:function(){setShowProfile(false);},
+      profile:profile,lang:lang,mono:mono,sp:sp,setStep:setStep,
+    }),
     showAthletes&&e(AthleteSheet,{
       show:showAthletes,
       onClose:function(){setShowAthletes(false);},
@@ -4645,7 +4807,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
           setShowBotChat={setShowBotChat}
           mono={mono} profile={profile}
           tab={tab} setTab={setTabR} setSel={setSel} sel={sel}
-          sp={sp} sr={sr}
+          sp={sp} sr={sr} setStep={setStep}
         />
 
       </div>
