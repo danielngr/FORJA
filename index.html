@@ -5849,7 +5849,7 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
 
     if(obStep===0) return(
       <div style={slideStyle}>
-        <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+        <div style={{display:"flex",flexWrap:"wrap",gap:8,justifyContent:"center"}}>
           {langs.map(l=>(
             <button key={l.code}
               onClick={()=>{set("lang",l.code);setLang(l.code);setTimeout(next,180);}}
