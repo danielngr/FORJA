@@ -4453,24 +4453,7 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
   return e("div",{style:{position:"relative",zIndex:1}},
 
     // Nav ESTA SEMANA + settings
-    e("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 18px 0"}},
-      // Navegación de semana — compacta y elegante
-      e("div",{style:{display:"flex",alignItems:"center",gap:6,
-        background:"rgba(255,255,255,0.04)",
-        border:"0.5px solid rgba(255,255,255,0.08)",
-        borderRadius:10,padding:"5px 8px",
-      }},
-        e("button",{onClick:function(){setWeekOff(function(p){return Math.max(-12,p-1);});},
-          style:{background:"none",border:"none",color:"rgba(255,255,255,0.3)",
-          fontSize:14,cursor:"pointer",padding:"0 2px",lineHeight:1,display:"flex"}},"‹"),
-        e("span",{style:{fontSize:8,fontFamily:mono,letterSpacing:2,
-          color:weekOff===0?"rgba(130,175,255,0.8)":"rgba(255,255,255,0.4)",
-          fontWeight:600,minWidth:70,textAlign:"center"}},weekLabel),
-        e("button",{onClick:function(){setWeekOff(function(p){return Math.min(0,p+1);});},
-          style:{background:"none",border:"none",
-          color:weekOff===0?"rgba(255,255,255,0.1)":"rgba(255,255,255,0.3)",
-          fontSize:14,cursor:weekOff===0?"default":"pointer",padding:"0 2px",lineHeight:1,display:"flex"}},"›")
-      ),
+    e("div",{style:{display:"flex",alignItems:"center",justifyContent:"flex-end",padding:"12px 18px 0"}},
       e("button",{onClick:function(){setShowProfile(true);},style:{width:30,height:30,borderRadius:10,
         border:"0.5px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.05)",
         cursor:"pointer",color:"rgba(255,255,255,0.5)",fontSize:14,
@@ -4597,6 +4580,23 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
       padding:"6px",
       position:"relative",
     }},
+      // Flecha izquierda — semana anterior
+      e("button",{onClick:function(){setWeekOff(function(p){return Math.max(-12,p-1);});},
+        style:{
+          position:"absolute",left:-28,top:"50%",transform:"translateY(-50%)",
+          background:"none",border:"none",cursor:"pointer",
+          color:"rgba(255,255,255,0.2)",fontSize:18,padding:4,
+          lineHeight:1,zIndex:2,
+        }},"‹"),
+      // Flecha derecha — semana siguiente
+      e("button",{onClick:function(){setWeekOff(function(p){return Math.min(0,p+1);});},
+        style:{
+          position:"absolute",right:-28,top:"50%",transform:"translateY(-50%)",
+          background:"none",border:"none",
+          cursor:weekOff===0?"default":"pointer",
+          color:weekOff===0?"rgba(255,255,255,0.06)":"rgba(255,255,255,0.2)",
+          fontSize:18,padding:4,lineHeight:1,zIndex:2,
+        }},"›"),
       e("div",{style:{
         display:"flex",alignItems:"center",
         position:"relative",
