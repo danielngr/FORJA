@@ -5648,236 +5648,252 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
         </div>
       )}
       {(tourAskVisible||(tourStep!==null&&tourStep!==-1&&(tourStep<4||tourStep>7)))&&(()=>{
-        const M_="'SF Mono','Fira Code',monospace";
-        const S_="'DM Sans',sans-serif";
-        const es=lang==="es"||lang==="pt";
-        const TOTAL=14;
-        const STEPS=[
-          {id:"cal-day", pad:8,
-           tES:"Tu semana",         tEN:"Your week",          tFR:"Ta semaine",       tIT:"La tua settimana",  tDE:"Deine Woche",
-           xES:"El día resaltado es hoy. Toca cualquier día para ver tu rutina — los días completados brillan en verde.",
-           xEN:"The highlighted day is today. Tap any day to see your routine — completed days glow green.",
-           xFR:"Le jour en surbrillance c'est aujourd'hui. Touche n'importe quel jour pour voir ta routine.",
-           xIT:"Il giorno evidenziato è oggi. Tocca qualsiasi giorno per vedere la tua routine.",
-           xDE:"Der markierte Tag ist heute. Tippe auf einen Tag um dein Programm zu sehen."},
-          {id:"day-progress", pad:10,
-           tES:"Progreso + corazón",  tEN:"Progress + heart",    tFR:"Progrès + cœur",   tIT:"Progresso + cuore",  tDE:"Fortschritt + Herz",
-           xES:"El contador muestra tus ejercicios de hoy. El corazón 3D late cuando completas el día — se congela si no entrenas. Tu edad cardiovascular se calcula con VO2max según ciencia NTNU.",
-           xEN:"The counter shows today's exercises. The 3D heart beats when you complete the day — freezes if you skip. Cardiovascular age calculated with NTNU VO2max science.",
-           xFR:"Le compteur montre tes exercices du jour. Le cœur 3D bat quand tu complètes la journée. L'âge cardiovasculaire est calculé avec la science NTNU.",
-           xIT:"Il contatore mostra gli esercizi di oggi. Il cuore 3D batte quando completi la giornata. L'età cardiovascolare è calcolata con la scienza NTNU.",
-           xDE:"Der Zähler zeigt heutige Übungen. Das 3D-Herz schlägt wenn du den Tag abschließt. Kardiovaskuläres Alter per NTNU-Wissenschaft."},
-          {id:"start-workout", pad:8,
-           tES:"Empieza a entrenar",  tEN:"Start training",      tFR:"Commence à t'entraîner", tIT:"Inizia ad allenarti", tDE:"Training beginnen",
-           xES:"Toca aquí para abrir tu sesión de hoy. Registra pesos y reps en tiempo real — FORJA guarda todo automáticamente.",
-           xEN:"Tap here to open today's session. Log weights and reps in real time — FORJA saves everything automatically.",
-           xFR:"Touche ici pour ouvrir ta session du jour. Enregistre poids et reps en temps réel.",
-           xIT:"Tocca qui per aprire la sessione di oggi. Registra pesi e ripetizioni in tempo reale.",
-           xDE:"Hier tippen um die heutige Session zu starten. Gewichte und Wdhl. in Echtzeit erfassen."},
-          {id:"vol-weekly", pad:10, tabNeeded:"train",
-           tES:"Volumen muscular",   tEN:"Muscle volume",       tFR:"Volume musculaire",  tIT:"Volume muscolare",  tDE:"Muskelvolumen",
-           xES:"Las barras muestran cuántos sets hiciste por músculo vs. el rango recomendado por ciencia. Verde = perfecto. Rojo = necesitas más.",
-           xEN:"Bars show sets per muscle vs. science-backed recommendations. Green = perfect. Red = need more.",
-           xFR:"Les barres montrent les séries par muscle vs. recommandations scientifiques.",
-           xIT:"Le barre mostrano le serie per muscolo vs. le raccomandazioni scientifiche.",
-           xDE:"Balken zeigen Sätze pro Muskel vs. wissenschaftliche Empfehlungen."},
-          {id:"carga-semanal", pad:10, tabNeeded:"train",
-           tES:"Carga ACWR",         tEN:"ACWR load",           tFR:"Charge ACWR",       tIT:"Carico ACWR",        tDE:"ACWR-Last",
-           xES:"Mide si estás entrenando más de lo normal. Óptimo: 0.8–1.3. Por encima de 1.5 = riesgo de lesión. Se calcula solo al guardar tus sets.",
-           xEN:"Measures if you're training above your baseline. Optimal: 0.8–1.3. Above 1.5 = injury risk. Auto-calculated when you save sets.",
-           xFR:"Mesure si tu dépasses ta charge habituelle. Optimal: 0.8–1.3. Au-dessus de 1.5 = risque de blessure.",
-           xIT:"Misura se superi il tuo carico abituale. Ottimale: 0.8–1.3. Sopra 1.5 = rischio infortuni.",
-           xDE:"Misst ob du über deiner üblichen Last trainierst. Optimal: 0.8–1.3. Über 1.5 = Verletzungsrisiko."},
-          {id:"tab-body", pad:8, tabNeeded:"train",
-           tES:"Pestaña Cuerpo →",   tEN:"Body tab →",          tFR:"Onglet Corps →",    tIT:"Tab Corpo →",        tDE:"Tab Körper →",
-           xES:"Aquí vive tu maniquí 3D interactivo. Toca SIGUIENTE para ir.",
-           xEN:"Your interactive 3D mannequin lives here. Tap NEXT to go there.",
-           xFR:"Ton mannequin 3D interactif est ici. Touche SUIVANT pour y aller.",
-           xIT:"Il tuo manichino 3D interattivo è qui. Tocca AVANTI per andare.",
-           xDE:"Dein interaktives 3D-Mannequin ist hier. WEITER um dorthin zu gehen.",
+        const MN_="'SF Mono','Fira Code',monospace";
+        const BN_="'Bebas Neue',cursive";
+        const es_=lang==="es"||lang==="pt";
+        const BLUE="rgba(72,120,255,1)";
+        const BLUE_GLOW="rgba(72,120,255,0.5)";
+
+        // Definición de pasos — cada uno con su data-tour id y textos
+        const TOUR_STEPS=[
+          {id:"cal-day",
+           t:{es:"Tu semana",en:"Your week",fr:"Ta semaine",it:"La tua settimana",de:"Deine Woche"},
+           x:{es:"El día resaltado es hoy. Toca cualquier día para ver tu rutina — los días completados brillan en verde.",
+              en:"The highlighted day is today. Tap any day to see your routine — completed days glow green.",
+              fr:"Le jour surligné c'est aujourd'hui. Touche n'importe quel jour pour ta routine.",
+              it:"Il giorno evidenziato è oggi. Tocca qualsiasi giorno per la tua routine.",
+              de:"Der markierte Tag ist heute. Tippe auf einen Tag um dein Programm zu sehen."},
+           pad:10},
+          {id:"day-progress",
+           t:{es:"Corazón + métricas",en:"Heart + metrics",fr:"Cœur + métriques",it:"Cuore + metriche",de:"Herz + Metriken"},
+           x:{es:"El corazón 3D late cuando completas el día entero — se congela si fallas. La edad cardiovascular se calcula con tu VO2max según el modelo científico NTNU.",
+              en:"The 3D heart beats when you complete the full day — freezes if you skip. Cardiovascular age uses your VO2max via the NTNU scientific model.",
+              fr:"Le cœur 3D bat quand tu complètes la journée entière. L'âge cardiovasculaire utilise ton VO2max via le modèle NTNU.",
+              it:"Il cuore 3D batte quando completi l'intera giornata. L'età cardiovascolare usa il tuo VO2max secondo il modello NTNU.",
+              de:"Das 3D-Herz schlägt wenn du den ganzen Tag abschließt. Kardiovaskuläres Alter per NTNU-Modell."},
+           pad:12},
+          {id:"start-workout",
+           t:{es:"Registra tu entreno",en:"Log your workout",fr:"Enregistre ton entraînement",it:"Registra il tuo allenamento",de:"Training erfassen"},
+           x:{es:"Toca aquí para abrir tu sesión. Registra pesos y reps en tiempo real — FORJA guarda todo y calcula tu 1RM automáticamente.",
+              en:"Tap here to open your session. Log weights and reps in real time — FORJA saves everything and auto-calculates your 1RM.",
+              fr:"Touche ici pour ouvrir ta session. Enregistre poids et reps — FORJA calcule ton 1RM automatiquement.",
+              it:"Tocca qui per aprire la sessione. Registra pesi e rip — FORJA calcola il tuo 1RM automaticamente.",
+              de:"Hier tippen um die Session zu öffnen. Gewichte erfassen — FORJA berechnet dein 1WM automatisch."},
+           pad:8},
+          {id:"vol-weekly",
+           t:{es:"Volumen muscular",en:"Muscle volume",fr:"Volume musculaire",it:"Volume muscolare",de:"Muskelvolumen"},
+           x:{es:"Barras de cuántos sets hiciste por músculo vs. el rango recomendado. Verde = perfecto, rojo = trabaja más esa zona.",
+              en:"Bars showing sets per muscle vs. recommended range. Green = perfect, red = work that zone more.",
+              fr:"Barres de séries par muscle vs. recommandations. Vert = parfait, rouge = travaille plus cette zone.",
+              it:"Barre di serie per muscolo vs. raccomandazioni. Verde = perfetto, rosso = lavora di più.",
+              de:"Balken: Sätze pro Muskel vs. Empfehlungen. Grün = perfekt, Rot = mehr trainieren."},
+           pad:10},
+          {id:"carga-semanal",
+           t:{es:"Carga ACWR",en:"ACWR load",fr:"Charge ACWR",it:"Carico ACWR",de:"ACWR-Last"},
+           x:{es:"Mide si entrenas más de lo normal. Óptimo: 0.8–1.3. Por encima de 1.5 hay riesgo de lesión. Se calcula al guardar sets.",
+              en:"Measures training above your baseline. Optimal: 0.8–1.3. Above 1.5 = injury risk. Calculated when saving sets.",
+              fr:"Mesure si tu dépasses ta charge habituelle. Optimal: 0.8–1.3. Au-dessus de 1.5 = risque.",
+              it:"Misura se superi il tuo carico. Ottimale: 0.8–1.3. Sopra 1.5 = rischio infortuni.",
+              de:"Misst ob du über deiner Last trainierst. Optimal: 0.8–1.3. Über 1.5 = Verletzungsrisiko."},
+           pad:10},
+          {id:"tab-body",
+           t:{es:"Pestaña Cuerpo",en:"Body tab",fr:"Onglet Corps",it:"Tab Corpo",de:"Tab Körper"},
+           x:{es:"Toca SIGUIENTE para ir al maniquí 3D interactivo — aquí vive todo el análisis muscular.",
+              en:"Tap NEXT to go to the interactive 3D mannequin — all muscle analysis lives here.",
+              fr:"Touche SUIVANT pour aller au mannequin 3D interactif.",
+              it:"Tocca AVANTI per il manichino 3D interattivo.",
+              de:"WEITER um zum 3D-Mannequin zu gehen."},
+           pad:8,
            onEnter:()=>{setTabR("body");}},
-          {id:"mannequin", pad:4, tabNeeded:"body",
-           tES:"Maniquí muscular",   tEN:"Muscle mannequin",    tFR:"Mannequin musculaire", tIT:"Manichino muscolare", tDE:"Muskel-Mannequin",
-           xES:"Cada músculo tiene su propio color según qué tan reciente fue tu último entreno. Rojo = activo hoy, naranja = recuperando, verde = listo. Tócalo para ver detalles. Gíralo arrastrando.",
-           xEN:"Each muscle has its own color based on when you last trained it. Red = active today, orange = recovering, green = ready. Tap for details. Drag to rotate.",
-           xFR:"Chaque muscle a sa couleur selon ton dernier entraînement. Rouge=actif, orange=récupération, vert=prêt. Fais glisser pour tourner.",
-           xIT:"Ogni muscolo ha il suo colore in base all'ultimo allenamento. Rosso=attivo, arancione=recupero, verde=pronto. Trascina per ruotare.",
-           xDE:"Jeder Muskel hat eine Farbe je nach letztem Training. Rot=aktiv, orange=Erholung, grün=bereit. Ziehen zum Drehen.",
+          {id:"mannequin",
+           t:{es:"Maniquí muscular",en:"Muscle mannequin",fr:"Mannequin musculaire",it:"Manichino muscolare",de:"Muskel-Mannequin"},
+           x:{es:"Cada músculo tiene color según tu último entreno: rojo=activo hoy, naranja=recuperando, verde=listo. Tócalo para ver XP y nivel. Gíralo arrastrando.",
+              en:"Each muscle is colored by your last training: red=active today, orange=recovering, green=ready. Tap it for XP and level. Drag to rotate.",
+              fr:"Chaque muscle: rouge=actif, orange=récup, vert=prêt. Touche pour XP et niveau. Glisse pour tourner.",
+              it:"Ogni muscolo: rosso=attivo, arancione=recupero, verde=pronto. Tocca per XP. Trascina per ruotare.",
+              de:"Jeder Muskel: rot=aktiv, orange=Erholung, grün=bereit. Tippen für XP. Ziehen zum Drehen."},
+           pad:4,
            onEnter:()=>{window.scrollTo({top:0,behavior:"instant"});}},
-          {id:"balance-score", pad:10, tabNeeded:"body",
-           tES:"Balance Score + XP",  tEN:"Balance Score + XP",  tFR:"Score équilibre + XP", tIT:"Score equilibrio + XP", tDE:"Balance Score + XP",
-           xES:"Cada set suma XP al músculo trabajado. Sube de nivel y el maniquí brilla más — de gris a corona dorada en nivel 10. Si paras 7+ días, el nivel baja. El Balance Score mide qué tan completo es tu entrenamiento.",
-           xEN:"Every set gives XP to the trained muscle. Level up and the mannequin glows brighter — from gray to gold crown at level 10. Stop 7+ days and the level drops. Balance Score measures how complete your training is.",
-           xFR:"Chaque série donne de l'XP au muscle. Monte de niveau et le mannequin brille plus. Arrêter 7+ jours fait baisser le niveau.",
-           xIT:"Ogni serie dà XP al muscolo. Sali di livello e il manichino brilla di più. Fermarsi 7+ giorni abbassa il livello.",
-           xDE:"Jeder Satz gibt XP für den Muskel. Level auf und der Mannequin leuchtet stärker. 7+ Tage Pause senkt den Level."},
-          {id:"fix-my-balance", pad:10, tabNeeded:"body",
-           tES:"Fix My Balance",     tEN:"Fix My Balance",       tFR:"Corriger l'équilibre", tIT:"Correggi equilibrio", tDE:"Balance verbessern",
-           xES:"Te dice qué músculos llevan más de 14 días sin trabajar y cuánto Balance Score ganarías entrenándolos. Tu hoja de ruta para no descuidar ninguna zona.",
-           xEN:"Shows which muscles haven't been trained in 14+ days and how much Balance Score you'd gain. Your roadmap to never neglect a zone.",
-           xFR:"Montre les muscles non entraînés depuis 14+ jours et comment améliorer ton score.",
-           xIT:"Mostra i muscoli non allenati da 14+ giorni e come migliorare il punteggio.",
-           xDE:"Zeigt Muskeln die 14+ Tage nicht trainiert wurden und wie du den Score verbesserst."},
-          {id:"prs-section", pad:10, tabNeeded:"body",
-           tES:"PRs y progresión",   tEN:"PRs & progression",   tFR:"Records & progression", tIT:"Record & progressione", tDE:"Bestleistungen & Progression",
-           xES:"FORJA calcula tu 1RM estimado (fórmula Epley) en cada ejercicio automáticamente. Ve tu récord personal, la curva de progresión y el tonelaje semanal — la métrica real de progreso.",
-           xEN:"FORJA auto-calculates your estimated 1RM (Epley formula) for every exercise. See your personal record, progression curve, and weekly tonnage — the real progress metric.",
-           xFR:"FORJA calcule automatiquement ton 1RM estimé (formule Epley). Vois tes records et la progression.",
-           xIT:"FORJA calcola automaticamente il tuo 1RM stimato (formula Epley). Vedi i tuoi record e la progressione.",
-           xDE:"FORJA berechnet automatisch dein geschätztes 1WM (Epley-Formel). Sieh deine Bestleistungen und Progression."},
+          {id:"balance-score",
+           t:{es:"Balance Score + XP",en:"Balance Score + XP",fr:"Score équilibre + XP",it:"Score equilibrio + XP",de:"Balance Score + XP"},
+           x:{es:"Cada set suma XP al músculo trabajado. Sube de nivel y brilla más — de gris a corona dorada en nivel 10. Para 7+ días y el nivel baja. El Balance Score mide lo completo de tu entrenamiento.",
+              en:"Every set gives XP to the trained muscle. Level up and it glows brighter — gray to gold crown at level 10. Stop 7+ days and the level drops. Balance Score measures training completeness.",
+              fr:"Chaque série donne de l'XP. Monte de niveau — de gris à couronne dorée au niveau 10. Arrêter 7+ jours baisse le niveau.",
+              it:"Ogni serie dà XP. Sali di livello — da grigio a corona d'oro al livello 10. Fermarsi 7+ giorni abbassa il livello.",
+              de:"Jeder Satz gibt XP. Level auf — von grau zur Goldkrone bei Level 10. 7+ Tage Pause senkt den Level."},
+           pad:10},
+          {id:"fix-my-balance",
+           t:{es:"Fix My Balance",en:"Fix My Balance",fr:"Corriger l'équilibre",it:"Correggi equilibrio",de:"Balance verbessern"},
+           x:{es:"Te dice qué músculos llevan más de 14 días sin trabajar y cuánto Balance Score ganarías entrenándolos. Tu hoja de ruta para no descuidar ninguna zona.",
+              en:"Shows muscles not trained in 14+ days and how much Balance Score you'd gain. Your roadmap to never neglect a zone.",
+              fr:"Montre les muscles non entraînés 14+ jours et comment améliorer ton score.",
+              it:"Mostra i muscoli non allenati da 14+ giorni e come migliorare il punteggio.",
+              de:"Zeigt Muskeln 14+ Tage ohne Training und wie du den Score verbesserst."},
+           pad:10},
+          {id:"prs-section",
+           t:{es:"PRs y progresión",en:"PRs & progression",fr:"Records & progression",it:"Record & progressione",de:"Bestleistungen"},
+           x:{es:"FORJA calcula tu 1RM estimado (fórmula Epley) automáticamente en cada ejercicio. Ve tu récord, la curva de progresión y el tonelaje semanal — la métrica real de si estás progresando.",
+              en:"FORJA auto-calculates your estimated 1RM (Epley formula) for every exercise. See your record, progression curve, and weekly tonnage — the real progress metric.",
+              fr:"FORJA calcule ton 1RM estimé (Epley) automatiquement. Vois ton record et la progression.",
+              it:"FORJA calcola il 1RM stimato (Epley) automaticamente. Vedi il record e la progressione.",
+              de:"FORJA berechnet dein 1WM (Epley) automatisch. Sieh Bestleistung und Progression."},
+           pad:10},
         ];
-        const STEP_MAP={0:0,1:1,2:2,3:3,8:4,9:5,10:6,11:7,12:8,13:9};
-        const si=STEP_MAP[tourStep];
+
+        // Mapeo tourStep → índice en TOUR_STEPS
+        const T_MAP={0:0,1:1,2:2,3:3,8:4,9:5,10:6,11:7,12:8,13:9};
+        const si_=T_MAP[tourStep];
+        const step_=si_!==undefined?TOUR_STEPS[si_]:null;
+        const lang_=lang||"es";
+        const stepTitle=step_?(step_.t[lang_]||step_.t.en):"";
+        const stepText=step_?(step_.x[lang_]||step_.x.en):"";
+
+        // Obtener bounds del elemento
+        const el_=step_?document.querySelector('[data-tour="'+step_.id+'"]'):null;
+        const rawB=el_?el_.getBoundingClientRect():null;
+        const pad_=step_?step_.pad||8:8;
+        const vh_=window.innerHeight;
+        const vw_=window.innerWidth;
+
+        // Calcular posición del tooltip — inteligente
+        const tooltipH=200;
+        const spaceBelow=rawB?(vh_-rawB.bottom-pad_):0;
+        const spaceAbove=rawB?(rawB.top-pad_):0;
+        const tipPos=rawB?(spaceBelow>=tooltipH+16?
+          {top:Math.round(rawB.bottom+pad_+8)}:
+          spaceAbove>=tooltipH+16?
+          {bottom:Math.round(vh_-rawB.top+pad_+8)}:
+          {bottom:24}):
+          {bottom:24};
+
+        const totalSteps=10;
+        const displayStep=si_!==undefined?si_+1:1;
+
+        const endTour_=()=>{
+          try{localStorage.setItem("fv8_toured","1");}catch(_){}
+          setTourAskVisible(false);
+          setTourStep(-1);
+          if(tourOriginalSel!==null){setSel(tourOriginalSel);setTourOriginalSel(null);}
+        };
+
+        const nextStep_=()=>{
+          const ns=tourStep+1;
+          if(ns>=14){endTour_();return;}
+          if(ns===4){
+            if(day&&day.ex&&day.ex.length){setInWorkout(true);setTourStep(ns);}
+            else{setTabR("train");setTourStep(8);}
+            return;
+          }
+          if(ns===8){setInWorkout(false);setTabR("train");}
+          if(ns>=10&&ns<=13){setTabR("body");}
+          const nextDef=T_MAP[ns]!==undefined?TOUR_STEPS[T_MAP[ns]]:null;
+          if(nextDef&&nextDef.onEnter) nextDef.onEnter();
+          setTourStep(ns);
+        };
+
         if(tourAskVisible&&tourReady&&tourStep===null) return(
           <div style={{position:"fixed",inset:0,zIndex:9000,
-            background:"rgba(0,0,0,0.75)",backdropFilter:"blur(4px)",
+            background:"rgba(0,0,0,0.82)",backdropFilter:"blur(4px)",
             display:"flex",alignItems:"flex-end",justifyContent:"center",padding:"0 0 40px"}}>
-            <div style={{width:"calc(100% - 40px)",maxWidth:420,background:"#141418",
-              borderRadius:20,border:"1px solid rgba(255,255,255,0.1)",
+            <div style={{width:"calc(100% - 32px)",maxWidth:400,background:"#0e1118",
+              borderRadius:22,border:"1px solid rgba(72,120,255,0.2)",
+              borderTop:"1px solid rgba(130,175,255,0.3)",
               padding:"28px 24px 24px",boxShadow:"0 32px 64px rgba(0,0,0,0.6)"}}>
-              <div style={{fontSize:22,marginBottom:6}}>👋</div>
-              <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,letterSpacing:2,
-                color:"#EEEAE3",marginBottom:8}}>
-                {lang==="es"||lang==="pt"?"Descubre cómo funciona FORJA":lang==="fr"?"Découvre comment fonctionne FORJA":lang==="it"?"Scopri come funziona FORJA":lang==="de"?"Entdecke wie FORJA funktioniert":"Discover how FORJA works"}
+              <div style={{fontFamily:MN_,fontSize:8,letterSpacing:4,color:"rgba(72,120,255,0.7)",marginBottom:12}}>// BIENVENIDO A FORJA</div>
+              <div style={{fontFamily:BN_,fontSize:32,letterSpacing:1,color:"rgba(240,242,245,0.95)",lineHeight:0.95,marginBottom:12}}>
+                {lang_==="en"?"QUICK TOUR":lang_==="fr"?"VISITE RAPIDE":lang_==="it"?"TOUR RAPIDO":lang_==="de"?"SCHNELLTOUR":"TOUR RÁPIDO"}
               </div>
-              <div style={{fontSize:13,color:"rgba(238,234,227,0.65)",lineHeight:1.6,
-                marginBottom:24,fontFamily:S_}}>
-                {lang==="es"||lang==="pt"?"Un tour rápido de 12 pasos te muestra todo.":lang==="fr"?"Un tour rapide de 12 étapes te montre tout.":lang==="it"?"Un tour rapido di 12 passi ti mostra tutto.":lang==="de"?"Eine schnelle 12-Schritte-Tour zeigt dir alles.":"A quick 12-step tour shows you everything."}
+              <div style={{fontFamily:MN_,fontSize:11,color:"rgba(240,242,245,0.45)",lineHeight:1.6,marginBottom:24}}>
+                {lang_==="en"?"10 steps to master FORJA. Takes 2 minutes.":lang_==="fr"?"10 étapes pour maîtriser FORJA. 2 minutes.":lang_==="it"?"10 passi per padroneggiare FORJA. 2 minuti.":lang_==="de"?"10 Schritte um FORJA zu meistern. 2 Minuten.":"10 pasos para dominar FORJA. 2 minutos."}
               </div>
-              <div style={{display:"flex",flexDirection:"column",gap:10}}>
-                <button onClick={()=>{setTourAskVisible(false);
-                  if(routine){
-                    const curDay=routine[sel];
-                    if(!curDay||!curDay.ex||!curDay.ex.length){
-                      const firstWorkoutDay=routine.findIndex(d=>d&&d.ex&&d.ex.length>0);
-                      if(firstWorkoutDay>=0){
-                        setTourOriginalSel(sel);
-                        setSel(firstWorkoutDay);
-                      }
-                    }
-                  }
-                  setTourStep(0);}} style={{
-                  padding:"14px",borderRadius:12,border:"none",background:"#EEEAE3",color:"#07080a",
-                  fontFamily:M_,fontSize:11,fontWeight:700,letterSpacing:2,cursor:"pointer"}}>
-                  {lang==="es"||lang==="pt"?"EMPEZAR TOUR →":lang==="fr"?"COMMENCER TOUR →":lang==="it"?"INIZIA IL TOUR →":lang==="de"?"TOUR STARTEN →":"START TOUR →"}
-                </button>
-                <button onClick={()=>{
-                  try{localStorage.setItem('fv8_toured','1');}catch{}
-                  setTourAskVisible(false);setTourStep(-1);
-                  if(tourOriginalSel!==null){setSel(tourOriginalSel);setTourOriginalSel(null);}
-                }} style={{padding:"12px",borderRadius:12,
-                  border:"1px solid rgba(255,255,255,0.1)",background:"transparent",
-                  color:"rgba(238,234,227,0.4)",fontFamily:M_,fontSize:10,letterSpacing:1,cursor:"pointer"}}>
-                  {lang==="es"||lang==="pt"?"Saltar":lang==="fr"?"Passer":lang==="it"?"Salta":lang==="de"?"Überspringen":"Skip"}
-                </button>
+              <button onClick={()=>{setTabR("train");setTourStep(0);}} style={{
+                width:"100%",padding:"14px",borderRadius:14,border:"none",
+                background:"linear-gradient(180deg,rgba(72,120,255,0.9),rgba(50,90,200,0.85))",
+                borderTop:"1px solid rgba(130,175,255,0.4)",
+                color:"#fff",fontFamily:MN_,fontSize:11,fontWeight:700,letterSpacing:3,cursor:"pointer",
+                boxShadow:"0 0 24px rgba(72,120,255,0.25)",marginBottom:10}}>
+                {lang_==="en"?"START TOUR →":lang_==="fr"?"COMMENCER →":lang_==="it"?"INIZIA →":lang_==="de"?"STARTEN →":"EMPEZAR →"}
+              </button>
+              <div onClick={()=>{try{localStorage.setItem("fv8_toured","1");}catch(_){} setTourAskVisible(false);setTourStep(-1);}}
+                style={{textAlign:"center",fontFamily:MN_,fontSize:9,letterSpacing:2,color:"rgba(255,255,255,0.2)",cursor:"pointer",padding:8}}>
+                {lang_==="en"?"SKIP":"OMITIR"}
               </div>
             </div>
           </div>
         );
-        if(si===undefined||si===null) return null;
-        const step=STEPS[si];
-        if(!step) return null;
-        const _elRaw = step.id==='mannequin'
-          ? (document.getElementById('forja-canvas-3d') || document.querySelector('[data-tour="mannequin"]'))
-          : document.querySelector(`[data-tour="${step.id}"]`);
-        const el=_elRaw;
-        const bounds=el?el.getBoundingClientRect():null;
-        const pad=step.pad||8;
-        const vh=window.innerHeight;
-        const tooltipBelow=bounds&&(bounds.bottom+pad+180)<vh;
-        const endTour=()=>{
-          try{localStorage.setItem('fv8_toured','1');}catch{}
-          setTourAskVisible(false);setTourStep(-1);
-          if(tourOriginalSel!==null){setSel(tourOriginalSel);setTourOriginalSel(null);}
-        };
-        const nextStep=()=>{
-          const ns=tourStep+1;
-          if(ns>=TOTAL){endTour();return;}
-          if(ns===4){ if(day&&day.ex&&day.ex.length){ setInWorkout(true); setTourStep(ns); } else { setTabR('train'); setTourStep(8); } return; }
-          if(ns===8){ setInWorkout(false); setTabR("train"); }
-          if(ns>=10&&ns<=13){
-            setTabR('body');
-          }
-          const nextStepDef=STEPS[STEP_MAP[ns]];
-          if(nextStepDef?.onEnter) nextStepDef.onEnter();
-          setTourStep(ns);
-        };
+
+        if(!step_||tourStep===null||tourStep===-1) return null;
+
         return(
           <div style={{position:"fixed",inset:0,zIndex:9000,pointerEvents:"none"}}>
-            {bounds?<>
+            {/* Overlay oscuro en 4 partes alrededor del elemento */}
+            {rawB?<>
               <div style={{position:"fixed",top:0,left:0,right:0,
-                height:Math.max(0,bounds.top-pad),
+                height:Math.max(0,rawB.top-pad_),
                 background:"rgba(0,0,0,0.88)",pointerEvents:"all"}}/>
               <div style={{position:"fixed",left:0,right:0,
-                top:bounds.bottom+pad,bottom:0,
+                top:rawB.bottom+pad_,bottom:0,
                 background:"rgba(0,0,0,0.88)",pointerEvents:"all"}}/>
               <div style={{position:"fixed",
-                top:bounds.top-pad,height:bounds.height+pad*2,
-                left:0,width:Math.max(0,bounds.left-pad),
+                top:rawB.top-pad_,height:rawB.height+pad_*2,
+                left:0,width:Math.max(0,rawB.left-pad_),
                 background:"rgba(0,0,0,0.88)",pointerEvents:"all"}}/>
               <div style={{position:"fixed",
-                top:bounds.top-pad,height:bounds.height+pad*2,
-                left:bounds.right+pad,right:0,
+                top:rawB.top-pad_,height:rawB.height+pad_*2,
+                left:rawB.right+pad_,right:0,
                 background:"rgba(0,0,0,0.88)",pointerEvents:"all"}}/>
+              {/* Border azul FORJA alrededor del elemento */}
               <div style={{position:"fixed",
-                top:bounds.top-pad,left:bounds.left-pad,
-                width:bounds.width+pad*2,height:bounds.height+pad*2,
-                borderRadius:14,pointerEvents:"none",
-                border:"2.5px solid rgba(191,169,138,1)",
-                boxShadow:"0 0 0 1px rgba(191,169,138,0.2),0 0 24px rgba(191,169,138,0.45)"}}/>
-              {step.id!=="mannequin"&&<div style={{position:"fixed",
-                top:bounds.top-pad,left:bounds.left-pad,
-                width:bounds.width+pad*2,height:bounds.height+pad*2,
-                borderRadius:14,pointerEvents:"all",
-                background:"transparent",cursor:"default"}}
-                onClick={e=>e.stopPropagation()}/>}
-            </>:<div style={{position:"absolute",inset:0,
-              background:"rgba(0,0,0,0.88)",pointerEvents:"all"}}/>}
+                top:rawB.top-pad_,left:rawB.left-pad_,
+                width:rawB.width+pad_*2,height:rawB.height+pad_*2,
+                borderRadius:16,pointerEvents:"none",
+                border:"2px solid "+BLUE,
+                boxShadow:"0 0 0 1px rgba(72,120,255,0.2),0 0 20px "+BLUE_GLOW}}/>
+            </>:
+              <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.88)",pointerEvents:"all"}}/>
+            }
+
+            {/* Tooltip */}
             <div style={{
               position:"fixed",left:16,right:16,
-              ...(()=>{
-                if(!bounds) return {bottom:20};
-                const spaceBelow = vh - bounds.bottom - pad;
-                const spaceAbove = bounds.top - pad;
-                if(spaceBelow >= 170) return {top: Math.round(bounds.bottom+pad+8)};
-                if(spaceAbove >= 170) return {bottom: Math.round(vh - bounds.top + pad + 8)};
-                return {bottom: 20};
-              })(),
-              background:"#141418",borderRadius:16,
-              border:"1px solid rgba(255,255,255,0.1)",
-              padding:"18px 18px 14px",
-              boxShadow:"0 20px 48px rgba(0,0,0,0.75)",
-              pointerEvents:"all",zIndex:2,
-              maxHeight:"50vh",overflow:"hidden"}}>
-              <div style={{fontFamily:M_,fontSize:8,color:"rgba(255,255,255,0.3)",
-                letterSpacing:2,marginBottom:8,display:"flex",alignItems:"center",gap:8}}>
-                {tourStep+1} / {TOTAL}
-                <div style={{flex:1,height:2,background:"rgba(255,255,255,0.08)",
-                  borderRadius:1,overflow:"hidden"}}>
-                  <div style={{height:"100%",
-                    width:`${((tourStep+1)/TOTAL)*100}%`,
-                    background:"#BFA98A",borderRadius:1,transition:"width 0.3s ease"}}/>
+              ...tipPos,
+              background:"#0e1118",borderRadius:18,
+              border:"1px solid rgba(255,255,255,0.08)",
+              borderTop:"1px solid rgba(255,255,255,0.12)",
+              padding:"18px 20px 16px",
+              boxShadow:"0 20px 48px rgba(0,0,0,0.8)",
+              pointerEvents:"all",zIndex:2}}>
+              {/* Progress bar */}
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
+                <div style={{fontFamily:MN_,fontSize:7,letterSpacing:3,color:"rgba(72,120,255,0.7)"}}>
+                  {displayStep} / {totalSteps}
+                </div>
+                <div style={{flex:1,height:2,background:"rgba(255,255,255,0.06)",borderRadius:1,overflow:"hidden"}}>
+                  <div style={{height:"100%",width:(displayStep/totalSteps*100)+"%",
+                    background:"linear-gradient(90deg,rgba(72,120,255,0.8),rgba(130,175,255,0.9))",
+                    borderRadius:1,transition:"width 0.3s ease"}}/>
                 </div>
               </div>
-              <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:24,letterSpacing:1.5,
-                color:"#EEEAE3",marginBottom:8,lineHeight:1}}>
-                {lang==="fr"?(step.tFR||step.tEN):lang==="it"?(step.tIT||step.tEN):lang==="de"?(step.tDE||step.tEN):lang==="pt"?(step.tES||step.tEN):es?step.tES:step.tEN}
-              </div>
-              <div style={{fontSize:13,color:"rgba(238,234,227,0.85)",lineHeight:1.65,
-                marginBottom:16,fontFamily:S_}}>
-                {lang==="fr"?(step.xFR||step.xEN):lang==="it"?(step.xIT||step.xEN):lang==="de"?(step.xDE||step.xEN):lang==="pt"?(step.xES||step.xEN):es?step.xES:step.xEN}
-              </div>
-              <div style={{display:"flex",alignItems:"center",
-                justifyContent:"space-between",gap:12}}>
-                <button onClick={endTour} style={{background:"none",border:"none",
-                  padding:"6px 0",fontFamily:M_,fontSize:9,letterSpacing:1,
-                  color:"rgba(255,255,255,0.25)",cursor:"pointer"}}>
-                  {es?"Saltar tour":lang==="fr"?"Passer le tour":lang==="it"?"Salta il tour":lang==="de"?"Tour überspringen":"Skip tour"}
-                </button>
-                <button onClick={nextStep} style={{padding:"11px 22px",borderRadius:10,
-                  border:"none",background:"#EEEAE3",color:"#07080a",
-                  fontFamily:M_,fontSize:11,fontWeight:700,letterSpacing:2,cursor:"pointer"}}>
-                  {tourStep===TOTAL-1?(es?"¡LISTO!":"DONE!"):"CONTINUAR →"}
+              <div style={{fontFamily:BN_,fontSize:22,color:"rgba(240,242,245,0.95)",
+                letterSpacing:1,lineHeight:1,marginBottom:8}}>{stepTitle}</div>
+              <div style={{fontFamily:MN_,fontSize:11,color:"rgba(240,242,245,0.5)",
+                lineHeight:1.65,marginBottom:16}}>{stepText}</div>
+              <div style={{display:"flex",gap:8}}>
+                <div onClick={endTour_}
+                  style={{fontFamily:MN_,fontSize:9,letterSpacing:2,color:"rgba(255,255,255,0.18)",
+                    cursor:"pointer",padding:"10px 0",flex:"0 0 auto"}}>
+                  {lang_==="en"?"SKIP":lang_==="fr"?"PASSER":lang_==="it"?"SALTA":lang_==="de"?"ÜBERSPRINGEN":"OMITIR"}
+                </div>
+                <button onClick={nextStep_} style={{
+                  flex:1,padding:"11px",borderRadius:12,border:"none",cursor:"pointer",
+                  background:"linear-gradient(180deg,rgba(72,120,255,0.9),rgba(50,90,200,0.85))",
+                  borderTop:"1px solid rgba(130,175,255,0.4)",
+                  color:"#fff",fontFamily:MN_,fontSize:10,fontWeight:700,letterSpacing:3,
+                  boxShadow:"0 0 16px rgba(72,120,255,0.2)"}}>
+                  {si_===totalSteps-1?
+                    (lang_==="en"?"DONE ✓":lang_==="fr"?"TERMINÉ ✓":lang_==="it"?"FATTO ✓":lang_==="de"?"FERTIG ✓":"LISTO ✓"):
+                    (lang_==="en"?"NEXT →":lang_==="fr"?"SUIVANT →":lang_==="it"?"AVANTI →":lang_==="de"?"WEITER →":"SIGUIENTE →")
+                  }
                 </button>
               </div>
             </div>
