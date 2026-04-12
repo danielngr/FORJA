@@ -3976,17 +3976,6 @@ function ProfileSheet({show,onClose,profile,lang,mono,sp,setStep}){
         padding:"20px 24px 24px",
         position:"relative",zIndex:1,flexShrink:0,
       }},
-        // Nombre grande estilo FORJA
-        e("div",{style:{
-          fontFamily:BN,
-          fontSize:"clamp(48px,13vw,64px)",
-          lineHeight:0.88,letterSpacing:2,
-          color:"rgba(240,242,245,0.08)",
-          position:"absolute",top:16,right:20,
-          pointerEvents:"none",
-          userSelect:"none",
-        }},userName.toUpperCase().slice(0,6)),
-
         e("div",{style:{
           fontFamily:MN,fontSize:8,letterSpacing:5,
           color:"rgba(72,120,255,0.7)",marginBottom:10,
@@ -4190,10 +4179,16 @@ function ProfileSheet({show,onClose,profile,lang,mono,sp,setStep}){
           ),
           e("div",{
             onClick:function(){
-              var keys=[];
-              for(var k in localStorage){if(k.indexOf("fv8")===0)keys.push(k);}
-              keys.forEach(function(k){localStorage.removeItem(k);});
-              window.location.reload();
+              if(!window._resetStep){
+                window._resetStep=true;
+                setTimeout(function(){window._resetStep=false;},3000);
+              } else {
+                window._resetStep=false;
+                var keys=[];
+                for(var k in localStorage){if(k.indexOf("fv8")===0)keys.push(k);}
+                keys.forEach(function(k){localStorage.removeItem(k);});
+                window.location.reload();
+              }
             },
             style:{
               flex:1,padding:"14px 16px",borderRadius:14,cursor:"pointer",
@@ -4203,9 +4198,9 @@ function ProfileSheet({show,onClose,profile,lang,mono,sp,setStep}){
               transition:"all 0.2s",
             }},
             e("div",{style:{fontFamily:BN,fontSize:18,color:"rgba(220,80,80,0.7)",
-              letterSpacing:1,marginBottom:2}},l==="en"?"RESET":"RESET"),
+              letterSpacing:1,marginBottom:2}},"RESET"),
             e("div",{style:{fontFamily:MN,fontSize:7,letterSpacing:2,
-              color:"rgba(220,80,80,0.4)"}},l==="en"?"clear data":"borrar datos")
+              color:"rgba(220,80,80,0.4)"}},l==="en"?"tap twice":"toca 2 veces")
           )
         )
 
