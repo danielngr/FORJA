@@ -3639,6 +3639,24 @@ const CELEB_LIST=[
   {id:"jlo",gender:"F",      ac:"#f0b429", em:"💃", label:"J-LO",          badge:"J-LO WEEK",   days:5, lvl:{es:"MEDIO",en:"MEDIUM"},
    split:{es:"Tren inferior / Tren superior / Funcional / Cardio / Full Body",en:"Lower / Upper / Functional / Cardio / Full Body"},
    source:"David Kirsch · trainer confirmed"},
+  {id:"zendaya",gender:"F",  ac:"#9b59b6", em:"🕷️", label:"ZENDAYA",        badge:"SPIDEY FIT",   days:5, lvl:{es:"MODERADO",en:"MODERATE"},
+   split:{es:"Full Body / Core / Piernas / Upper / Funcional",en:"Full Body / Core / Legs / Upper / Functional"},
+   source:"Zendaya training prep — fitness interviews 2021-2023"},
+  {id:"scarlett",gender:"F", ac:"#c0392b", em:"🕸️", label:"SCARLETT",        badge:"BLACK WIDOW",  days:5, lvl:{es:"ALTO",en:"HIGH"},
+   split:{es:"Fuerza / Funcional / Piernas / Upper / Full Body",en:"Strength / Functional / Legs / Upper / Full Body"},
+   source:"Eric Johnson trainer · Marvel prep Black Widow 2020"},
+  {id:"halle",gender:"F",    ac:"#27ae60", em:"🐆", label:"HALLE BERRY",     badge:"CATWOMAN",     days:6, lvl:{es:"ALTO",en:"HIGH"},
+   split:{es:"Boxeo / Piernas / Upper / Core / Mixto / Cardio",en:"Boxing / Legs / Upper / Core / Mixed / Cardio"},
+   source:"Peter Lee Thomas trainer · Instagram verified 2020-2023"},
+  {id:"margot",gender:"F",   ac:"#e74c3c", em:"🃏", label:"MARGOT ROBBIE",   badge:"HARLEY QUINN", days:5, lvl:{es:"MODERADO",en:"MODERATE"},
+   split:{es:"Full Body / Piernas / Upper / Core / Funcional",en:"Full Body / Legs / Upper / Core / Functional"},
+   source:"David Higgins trainer · Suicide Squad prep 2016"},
+  {id:"brie",gender:"F",     ac:"#f39c12", em:"⭐", label:"BRIE LARSON",     badge:"CAPT. MARVEL", days:6, lvl:{es:"EXTREMO",en:"EXTREME"},
+   split:{es:"Piernas / Upper / Full Body / Core / Fuerza / Funcional",en:"Legs / Upper / Full Body / Core / Strength / Functional"},
+   source:"Jason Walsh trainer · Captain Marvel prep 2018-2019"},
+  {id:"rihanna",gender:"F",  ac:"#e91e63", em:"🌊", label:"RIHANNA",         badge:"SAVAGE FIT",   days:4, lvl:{es:"MEDIO",en:"MEDIUM"},
+   split:{es:"Full Body / Piernas / Upper / Core",en:"Full Body / Legs / Upper / Core"},
+   source:"Harley Pasternak trainer · verified fitness interviews"},
 ];
 const FREE_CELEB_IDS=["rock"]; // solo The Rock gratis
 
@@ -3806,7 +3824,7 @@ function AthleteSheet({show,onClose,lang,mono,profile,sp,sr}){
             borderTop:"1px solid rgba(130,175,255,0.3)",textAlign:"center"}}>
             <div style={{fontFamily:MN,fontSize:8,letterSpacing:3,
               color:"rgba(130,175,255,0.75)",marginBottom:8}}>
-              {langKey==="en"?"UNLOCK ALL 12 ATHLETES":"DESBLOQUEA LOS 12 ATLETAS"}
+              {langKey==="en"?"UNLOCK ALL 18 ATHLETES":"DESBLOQUEA LOS 18 ATLETAS"}
             </div>
             <div style={{fontFamily:BN,fontSize:24,color:"rgba(240,242,245,0.95)",
               letterSpacing:1,marginBottom:4}}>
