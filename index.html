@@ -4339,13 +4339,13 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
     var ds=new Date(today);ds.setDate(ds.getDate()-si);
     var di2=ds.getDay()===0?6:ds.getDay()-1;
     var rr=routine?routine[di2]:null;
-    if(!rr){streak++;continue;}
+    if(!rr||!rr.ex||!rr.ex.length){continue;} // día de descanso — skip, no suma ni rompe
     var wkO=Math.round((new Date(today)-ds)/(7*24*3600*1000))*-1;
     var sd2=FStore.loadDone(wk(wkO));
-    if(!sd2[di2+"-"+(rr.ex[0]||{id:""}).id]&&ds.toISOString().slice(0,10)!==today)break;
-    var anyDone=rr.ex.some(function(x){return sd2[di2+"-"+x.id]||done[di2+"-"+x.id];});
-    if(!anyDone&&ds.toISOString().slice(0,10)!==today)break;
-    streak++;
+    var isToday2=ds.toISOString().slice(0,10)===today;
+    var anyDone=rr.ex.some(function(x){return sd2[di2+"-"+x.id]||(isToday2&&done[di2+"-"+x.id]);});
+    if(!anyDone&&!isToday2) break; // no entrenó ese día — rompe racha
+    if(anyDone) streak++;
   }
 
   var totalXP=muscleXP?Object.values(muscleXP).reduce(function(a,v){return a+(v.xp||0);},0):0;
@@ -4417,12 +4417,17 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
   // fitnessAge: cuenta días completos de la semana desde done[] en memoria
   // pero EXCLUYE hoy para que el número sea estable al toggle
   var diasCompletados=0;
-  for(var wi2=0;wi2<7;wi2++){
-    if(wi2===tdi) continue; // excluir hoy
-    var rw2=routine?routine[wi2]:null;
+  // Contar días entrenados en las últimas 4 semanas (no solo semana actual)
+  for(var wi2=0;wi2<28;wi2++){
+    var ds3=new Date(today); ds3.setDate(ds3.getDate()-wi2);
+    var di3=ds3.getDay()===0?6:ds3.getDay()-1;
+    var rw2=routine?routine[di3]:null;
     if(!rw2||!rw2.ex||!rw2.ex.length) continue;
-    if(rw2.ex.every(function(x){return done[wi2+"-"+x.id];})) diasCompletados++;
+    var wkO3=Math.round((new Date(today)-ds3)/(7*24*3600*1000))*-1;
+    var sd3=wi2===0?done:FStore.loadDone(wk(wkO3));
+    if(rw2.ex.some(function(x){return sd3[di3+"-"+x.id];})) diasCompletados++;
   }
+  diasCompletados=Math.min(7,diasCompletados); // cap en 7 para la fórmula
   // VO2max estimado con datos del perfil (Uth et al.) + ajuste por entrenos completados
   var userWeight=profile&&profile.weight?profile.weight:70;
   var userHeight=profile&&profile.height?profile.height:175;
