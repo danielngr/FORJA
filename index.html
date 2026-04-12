@@ -2523,120 +2523,48 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
     });
   });
   if(allDone){
-    const BN2="'Bebas Neue',cursive";
-    const MN2="'SF Mono','Fira Code','Courier New',monospace";
-    const totalVol=sets.reduce((a,e)=>a+e.filter(s=>s.done).reduce((b,s)=>b+(parseFloat(s.kg)||0)*(parseInt(s.rp)||0),0),0);
-    const totalSets=sets.reduce((a,e)=>a+e.filter(s=>s.done).length,0);
+    const confettiColors=["#3fcf8e","#6a8fc0","#f0b429","#8878c0","#F0F2F5","#e05555"];
     return(
-      <div style={{position:"fixed",inset:0,background:"#04080f",
-        display:"flex",flexDirection:"column",alignItems:"center",
-        justifyContent:"center",overflow:"hidden"}}>
-
-        {/* Glow central */}
-        <div style={{position:"absolute",top:"30%",left:"50%",
-          transform:"translate(-50%,-50%)",
-          width:400,height:400,borderRadius:"50%",
-          background:"radial-gradient(circle,rgba(72,120,255,0.12) 0%,transparent 70%)",
-          pointerEvents:"none"}}/>
-
-        {/* Líneas decorativas tipo código */}
-        <div style={{position:"absolute",top:40,left:24,
-          fontFamily:MN2,fontSize:8,letterSpacing:3,
-          color:"rgba(72,120,255,0.2)",lineHeight:2}}>
-          {"// SESSION.COMPLETE
-// STATUS: FORGED"}
+      <div style={{position:"fixed",inset:0,background:"#080a0e",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:"sans-serif",overflow:"hidden"}}>
+        <div style={{position:"absolute",inset:0,pointerEvents:"none",overflow:"hidden"}}>
+          {confettiPieces.map((p,i)=>(
+            <div key={i} style={{
+              position:"absolute",
+              left:`${p.left}%`,
+              top:`${p.top}%`,
+              width:p.w, height:p.h,
+              borderRadius:p.br,
+              background:p.bg,
+              transform:`rotate(${p.rot}deg)`,
+              animation:`floatUp ${p.dur}s ease-out ${p.delay}s infinite`,
+              opacity:p.op,
+            }}/>
+          ))}
         </div>
-
-        {/* Número de sesión estilo marcador */}
-        <div style={{
-          fontFamily:BN2,
-          fontSize:"clamp(100px,30vw,140px)",
-          lineHeight:0.85,letterSpacing:-4,
-          color:"rgba(72,120,255,0.06)",
-          position:"absolute",
-          top:"50%",left:"50%",
-          transform:"translate(-50%,-50%)",
-          pointerEvents:"none",userSelect:"none",
-          whiteSpace:"nowrap",
-        }}>FORGED</div>
-
-        {/* Contenido central */}
-        <div style={{position:"relative",zIndex:1,textAlign:"center",padding:"0 32px"}}>
-
-          {/* Checkmark premium */}
-          <div style={{
-            width:72,height:72,borderRadius:20,
-            background:"rgba(72,120,255,0.1)",
-            border:"1px solid rgba(72,120,255,0.3)",
-            borderTop:"1px solid rgba(130,175,255,0.5)",
-            display:"flex",alignItems:"center",justifyContent:"center",
-            margin:"0 auto 28px",
-            boxShadow:"0 0 40px rgba(72,120,255,0.2)",
-          }}>
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-              <path d="M6 16L13 23L26 9" stroke="rgba(130,175,255,0.9)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </div>
-
-          {/* Mensaje principal */}
-          <div style={{fontFamily:BN2,fontSize:"clamp(38px,10vw,52px)",
-            color:"rgba(240,242,245,0.95)",letterSpacing:1,lineHeight:0.92,
-            marginBottom:12}}>
-            {lang==="es"?"SESIÓN
-COMPLETADA":lang==="fr"?"SÉANCE
-TERMINÉE":lang==="it"?"SESSIONE
-COMPLETATA":lang==="de"?"SESSION
-ABGESCHLOSSEN":"SESSION
-COMPLETE"}
-          </div>
-
-          {/* Frase motivacional */}
-          <div style={{fontFamily:MN2,fontSize:9,letterSpacing:3,
-            color:"rgba(72,120,255,0.7)",marginBottom:36,lineHeight:1.6}}>
-            {lang==="es"?"// EL TRABAJO DE HOY FORJA EL ATLETA DE MAÑANA":
-             lang==="fr"?"// LE TRAVAIL D'AUJOURD'HUI FORGE L'ATHLÈTE":
-             lang==="it"?"// IL LAVORO DI OGGI FORGIA L'ATLETA":
-             lang==="de"?"// DIE ARBEIT VON HEUTE SCHMIEDET DEN ATHLETEN":
-             "// TODAY'S WORK BUILDS TOMORROW'S ATHLETE"}
-          </div>
-
-          {/* Stats de la sesión */}
-          <div style={{display:"flex",gap:8,justifyContent:"center",marginBottom:40}}>
-            {[
-              {val:exs.length,lbl:lang==="es"?"EJERC":lang==="de"?"ÜBUNGEN":"EXERC"},
-              {val:totalSets,lbl:"SETS"},
-              {val:Math.floor(totalVol)+"kg",lbl:lang==="es"?"VOLUMEN":"VOLUME"},
-              {val:fmtSess(),lbl:lang==="es"?"TIEMPO":"TIME"},
-            ].map(function(s,i){
-              return(
-                <div key={i} style={{
-                  flex:1,padding:"12px 6px",borderRadius:14,textAlign:"center",
-                  background:"rgba(255,255,255,0.03)",
-                  border:"0.5px solid rgba(255,255,255,0.07)",
-                  borderTop:"1px solid rgba(255,255,255,0.1)",
-                }}>
-                  <div style={{fontFamily:BN2,fontSize:22,color:"rgba(240,242,245,0.9)",
-                    lineHeight:1,marginBottom:4}}>{s.val}</div>
-                  <div style={{fontFamily:MN2,fontSize:7,letterSpacing:2,
-                    color:"rgba(255,255,255,0.25)"}}>{s.lbl}</div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Botón */}
-          <button onClick={onBack} style={{
-            width:"100%",padding:"16px",borderRadius:16,border:"none",
-            cursor:"pointer",
-            background:"linear-gradient(180deg,rgba(72,120,255,0.9),rgba(50,90,200,0.85))",
-            borderTop:"1px solid rgba(130,175,255,0.4)",
-            color:"#fff",fontFamily:MN2,fontSize:11,fontWeight:700,
-            letterSpacing:3,
-            boxShadow:"0 0 32px rgba(72,120,255,0.25)",
-          }}>
-            {lang==="es"?"CONTINUAR →":lang==="fr"?"CONTINUER →":lang==="it"?"CONTINUA →":lang==="de"?"WEITER →":"CONTINUE →"}
-          </button>
+        <div style={{width:88,height:88,borderRadius:"50%",background:C2.green,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:`0 0 48px ${C2.green}55`,marginBottom:22,animation:"celebrate .6s cubic-bezier(.34,1.56,.64,1) both"}}>
+          <svg width="40" height="40" viewBox="0 0 40 40" fill="none"><path d="M7 20L16 29L33 11" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
         </div>
+        <div style={{fontSize:28,fontWeight:900,letterSpacing:-1,color:C2.tx,textAlign:"center",padding:"0 32px",animation:"fu .5s .25s both"}}>{celebMsg}</div>
+        <div style={{fontFamily:"'SF Mono','Courier New',monospace",fontSize:9,color:C2.tx3,letterSpacing:2,marginTop:8,animation:"fu .5s .4s both"}}>
+          {lang==="es"?"EL TRABAJO DE HOY FORJA EL ATLETA DE MAÑANA":lang==="fr"?"LE TRAVAIL D'AUJOURD'HUI FORGE L'ATHLÈTE DE DEMAIN":lang==="it"?"IL LAVORO DI OGGI FORGIA L'ATLETA DI DOMANI":lang==="de"?"DIE ARBEIT VON HEUTE SCHMIEDET DEN ATHLETEN VON MORGEN":lang==="pt"?"O TRABALHO DE HOJE FORJA O ATLETA DE AMANHÃ":"TODAY'S WORK BUILDS TOMORROW'S ATHLETE"}
+        </div>
+        <div style={{display:"flex",gap:24,marginTop:28,animation:"fu .5s .55s both"}}>
+          {[{v:exs.length,l:lang==="es"||lang==="pt"?"EJERCICIOS":lang==="fr"?"EXERCICES":lang==="it"?"ESERCIZI":lang==="de"?"ÜBUNGEN":"EXERCISES",c:C2.tx},
+            {v:doneSets,l:(L[lang]||L.en).sets,c:C2.green},
+            {v:fmtSess(),l:lang==="es"||lang==="pt"?"DURACIÓN":lang==="fr"?"DURÉE":lang==="it"?"DURATA":lang==="de"?"DAUER":"DURATION",c:C2.blue}
+          ].map((stat,i)=>(
+            <React.Fragment key={i}>
+              {i>0&&<div style={{width:1,background:C2.borderL}}/>}
+              <div style={{textAlign:"center"}}>
+                <div style={{fontSize:28,fontWeight:900,color:stat.c}}>{stat.v}</div>
+                <div style={{fontFamily:"'SF Mono','Courier New',monospace",fontSize:8,color:C2.tx3,letterSpacing:2,marginTop:3}}>{stat.l}</div>
+              </div>
+            </React.Fragment>
+          ))}
+        </div>
+        <button onClick={onBack} style={{marginTop:36,padding:"14px 42px",background:C2.tx,color:C2.bgD,border:"none",borderRadius:12,fontFamily:"'SF Mono','Courier New',monospace",fontSize:11,fontWeight:700,letterSpacing:2,cursor:"pointer",animation:"fu .5s .7s both"}}>
+          {"← "+(L[lang]||L.en).back}
+        </button>
       </div>
     );
   }
