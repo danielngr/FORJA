@@ -3,7 +3,12 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
-<title>FORJA</title>
+<title>FORJA — Forge Your Legacy</title>
+  <meta name="description" content="FORJA is a premium fitness app with AI-generated routines, celebrity workout programs, muscle recovery tracking, and cardiovascular age analysis.">
+  <meta property="og:title" content="FORJA — Forge Your Legacy">
+  <meta property="og:description" content="Train like The Rock. Track your recovery. Forge your legacy.">
+  <meta property="og:type" content="website">
+  <meta name="theme-color" content="#04080f">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -83,7 +88,7 @@ input[type=number]{-moz-appearance:textfield;}
 <div id="root" style="opacity:0;transition:opacity 0.2s"></div>
 <div id="forja-sync" title="sync"></div>
 <script>
-console.log('FORJA JS inicio');
+;
 // ===============================================================
 // FORJA SUPABASE LAYER v1.0
 // Hybrid: localStorage instant + Supabase async sync
@@ -176,7 +181,7 @@ function signInWithGoogle(){
   const sb=getSB();
   if(!sb){console.error('Supabase not available');return;}
   const redirectTo='https://danielngr.github.io/FORJA/';
-  console.log('Starting Google OAuth, redirectTo:', redirectTo);
+  
   sb.auth.signInWithOAuth({
     provider:'google',
     options:{redirectTo,scopes:'email profile'}
@@ -210,10 +215,10 @@ function getUserEmail(){
 function doGoogleSignIn(){
   const sb=getSB();
   if(!sb){ console.error('FORJA: Supabase not available'); return; }
-  console.log('FORJA: Signing out anonymous session before Google OAuth...');
+  
   // Must sign out anonymous session first — otherwise Supabase ignores the OAuth response
   sb.auth.signOut().finally(function(){
-    console.log('FORJA: Starting Google OAuth...');
+    
     sb.auth.signInWithOAuth({
       provider:'google',
       options:{
@@ -222,7 +227,7 @@ function doGoogleSignIn(){
       }
     }).then(function(result){
       if(result.error) console.error('FORJA: OAuth error:', result.error.message);
-      else console.log('FORJA: OAuth redirecting to Google...');
+      else 
     }).catch(function(e){ console.error('FORJA: OAuth catch:', e.message); });
   });
 }
@@ -2258,9 +2263,7 @@ const getVid=name=>{
   if(!name) return null;
   const low=name.toLowerCase().trim();
   const result=VID[low]||VID[ES_TO_META[low]]||null;
-  if(!result) console.log("[FORJA] No video for:",JSON.stringify(low));
-  else console.log("[FORJA] Video found:",low,"→",result.slice(-40));
-  return result;
+  if(!result)   else   return result;
 };
 const epley=(w,r)=>r===1?+w:Math.round(+w*(1+0.0333*+r));
 const ARC_C=2*Math.PI*18; // circumference r=18
@@ -3589,7 +3592,7 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
             React.createElement("div",{style:{display:"flex",alignItems:"baseline",gap:3}},
               React.createElement("span",{style:{fontFamily:"monospace",fontSize:18,fontWeight:800,color:deltaColor||"rgba(255,255,255,0.7)",lineHeight:1}},fitnessAge!==null?fitnessAge:"—"),
               React.createElement("span",{style:{fontFamily:"monospace",fontSize:7,color:"rgba(255,255,255,0.25)"}}," años"),
-              weeklyDelta!==undefined?React.createElement("span",{style:{fontFamily:"monospace",fontSize:8,fontWeight:700,color:deltaColor,marginLeft:2}},
+              weeklyDelta!==null&&weeklyDelta!==undefined&&deltaAbs?React.createElement("span",{style:{fontFamily:"monospace",fontSize:8,fontWeight:700,color:deltaColor,marginLeft:2}},
                 deltaSign+" "+deltaAbs+"/sem"
               ):null
             )
@@ -3748,7 +3751,11 @@ function AthleteSheet({show,onClose,lang,mono,profile,sp,sr}){
       const routine=buildCelebRoutine(celeb,eqArr,sd.slice(0,celeb.days));
       const np=Object.assign({},profile,{mode:"celebrity",celebrity:celeb.id,celebAc:celeb.ac});
       FStore.saveProfile(np,routine);sp(np);sr(routine);close();
-    }catch(e){console.error(e);}
+    }catch(e){
+            console.error('[FORJA]',e);
+            setGenerating(false);
+            alert((ob.lang==="en"?"Error generating routine. Try again.":"Error al generar rutina. Intenta de nuevo."));
+          }
   };
 
   const deactivate=()=>{
@@ -3762,7 +3769,11 @@ function AthleteSheet({show,onClose,lang,mono,profile,sp,sr}){
       const routine=buildRoutine7(filtered,sd,(profile&&profile.goal)||"general",eqArr);
       const np=Object.assign({},profile,{mode:"auto",celebrity:null,celebAc:null});
       FStore.saveProfile(np,routine);sp(np);sr(routine);close();
-    }catch(e){console.error(e);}
+    }catch(e){
+            console.error('[FORJA]',e);
+            setGenerating(false);
+            alert((ob.lang==="en"?"Error generating routine. Try again.":"Error al generar rutina. Intenta de nuevo."));
+          }
   };
 
   const men=CELEB_LIST.filter(c=>c.gender==="M");
@@ -4020,11 +4031,13 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
   fitnessAge=Math.max(userAge-15, Math.min(userAge+15, fitnessAge));
   ageDiff=userAge-fitnessAge;
 
-  // Color y flecha: solo dependen del estado vivo/congelado
+  // Color y flecha: solo con historial real
+  var hasRealHistory=false;
+  try{var _h=JSON.parse(localStorage.getItem("fv8l")||"{}");hasRealHistory=Object.keys(_h).length>=3;}catch(_){}
   var deltaSign=heartAlive?"↓":"↑";
   var deltaColor=heartAlive?"#3fcf8e":"#e8a020";
-  var deltaAbs="0.1";
-  var weeklyDelta=heartAlive?-0.1:+0.1;
+  var deltaAbs=hasRealHistory?"0.1":null;
+  var weeklyDelta=hasRealHistory?(heartAlive?-0.1:+0.1):null;
   var fitnessAgeColor=heartAlive?"#3fcf8e":"#e8a020";
 
   return e("div",{style:{position:"relative",zIndex:1}},
@@ -6114,7 +6127,11 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               equipment:ob.equipment||"gym",name:ob.name||"Atleta",mode:"auto",toured:false};
             FStore.saveProfile(pf,routine);
             sp(pf);sr(routine);setStep(99);
-          }catch(e){console.error(e);}
+          }catch(e){
+            console.error('[FORJA]',e);
+            setGenerating(false);
+            alert((ob.lang==="en"?"Error generating routine. Try again.":"Error al generar rutina. Intenta de nuevo."));
+          }
         },400);
       } else setGenPct(Math.round(p));
     },190);
@@ -6795,6 +6812,32 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
   }));
   const maxVol=Math.max(...grid.flat().map(d=>d.vol),1);
   const e=React.createElement;
+  const isProUser=true; // TODO: conectar a RevenueCat
+  if(!isProUser) return e("div",{style:{
+    position:"relative",height:400,borderRadius:20,overflow:"hidden",
+    background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.07)",
+    display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+    gap:12,margin:"0 0 16px",
+  }},
+    e("div",{style:{fontSize:9,fontFamily:"'SF Mono','Courier New',monospace",
+      letterSpacing:4,color:"rgba(255,255,255,0.25)",marginBottom:4}},
+      lang==="en"?"BODY ANALYSIS":"ANÁLISIS CORPORAL"),
+    e("div",{style:{fontSize:48,marginBottom:4}},"🔒"),
+    e("div",{style:{fontFamily:"'Bebas Neue',cursive",fontSize:26,color:"rgba(240,242,245,0.9)",
+      letterSpacing:1,textAlign:"center",lineHeight:1,marginBottom:6}},
+      lang==="en"?"MUSCLE HEATMAP":"MAPA MUSCULAR"),
+    e("div",{style:{fontSize:12,color:"rgba(255,255,255,0.4)",textAlign:"center",
+      maxWidth:220,lineHeight:1.5}},
+      lang==="en"?"Track recovery by muscle zone. Available with FORJA PRO."
+      :"Recuperación por zona muscular. Disponible con FORJA PRO."),
+    e("button",{style:{
+      marginTop:8,padding:"12px 28px",borderRadius:12,border:"none",cursor:"pointer",
+      background:"linear-gradient(135deg,rgba(72,120,255,0.9),rgba(100,150,255,0.8))",
+      color:"#fff",fontFamily:"'SF Mono','Courier New',monospace",
+      fontSize:10,fontWeight:700,letterSpacing:3,
+      boxShadow:"0 0 20px rgba(72,120,255,0.3)",
+    }},lang==="en"?"UPGRADE TO PRO":"OBTENER PRO")
+  );
   return e("div",{style:{paddingBottom:32}},
     (()=>{
       const ZONES_A=["pecho","dorsal","hombro_izq","bicep_izq","tricep_izq",
@@ -7253,7 +7296,7 @@ function App(){
       });
       setTimeout(()=>{
         if(!authChecked){
-          console.log('FORJA: OAuth timeout, showing login screen');
+          
           window.history.replaceState(null,'',window.location.pathname);
           setReady(true);
           setAuthChecked(true);
@@ -7267,7 +7310,7 @@ function App(){
             const isGoogle=session.user.email && 
               session.user.app_metadata?.provider==='google';
             if(isGoogle){
-              console.log('FORJA: Returning Google user detected:', session.user.email);
+              
             }
           }
           loadAndRoute(false);
@@ -7624,8 +7667,7 @@ function BotChat({profile,routine,done,lang,mono}){
     const chosen=opts[Math.floor(Math.random()*opts.length)];
     canWalk=chosen.walk;
     currentAnim=chosen.a;
-    console.log('BOT mood=',mood,'anim=',chosen.a);
-
+    
     fetch(CDN+chosen.a+".glb").then(r=>r.arrayBuffer()).then(buf=>{
       new THREE.GLTFLoader().parse(buf, CDN, (gltf)=>{
         model=gltf.scene;
