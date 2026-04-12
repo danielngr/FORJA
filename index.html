@@ -3974,7 +3974,7 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
           React.createElement("div",null,
             React.createElement("div",{style:{fontFamily:"monospace",fontSize:6,color:"rgba(255,255,255,0.22)",letterSpacing:1.5,marginBottom:1}},"EDAD CARDIOVASCULAR"),
             React.createElement("div",{style:{display:"flex",alignItems:"baseline",gap:3}},
-              React.createElement("span",{style:{fontFamily:"monospace",fontSize:18,fontWeight:800,color:deltaColor||"rgba(255,255,255,0.7)",lineHeight:1}},fitnessAge),
+              React.createElement("span",{style:{fontFamily:"monospace",fontSize:18,fontWeight:800,color:fitnessAge?deltaColor:"rgba(255,255,255,0.25)",lineHeight:1}},fitnessAge||"—"),
               React.createElement("span",{style:{fontFamily:"monospace",fontSize:7,color:"rgba(255,255,255,0.25)"}}," años"),
               weeklyDelta!==undefined?React.createElement("span",{style:{fontFamily:"monospace",fontSize:8,fontWeight:700,color:deltaColor,marginLeft:2}},
                 deltaSign+" "+deltaAbs+"/sem"
@@ -4083,12 +4083,15 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
     if(!rw2||!rw2.ex||!rw2.ex.length) continue;
     if(rw2.ex.every(function(x){return done[wi2+"-"+x.id];})) diasCompletados++;
   }
+  // Solo calcular si hay historial real de entrenos — sin datos no estimamos
+  var hasHistory=false;
+  try{var _lh=JSON.parse(localStorage.getItem("fv8l")||"{}");hasHistory=Object.keys(_lh).length>0;}catch(_){}
   var vo2estFinal=isFemale
     ?(56.363 + 1.921*Math.min(7,diasCompletados) - 0.381*userAge)
     :(67.350 + 1.921*Math.min(7,diasCompletados) - 0.381*userAge);
-  fitnessAge=Math.round(userAge - 0.2*(vo2estFinal - vo2avg));
-  fitnessAge=Math.max(userAge-15, Math.min(userAge+15, fitnessAge));
-  ageDiff=userAge-fitnessAge;
+  fitnessAge=hasHistory?Math.round(userAge - 0.2*(vo2estFinal - vo2avg)):null;
+  if(fitnessAge!==null) fitnessAge=Math.max(userAge-15, Math.min(userAge+15, fitnessAge));
+  ageDiff=fitnessAge!==null?userAge-fitnessAge:0;
 
   // Color y flecha: solo dependen del estado vivo/congelado
   var deltaSign=heartAlive?"↓":"↑";
@@ -5922,21 +5925,40 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
     };
     draw();
 
-    const onMove=(e)=>{
+    // Solo seguir mouse en desktop, touch solo en el canvas
+    const onMouseMove=(e)=>{
       const rect=canvas.getBoundingClientRect();
-      const px=e.touches?e.touches[0].clientX:e.clientX;
-      const py=e.touches?e.touches[0].clientY:e.clientY;
       mouseRef.current={
-        x:(px-(rect.left+rect.width/2))/(rect.width/2),
-        y:(py-(rect.top+rect.height/2))/(rect.height/2),
+        x:(e.clientX-(rect.left+rect.width/2))/(rect.width/2),
+        y:(e.clientY-(rect.top+rect.height/2))/(rect.height/2),
       };
     };
-    window.addEventListener('mousemove',onMove,{passive:true});
-    window.addEventListener('touchmove',onMove,{passive:true});
+    const onTouchMove=(e)=>{
+      const rect=canvas.getBoundingClientRect();
+      const t=e.touches[0];
+      // Solo reacciona si el touch está sobre el canvas
+      if(t.clientX>=rect.left&&t.clientX<=rect.right&&
+         t.clientY>=rect.top&&t.clientY<=rect.bottom){
+        mouseRef.current={
+          x:(t.clientX-(rect.left+rect.width/2))/(rect.width/2),
+          y:(t.clientY-(rect.top+rect.height/2))/(rect.height/2),
+        };
+      }
+    };
+    // Mouse suavemente vuelve al centro cuando no hay interacción
+    const decayMouse=setInterval(()=>{
+      mouseRef.current={
+        x:mouseRef.current.x*0.92,
+        y:mouseRef.current.y*0.92,
+      };
+    },50);
+    window.addEventListener('mousemove',onMouseMove,{passive:true});
+    canvas.addEventListener('touchmove',onTouchMove,{passive:true});
     return()=>{
       cancelAnimationFrame(animRef.current);
-      window.removeEventListener('mousemove',onMove);
-      window.removeEventListener('touchmove',onMove);
+      clearInterval(decayMouse);
+      window.removeEventListener('mousemove',onMouseMove);
+      canvas.removeEventListener('touchmove',onTouchMove);
     };
   },[]);
 
@@ -6185,8 +6207,10 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               style={{
                 width:"100%",padding:"14px 18px",borderRadius:16,marginBottom:8,
                 textAlign:"left",cursor:"pointer",display:"flex",alignItems:"center",gap:14,
-                background:sel?"rgba(72,120,255,0.1)":"rgba(255,255,255,0.04)",
-                border:"1.5px solid "+(sel?"rgba(72,120,255,0.55)":"rgba(255,255,255,0.07)"),
+                background:sel?"rgba(72,120,255,0.12)":"rgba(255,255,255,0.03)",
+                border:"1px solid "+(sel?"rgba(130,175,255,0.5)":"rgba(255,255,255,0.06)"),
+                borderTop:sel?"1px solid rgba(180,210,255,0.4)":"1px solid rgba(255,255,255,0.1)",
+                boxShadow:sel?"inset 0 1px 0 rgba(180,210,255,0.15),0 0 20px rgba(72,120,255,0.12)":"none",
                 transition:"all 0.22s cubic-bezier(0.34,1.56,0.64,1)",
                 transform:sel?"scale(1.02)":"scale(1)",
               }}>
@@ -6445,20 +6469,25 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
       <div style={{padding:"12px 28px 40px",flexShrink:0,display:"flex",gap:10}}>
         {obStep>0&&(
           <button onClick={back} style={{
-            padding:"14px 20px",borderRadius:12,border:"1px solid rgba(255,255,255,0.1)",
-            background:"rgba(255,255,255,0.05)",color:dim,
+            padding:"14px 20px",borderRadius:14,
+            background:"rgba(255,255,255,0.04)",
+            border:"0.5px solid rgba(255,255,255,0.1)",
+            borderTop:"1px solid rgba(255,255,255,0.18)",
+            color:"rgba(255,255,255,0.4)",
             fontFamily:MN,fontSize:9,letterSpacing:2,cursor:"pointer",
+            backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",
           }}>{tx.back}</button>
         )}
         {obStep===6?(
           <button onClick={doFinish} disabled={!canNext} style={{
             flex:1,padding:"16px",borderRadius:14,border:"none",
-            background:canNext?"linear-gradient(135deg,#4878ff,"+BLUE_L+")":"rgba(255,255,255,0.06)",
+            background:canNext?"linear-gradient(135deg,rgba(72,120,255,0.9),rgba(100,150,255,0.95))":"rgba(255,255,255,0.05)",
             color:canNext?"#fff":dim,
             fontFamily:MN,fontSize:11,fontWeight:700,letterSpacing:3,
             cursor:canNext?"pointer":"default",
-            boxShadow:canNext?"0 0 28px rgba(72,120,255,0.35)":"none",
-            transition:"all 0.25s",
+            borderTop:canNext?"1px solid rgba(180,210,255,0.4)":"1px solid rgba(255,255,255,0.05)",
+            boxShadow:canNext?"0 0 40px rgba(72,120,255,0.4),inset 0 1px 0 rgba(180,210,255,0.3)":"none",
+            transition:"all 0.3s cubic-bezier(0.34,1.56,0.64,1)",
           }}>{tx.finish}</button>
         ):[0,3,4,5].includes(obStep)?null:(
           <button onClick={()=>{
@@ -6467,12 +6496,14 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
             next();
           }} disabled={!canNext} style={{
             flex:1,padding:"16px",borderRadius:14,border:"none",
-            background:canNext?"linear-gradient(135deg,#4878ff,"+BLUE_L+")":"rgba(255,255,255,0.06)",
+            background:canNext?"linear-gradient(135deg,rgba(72,120,255,0.9),rgba(100,150,255,0.95))":"rgba(255,255,255,0.05)",
             color:canNext?"#fff":dim,
             fontFamily:MN,fontSize:11,fontWeight:700,letterSpacing:3,
             cursor:canNext?"pointer":"default",
-            boxShadow:canNext?"0 0 28px rgba(72,120,255,0.35)":"none",
-            transition:"all 0.25s",
+            borderTop:canNext?"1px solid rgba(180,210,255,0.4)":"1px solid rgba(255,255,255,0.05)",
+            boxShadow:canNext?"0 0 32px rgba(72,120,255,0.3),inset 0 1px 0 rgba(180,210,255,0.3)":"none",
+            transition:"all 0.3s cubic-bezier(0.34,1.56,0.64,1)",
+            transform:canNext?"scale(1)":"scale(0.98)",
           }}>{tx.cont}</button>
         )}
       </div>
