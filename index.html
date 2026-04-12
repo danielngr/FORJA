@@ -4453,13 +4453,28 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
   return e("div",{style:{position:"relative",zIndex:1}},
 
     // Nav ESTA SEMANA + settings
-    e("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 18px 0"}},
-      e("div",{style:{display:"flex",alignItems:"center",gap:4}},
-        e("button",{onClick:function(){setWeekOff(function(p){return Math.max(-12,p-1);});},style:{background:"none",border:"none",color:"rgba(255,255,255,0.25)",fontSize:18,cursor:"pointer",padding:"0 4px",lineHeight:1}},"‹"),
-        e("span",{style:{fontSize:7,fontFamily:mono,letterSpacing:3,color:"rgba(255,255,255,0.35)",fontWeight:600}},weekLabel),
-        e("button",{onClick:function(){setWeekOff(function(p){return Math.min(0,p+1);});},style:{background:"none",border:"none",color:weekOff===0?"rgba(255,255,255,0.08)":"rgba(255,255,255,0.25)",fontSize:18,cursor:weekOff===0?"default":"pointer",padding:"0 4px",lineHeight:1}},"›")
+    e("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 18px 0"}},
+      // Navegación de semana — compacta y elegante
+      e("div",{style:{display:"flex",alignItems:"center",gap:6,
+        background:"rgba(255,255,255,0.04)",
+        border:"0.5px solid rgba(255,255,255,0.08)",
+        borderRadius:10,padding:"5px 8px",
+      }},
+        e("button",{onClick:function(){setWeekOff(function(p){return Math.max(-12,p-1);});},
+          style:{background:"none",border:"none",color:"rgba(255,255,255,0.3)",
+          fontSize:14,cursor:"pointer",padding:"0 2px",lineHeight:1,display:"flex"}},"‹"),
+        e("span",{style:{fontSize:8,fontFamily:mono,letterSpacing:2,
+          color:weekOff===0?"rgba(130,175,255,0.8)":"rgba(255,255,255,0.4)",
+          fontWeight:600,minWidth:70,textAlign:"center"}},weekLabel),
+        e("button",{onClick:function(){setWeekOff(function(p){return Math.min(0,p+1);});},
+          style:{background:"none",border:"none",
+          color:weekOff===0?"rgba(255,255,255,0.1)":"rgba(255,255,255,0.3)",
+          fontSize:14,cursor:weekOff===0?"default":"pointer",padding:"0 2px",lineHeight:1,display:"flex"}},"›")
       ),
-      e("button",{onClick:function(){setShowProfile(true);},style:{width:26,height:26,borderRadius:8,border:"0.5px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.05)",cursor:"pointer",color:"rgba(255,255,255,0.4)",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center"}},"⚙")
+      e("button",{onClick:function(){setShowProfile(true);},style:{width:30,height:30,borderRadius:10,
+        border:"0.5px solid rgba(255,255,255,0.1)",background:"rgba(255,255,255,0.05)",
+        cursor:"pointer",color:"rgba(255,255,255,0.5)",fontSize:14,
+        display:"flex",alignItems:"center",justifyContent:"center"}},"⚙")
     ),
 
     // Mode selector — AUTO / ATLETAS
