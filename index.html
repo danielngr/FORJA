@@ -5841,117 +5841,82 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
   const set=(k,v)=>setOb(d=>({...d,[k]:v}));
   const markDone=(s)=>setDone(d=>d.includes(s)?d:[...d,s]);
 
-  // ── Esfera de partículas Three.js ──────────────────────────
+  // ── Esfera de partículas 2D en Canvas (sin Three.js) ───────
   React.useEffect(()=>{
     const canvas=canvasRef.current;
-    if(!canvas||!window.THREE) return;
-    const W2=canvas.offsetWidth||320;
-    const H2=canvas.offsetHeight||320;
+    if(!canvas) return;
+    const SIZE=200;
     const dpr=Math.min(window.devicePixelRatio||1,2);
-    const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
-    renderer.setSize(W2,H2);
-    renderer.setPixelRatio(dpr);
-    renderer.setClearColor(0x000000,0);
-
-    const scene=new THREE.Scene();
-    const camera=new THREE.PerspectiveCamera(60,1,0.1,100);
-    camera.position.z=3.2;
-
-    // Crear partículas en esfera fibonacci
-    const N=1800;
-    const positions=new Float32Array(N*3);
-    const colors=new Float32Array(N*3);
-    const sizes=new Float32Array(N);
+    canvas.width=SIZE*dpr;
+    canvas.height=SIZE*dpr;
+    canvas.style.width=SIZE+"px";
+    canvas.style.height=SIZE+"px";
+    const ctx=canvas.getContext("2d");
+    ctx.scale(dpr,dpr);
+    const cx=SIZE/2,cy=SIZE/2,R=88;
+    const N=600;
     const phi=Math.PI*(3-Math.sqrt(5));
-
+    const pts=[];
     for(let i=0;i<N;i++){
       const y=1-2*(i/(N-1));
       const r=Math.sqrt(1-y*y);
       const theta=phi*i;
-      const scale=0.9+Math.random()*0.15;
-      positions[i*3]=Math.cos(theta)*r*scale;
-      positions[i*3+1]=y*scale;
-      positions[i*3+2]=Math.sin(theta)*r*scale;
-      colors[i*3]=0.24;colors[i*3+1]=0.81;colors[i*3+2]=0.56; // verde base
-      sizes[i]=2+Math.random()*3;
+      pts.push({
+        x:Math.cos(theta)*r,
+        y:y,
+        z:Math.sin(theta)*r,
+        s:1+Math.random()*2.2,
+        phase:Math.random()*Math.PI*2,
+      });
     }
-
-    const geo=new THREE.BufferGeometry();
-    geo.setAttribute('position',new THREE.BufferAttribute(positions,3));
-    geo.setAttribute('color',new THREE.BufferAttribute(colors,3));
-    geo.setAttribute('size',new THREE.BufferAttribute(sizes,1));
-
-    const mat=new THREE.ShaderMaterial({
-      vertexColors:true,
-      transparent:true,
-      uniforms:{
-        uTime:{value:0},
-        uProgress:{value:0},
-        uMouse:{value:new THREE.Vector2(0,0)},
-      },
-      vertexShader:`
-        attribute float size;
-        attribute vec3 color;
-        varying vec3 vColor;
-        varying float vAlpha;
-        uniform float uTime;
-        uniform float uProgress;
-        uniform vec2 uMouse;
-        void main(){
-          vColor=color;
-          vec3 pos=position;
-          float dist=length(pos);
-          float wave=sin(uTime*1.2+pos.x*3.0+pos.y*2.0)*0.04;
-          pos+=normalize(pos)*wave;
-          // Reacción al mouse
-          vec2 mDiff=uMouse-pos.xy;
-          float mDist=length(mDiff);
-          if(mDist<0.6) pos.z+=0.15*(0.6-mDist);
-          // Progreso: pulso verde
-          float progPulse=sin(uTime*2.0+dist*4.0)*uProgress*0.5;
-          pos+=normalize(pos)*progPulse*0.08;
-          vAlpha=0.6+sin(uTime*0.8+pos.y*5.0)*0.3;
-          gl_PointSize=size*(1.0+uProgress*0.4);
-          gl_Position=projectionMatrix*modelViewMatrix*vec4(pos,1.0);
-        }
-      `,
-      fragmentShader:`
-        varying vec3 vColor;
-        varying float vAlpha;
-        void main(){
-          float d=length(gl_PointCoord-0.5)*2.0;
-          if(d>1.0) discard;
-          float alpha=vAlpha*(1.0-d*d);
-          gl_FragColor=vec4(vColor,alpha*0.85);
-        }
-      `,
-    });
-
-    const points=new THREE.Points(geo,mat);
-    scene.add(points);
-
     let t=0;
     const animate=()=>{
       animRef.current=requestAnimationFrame(animate);
-      t+=0.008;
-      mat.uniforms.uTime.value=t;
-      mat.uniforms.uProgress.value=progressRef.current;
-      // Rotación suave + seguimiento mouse
-      points.rotation.y=t*0.15+mouseRef.current.x*0.3;
-      points.rotation.x=mouseRef.current.y*0.2+Math.sin(t*0.3)*0.1;
-      renderer.render(scene,camera);
+      t+=0.012;
+      ctx.clearRect(0,0,SIZE,SIZE);
+      const mx=mouseRef.current.x*0.4;
+      const my=mouseRef.current.y*0.3;
+      const prog=progressRef.current;
+      // Rotar puntos
+      const cosY=Math.cos(t*0.18+mx);
+      const sinY=Math.sin(t*0.18+mx);
+      const cosX=Math.cos(my+Math.sin(t*0.08)*0.1);
+      const sinX=Math.sin(my+Math.sin(t*0.08)*0.1);
+      // Pulso de progreso
+      const pulse=Math.abs(Math.sin(t*1.5))*prog;
+      const sorted=pts.map(p=>{
+        const wave=Math.sin(t*1.4+p.phase)*0.06;
+        const sc=1+wave+pulse*0.12;
+        let x=p.x*sc,y2=p.y*sc,z=p.z*sc;
+        // Rotar Y
+        const x2=x*cosY+z*sinY;
+        const z2=-x*sinY+z*cosY;
+        // Rotar X
+        const y3=y2*cosX-z2*sinX;
+        const z3=y2*sinX+z2*cosX;
+        return{sx:cx+x2*R,sy:cy+y3*R,z:z3,s:p.s,phase:p.phase};
+      }).sort((a,b)=>a.z-b.z);
+      sorted.forEach(p=>{
+        const depth=(p.z+1)/2; // 0=atrás 1=frente
+        const alpha=0.2+depth*0.7;
+        const size=p.s*(0.5+depth*0.8)*(1+pulse*0.3);
+        // Color: verde base, más brillante con progreso
+        const gv=Math.floor(181+prog*50);
+        ctx.beginPath();
+        ctx.arc(p.sx,p.sy,size,0,Math.PI*2);
+        ctx.fillStyle="rgba(63,"+gv+",142,"+alpha.toFixed(2)+")";
+        ctx.fill();
+      });
     };
     animate();
 
     const onMove=(e)=>{
       const rect=canvas.getBoundingClientRect();
-      const cx=rect.left+rect.width/2;
-      const cy=rect.top+rect.height/2;
       const px=e.touches?e.touches[0].clientX:e.clientX;
       const py=e.touches?e.touches[0].clientY:e.clientY;
       mouseRef.current={
-        x:(px-cx)/(rect.width/2)*1.2,
-        y:-(py-cy)/(rect.height/2)*0.8,
+        x:(px-(rect.left+rect.width/2))/(rect.width/2),
+        y:-(py-(rect.top+rect.height/2))/(rect.height/2),
       };
     };
     window.addEventListener('mousemove',onMove);
@@ -5959,7 +5924,6 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
 
     return()=>{
       if(animRef.current) cancelAnimationFrame(animRef.current);
-      renderer.dispose();
       window.removeEventListener('mousemove',onMove);
       window.removeEventListener('touchmove',onMove);
     };
