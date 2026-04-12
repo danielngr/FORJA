@@ -5881,47 +5881,80 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
       };
     });
 
+    // Rotación suavizada con inercia
     let t=0;
+    let rotY=0,rotX=0,velY=0,velX=0;
+    let smoothMx=0,smoothMy=0;
+
     const draw=()=>{
       animRef.current=requestAnimationFrame(draw);
-      t+=0.01;
-      ctx.clearRect(0,0,S,S);
-      const mx=mouseRef.current.x*0.35;
-      const my=-mouseRef.current.y*0.25;
+      t+=0.008;
+
+      // Suavizado del mouse con lerp
+      smoothMx+=(mouseRef.current.x*0.28-smoothMx)*0.06;
+      smoothMy+=(-mouseRef.current.y*0.18-smoothMy)*0.06;
+
+      // Inercia de rotación
+      velY+=(0.0012+smoothMx*0.004-velY)*0.04;
+      velX+=(smoothMy*0.003-velX)*0.04;
+      rotY+=velY;
+      rotX+=velX;
+
       const timeSinceBurst=(Date.now()-burstRef.current)/1000;
-      const burst=timeSinceBurst<0.6?Math.sin(timeSinceBurst*Math.PI/0.6)*0.22:0;
-      const cY=Math.cos(t*0.16+mx),sY=Math.sin(t*0.16+mx);
-      const cX=Math.cos(my),sX=Math.sin(my);
+      const burst=timeSinceBurst<0.9?Math.pow(Math.sin(timeSinceBurst*Math.PI/0.9),1.5)*0.18:0;
+
+      const cY=Math.cos(rotY),sY=Math.sin(rotY);
+      const cX=Math.cos(rotX),sX=Math.sin(rotX);
+
+      // Fade trail en vez de clear total — da efecto glow suave
+      ctx.fillStyle="rgba(4,8,15,0.18)";
+      ctx.fillRect(0,0,S,S);
 
       const sorted=pts.map(p=>{
-        const w=Math.sin(t*1.1+p.phase)*0.05;
-        const sc=1+w+burst;
+        // Ondulación orgánica muy suave
+        const w=Math.sin(t*0.7+p.phase)*0.03+Math.sin(t*0.4+p.phase*1.3)*0.02;
+        const sc=1+w+burst*0.8;
         let x=p.ox*sc,y2=p.oy*sc,z=p.oz*sc;
         const x2=x*cY+z*sY, z2=-x*sY+z*cY;
         const y3=y2*cX-z2*sX, z3=y2*sX+z2*cX;
-        return{sx:cx+x2*R,sy:cy+y3*R,z:z3,s:p.s};
+        return{sx:cx+x2*R,sy:cy+y3*R,z:z3,s:p.s,phase:p.phase};
       }).sort((a,b)=>a.z-b.z);
 
       sorted.forEach(p=>{
         const depth=(p.z+1)/2;
-        const alpha=(0.15+depth*0.65)*(0.85+burst*0.4);
-        const size=p.s*(0.4+depth*0.8)*(1+burst*0.5);
-        // Azul frío — mismo tono del main
-        const r2=Math.floor(48+depth*80);
-        const g2=Math.floor(100+depth*75);
-        const b2=Math.floor(220+depth*35);
+        const alpha=(0.12+depth*0.55)*(1+burst*0.3);
+        const size=p.s*(0.3+depth*0.9)*(1+burst*0.4);
+
+        // Gradiente de color por profundidad — azul frío premium
+        const r2=Math.floor(30+depth*70);
+        const g2=Math.floor(80+depth*95);
+        const b2=Math.floor(200+depth*55);
+
         ctx.beginPath();
-        ctx.arc(p.sx,p.sy,Math.max(0.3,size),0,Math.PI*2);
+        ctx.arc(p.sx,p.sy,Math.max(0.2,size),0,Math.PI*2);
         ctx.fillStyle="rgba("+r2+","+g2+","+b2+","+Math.min(1,alpha).toFixed(2)+")";
         ctx.fill();
-        // Halo sutil en frente
-        if(depth>0.8&&size>1.8){
+
+        // Halo solo en partículas muy al frente
+        if(depth>0.85&&size>2){
+          const grad=ctx.createRadialGradient(p.sx,p.sy,0,p.sx,p.sy,size*3);
+          grad.addColorStop(0,"rgba(100,160,255,"+(alpha*0.12).toFixed(3)+")");
+          grad.addColorStop(1,"rgba(100,160,255,0)");
           ctx.beginPath();
-          ctx.arc(p.sx,p.sy,size*2.5,0,Math.PI*2);
-          ctx.fillStyle="rgba(72,120,255,"+(alpha*0.06).toFixed(3)+")";
+          ctx.arc(p.sx,p.sy,size*3,0,Math.PI*2);
+          ctx.fillStyle=grad;
           ctx.fill();
         }
       });
+
+      // Glow central suave
+      const glowR=ctx.createRadialGradient(cx,cy,0,cx,cy,R*0.6);
+      glowR.addColorStop(0,"rgba(72,120,255,"+(0.03+burst*0.06).toFixed(3)+")");
+      glowR.addColorStop(1,"rgba(72,120,255,0)");
+      ctx.beginPath();
+      ctx.arc(cx,cy,R*0.6,0,Math.PI*2);
+      ctx.fillStyle=glowR;
+      ctx.fill();
     };
     draw();
 
