@@ -3910,6 +3910,122 @@ function ModeSelectorBar({profile,lang,mono,onShowAthletes}){
 }
 
 
+function ResetModal({show,onClose,lang}){
+  var e=React.createElement;
+  var MN="'SF Mono','Courier New',monospace";
+  var BN="'Bebas Neue',cursive";
+  var[x,setX]=React.useState(0);
+  var dragging=React.useRef(false);
+  var MAX=208;
+  if(!show) return null;
+
+  var start=function(cx){
+    dragging.current=true;
+    var ox=cx;
+    var ox2=x;
+    var onM=function(ev){
+      if(!dragging.current) return;
+      var nx=Math.max(0,Math.min(MAX,ox2+(( ev.touches?ev.touches[0].clientX:ev.clientX)-ox)));
+      setX(nx);
+      if(nx>=MAX-4){
+        dragging.current=false;
+        cleanup();
+        setTimeout(function(){
+          onClose();
+          setTimeout(function(){
+            var keys=[];
+            for(var k in localStorage){if(k.startsWith("fv8"))keys.push(k);}
+            keys.forEach(function(k){localStorage.removeItem(k);});
+            window.location.reload();
+          },400);
+        },600);
+      }
+    };
+    var onU=function(){
+      dragging.current=false;
+      setX(0);
+      cleanup();
+    };
+    var cleanup=function(){
+      window.removeEventListener("mousemove",onM);
+      window.removeEventListener("mouseup",onU);
+      window.removeEventListener("touchmove",onM);
+      window.removeEventListener("touchend",onU);
+    };
+    window.addEventListener("mousemove",onM);
+    window.addEventListener("mouseup",onU);
+    window.addEventListener("touchmove",onM,{passive:true});
+    window.addEventListener("touchend",onU);
+  };
+
+  var pct=x/MAX;
+  var l=lang==="en"?"en":"es";
+
+  return e("div",{
+    onClick:function(ev){if(ev.target===ev.currentTarget){setX(0);onClose();}},
+    style:{position:"fixed",inset:0,zIndex:9999,
+      background:"rgba(2,4,10,0.97)",
+      display:"flex",alignItems:"center",justifyContent:"center",padding:28}},
+    e("div",{style:{width:"100%",maxWidth:320,textAlign:"center"}},
+      e("div",{style:{fontFamily:BN,fontSize:100,lineHeight:1,
+        color:"rgba(220,50,50,0.07)",marginBottom:-16,letterSpacing:-2}},"!"),
+      e("div",{style:{fontFamily:MN,fontSize:8,letterSpacing:5,
+        color:"rgba(220,80,80,0.5)",marginBottom:18}},
+        l==="en"?"// WARNING":"// ADVERTENCIA"),
+      e("div",{style:{fontFamily:BN,fontSize:34,color:"rgba(240,242,245,0.92)",
+        letterSpacing:1,lineHeight:0.95,marginBottom:14}},
+        l==="en"?"DELETE ALL DATA?":"¿BORRAR TODOS
+LOS DATOS?"),
+      e("div",{style:{fontFamily:MN,fontSize:11,color:"rgba(255,255,255,0.3)",
+        lineHeight:1.7,marginBottom:36}},
+        l==="en"
+          ?"Workouts, progress and settings will be permanently deleted."
+          :"Entrenos, progreso y configuración se eliminarán permanentemente."),
+      e("div",{style:{
+        width:"100%",height:60,borderRadius:999,
+        background:"rgba(255,255,255,0.04)",
+        border:"1px solid rgba(255,255,255,0.08)",
+        position:"relative",marginBottom:20,
+        overflow:"hidden",userSelect:"none",
+      }},
+        e("div",{style:{
+          position:"absolute",inset:0,
+          background:"rgba(220,50,50,"+(pct*0.2)+")",
+          transition:"background 0.05s",
+        }}),
+        e("div",{style:{
+          position:"absolute",inset:0,display:"flex",
+          alignItems:"center",justifyContent:"center",
+          fontFamily:MN,fontSize:9,letterSpacing:3,
+          color:"rgba(255,255,255,"+(0.15+(1-pct)*0.15)+")",
+          pointerEvents:"none",paddingLeft:60,
+        }},l==="en"?"SLIDE TO CONFIRM":"DESLIZA PARA CONFIRMAR"),
+        e("div",{
+          onMouseDown:function(ev){ev.preventDefault();start(ev.clientX);},
+          onTouchStart:function(ev){start(ev.touches[0].clientX);},
+          style:{
+            position:"absolute",top:5,bottom:5,left:5+x,width:50,
+            borderRadius:999,
+            background:pct>0.95?"rgba(220,50,50,0.9)":"rgba(255,255,255,0.1)",
+            border:"1px solid rgba(255,255,255,0.2)",
+            borderTop:"1px solid rgba(255,255,255,0.35)",
+            display:"flex",alignItems:"center",justifyContent:"center",
+            cursor:"grab",fontSize:pct>0.95?16:14,
+            boxShadow:"0 2px 12px rgba(0,0,0,0.4)",
+            transition:dragging.current?"none":"left 0.3s cubic-bezier(0.34,1.56,0.64,1)",
+          }
+        },pct>0.95?"✓":"→")
+      ),
+      e("div",{
+        onClick:function(){setX(0);onClose();},
+        style:{fontFamily:MN,fontSize:10,letterSpacing:3,
+          color:"rgba(255,255,255,0.2)",cursor:"pointer",padding:12}},
+        l==="en"?"CANCEL":"CANCELAR")
+    )
+  );
+}
+
+
 function ProfileSheet({show,onClose,profile,lang,mono,sp,setStep}){
   var MN=mono||"'SF Mono','Courier New',monospace";
   var BN="'Bebas Neue',cursive";
@@ -3920,47 +4036,7 @@ function ProfileSheet({show,onClose,profile,lang,mono,sp,setStep}){
   var sliderRef=React.useRef(null);
   var draggingRef=React.useRef(false);
   if(!show&&!closing) return null;
-
-  var SLIDER_W=260;
-  var THUMB_W=52;
-  var MAX_X=SLIDER_W-THUMB_W-4;
-
-  var onSliderStart=function(clientX){
-    draggingRef.current=true;
-    var startX=clientX;
-    var startVal=sliderX;
-    var onMove=function(ev){
-      if(!draggingRef.current) return;
-      var cx=ev.touches?ev.touches[0].clientX:ev.clientX;
-      var nx=Math.max(0,Math.min(MAX_X,startVal+(cx-startX)));
-      setSliderX(nx);
-      if(nx>=MAX_X-4){
-        draggingRef.current=false;
-        window.removeEventListener('mousemove',onMove);
-        window.removeEventListener('mouseup',onUp);
-        window.removeEventListener('touchmove',onMove);
-        window.removeEventListener('touchend',onUp);
-        setTimeout(function(){
-          var keys=[];
-          for(var k in localStorage){if(k.indexOf("fv8")===0)keys.push(k);}
-          keys.forEach(function(k){localStorage.removeItem(k);});
-          window.location.reload();
-        },300);
-      }
-    };
-    var onUp=function(){
-      draggingRef.current=false;
-      setSliderX(0);
-      window.removeEventListener('mousemove',onMove);
-      window.removeEventListener('mouseup',onUp);
-      window.removeEventListener('touchmove',onMove);
-      window.removeEventListener('touchend',onUp);
-    };
-    window.addEventListener('mousemove',onMove);
-    window.addEventListener('mouseup',onUp);
-    window.addEventListener('touchmove',onMove,{passive:true});
-    window.addEventListener('touchend',onUp);
-  };
+;
 
   var close=function(){setClosing(true);setTimeout(function(){setClosing(false);onClose();},260);};
   var l=lang==="en"?"en":"es";
@@ -4071,7 +4147,7 @@ function ProfileSheet({show,onClose,profile,lang,mono,sp,setStep}){
       display:"flex",flexDirection:"column",justifyContent:"flex-end",
       opacity:closing?0:1,transition:"opacity 0.3s ease",
     }},
-    ResetModal,
+    e(ResetModal,{show:showReset,onClose:function(){setShowReset(false);},lang:lang}),
     e("div",{style:{
       background:"#04080f",
       borderRadius:"28px 28px 0 0",
