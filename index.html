@@ -3767,8 +3767,8 @@ function AthleteSheet({show,onClose,onSelect,lang,mono,profile,setProfile,sr,sp}
                   "rgba(255,255,255,0.07)"),
                 borderTop:"1px solid "+(active?"rgba("+hexToRgb(celeb.ac)+",0.6)":
                   "rgba(255,255,255,0.12)"),
-                cursor:unlocked?"pointer":"default",
-                opacity:unlocked?1:0.45,
+                cursor:unlocked?"pointer":"default",filter:(!unlocked&&!active)?"none":"none",
+                opacity:1,
                 transition:"all 0.2s",
               }},
               // Emoji avatar
@@ -3804,7 +3804,18 @@ function AthleteSheet({show,onClose,onSelect,lang,mono,profile,setProfile,sr,sp}
                   "FREE"
                 )
               :
-                React.createElement("div",{style:{fontSize:12,opacity:0.4,flexShrink:0}},"🔒")
+                React.createElement("div",{style:{
+                  display:"flex",alignItems:"center",gap:5,flexShrink:0,
+                  padding:"4px 10px",borderRadius:8,
+                  background:"rgba(255,255,255,0.06)",
+                  border:"1px solid rgba(255,255,255,0.1)",
+                }},
+                  React.createElement("span",{style:{fontSize:10}},"🔒"),
+                  React.createElement("span",{style:{
+                    fontFamily:MN,fontSize:7,letterSpacing:1,
+                    color:"rgba(255,255,255,0.4)",
+                  }},"PRO")
+                )
             );
           }),
           // Paywall CTA
@@ -3820,7 +3831,7 @@ function AthleteSheet({show,onClose,onSelect,lang,mono,profile,setProfile,sr,sp}
               lang==="en"?"UNLOCK ALL 12 ATHLETES":"DESBLOQUEA LOS 12 ATLETAS"
             ),
             React.createElement("div",{style:{fontFamily:BN,fontSize:26,color:"rgba(240,242,245,0.95)",
-              letterSpacing:1,marginBottom:4}},"FORJA PRO — $7.99/MES"),
+              letterSpacing:1,marginBottom:4}},lang==="en"?"FORJA PRO — $7.99/MONTH":"FORJA PRO — $7.99/MES"),
             React.createElement("div",{style:{fontFamily:MN,fontSize:9,
               color:"rgba(255,255,255,0.3)",marginBottom:14}},
               lang==="en"?"or $49.99/year · 7-day free trial":"o $49.99/año · 7 días gratis"
