@@ -6211,13 +6211,17 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
   const burstParticles=React.useRef([]);
   const burstCanvasRef=React.useRef(null);
   const burstAnimRef=React.useRef(null);
+  const activePlanetPos=React.useRef({x:0,y:0});
 
   const set=(k,v)=>setOb(d=>({...d,[k]:v}));
 
   const fireBurst=()=>{
-    // Centro de la pantalla completa
-    const cx=window.innerWidth/2;
-    const cy=window.innerHeight*0.35; // donde está el planeta
+    // Posición real del planeta en el canvas solar
+    const solarCanvas=canvasRef.current;
+    const solarRect=solarCanvas?solarCanvas.getBoundingClientRect():{top:0,left:0};
+    const pos=activePlanetPos.current;
+    const cx=solarRect.left+pos.x;
+    const cy=solarRect.top+pos.y;
     const N=120;
     const newPts=Array.from({length:N},()=>{
       const angle=Math.random()*Math.PI*2;
