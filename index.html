@@ -6216,12 +6216,14 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
   const set=(k,v)=>setOb(d=>({...d,[k]:v}));
 
   const fireBurst=()=>{
+    // El planeta activo siempre está centrado horizontalmente
+    // y en el canvas solar que ocupa los primeros 260px de la pantalla
     const solarCanvas=canvasRef.current;
-    const rect=solarCanvas?solarCanvas.getBoundingClientRect():{top:0,left:0};
-    const pos=activePlanetPos.current;
-    const cx=rect.left+pos.x;
-    const cy=rect.top+pos.y;
-    console.log("BURST",{rect,pos,cx,cy,innerW:window.innerWidth,innerH:window.innerHeight});
+    const rect=solarCanvas?solarCanvas.getBoundingClientRect():{top:0,left:0,width:window.innerWidth,height:260};
+    // Centro horizontal = mitad del canvas
+    // Centro vertical = mitad del canvas solar
+    const cx=rect.left+rect.width/2;
+    const cy=rect.top+rect.height/2;
     const N=120;
     const newPts=Array.from({length:N},()=>{
       const angle=Math.random()*Math.PI*2;
@@ -6919,8 +6921,9 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
 
       {/* Canvas fullscreen para burst de partículas */}
       <canvas ref={burstCanvasRef} style={{
-        position:"absolute",inset:0,zIndex:10,
+        position:"fixed",inset:0,zIndex:99999,
         pointerEvents:"none",
+        width:"100vw",height:"100vh",
       }}/>
 
       {/* Sistema solar */}
