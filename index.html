@@ -6216,31 +6216,39 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
   const set=(k,v)=>setOb(d=>({...d,[k]:v}));
 
   const fireBurst=()=>{
-    // El planeta activo siempre está centrado horizontalmente
-    // y en el canvas solar que ocupa los primeros 260px de la pantalla
     const solarCanvas=canvasRef.current;
     const rect=solarCanvas?solarCanvas.getBoundingClientRect():{top:0,left:0,width:window.innerWidth,height:260};
-    // Centro horizontal = mitad del canvas
-    // Centro vertical = mitad del canvas solar
     const cx=rect.left+rect.width/2;
     const cy=rect.top+rect.height/2;
-    const N=120;
+
+    // Paleta premium — azul eléctrico, blanco frío, cyan, violeta
+    const palette=[
+      [72,140,255],   // azul FORJA
+      [140,190,255],  // azul claro
+      [200,225,255],  // casi blanco frío
+      [100,220,255],  // cyan eléctrico
+      [160,130,255],  // violeta suave
+      [255,255,255],  // destello blanco
+    ];
+
+    const N=160;
     const newPts=Array.from({length:N},()=>{
+      // Distribución: mayoría van hacia afuera, algunas van arriba fuerte
       const angle=Math.random()*Math.PI*2;
-      const speed=3+Math.random()*14;
-      const size=1.2+Math.random()*3.5;
-      // Colores: azul frío con variaciones
-      const variant=Math.random();
-      const r=Math.floor(variant<0.3?100:variant<0.6?48:200);
-      const g=Math.floor(variant<0.3?160:variant<0.6?120:200);
-      const b=Math.floor(variant<0.3?255:variant<0.6?220:255);
+      const isFast=Math.random()<0.3;
+      const isTrail=Math.random()<0.4;
+      const speed=isFast?(12+Math.random()*16):(4+Math.random()*9);
+      const col=palette[Math.floor(Math.random()*palette.length)];
       return{
         x:cx,y:cy,
         vx:Math.cos(angle)*speed,
-        vy:Math.sin(angle)*speed-4, // bias hacia arriba
+        vy:Math.sin(angle)*speed-(isFast?6:2),
         life:1,
-        decay:0.008+Math.random()*0.018,
-        size,r,g,b,
+        decay:isFast?(0.005+Math.random()*0.01):(0.01+Math.random()*0.02),
+        size:isTrail?(0.6+Math.random()*1.4):(1.5+Math.random()*3.5),
+        r:col[0],g:col[1],b:col[2],
+        isTrail,isFast,
+        trail:[],
       };
     });
     burstParticles.current=[...burstParticles.current,...newPts];
@@ -6521,27 +6529,53 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
       burstAnimRef.current=requestAnimationFrame(loop);
       ctx.clearRect(0,0,canvas.width,canvas.height);
       burstParticles.current=burstParticles.current.filter(p=>{
+        // Guardar trail
+        p.trail=p.trail||[];
+        p.trail.push({x:p.x,y:p.y});
+        if(p.trail.length>8) p.trail.shift();
+
         p.x+=p.vx; p.y+=p.vy;
-        p.vy+=0.18;
-        p.vx*=0.97;
+        p.vy+=p.isFast?0.08:0.22;
+        p.vx*=p.isFast?0.99:0.97;
         p.life-=p.decay;
         if(p.life<=0) return false;
-        const al=p.life*(p.life>0.6?1:p.life/0.6);
+
+        const al=Math.pow(p.life,0.7);
         const sz=p.size*Math.max(0.1,p.life);
         const px=p.x*dpr, py=p.y*dpr;
-        // Glow suave
-        const g=ctx.createRadialGradient(px,py,0,px,py,sz*4*dpr);
-        g.addColorStop(0,"rgba("+p.r+","+p.g+","+p.b+","+(al*0.6).toFixed(2)+")");
-        g.addColorStop(1,"rgba("+p.r+","+p.g+","+p.b+",0)");
+
+        // Trail luminoso
+        if(p.trail.length>2){
+          ctx.beginPath();
+          ctx.moveTo(p.trail[0].x*dpr,p.trail[0].y*dpr);
+          for(let i=1;i<p.trail.length;i++){
+            ctx.lineTo(p.trail[i].x*dpr,p.trail[i].y*dpr);
+          }
+          ctx.strokeStyle="rgba("+p.r+","+p.g+","+p.b+","+(al*0.15).toFixed(2)+")";
+          ctx.lineWidth=sz*dpr*0.8;
+          ctx.lineCap="round";
+          ctx.stroke();
+        }
+
+        // Glow exterior suave
+        const gOut=ctx.createRadialGradient(px,py,0,px,py,sz*6*dpr);
+        gOut.addColorStop(0,"rgba("+p.r+","+p.g+","+p.b+","+(al*0.25).toFixed(2)+")");
+        gOut.addColorStop(1,"rgba("+p.r+","+p.g+","+p.b+",0)");
         ctx.beginPath();
-        ctx.arc(px,py,sz*4*dpr,0,Math.PI*2);
-        ctx.fillStyle=g;
+        ctx.arc(px,py,sz*6*dpr,0,Math.PI*2);
+        ctx.fillStyle=gOut;
         ctx.fill();
+
         // Núcleo brillante
+        const gIn=ctx.createRadialGradient(px,py,0,px,py,sz*dpr*1.5);
+        gIn.addColorStop(0,"rgba(255,255,255,"+(al*0.9).toFixed(2)+")");
+        gIn.addColorStop(0.4,"rgba("+p.r+","+p.g+","+p.b+","+(al*0.95).toFixed(2)+")");
+        gIn.addColorStop(1,"rgba("+p.r+","+p.g+","+p.b+",0)");
         ctx.beginPath();
-        ctx.arc(px,py,Math.max(0.5,sz*dpr),0,Math.PI*2);
-        ctx.fillStyle="rgba("+p.r+","+p.g+","+p.b+","+(al*0.95).toFixed(2)+")";
+        ctx.arc(px,py,sz*dpr*1.5,0,Math.PI*2);
+        ctx.fillStyle=gIn;
         ctx.fill();
+
         return true;
       });
     };
