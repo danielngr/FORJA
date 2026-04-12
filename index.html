@@ -6354,11 +6354,9 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
           zIndex:0,
         }}/>
 
-        {/* Nodos orbitales — uno por step */}
+        {/* Nodos orbitales — centrados en el canvas */}
         {Array.from({length:TOTAL_STEPS},(_,i)=>{
           const angle=((i/TOTAL_STEPS)*Math.PI*2)-Math.PI/2;
-          const x=CENTER+ORBIT_R*Math.cos(angle);
-          const y=CENTER+ORBIT_R*Math.sin(angle);
           const isActive=i===obStep;
           const isDone=i<obStep;
           const isNext=i===obStep+1;
@@ -6367,7 +6365,8 @@ function Onboard({lang,setLang,step,setStep,sp,sr}){
               onClick={()=>{if(isDone||isNext)goTo(i);}}
               style={{
                 position:"absolute",
-                left:x-14,top:y-14,
+                left:"calc(50% + "+(ORBIT_R*Math.cos(angle)-14)+"px)",
+                top:"calc(50% + "+(ORBIT_R*Math.sin(angle)-14)+"px)",
                 width:28,height:28,
                 borderRadius:"50%",
                 zIndex:2,
