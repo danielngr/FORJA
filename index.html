@@ -25,6 +25,13 @@ input[type=number]{-moz-appearance:textfield;}
 }
 @keyframes fu{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fogIn{from{opacity:0;filter:blur(6px)}to{opacity:1;filter:blur(0)}}
+@keyframes heartbeat{
+  0%,100%{transform:scale(1);}
+  14%{transform:scale(1.15);}
+  28%{transform:scale(1);}
+  42%{transform:scale(1.1);}
+  56%{transform:scale(1);}
+}
 @keyframes ecgMove{
   0%{stroke-dashoffset:60}
   100%{stroke-dashoffset:0}
@@ -3587,43 +3594,119 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
     window.dispatchEvent(new CustomEvent("forja:toggleDay",{detail:{sel:sel}}));
   };
   return React.createElement("div",{
-    onClick:handleClick,
-    style:{width:"100%",height:160,borderRadius:16,position:"relative",cursor:"pointer",
-      background:isAlive?"#080c14":"#04080f",transition:"background 0.8s ease",
-      overflow:"hidden",border:"0.5px solid rgba(255,255,255,0.08)",marginBottom:0}},
-    React.createElement("canvas",{ref:canvasRef,style:{position:"absolute",inset:0,width:"100%",height:"100%",zIndex:1,pointerEvents:"none",borderRadius:16}}),
-    React.createElement("canvas",{ref:fogRef,style:{position:"absolute",inset:0,width:"100%",height:"100%",zIndex:2,pointerEvents:"none",borderRadius:16}}),
-    React.createElement("div",{style:{position:"absolute",inset:0,zIndex:3,padding:"14px 16px",display:"flex",flexDirection:"column",justifyContent:"space-between",pointerEvents:"none"}},
-      React.createElement("div",null,
-        React.createElement("div",{style:{fontFamily:"monospace",fontSize:8,color:"rgba(255,255,255,0.28)",letterSpacing:3,marginBottom:5}},"HOY"),
-        React.createElement("div",{style:{fontFamily:"monospace",fontSize:day?21:16,fontWeight:800,color:day?"#fff":"rgba(255,255,255,0.4)",letterSpacing:-0.5,lineHeight:1,marginBottom:4}},day?day.l:(lang==="es"||lang==="pt"?"DESCANSO":lang==="it"?"RIPOSO":lang==="fr"?"REPOS":"REST")),
-        dayExs.length>0?React.createElement("div",{style:{fontFamily:"monospace",fontSize:7,color:"rgba(255,255,255,0.25)",letterSpacing:1.5}},dayExs.length+" EJERC · TAP PARA INICIAR"):null
-      ),
-      fitnessAge?React.createElement("div",{style:{display:"flex",alignItems:"flex-end",justifyContent:"space-between"}},
-        React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6}},
-          React.createElement("svg",{width:36,height:16,viewBox:"0 0 36 16",fill:"none",style:{overflow:"visible"}},
-            React.createElement("polyline",{
-              points:"0,8 4,8 6,1 9,15 12,8 16,8 18,4 20,8 36,8",
-              stroke:isAlive?"#e05555":"rgba(100,180,255,0.35)",
-              strokeWidth:isAlive?"1.8":"1.2",
-              strokeLinecap:"round",strokeLinejoin:"round",
-              strokeDasharray:"60",
-              strokeDashoffset:"0",
-              style:isAlive?{animation:"ecgMove 0.8s linear infinite"}:{},
+    style:{width:"100%",height:160,borderRadius:16,position:"relative",
+      background:"#080c14",overflow:"hidden",
+      border:"0.5px solid rgba(255,255,255,0.08)",
+    }},
+
+    // Canvas del fog (mantener)
+    React.createElement("canvas",{ref:fogRef,style:{
+      position:"absolute",inset:0,width:"100%",height:"100%",
+      pointerEvents:"none",opacity:isAlive?0:0.7,transition:"opacity 1s ease",
+    }}),
+
+    // Layout principal — izquierda: anillo+corazón, derecha: métricas
+    React.createElement("div",{style:{
+      position:"relative",zIndex:1,height:"100%",
+      display:"flex",alignItems:"center",padding:"0 16px",gap:16,
+    }},
+
+      // Anillo tipo Apple Watch con corazón
+      React.createElement("div",{style:{position:"relative",flexShrink:0,width:96,height:96}},
+        // SVG anillo
+        React.createElement("svg",{width:96,height:96,viewBox:"0 0 96 96",style:{position:"absolute",inset:0}},
+          // Track
+          React.createElement("circle",{cx:48,cy:48,r:40,fill:"none",
+            stroke:isAlive?"rgba(220,50,50,0.15)":"rgba(80,130,200,0.12)",
+            strokeWidth:7}),
+          // Progreso — basado en doneCount/dayExs.length
+          React.createElement("circle",{cx:48,cy:48,r:40,fill:"none",
+            stroke:isAlive?"#e05555":"rgba(72,120,255,0.6)",
+            strokeWidth:7,
+            strokeLinecap:"round",
+            strokeDasharray:251.2,
+            strokeDashoffset:dayExs.length>0?251.2*(1-(doneCount/dayExs.length)):251.2,
+            transform:"rotate(-90 48 48)",
+            style:{transition:"stroke-dashoffset 0.6s ease, stroke 0.8s ease"},
+          })
+        ),
+        // Corazón SVG en el centro
+        React.createElement("div",{style:{
+          position:"absolute",inset:0,
+          display:"flex",alignItems:"center",justifyContent:"center",
+        }},
+          React.createElement("svg",{
+            width:32,height:32,viewBox:"0 0 32 32",fill:"none",
+            style:isAlive?{animation:"heartbeat 0.8s ease-in-out infinite"}:{},
+          },
+            React.createElement("path",{
+              d:"M16 27s-12-7.5-12-14A7 7 0 0 1 16 9.6 7 7 0 0 1 28 13c0 6.5-12 14-12 14z",
+              fill:isAlive?"#e05555":"rgba(80,130,200,0.5)",
+              style:{transition:"fill 0.8s ease"},
             })
-          ),
-          React.createElement("div",null,
-            React.createElement("div",{style:{fontFamily:"monospace",fontSize:6,color:"rgba(255,255,255,0.22)",letterSpacing:1.5,marginBottom:1}},"EDAD CARDIOVASCULAR"),
-            React.createElement("div",{style:{display:"flex",alignItems:"baseline",gap:3}},
-              React.createElement("span",{style:{fontFamily:"monospace",fontSize:18,fontWeight:800,color:deltaColor||"rgba(255,255,255,0.7)",lineHeight:1}},fitnessAge!==null?fitnessAge:"—"),
-              React.createElement("span",{style:{fontFamily:"monospace",fontSize:7,color:"rgba(255,255,255,0.25)"}}," años"),
-              weeklyDelta!==null&&weeklyDelta!==undefined&&deltaAbs?React.createElement("span",{style:{fontFamily:"monospace",fontSize:8,fontWeight:700,color:deltaColor,marginLeft:2}},
-                deltaSign+" "+deltaAbs+"/sem"
-              ):null
-            )
           )
         )
-      ):null
+      ),
+
+      // Métricas — derecha
+      React.createElement("div",{style:{flex:1,minWidth:0}},
+
+        // HOY / REST
+        React.createElement("div",{style:{
+          fontFamily:"'SF Mono','Courier New',monospace",
+          fontSize:7,letterSpacing:3,
+          color:"rgba(255,255,255,0.25)",marginBottom:4,
+        }},
+          dayExs.length===0
+            ?(lang==="en"?"REST DAY":"DESCANSO")
+            :isAlive
+              ?(lang==="en"?"COMPLETED ✓":"COMPLETADO ✓")
+              :(doneCount+"/"+dayExs.length+" "+(lang==="en"?"EXERCISES":"EJERCICIOS"))
+        ),
+
+        // Edad CV — número grande
+        fitnessAge!=null?React.createElement("div",{style:{
+          display:"flex",alignItems:"baseline",gap:4,marginBottom:6,
+        }},
+          React.createElement("span",{style:{
+            fontFamily:"'Bebas Neue',cursive",
+            fontSize:44,lineHeight:1,letterSpacing:1,
+            color:isAlive?"rgba(220,80,80,0.9)":"rgba(130,175,255,0.8)",
+            transition:"color 0.8s ease",
+          }},fitnessAge),
+          React.createElement("div",{style:{display:"flex",flexDirection:"column",gap:1}},
+            React.createElement("span",{style:{
+              fontFamily:"'SF Mono','Courier New',monospace",
+              fontSize:9,color:"rgba(255,255,255,0.3)",letterSpacing:1,
+            }},lang==="en"?"yrs":"años"),
+            weeklyDelta!==null&&deltaAbs?React.createElement("span",{style:{
+              fontFamily:"'SF Mono','Courier New',monospace",
+              fontSize:8,fontWeight:700,
+              color:isAlive?"rgba(220,80,80,0.7)":"rgba(130,175,255,0.6)",
+            }},deltaSign+deltaAbs):null
+          )
+        ):null,
+
+        // Label pequeño
+        React.createElement("div",{style:{
+          fontFamily:"'SF Mono','Courier New',monospace",
+          fontSize:7,letterSpacing:2,
+          color:"rgba(255,255,255,0.18)",marginBottom:8,
+        }},lang==="en"?"CV AGE · NTNU MODEL":"EDAD CV · NTNU"),
+
+        // ECG línea
+        React.createElement("svg",{width:80,height:14,viewBox:"0 0 80 14",fill:"none",
+          style:{overflow:"visible"},
+        },
+          React.createElement("polyline",{
+            points:"0,7 8,7 12,1 16,13 20,7 28,7 32,4 36,7 80,7",
+            stroke:isAlive?"rgba(220,80,80,0.6)":"rgba(72,120,255,0.3)",
+            strokeWidth:"1.5",
+            strokeLinecap:"round",strokeLinejoin:"round",
+            style:isAlive?{animation:"ecgMove 0.8s linear infinite"}:{},
+          })
+        )
+      )
     )
   );
 }
