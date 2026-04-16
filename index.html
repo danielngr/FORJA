@@ -3693,7 +3693,7 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
         React.createElement("div",{style:{
           fontFamily:"'SF Mono','Courier New',monospace",
           fontSize:8,letterSpacing:2,marginBottom:10,
-          color:isAlive?"rgba(255,100,100,0.7)":"rgba(100,160,255,0.55)",
+          color:isAlive?"rgba(255,120,120,0.9)":"rgba(140,185,255,0.75)",
         }},
           dayExs.length===0
             ?(lang==="en"?"REST DAY":"DÍA DE DESCANSO")
@@ -3718,13 +3718,13 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
           fitnessAge!=null?React.createElement("div",{style:{paddingBottom:6,marginLeft:2}},
             React.createElement("div",{style:{
               fontFamily:"'SF Mono','Courier New',monospace",
-              fontSize:11,color:"rgba(255,255,255,0.3)",
+              fontSize:11,color:"rgba(255,255,255,0.55)",
               letterSpacing:0.5,lineHeight:1.4,
             }},lang==="en"?"yrs":"años"),
             weeklyDelta!==null&&deltaAbs?React.createElement("div",{style:{
               fontFamily:"'SF Mono','Courier New',monospace",
               fontSize:9,
-              color:isAlive?"rgba(255,80,80,0.6)":"rgba(100,160,255,0.55)",
+              color:isAlive?"rgba(255,100,100,0.8)":"rgba(130,175,255,0.75)",
             }},deltaSign+deltaAbs):null
           ):null
         ),
@@ -3733,7 +3733,7 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
         React.createElement("div",{style:{
           fontFamily:"'SF Mono','Courier New',monospace",
           fontSize:7,letterSpacing:1.5,
-          color:"rgba(255,255,255,0.18)",marginBottom:10,
+          color:"rgba(255,255,255,0.35)",marginBottom:10,
         }},lang==="en"?"CARDIOVASCULAR AGE · NTNU":"EDAD CARDIOVASCULAR · NTNU"),
 
         // ECG delgado
@@ -3743,7 +3743,7 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
         },
           React.createElement("polyline",{
             points:"0,7 14,7 18,1 22,13 26,7 36,7 40,4 44,7 110,7",
-            stroke:isAlive?"rgba(255,50,50,0.5)":"rgba(80,140,255,0.3)",
+            stroke:isAlive?"rgba(255,60,60,0.7)":"rgba(100,160,255,0.5)",
             strokeWidth:"1.5",strokeLinecap:"round",strokeLinejoin:"round",
             style:isAlive?{animation:"ecgMove 0.85s linear infinite"}:{},
           })
