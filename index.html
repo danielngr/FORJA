@@ -3847,12 +3847,51 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
           ):null
         ),
 
-        // Sublabel
-        React.createElement("div",{style:{
-          fontFamily:"'SF Mono','Courier New',monospace",
-          fontSize:7,letterSpacing:1.5,
-          color:"rgba(255,255,255,0.55)",marginBottom:10,
-        }},lang==="en"?"CARDIOVASCULAR AGE · NTNU":"EDAD CARDIOVASCULAR · NTNU"),
+        // Sublabel + ?
+        React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6,marginBottom:10}},
+          React.createElement("div",{style:{
+            fontFamily:"'SF Mono','Courier New',monospace",
+            fontSize:7,letterSpacing:1.5,color:"rgba(255,255,255,0.55)",
+          }},lang==="en"?"CV AGE · NTNU":"EDAD CV · NTNU"),
+          React.createElement("div",{
+            onClick:function(e){e.stopPropagation();setShowInfo(function(v){return !v;});},
+            style:{
+              width:14,height:14,borderRadius:"50%",flexShrink:0,
+              border:"1px solid rgba(255,255,255,0.3)",
+              display:"flex",alignItems:"center",justifyContent:"center",
+              cursor:"pointer",
+              fontFamily:"'SF Mono','Courier New',monospace",
+              fontSize:9,color:"rgba(255,255,255,0.5)",
+            }
+          },"?")
+        ),
+
+        // Tooltip NTNU
+        showInfo?React.createElement("div",{
+          onClick:function(e){e.stopPropagation();setShowInfo(false);},
+          style:{
+            position:"fixed",bottom:120,left:16,right:16,zIndex:9999,
+            background:"rgba(8,12,24,0.98)",
+            border:"1px solid rgba(72,120,255,0.3)",
+            borderTop:"1px solid rgba(130,175,255,0.35)",
+            borderRadius:16,padding:"16px",
+            boxShadow:"0 8px 40px rgba(0,0,0,0.8)",
+          }},
+          React.createElement("div",{style:{
+            fontFamily:"'SF Mono','Courier New',monospace",
+            fontSize:8,letterSpacing:2,color:"rgba(130,175,255,0.8)",marginBottom:10,
+          }},lang==="en"?"// HOW IT WORKS":"// CÓMO FUNCIONA"),
+          React.createElement("div",{style:{
+            fontSize:12,color:"rgba(240,242,245,0.8)",lineHeight:1.65,marginBottom:10,
+          }},lang==="en"
+            ?"Your cardiovascular age is estimated from VO2max using the NTNU model (Nes et al. 2014). VO2max is calculated from your age, BMI, and how often you complete workouts. More completed days = better VO2max = lower CV age than your real age."
+            :"Tu edad cardiovascular se estima a partir de tu VO2max con el modelo NTNU (Nes et al. 2014). El VO2max se calcula con tu edad, IMC y frecuencia de entrenos completos. Más días completos = mejor VO2max = edad CV menor que tu edad real."
+          ),
+          React.createElement("div",{style:{
+            fontFamily:"'SF Mono','Courier New',monospace",
+            fontSize:7,color:"rgba(255,255,255,0.2)",letterSpacing:1,
+          }},"Nes et al. (2014) · NTNU · n=4,631")
+        ):null,
 
         // ECG delgado
         React.createElement("canvas",{
