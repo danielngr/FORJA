@@ -3595,144 +3595,127 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
   };
   return React.createElement("div",{
     style:{
-      width:"100%",height:168,borderRadius:20,position:"relative",
+      width:"100%",height:156,borderRadius:20,position:"relative",
       overflow:"hidden",
-      background:"linear-gradient(135deg,#060a12 0%,#080d1a 60%,#060e1c 100%)",
-      border:"0.5px solid rgba(255,255,255,0.07)",
-      borderTop:"0.5px solid rgba(255,255,255,0.12)",
+      background:"#06090f",
+      border:"0.5px solid rgba(255,255,255,0.08)",
     }},
 
     // Fog canvas
     React.createElement("canvas",{ref:fogRef,style:{
       position:"absolute",inset:0,width:"100%",height:"100%",
-      pointerEvents:"none",opacity:isAlive?0:0.6,transition:"opacity 1.2s ease",
+      pointerEvents:"none",opacity:isAlive?0:0.5,transition:"opacity 1.2s ease",
     }}),
 
-    // Glow de fondo según estado
-    React.createElement("div",{style:{
-      position:"absolute",
-      width:200,height:200,borderRadius:"50%",
-      top:-60,left:-20,
-      background:isAlive
-        ?"radial-gradient(circle,rgba(220,50,50,0.08) 0%,transparent 70%)"
-        :"radial-gradient(circle,rgba(40,80,200,0.06) 0%,transparent 70%)",
-      transition:"background 1s ease",
-      pointerEvents:"none",
-    }}),
-
+    // Layout
     React.createElement("div",{style:{
       position:"relative",zIndex:1,height:"100%",
-      display:"flex",alignItems:"center",padding:"0 20px",gap:20,
+      display:"flex",alignItems:"center",padding:"0 18px",gap:16,
     }},
 
-      // Anillo con corazón
-      React.createElement("div",{style:{position:"relative",flexShrink:0,width:100,height:100}},
-
-        React.createElement("svg",{width:100,height:100,viewBox:"0 0 100 100"},
-          // Sombra del track
-          React.createElement("circle",{cx:50,cy:50,r:42,fill:"none",
-            stroke:isAlive?"rgba(180,30,30,0.12)":"rgba(30,60,140,0.12)",
-            strokeWidth:8}),
-          // Track
-          React.createElement("circle",{cx:50,cy:50,r:42,fill:"none",
-            stroke:isAlive?"rgba(220,50,50,0.18)":"rgba(60,100,200,0.15)",
-            strokeWidth:7}),
-          // Progress ring
-          React.createElement("circle",{cx:50,cy:50,r:42,fill:"none",
-            stroke:isAlive
-              ?"url(#heartGrad)"
-              :"rgba(72,120,255,0.5)",
-            strokeWidth:7,
-            strokeLinecap:"round",
-            strokeDasharray:263.9,
-            strokeDashoffset:dayExs.length>0
-              ?Math.max(4,263.9*(1-(doneCount/dayExs.length)))
-              :263.9,
-            transform:"rotate(-90 50 50)",
-            style:{transition:"stroke-dashoffset 0.8s cubic-bezier(0.34,1.56,0.64,1), stroke 0.8s ease"},
-          }),
-          // Gradiente para el ring
+      // Anillo compacto tipo Apple Watch
+      React.createElement("div",{style:{position:"relative",flexShrink:0,width:80,height:80}},
+        React.createElement("svg",{width:80,height:80,viewBox:"0 0 80 80"},
           React.createElement("defs",null,
-            React.createElement("linearGradient",{id:"heartGrad",x1:"0%",y1:"0%",x2:"100%",y2:"100%"},
-              React.createElement("stop",{offset:"0%",stopColor:"#ff6060"}),
-              React.createElement("stop",{offset:"100%",stopColor:"#e02020"})
+            React.createElement("linearGradient",{id:"rg",x1:"0%",y1:"0%",x2:"100%",y2:"0%"},
+              React.createElement("stop",{offset:"0%",stopColor:isAlive?"#ff4d4d":"#4878ff"}),
+              React.createElement("stop",{offset:"100%",stopColor:isAlive?"#ff2020":"#2244cc"})
             )
-          )
+          ),
+          // Track
+          React.createElement("circle",{cx:40,cy:40,r:34,fill:"none",
+            stroke:isAlive?"rgba(255,50,50,0.1)":"rgba(40,80,200,0.1)",strokeWidth:7}),
+          // Fill
+          React.createElement("circle",{cx:40,cy:40,r:34,fill:"none",
+            stroke:"url(#rg)",strokeWidth:7,strokeLinecap:"round",
+            strokeDasharray:213.6,
+            strokeDashoffset:dayExs.length>0?Math.max(6,213.6*(1-doneCount/dayExs.length)):213.6,
+            transform:"rotate(-90 40 40)",
+            style:{transition:"stroke-dashoffset 0.9s cubic-bezier(0.34,1.56,0.64,1)"},
+          })
         ),
-
-        // Corazón en centro
+        // Corazón SVG plano en el centro
         React.createElement("div",{style:{
           position:"absolute",inset:0,
           display:"flex",alignItems:"center",justifyContent:"center",
         }},
           React.createElement("svg",{
-            width:34,height:34,viewBox:"0 0 32 32",
-            style:isAlive?{animation:"heartbeat 0.75s ease-in-out infinite",filter:"drop-shadow(0 0 6px rgba(220,50,50,0.6))"}:{filter:"drop-shadow(0 0 4px rgba(60,100,200,0.3))"},
+            width:28,height:26,viewBox:"0 0 28 26",fill:"none",
+            style:isAlive?{
+              animation:"heartbeat 0.75s ease-in-out infinite",
+              filter:"drop-shadow(0 0 5px rgba(255,60,60,0.7))",
+            }:{
+              filter:"drop-shadow(0 0 3px rgba(72,120,255,0.4))",
+            },
           },
             React.createElement("path",{
-              d:"M16 27.5S3 19.5 3 12A6.5 6.5 0 0 1 16 9.2 6.5 6.5 0 0 1 29 12c0 7.5-13 15.5-13 15.5z",
-              fill:isAlive?"#e84040":"rgba(80,130,220,0.6)",
+              d:"M14 23.5C14 23.5 1.5 16 1.5 8.5a6 6 0 0 1 12-0.5 6 6 0 0 1 12 0.5C25.5 16 14 23.5 14 23.5z",
+              fill:isAlive?"#ff3030":"rgba(72,120,255,0.7)",
               style:{transition:"fill 0.8s ease"},
             })
           )
         )
       ),
 
-      // Info lado derecho
-      React.createElement("div",{style:{flex:1,minWidth:0}},
+      // Separador vertical
+      React.createElement("div",{style:{
+        width:"0.5px",height:80,
+        background:"rgba(255,255,255,0.07)",flexShrink:0,
+      }}),
 
-        // Status label
+      // Métricas
+      React.createElement("div",{style:{flex:1,minWidth:0,paddingLeft:4}},
+
+        // Label estado
         React.createElement("div",{style:{
           fontFamily:"'SF Mono','Courier New',monospace",
-          fontSize:7,letterSpacing:3,marginBottom:8,
-          color:isAlive?"rgba(220,80,80,0.55)":"rgba(100,150,255,0.45)",
+          fontSize:7,letterSpacing:3,marginBottom:6,
+          color:isAlive?"rgba(255,80,80,0.5)":"rgba(100,150,255,0.45)",
         }},
           dayExs.length===0
-            ?(lang==="en"?"REST DAY":"DESCANSO")
+            ?(lang==="en"?"// REST":"// DESCANSO")
             :isAlive
-              ?(lang==="en"?"HEART ALIVE":"CORAZÓN VIVO")
-              :(doneCount+"/"+dayExs.length+" "+(lang==="en"?"DONE":"HECHOS"))
+              ?(lang==="en"?"// ALIVE":"// VIVO")
+              :("// "+doneCount+"/"+dayExs.length)
         ),
 
-        // Edad CV
-        fitnessAge!=null?React.createElement("div",{style:{
-          display:"flex",alignItems:"baseline",gap:6,marginBottom:4,
+        // Número edad CV — grande
+        React.createElement("div",{style:{
+          display:"flex",alignItems:"flex-end",gap:5,marginBottom:2,
         }},
           React.createElement("span",{style:{
             fontFamily:"'Bebas Neue',cursive",
-            fontSize:52,lineHeight:0.9,letterSpacing:1,
-            color:isAlive?"rgba(240,100,100,0.95)":"rgba(140,180,255,0.85)",
+            fontSize:58,lineHeight:0.85,letterSpacing:0,
+            color:isAlive?"#ff5050":"rgba(130,175,255,0.9)",
             transition:"color 0.8s ease",
-            textShadow:isAlive?"0 0 20px rgba(220,50,50,0.3)":"0 0 20px rgba(72,120,255,0.2)",
-          }},fitnessAge),
-          React.createElement("div",{style:{paddingBottom:4}},
+            textShadow:isAlive?"0 0 30px rgba(255,60,60,0.25)":"0 0 20px rgba(72,120,255,0.2)",
+          }},fitnessAge!=null?fitnessAge:"—"),
+          fitnessAge!=null?React.createElement("div",{style:{paddingBottom:8}},
             React.createElement("div",{style:{
               fontFamily:"'SF Mono','Courier New',monospace",
-              fontSize:10,color:"rgba(255,255,255,0.3)",letterSpacing:1,lineHeight:1,marginBottom:2,
+              fontSize:10,color:"rgba(255,255,255,0.25)",letterSpacing:0.5,lineHeight:1.3,
             }},lang==="en"?"yrs":"años"),
             weeklyDelta!==null&&deltaAbs?React.createElement("div",{style:{
               fontFamily:"'SF Mono','Courier New',monospace",
-              fontSize:9,fontWeight:700,
-              color:isAlive?"rgba(220,80,80,0.6)":"rgba(100,150,255,0.55)",
+              fontSize:8,color:isAlive?"rgba(255,80,80,0.5)":"rgba(100,150,255,0.5)",
             }},deltaSign+deltaAbs):null
-          )
-        ):React.createElement("div",{style:{
-          fontFamily:"'Bebas Neue',cursive",fontSize:38,color:"rgba(255,255,255,0.15)",
-          marginBottom:4,
-        }},"—"),
+          ):null
+        ),
 
-        // Label NTNU
+        // EDAD CV label
         React.createElement("div",{style:{
           fontFamily:"'SF Mono','Courier New',monospace",
           fontSize:7,letterSpacing:2,
-          color:"rgba(255,255,255,0.15)",marginBottom:10,
-        }},lang==="en"?"CV AGE · NTNU":"EDAD CV · NTNU"),
+          color:"rgba(255,255,255,0.13)",marginBottom:8,
+        }},"EDAD CV · NTNU"),
 
         // ECG
-        React.createElement("svg",{width:90,height:16,viewBox:"0 0 90 16",fill:"none",style:{overflow:"visible"}},
+        React.createElement("svg",{width:100,height:14,viewBox:"0 0 100 14",fill:"none",
+          style:{overflow:"visible",display:"block"},
+        },
           React.createElement("polyline",{
-            points:"0,8 10,8 14,1 18,15 22,8 30,8 34,4 38,8 90,8",
-            stroke:isAlive?"rgba(220,60,60,0.5)":"rgba(72,120,255,0.25)",
+            points:"0,7 12,7 16,1 20,13 24,7 34,7 38,4 42,7 100,7",
+            stroke:isAlive?"rgba(255,60,60,0.45)":"rgba(72,120,255,0.2)",
             strokeWidth:"1.5",strokeLinecap:"round",strokeLinejoin:"round",
             style:isAlive?{animation:"ecgMove 0.8s linear infinite"}:{},
           })
