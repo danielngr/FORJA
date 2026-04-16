@@ -3479,28 +3479,27 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
 
       var step=1.4;
       xPos+=step;
-      if(xPos>W) xPos=0;
+      var wrapped=xPos>W;
+      if(wrapped) xPos=xPos-W;
 
       var curY=getY(xPos);
 
-      // Borrar zona adelante (efecto barrido)
-      ctx.clearRect(xPos,0,18,H);
+      // Borrar zona adelante del cursor
+      ctx.clearRect(xPos,0,22,H);
 
-      // Dibujar segmento
-      ctx.beginPath();
-      if(xPos<step+1){
-        ctx.moveTo(xPos,curY);
-      } else {
+      // Dibujar segmento (no dibujar si hubo wrap)
+      if(!wrapped){
+        ctx.beginPath();
         ctx.moveTo(xPos-step,prevY);
         ctx.lineTo(xPos,curY);
+        ctx.strokeStyle="rgba(255,50,50,0.95)";
+        ctx.lineWidth=1.6;
+        ctx.lineCap="round";
+        ctx.shadowColor="rgba(255,30,30,0.6)";
+        ctx.shadowBlur=4;
+        ctx.stroke();
+        ctx.shadowBlur=0;
       }
-      ctx.strokeStyle="rgba(255,50,50,0.95)";
-      ctx.lineWidth=1.6;
-      ctx.lineCap="round";
-      ctx.shadowColor="rgba(255,30,30,0.6)";
-      ctx.shadowBlur=4;
-      ctx.stroke();
-      ctx.shadowBlur=0;
 
       prevY=curY;
     }
@@ -3791,11 +3790,13 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
           fontSize:8,letterSpacing:2,marginBottom:10,
           color:isAlive?"rgba(255,120,120,0.9)":"rgba(140,185,255,0.75)",
         }},
-          dayExs.length===0
-            ?(lang==="en"?"REST DAY":"DÍA DE DESCANSO")
-            :isAlive
-              ?(lang==="en"?"HEART ALIVE ↑":"CORAZÓN ACTIVO ↑")
-              :(doneCount+"/"+dayExs.length+" "+(lang==="en"?"SETS DONE":"COMPLETADOS"))
+          testAlive
+            ?(lang==="en"?"HEART ALIVE ↑":"CORAZÓN ACTIVO ↑")
+            :dayExs.length===0
+              ?(lang==="en"?"REST DAY":"DESCANSO")
+              :isAlive
+                ?(lang==="en"?"HEART ALIVE ↑":"CORAZÓN ACTIVO ↑")
+                :(doneCount+"/"+dayExs.length+" "+(lang==="en"?"SETS DONE":"COMPLETADOS"))
         ),
 
         // Número grande
