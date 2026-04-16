@@ -3807,7 +3807,7 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
         React.createElement("div",{style:{
           fontFamily:"'SF Mono','Courier New',monospace",
           fontSize:8,letterSpacing:2,marginBottom:10,
-          color:isAlive?"rgba(255,120,120,0.9)":"rgba(140,185,255,0.75)",
+          color:isAlive?"rgba(255,140,140,1.0)":"rgba(160,200,255,0.9)",
         }},
           testAlive
             ?(lang==="en"?"HEART ALIVE ↑":"CORAZÓN ACTIVO ↑")
@@ -3834,13 +3834,13 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
           fitnessAge!=null?React.createElement("div",{style:{paddingBottom:6,marginLeft:2}},
             React.createElement("div",{style:{
               fontFamily:"'SF Mono','Courier New',monospace",
-              fontSize:11,color:"rgba(255,255,255,0.55)",
+              fontSize:11,color:"rgba(255,255,255,0.75)",
               letterSpacing:0.5,lineHeight:1.4,
             }},lang==="en"?"yrs":"años"),
             weeklyDelta!==null&&deltaAbs?React.createElement("div",{style:{
               fontFamily:"'SF Mono','Courier New',monospace",
               fontSize:9,
-              color:isAlive?"rgba(255,100,100,0.8)":"rgba(130,175,255,0.75)",
+              color:isAlive?"rgba(255,130,130,0.95)":"rgba(160,195,255,0.9)",
             }},deltaSign+deltaAbs):null
           ):null
         ),
@@ -3849,7 +3849,7 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
         React.createElement("div",{style:{
           fontFamily:"'SF Mono','Courier New',monospace",
           fontSize:7,letterSpacing:1.5,
-          color:"rgba(255,255,255,0.35)",marginBottom:10,
+          color:"rgba(255,255,255,0.55)",marginBottom:10,
         }},lang==="en"?"CARDIOVASCULAR AGE · NTNU":"EDAD CARDIOVASCULAR · NTNU"),
 
         // ECG delgado
