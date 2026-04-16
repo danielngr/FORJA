@@ -3425,86 +3425,86 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
   var ecgAnimRef=React.useRef(null);
   var ecgPosRef=React.useRef(0);
 
-  // ECG canvas — señal QRS real en tiempo real
+  // ECG canvas — barrido tipo monitor de hospital
   React.useEffect(function(){
     var canvas=ecgRef.current;
     if(!canvas) return;
     var ctx=canvas.getContext("2d");
-    var W=canvas.offsetWidth||200;
-    var H=18;
     var dpr=window.devicePixelRatio||1;
-    canvas.width=W*dpr;
-    canvas.height=H*dpr;
+    var W=canvas.offsetWidth||200;
+    var H=20;
+    canvas.width=Math.round(W*dpr);
+    canvas.height=Math.round(H*dpr);
     ctx.scale(dpr,dpr);
 
-    // Señal QRS — array de puntos normalizados [-1,1]
-    var QRS=[
-      0,0,0,0,0,0,0,0,0,0,
-      0,0,0.05,0.1,0.15,0.1,0.05,0,  // P wave
-      0,0,0,0,
-      -0.1,-0.25,  // Q
-      0.2,0.5,1.0,1.8,1.0,0.5,0.2,  // R spike
-      -0.5,-0.8,-0.5,-0.25,-0.1,  // S
-      0,0,0.05,0.15,0.2,0.15,0.05,0,  // T wave
-      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    // Señal QRS: 1 ciclo completo en px
+    // [x_norm 0-1, y_norm -1 a 1]
+    var BEAT=[
+      [0,0],[0.08,0],[0.10,0.08],[0.12,0.12],[0.14,0.08],[0.16,0],  // P
+      [0.20,0],[0.22,-0.18],                                          // Q
+      [0.24,0.15],[0.26,0.7],[0.28,1.0],[0.30,0.7],[0.32,0.15],     // R
+      [0.34,-0.35],[0.36,-0.5],[0.38,-0.3],[0.40,-0.1],              // S
+      [0.44,0],[0.48,0.12],[0.52,0.18],[0.56,0.12],[0.60,0],        // T
+      [1.0,0]                                                         // flatline
     ];
-    var TOTAL=QRS.length;
-    var speed=2.2; // pixels por frame
-    var trail=[];
-    var maxTrail=W;
+    var CYCLE_PX=120; // pixels por latido
+    var xPos=0;
+    var prevY=H/2;
 
-    function draw(){
-      ecgAnimRef.current=requestAnimationFrame(draw);
+    function getY(x){
+      var xn=(x%CYCLE_PX)/CYCLE_PX;
+      for(var i=1;i<BEAT.length;i++){
+        if(xn<=BEAT[i][0]){
+          var t=(xn-BEAT[i-1][0])/(BEAT[i][0]-BEAT[i-1][0]);
+          var yn=BEAT[i-1][1]+(BEAT[i][1]-BEAT[i-1][1])*t;
+          return H/2-yn*(H*0.42);
+        }
+      }
+      return H/2;
+    }
+
+    function loop(){
+      ecgAnimRef.current=requestAnimationFrame(loop);
+
       if(!isAliveRef.current){
         ctx.clearRect(0,0,W,H);
-        // Línea plana punteada cuando inactivo
         ctx.beginPath();
-        ctx.setLineDash([3,6]);
-        ctx.moveTo(0,H/2);
-        ctx.lineTo(W,H/2);
-        ctx.strokeStyle="rgba(100,160,255,0.25)";
-        ctx.lineWidth=1;
-        ctx.stroke();
+        ctx.setLineDash([2,5]);
+        ctx.moveTo(0,H/2);ctx.lineTo(W,H/2);
+        ctx.strokeStyle="rgba(100,150,255,0.3)";
+        ctx.lineWidth=1;ctx.stroke();
         ctx.setLineDash([]);
         return;
       }
 
-      // Avanzar posición
-      ecgPosRef.current=(ecgPosRef.current+speed);
-      var xNew=ecgPosRef.current%W;
+      var step=1.4;
+      xPos+=step;
+      if(xPos>W) xPos=0;
 
-      // Obtener valor de la señal
-      var idx=Math.floor(ecgPosRef.current/speed)%TOTAL;
-      var val=QRS[idx];
-      var yNew=H/2-val*(H*0.38);
+      var curY=getY(xPos);
 
-      trail.push({x:xNew,y:yNew});
-      if(trail.length>maxTrail) trail.shift();
+      // Borrar zona adelante (efecto barrido)
+      ctx.clearRect(xPos,0,18,H);
 
-      // Limpiar
-      ctx.clearRect(0,0,W,H);
-
-      // Borrador justo delante del punto actual — efecto osciloscópio
-      var eraseW=W*0.12;
-      ctx.clearRect(xNew,0,eraseW,H);
-
-      if(trail.length<2) return;
-
-      // Dibujar trail con fade
-      for(var i=1;i<trail.length;i++){
-        var age=i/trail.length;
-        // Corte cuando hay wrap
-        if(Math.abs(trail[i].x-trail[i-1].x)>W*0.5) continue;
-        ctx.beginPath();
-        ctx.moveTo(trail[i-1].x,trail[i-1].y);
-        ctx.lineTo(trail[i].x,trail[i].y);
-        ctx.strokeStyle="rgba(255,50,50,"+(age*0.9).toFixed(2)+")";
-        ctx.lineWidth=age>0.8?1.8:1.2;
-        ctx.lineCap="round";
-        ctx.stroke();
+      // Dibujar segmento
+      ctx.beginPath();
+      if(xPos<step+1){
+        ctx.moveTo(xPos,curY);
+      } else {
+        ctx.moveTo(xPos-step,prevY);
+        ctx.lineTo(xPos,curY);
       }
+      ctx.strokeStyle="rgba(255,50,50,0.95)";
+      ctx.lineWidth=1.6;
+      ctx.lineCap="round";
+      ctx.shadowColor="rgba(255,30,30,0.6)";
+      ctx.shadowBlur=4;
+      ctx.stroke();
+      ctx.shadowBlur=0;
+
+      prevY=curY;
     }
-    draw();
+    loop();
     return function(){cancelAnimationFrame(ecgAnimRef.current);};
   },[isAlive]);
 
