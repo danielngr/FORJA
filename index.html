@@ -32,6 +32,12 @@ input[type=number]{-moz-appearance:textfield;}
   42%{transform:scale(1.1);}
   56%{transform:scale(1);}
 }
+@keyframes ecgDraw{
+  0%{stroke-dashoffset:400;stroke-dasharray:400}
+  60%{stroke-dashoffset:0;stroke-dasharray:400}
+  61%{stroke-dashoffset:400;stroke-dasharray:400}
+  100%{stroke-dashoffset:400;stroke-dasharray:400}
+}
 @keyframes ecgScroll{
   0%{transform:translateX(0)}
   100%{transform:translateX(-50%)}
@@ -3741,16 +3747,24 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
         }},lang==="en"?"CARDIOVASCULAR AGE · NTNU":"EDAD CARDIOVASCULAR · NTNU"),
 
         // ECG delgado
-        React.createElement("div",{style:{overflow:"hidden",height:14,borderRadius:2}},
+        React.createElement("div",{style:{position:"relative",height:18,overflow:"hidden"}},
           React.createElement("svg",{
-            width:"140%",height:14,viewBox:"0 0 160 14",preserveAspectRatio:"none",
-            fill:"none",
-            style:isAlive?{display:"block",animation:"ecgScroll 1.2s linear infinite"}:{display:"block"},
+            width:"100%",height:18,viewBox:"0 0 200 18",preserveAspectRatio:"none",fill:"none",
           },
-            React.createElement("polyline",{
-              points:"0,7 10,7 14,1 18,13 22,7 32,7 36,4 40,7 80,7 90,7 94,1 98,13 102,7 112,7 116,4 120,7 160,7",
-              stroke:isAlive?"rgba(255,60,60,0.7)":"rgba(100,160,255,0.5)",
-              strokeWidth:"1.5",strokeLinecap:"round",strokeLinejoin:"round",
+            // Path ECG con señal realista — QRS complejo
+            React.createElement("path",{
+              id:"ecgPath",
+              d:"M0,9 L30,9 L34,9 L36,5 L38,2 L40,16 L42,4 L44,9 L48,9 L52,7 L56,9 L90,9 L120,9 L124,9 L126,5 L128,2 L130,16 L132,4 L134,9 L138,9 L142,7 L146,9 L200,9",
+              stroke:isAlive?"rgba(255,55,55,0.85)":"rgba(100,160,255,0.45)",
+              strokeWidth:"1.5",fill:"none",strokeLinecap:"round",strokeLinejoin:"round",
+              style:isAlive?{
+                strokeDasharray:400,
+                strokeDashoffset:400,
+                animation:"ecgDraw 1.5s linear infinite",
+              }:{
+                strokeDasharray:"4 6",
+                opacity:0.4,
+              },
             })
           )
         )
