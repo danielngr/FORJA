@@ -3432,7 +3432,7 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
     var ctx=canvas.getContext("2d");
     var dpr=window.devicePixelRatio||1;
     var W=canvas.offsetWidth||200;
-    var H=20;
+    var H=32;
     canvas.width=Math.round(W*dpr);
     canvas.height=Math.round(H*dpr);
     ctx.scale(dpr,dpr);
@@ -3463,7 +3463,7 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
         if(xn<=BEAT[i][0]){
           var t=(xn-BEAT[i-1][0])/(BEAT[i][0]-BEAT[i-1][0]);
           var yn=BEAT[i-1][1]+(BEAT[i][1]-BEAT[i-1][1])*t;
-          return H/2-yn*(H*0.42);
+          return H/2-yn*(H*0.44);
         }
       }
       return H/2;
@@ -3842,7 +3842,7 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
         // ECG delgado
         React.createElement("canvas",{
           ref:ecgRef,
-          style:{display:"block",width:"100%",height:18,borderRadius:2},
+          style:{display:"block",width:"100%",height:32,borderRadius:2},
         })
       )
     )
