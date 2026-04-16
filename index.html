@@ -3595,130 +3595,157 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
     window.dispatchEvent(new CustomEvent("forja:toggleDay",{detail:{sel:sel}}));
   };
   return React.createElement("div",{
+    onClick:function(){setTestAlive(function(v){return !v;});},
     style:{
-      width:"100%",height:156,borderRadius:20,position:"relative",
-      overflow:"hidden",
-      background:"#06090f",
-      border:"0.5px solid rgba(255,255,255,0.08)",
+      width:"100%",height:148,borderRadius:20,position:"relative",
+      overflow:"hidden",cursor:"pointer",
+      background:isAlive
+        ?"linear-gradient(135deg,#12060a 0%,#1a080c 100%)"
+        :"linear-gradient(135deg,#060a14 0%,#08101e 100%)",
+      transition:"background 1s ease",
     }},
 
-    // Fog canvas
+    // Fog
     React.createElement("canvas",{ref:fogRef,style:{
       position:"absolute",inset:0,width:"100%",height:"100%",
-      pointerEvents:"none",opacity:isAlive?0:0.5,transition:"opacity 1.2s ease",
+      pointerEvents:"none",opacity:isAlive?0:0.4,transition:"opacity 1.2s ease",
     }}),
 
-    // Layout
+    // Glow radial de fondo
+    React.createElement("div",{style:{
+      position:"absolute",top:-40,left:-40,
+      width:220,height:220,borderRadius:"50%",
+      background:isAlive
+        ?"radial-gradient(circle,rgba(255,40,40,0.1) 0%,transparent 65%)"
+        :"radial-gradient(circle,rgba(40,90,255,0.07) 0%,transparent 65%)",
+      transition:"background 1s ease",
+      pointerEvents:"none",
+    }}),
+
     React.createElement("div",{style:{
       position:"relative",zIndex:1,height:"100%",
-      display:"flex",alignItems:"center",padding:"0 18px",gap:16,
+      display:"flex",alignItems:"center",padding:"0 22px",gap:22,
     }},
 
-      // Anillo compacto tipo Apple Watch
-      React.createElement("div",{style:{position:"relative",flexShrink:0,width:80,height:80}},
-        React.createElement("svg",{width:80,height:80,viewBox:"0 0 80 80"},
+      // Corazón con anillo delgado tipo AW
+      React.createElement("div",{style:{position:"relative",width:76,height:76,flexShrink:0}},
+
+        // SVG anillo
+        React.createElement("svg",{
+          width:76,height:76,viewBox:"0 0 76 76",
+          style:{position:"absolute",inset:0},
+        },
           React.createElement("defs",null,
-            React.createElement("linearGradient",{id:"rg",x1:"0%",y1:"0%",x2:"100%",y2:"0%"},
-              React.createElement("stop",{offset:"0%",stopColor:isAlive?"#ff4d4d":"#6090ff"}),
-              React.createElement("stop",{offset:"100%",stopColor:isAlive?"#ff2020":"#3355ee"})
+            React.createElement("linearGradient",{id:"rg2",x1:"0%",y1:"0%",x2:"0%",y2:"100%"},
+              React.createElement("stop",{offset:"0%",stopColor:isAlive?"#ff6b6b":"#6b9fff"}),
+              React.createElement("stop",{offset:"100%",stopColor:isAlive?"#e8001c":"#0055ff"})
             )
           ),
-          // Track
-          React.createElement("circle",{cx:40,cy:40,r:34,fill:"none",
-            stroke:isAlive?"rgba(255,50,50,0.12)":"rgba(72,120,255,0.18)",strokeWidth:7}),
-          // Fill
-          React.createElement("circle",{cx:40,cy:40,r:34,fill:"none",
-            stroke:"url(#rg)",strokeWidth:7,strokeLinecap:"round",
-            strokeDasharray:213.6,
-            strokeDashoffset:dayExs.length>0?Math.max(6,213.6*(1-doneCount/dayExs.length)):213.6,
-            transform:"rotate(-90 40 40)",
-            style:{transition:"stroke-dashoffset 0.9s cubic-bezier(0.34,1.56,0.64,1)"},
+          // Track muy sutil
+          React.createElement("circle",{cx:38,cy:38,r:32,fill:"none",
+            stroke:isAlive?"rgba(255,30,30,0.08)":"rgba(40,100,255,0.08)",
+            strokeWidth:4}),
+          // Anillo delgado de progreso
+          React.createElement("circle",{cx:38,cy:38,r:32,fill:"none",
+            stroke:"url(#rg2)",strokeWidth:3.5,strokeLinecap:"round",
+            strokeDasharray:201.1,
+            strokeDashoffset:dayExs.length>0?Math.max(4,201.1*(1-doneCount/dayExs.length)):201.1,
+            transform:"rotate(-90 38 38)",
+            style:{transition:"stroke-dashoffset 1s cubic-bezier(0.34,1.56,0.64,1)"},
           })
         ),
-        // Corazón SVG plano en el centro
+
+        // Corazón SVG minimalista en el centro
         React.createElement("div",{style:{
           position:"absolute",inset:0,
           display:"flex",alignItems:"center",justifyContent:"center",
         }},
           React.createElement("svg",{
-            width:28,height:26,viewBox:"0 0 28 26",fill:"none",
+            width:30,height:28,viewBox:"0 0 30 28",
             style:isAlive?{
-              animation:"heartbeat 0.75s ease-in-out infinite",
-              filter:"drop-shadow(0 0 5px rgba(255,60,60,0.7))",
+              animation:"heartbeat 0.8s ease-in-out infinite",
+              filter:"drop-shadow(0 0 8px rgba(255,30,30,0.8)) drop-shadow(0 0 16px rgba(255,30,30,0.4))",
             }:{
-              filter:"drop-shadow(0 0 3px rgba(72,120,255,0.4))",
+              filter:"drop-shadow(0 0 4px rgba(60,120,255,0.5))",
+              opacity:0.7,
             },
           },
+            // Corazón limpio tipo SF Symbol
             React.createElement("path",{
-              d:"M14 23.5C14 23.5 1.5 16 1.5 8.5a6 6 0 0 1 12-0.5 6 6 0 0 1 12 0.5C25.5 16 14 23.5 14 23.5z",
-              fill:isAlive?"#ff3030":"rgba(80,140,255,0.85)",
+              d:"M15 25.5C15 25.5 2 17.5 2 9.5C2 5.9 4.9 3 8.5 3C10.8 3 12.8 4.1 15 6.2C17.2 4.1 19.2 3 21.5 3C25.1 3 28 5.9 28 9.5C28 17.5 15 25.5 15 25.5Z",
+              fill:isAlive?"#ff2d2d":"#4a8cff",
               style:{transition:"fill 0.8s ease"},
             })
           )
         )
       ),
 
-      // Separador vertical
+      // Divisor
       React.createElement("div",{style:{
-        width:"0.5px",height:80,
-        background:"rgba(255,255,255,0.07)",flexShrink:0,
+        width:1,height:72,flexShrink:0,
+        background:"linear-gradient(180deg,transparent,rgba(255,255,255,0.08),transparent)",
       }}),
 
       // Métricas
-      React.createElement("div",{style:{flex:1,minWidth:0,paddingLeft:4}},
+      React.createElement("div",{style:{flex:1,minWidth:0}},
 
-        // Label estado
+        // Status
         React.createElement("div",{style:{
           fontFamily:"'SF Mono','Courier New',monospace",
-          fontSize:7,letterSpacing:3,marginBottom:6,
-          color:isAlive?"rgba(255,80,80,0.6)":"rgba(120,170,255,0.6)",
+          fontSize:8,letterSpacing:2,marginBottom:10,
+          color:isAlive?"rgba(255,100,100,0.7)":"rgba(100,160,255,0.55)",
         }},
           dayExs.length===0
-            ?(lang==="en"?"// REST":"// DESCANSO")
+            ?(lang==="en"?"REST DAY":"DÍA DE DESCANSO")
             :isAlive
-              ?(lang==="en"?"// ALIVE":"// VIVO")
-              :("// "+doneCount+"/"+dayExs.length)
+              ?(lang==="en"?"HEART ALIVE ↑":"CORAZÓN ACTIVO ↑")
+              :(doneCount+"/"+dayExs.length+" "+(lang==="en"?"SETS DONE":"COMPLETADOS"))
         ),
 
-        // Número edad CV — grande
+        // Número grande
         React.createElement("div",{style:{
-          display:"flex",alignItems:"flex-end",gap:5,marginBottom:2,
+          display:"flex",alignItems:"flex-end",gap:4,marginBottom:2,lineHeight:1,
         }},
           React.createElement("span",{style:{
             fontFamily:"'Bebas Neue',cursive",
-            fontSize:58,lineHeight:0.85,letterSpacing:0,
-            color:isAlive?"#ff5050":"rgba(160,200,255,0.95)",
+            fontSize:56,lineHeight:0.88,
+            color:isAlive?"#ff4444":"rgba(150,195,255,0.95)",
             transition:"color 0.8s ease",
-            textShadow:isAlive?"0 0 30px rgba(255,60,60,0.25)":"0 0 20px rgba(72,120,255,0.2)",
+            textShadow:isAlive
+              ?"0 0 40px rgba(255,30,30,0.4),0 0 80px rgba(255,30,30,0.15)"
+              :"0 0 30px rgba(72,120,255,0.25)",
           }},fitnessAge!=null?fitnessAge:"—"),
-          fitnessAge!=null?React.createElement("div",{style:{paddingBottom:8}},
+          fitnessAge!=null?React.createElement("div",{style:{paddingBottom:6,marginLeft:2}},
             React.createElement("div",{style:{
               fontFamily:"'SF Mono','Courier New',monospace",
-              fontSize:10,color:"rgba(255,255,255,0.25)",letterSpacing:0.5,lineHeight:1.3,
+              fontSize:11,color:"rgba(255,255,255,0.3)",
+              letterSpacing:0.5,lineHeight:1.4,
             }},lang==="en"?"yrs":"años"),
             weeklyDelta!==null&&deltaAbs?React.createElement("div",{style:{
               fontFamily:"'SF Mono','Courier New',monospace",
-              fontSize:8,color:isAlive?"rgba(255,80,80,0.5)":"rgba(100,150,255,0.5)",
+              fontSize:9,
+              color:isAlive?"rgba(255,80,80,0.6)":"rgba(100,160,255,0.55)",
             }},deltaSign+deltaAbs):null
           ):null
         ),
 
-        // EDAD CV label
+        // Sublabel
         React.createElement("div",{style:{
           fontFamily:"'SF Mono','Courier New',monospace",
-          fontSize:7,letterSpacing:2,
-          color:"rgba(255,255,255,0.13)",marginBottom:8,
-        }},"EDAD CV · NTNU"),
+          fontSize:7,letterSpacing:1.5,
+          color:"rgba(255,255,255,0.18)",marginBottom:10,
+        }},lang==="en"?"CARDIOVASCULAR AGE · NTNU":"EDAD CARDIOVASCULAR · NTNU"),
 
-        // ECG
-        React.createElement("svg",{width:100,height:14,viewBox:"0 0 100 14",fill:"none",
-          style:{overflow:"visible",display:"block"},
+        // ECG delgado
+        React.createElement("svg",{
+          width:"100%",height:14,viewBox:"0 0 110 14",preserveAspectRatio:"none",
+          fill:"none",style:{display:"block"},
         },
           React.createElement("polyline",{
-            points:"0,7 12,7 16,1 20,13 24,7 34,7 38,4 42,7 100,7",
-            stroke:isAlive?"rgba(255,60,60,0.55)":"rgba(100,150,255,0.4)",
+            points:"0,7 14,7 18,1 22,13 26,7 36,7 40,4 44,7 110,7",
+            stroke:isAlive?"rgba(255,50,50,0.5)":"rgba(80,140,255,0.3)",
             strokeWidth:"1.5",strokeLinecap:"round",strokeLinejoin:"round",
-            style:isAlive?{animation:"ecgMove 0.8s linear infinite"}:{},
+            style:isAlive?{animation:"ecgMove 0.85s linear infinite"}:{},
           })
         )
       )
