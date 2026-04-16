@@ -3405,7 +3405,7 @@ function translateMuscle(name, lang){
   }
   return name; // fallback: return original
 }
-function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ageDiff,weeklyDelta,deltaSign,deltaColor,deltaAbs}){
+function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ageDiff,weeklyDelta,deltaSign,deltaColor,deltaAbs,onShowNTNU}){
   var canvasRef=React.useRef(null);
   var fogRef=React.useRef(null);
   var tRef=React.useRef(0);
@@ -3419,7 +3419,6 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
   var dayExs=day?(day.ex||[]):[];
   var doneCount=dayExs.filter(function(x){return done[sel+"-"+x.id];}).length;
   var[testAlive,setTestAlive]=React.useState(false);
-  var[showInfo,setShowInfo]=React.useState(false);
   var isAlive=(dayExs.length>0&&doneCount===dayExs.length)||testAlive;
   isAliveRef.current=isAlive;
   var ecgRef=React.useRef(null);
@@ -3710,7 +3709,7 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
     window.dispatchEvent(new CustomEvent("forja:toggleDay",{detail:{sel:sel}}));
   };
   return React.createElement("div",{
-    onClick:function(){if(!showInfo){setTestAlive(function(v){return !v;});}},
+    onClick:function(){setTestAlive(function(v){return !v;});},
     style:{
       width:"100%",height:148,borderRadius:20,position:"relative",
       overflow:"hidden",cursor:"pointer",
@@ -3854,7 +3853,7 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
             fontSize:7,letterSpacing:1.5,color:"rgba(255,255,255,0.55)",
           }},lang==="en"?"CV AGE · NTNU":"EDAD CV · NTNU"),
           React.createElement("div",{
-            onClick:function(e){e.stopPropagation();e.preventDefault();setShowInfo(function(v){return !v;});},
+            onClick:function(e){e.stopPropagation();e.preventDefault();if(onShowNTNU)onShowNTNU();},
             style:{
               width:18,height:18,borderRadius:"50%",flexShrink:0,
               background:"rgba(72,120,255,0.15)",
@@ -3868,42 +3867,7 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
           },"?")
         ),
 
-        // Tooltip NTNU
-        showInfo?React.createElement("div",{
-          onClick:function(e){e.stopPropagation();e.preventDefault();setShowInfo(false);},
-          style:{
-            position:"fixed",inset:0,zIndex:9999,
-            background:"rgba(0,0,0,0.92)",backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)",
-            display:"flex",alignItems:"center",justifyContent:"center",
-            padding:"0 20px",
-          }},
-          React.createElement("div",{
-            onClick:function(e){e.stopPropagation();},
-            style:{
-              width:"100%",maxWidth:360,
-              background:"#080c18",
-              border:"1px solid rgba(72,120,255,0.4)",
-              borderTop:"1px solid rgba(130,175,255,0.35)",
-              borderRadius:18,padding:"20px",
-              boxShadow:"0 0 60px rgba(0,0,0,0.8)",
-            }
-          },
-          React.createElement("div",{style:{
-            fontFamily:"'SF Mono','Courier New',monospace",
-            fontSize:8,letterSpacing:2,color:"rgba(130,175,255,0.8)",marginBottom:10,
-          }},lang==="en"?"// HOW IT WORKS":"// CÓMO FUNCIONA"),
-          React.createElement("div",{style:{
-            fontSize:12,color:"rgba(240,242,245,0.8)",lineHeight:1.65,marginBottom:10,
-          }},lang==="en"
-            ?"Your cardiovascular age is estimated from VO2max using the NTNU model (Nes et al. 2014). VO2max is calculated from your age, BMI, and how often you complete workouts. More completed days = better VO2max = lower CV age than your real age."
-            :"Tu edad cardiovascular se estima a partir de tu VO2max con el modelo NTNU (Nes et al. 2014). El VO2max se calcula con tu edad, IMC y frecuencia de entrenos completos. Más días completos = mejor VO2max = edad CV menor que tu edad real."
-          ),
-          React.createElement("div",{style:{
-            fontFamily:"'SF Mono','Courier New',monospace",
-            fontSize:7,color:"rgba(255,255,255,0.2)",letterSpacing:1,marginTop:10,
-          }},"Nes et al. (2014) · NTNU · n=4,631")
-          )
-        ):null,
+
 
         // ECG delgado
         React.createElement("canvas",{
@@ -4644,6 +4608,7 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
   var e=React.createElement;
   var[showAthletes,setShowAthletes]=React.useState(false);
   var[showProfile,setShowProfile]=React.useState(false);
+  var[showNTNU,setShowNTNU]=React.useState(false);
   var now=new Date();
   var dow=now.getDay();
   var tdi=dow===0?6:dow-1;
@@ -4809,6 +4774,7 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
 
       // Rectángulo HOY con corazón — igual al boceto
       e(FrozenHeartBanner,{day:(sel!==undefined?routine&&routine[sel]:todayR),done:done,sel:(sel!==undefined?sel:tdi),lang:lang,mono:mono,compact:false,
+        onShowNTNU:function(){setShowNTNU(true);},
         onStart:null,fitnessAge:fitnessAge,ageDiff:ageDiff,weeklyDelta:weeklyDelta,
         deltaSign:deltaSign,deltaColor:deltaColor,deltaAbs:deltaAbs}),
 
@@ -4996,6 +4962,37 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
       )
     )
 ,
+    showNTNU&&e("div",{
+      onClick:function(){setShowNTNU(false);},
+      style:{position:"fixed",inset:0,zIndex:9999,
+        background:"rgba(0,0,0,0.85)",backdropFilter:"blur(6px)",WebkitBackdropFilter:"blur(6px)",
+        display:"flex",alignItems:"center",justifyContent:"center",padding:"0 20px"}},
+      e("div",{
+        onClick:function(ev){ev.stopPropagation();},
+        style:{width:"100%",maxWidth:360,background:"#0a0e1a",
+          border:"1px solid rgba(72,120,255,0.35)",
+          borderTop:"1px solid rgba(130,175,255,0.4)",
+          borderRadius:18,padding:"22px",
+          boxShadow:"0 0 80px rgba(0,0,0,0.9)"}},
+        e("div",{style:{fontFamily:"'SF Mono','Courier New',monospace",
+          fontSize:8,letterSpacing:3,color:"rgba(130,175,255,0.8)",marginBottom:12}},
+          lang==="en"?"// HOW CV AGE WORKS":"// CÓMO FUNCIONA LA EDAD CV"),
+        e("div",{style:{fontSize:13,color:"rgba(240,242,245,0.85)",lineHeight:1.7,marginBottom:14}},
+          lang==="en"
+            ?"Your cardiovascular age is estimated from VO2max using the NTNU model (Nes et al. 2014). VO2max is calculated from your age, BMI and training frequency. More completed days = better VO2max = lower CV age. A CV age lower than your real age means your heart is in better shape than average."
+            :"Tu edad cardiovascular se estima a partir de tu VO2max con el modelo NTNU (Nes et al. 2014). El VO2max se calcula con tu edad, IMC y frecuencia de entrenos completos. Más días completos = mejor VO2max = menor edad CV. Una edad CV menor que la real significa que tu corazón está en mejor forma que el promedio."
+        ),
+        e("div",{style:{fontFamily:"'SF Mono','Courier New',monospace",
+          fontSize:7,color:"rgba(255,255,255,0.2)",letterSpacing:1,marginBottom:16}},
+          "Nes et al. (2014) · NTNU Norway · n=4,631"),
+        e("button",{onClick:function(){setShowNTNU(false);},style:{
+          width:"100%",padding:"12px",borderRadius:12,border:"none",cursor:"pointer",
+          background:"rgba(72,120,255,0.15)",
+          color:"rgba(130,175,255,0.9)",
+          fontFamily:"'SF Mono','Courier New',monospace",fontSize:10,letterSpacing:2}},
+          lang==="en"?"CLOSE":"CERRAR")
+      )
+    ),
     showProfile&&e(ProfileSheet,{
       show:showProfile,
       onClose:function(){setShowProfile(false);},
