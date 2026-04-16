@@ -3419,6 +3419,7 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
   var dayExs=day?(day.ex||[]):[];
   var doneCount=dayExs.filter(function(x){return done[sel+"-"+x.id];}).length;
   var[testAlive,setTestAlive]=React.useState(false);
+  var[showInfo,setShowInfo]=React.useState(false);
   var isAlive=(dayExs.length>0&&doneCount===dayExs.length)||testAlive;
   isAliveRef.current=isAlive;
   var ecgRef=React.useRef(null);
@@ -3717,6 +3718,7 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
         ?"linear-gradient(135deg,#12060a 0%,#1a080c 100%)"
         :"linear-gradient(135deg,#060a14 0%,#08101e 100%)",
       transition:"background 1s ease",
+      position:"relative",
     }},
 
     // Fog
