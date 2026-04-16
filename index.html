@@ -3873,7 +3873,7 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
           onClick:function(e){e.stopPropagation();e.preventDefault();setShowInfo(false);},
           style:{
             position:"fixed",inset:0,zIndex:9999,
-            background:"rgba(0,0,0,0.75)",
+            background:"rgba(0,0,0,0.92)",backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)",
             display:"flex",alignItems:"center",justifyContent:"center",
             padding:"0 20px",
           }},
@@ -3881,8 +3881,8 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
             onClick:function(e){e.stopPropagation();},
             style:{
               width:"100%",maxWidth:360,
-              background:"#0a0e1a",
-              border:"1px solid rgba(72,120,255,0.3)",
+              background:"#080c18",
+              border:"1px solid rgba(72,120,255,0.4)",
               borderTop:"1px solid rgba(130,175,255,0.35)",
               borderRadius:18,padding:"20px",
               boxShadow:"0 0 60px rgba(0,0,0,0.8)",
