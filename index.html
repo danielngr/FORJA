@@ -3457,13 +3457,26 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
     var xPos=0;
     var prevY=H/2;
 
+    // Variación sutil en amplitud y timing por latido
+    var beatCount=0;
+    var beatAmp=1.0;
+    var prevCycle=-1;
     function getY(x){
+      var cycle=Math.floor(x/CYCLE_PX);
+      if(cycle!==prevCycle){
+        prevCycle=cycle;
+        beatCount++;
+        // Variación aleatoria suave en amplitud ±15%
+        beatAmp=0.85+Math.random()*0.30;
+        // Cada ~5 latidos uno más fuerte
+        if(beatCount%5===0) beatAmp=1.15+Math.random()*0.15;
+      }
       var xn=(x%CYCLE_PX)/CYCLE_PX;
       for(var i=1;i<BEAT.length;i++){
         if(xn<=BEAT[i][0]){
           var t=(xn-BEAT[i-1][0])/(BEAT[i][0]-BEAT[i-1][0]);
           var yn=BEAT[i-1][1]+(BEAT[i][1]-BEAT[i-1][1])*t;
-          return H/2-yn*(H*0.44);
+          return H/2-yn*(H*0.44)*beatAmp;
         }
       }
       return H/2;
