@@ -3408,7 +3408,8 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
 
   var dayExs=day?(day.ex||[]):[];
   var doneCount=dayExs.filter(function(x){return done[sel+"-"+x.id];}).length;
-  var isAlive=dayExs.length>0&&doneCount===dayExs.length;
+  var[testAlive,setTestAlive]=React.useState(false);
+  var isAlive=(dayExs.length>0&&doneCount===dayExs.length)||testAlive;
   isAliveRef.current=isAlive;
 
   React.useEffect(function(){
@@ -3618,13 +3619,13 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
         React.createElement("svg",{width:80,height:80,viewBox:"0 0 80 80"},
           React.createElement("defs",null,
             React.createElement("linearGradient",{id:"rg",x1:"0%",y1:"0%",x2:"100%",y2:"0%"},
-              React.createElement("stop",{offset:"0%",stopColor:isAlive?"#ff4d4d":"#4878ff"}),
-              React.createElement("stop",{offset:"100%",stopColor:isAlive?"#ff2020":"#2244cc"})
+              React.createElement("stop",{offset:"0%",stopColor:isAlive?"#ff4d4d":"#6090ff"}),
+              React.createElement("stop",{offset:"100%",stopColor:isAlive?"#ff2020":"#3355ee"})
             )
           ),
           // Track
           React.createElement("circle",{cx:40,cy:40,r:34,fill:"none",
-            stroke:isAlive?"rgba(255,50,50,0.1)":"rgba(40,80,200,0.1)",strokeWidth:7}),
+            stroke:isAlive?"rgba(255,50,50,0.12)":"rgba(72,120,255,0.18)",strokeWidth:7}),
           // Fill
           React.createElement("circle",{cx:40,cy:40,r:34,fill:"none",
             stroke:"url(#rg)",strokeWidth:7,strokeLinecap:"round",
@@ -3650,7 +3651,7 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
           },
             React.createElement("path",{
               d:"M14 23.5C14 23.5 1.5 16 1.5 8.5a6 6 0 0 1 12-0.5 6 6 0 0 1 12 0.5C25.5 16 14 23.5 14 23.5z",
-              fill:isAlive?"#ff3030":"rgba(72,120,255,0.7)",
+              fill:isAlive?"#ff3030":"rgba(80,140,255,0.85)",
               style:{transition:"fill 0.8s ease"},
             })
           )
@@ -3670,7 +3671,7 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
         React.createElement("div",{style:{
           fontFamily:"'SF Mono','Courier New',monospace",
           fontSize:7,letterSpacing:3,marginBottom:6,
-          color:isAlive?"rgba(255,80,80,0.5)":"rgba(100,150,255,0.45)",
+          color:isAlive?"rgba(255,80,80,0.6)":"rgba(120,170,255,0.6)",
         }},
           dayExs.length===0
             ?(lang==="en"?"// REST":"// DESCANSO")
@@ -3686,7 +3687,7 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
           React.createElement("span",{style:{
             fontFamily:"'Bebas Neue',cursive",
             fontSize:58,lineHeight:0.85,letterSpacing:0,
-            color:isAlive?"#ff5050":"rgba(130,175,255,0.9)",
+            color:isAlive?"#ff5050":"rgba(160,200,255,0.95)",
             transition:"color 0.8s ease",
             textShadow:isAlive?"0 0 30px rgba(255,60,60,0.25)":"0 0 20px rgba(72,120,255,0.2)",
           }},fitnessAge!=null?fitnessAge:"—"),
@@ -3715,7 +3716,7 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
         },
           React.createElement("polyline",{
             points:"0,7 12,7 16,1 20,13 24,7 34,7 38,4 42,7 100,7",
-            stroke:isAlive?"rgba(255,60,60,0.45)":"rgba(72,120,255,0.2)",
+            stroke:isAlive?"rgba(255,60,60,0.55)":"rgba(100,150,255,0.4)",
             strokeWidth:"1.5",strokeLinecap:"round",strokeLinejoin:"round",
             style:isAlive?{animation:"ecgMove 0.8s linear infinite"}:{},
           })
