@@ -3872,13 +3872,22 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
         showInfo?React.createElement("div",{
           onClick:function(e){e.stopPropagation();e.preventDefault();setShowInfo(false);},
           style:{
-            position:"fixed",top:260,left:16,right:16,zIndex:9999,
-            background:"rgba(8,12,24,0.98)",
-            border:"1px solid rgba(72,120,255,0.3)",
-            borderTop:"1px solid rgba(130,175,255,0.35)",
-            borderRadius:16,padding:"16px",
-            boxShadow:"0 8px 40px rgba(0,0,0,0.8)",
+            position:"fixed",inset:0,zIndex:9999,
+            background:"rgba(0,0,0,0.75)",
+            display:"flex",alignItems:"center",justifyContent:"center",
+            padding:"0 20px",
           }},
+          React.createElement("div",{
+            onClick:function(e){e.stopPropagation();},
+            style:{
+              width:"100%",maxWidth:360,
+              background:"#0a0e1a",
+              border:"1px solid rgba(72,120,255,0.3)",
+              borderTop:"1px solid rgba(130,175,255,0.35)",
+              borderRadius:18,padding:"20px",
+              boxShadow:"0 0 60px rgba(0,0,0,0.8)",
+            }
+          },
           React.createElement("div",{style:{
             fontFamily:"'SF Mono','Courier New',monospace",
             fontSize:8,letterSpacing:2,color:"rgba(130,175,255,0.8)",marginBottom:10,
@@ -3891,8 +3900,9 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
           ),
           React.createElement("div",{style:{
             fontFamily:"'SF Mono','Courier New',monospace",
-            fontSize:7,color:"rgba(255,255,255,0.2)",letterSpacing:1,
+            fontSize:7,color:"rgba(255,255,255,0.2)",letterSpacing:1,marginTop:10,
           }},"Nes et al. (2014) · NTNU · n=4,631")
+          )
         ):null,
 
         // ECG delgado
