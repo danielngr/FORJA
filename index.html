@@ -4389,7 +4389,7 @@ function ProfileSheet({show,onClose,profile,lang,mono,sp,setStep}){
   var doDeleteAccount=async function(){
     setDeleting(true);
     try{
-      var sb=(typeof getSb==='function')?getSb():null;
+      var sb=(typeof getSB==='function')?getSB():((typeof getSb==='function')?getSb():null);
       if(!sb){throw new Error("No Supabase client");}
 
       var userRes=await sb.auth.getUser();
@@ -4401,16 +4401,22 @@ function ProfileSheet({show,onClose,profile,lang,mono,sp,setStep}){
         var userId=user.id;
         var tables=["user_profiles","user_logs","strength_history","muscle_xp","pro_users"];
         for(var i=0;i<tables.length;i++){
-          try{await sb.from(tables[i]).delete().eq("user_id",userId);}catch(e){console.warn("Failed to delete from "+tables[i],e);}
+          try{
+            var delResult=await sb.from(tables[i]).delete().eq("user_id",userId);
+            if(delResult&&delResult.error)console.warn("Failed to delete from "+tables[i],delResult.error);
+          }catch(e){console.warn("Failed to delete from "+tables[i],e);}
         }
 
         // 2. Delete auth.users entry via Edge Function (service_role needed)
         try{
-          await sb.functions.invoke("delete-user-account",{body:{user_id:userId}});
+          var invokeResult=await sb.functions.invoke("delete-user-account",{body:{user_id:userId}});
+          if(invokeResult&&invokeResult.error){
+            console.warn("Edge function returned error",invokeResult.error);
+          }
         }catch(e){
           // If the Edge Function doesn't exist yet, we still continue
           // (user data is gone, just the auth record may linger)
-          console.warn("Edge function delete-user-account not available",e);
+          console.warn("Edge function delete-user-account failed",e);
         }
 
         // 3. Sign out
@@ -4432,7 +4438,7 @@ function ProfileSheet({show,onClose,profile,lang,mono,sp,setStep}){
     }catch(err){
       console.error("Account deletion failed",err);
       setDeleting(false);
-      alert(l==="en"?"Something went wrong. Please try again or contact support.":"Algo salió mal. Intenta de nuevo o contacta soporte.");
+      alert((l==="en"?"Something went wrong. Please try again or contact support.\n\nError: ":"Algo salió mal. Intenta de nuevo o contacta soporte.\n\nError: ")+(err&&err.message?err.message:String(err)));
     }
   };
 
