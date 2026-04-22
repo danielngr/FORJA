@@ -3754,6 +3754,7 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
   var stop2=isPerfect?"#FFD700":pct>=0.7?"#26a866":"#4878ff";
 
   return e("div",{
+    "data-tour":"hero-heart",
     style:{
       position:"relative",
       borderRadius:24,
@@ -4183,7 +4184,7 @@ function ModeSelectorBar({profile,lang,mono,onShowAthletes}){
   const isAuto=!profile||profile.mode!=="celebrity"||!activeCeleb;
   const celebAc=profile&&profile.celebAc?profile.celebAc:"#4878ff";
 
-  return React.createElement("div",{style:{
+  return React.createElement("div",{"data-tour":"mode-selector",style:{
     margin:"8px 18px 6px",
     padding:"3px",
     background:"rgba(255,255,255,0.03)",
@@ -4635,6 +4636,262 @@ function ProfileSheet({show,onClose,profile,lang,mono,sp,setStep}){
 }
 
 
+// ═══════════════════════════════════════════════════════════════
+// ForjaTour — Sistema de tour con posicionamiento robusto
+// ═══════════════════════════════════════════════════════════════
+function ForjaTour({steps,stepIndex,onNext,onEnd,onStepChange,lang}){
+  var e=React.createElement;
+  var [bounds,setBounds]=React.useState(null);
+  var [tipHeight,setTipHeight]=React.useState(0);
+  var [retryCount,setRetryCount]=React.useState(0);
+  var tipRef=React.useRef(null);
+  var step=steps[stepIndex]||null;
+
+  // Notificar al padre cuando cambia el paso (para cambiar tabs, etc)
+  React.useEffect(function(){
+    if(step&&onStepChange) onStepChange(step,stepIndex);
+  },[stepIndex]);
+
+  // Medir elemento con scroll + retries
+  React.useLayoutEffect(function(){
+    if(!step) return;
+    var cancelled=false;
+
+    function measure(){
+      if(cancelled) return;
+      var el=document.querySelector('[data-tour="'+step.anchor+'"]');
+      if(!el){
+        if(retryCount<3){
+          setTimeout(function(){if(!cancelled) setRetryCount(function(n){return n+1;});},150);
+        }else{
+          setBounds({top:0,left:16,right:window.innerWidth-16,width:window.innerWidth-32,height:0,bottom:0,missing:true});
+        }
+        return;
+      }
+      // Scroll el elemento al centro y luego medir
+      try{
+        var r1=el.getBoundingClientRect();
+        var vh=window.innerHeight;
+        var isFullyVisible=r1.top>=60 && r1.bottom<=(vh-100);
+        if(!isFullyVisible){
+          var targetY=window.scrollY+r1.top-(vh/2)+(r1.height/2);
+          window.scrollTo({top:Math.max(0,targetY),behavior:"smooth"});
+          setTimeout(function(){
+            if(cancelled) return;
+            var r2=el.getBoundingClientRect();
+            setBounds({top:r2.top,left:r2.left,right:r2.right,bottom:r2.bottom,width:r2.width,height:r2.height});
+          },380);
+        }else{
+          setBounds({top:r1.top,left:r1.left,right:r1.right,bottom:r1.bottom,width:r1.width,height:r1.height});
+        }
+      }catch(err){}
+    }
+
+    // Esperar un poco después de que onStepChange haga sus cosas (cambio de tab)
+    var delay=step.needsTabSwitch?450:120;
+    setTimeout(measure,delay);
+
+    return function(){cancelled=true;};
+  },[stepIndex,retryCount]);
+
+  // Reset retry al cambiar de paso
+  React.useEffect(function(){setRetryCount(0);setBounds(null);setTipHeight(0);},[stepIndex]);
+
+  // Medir altura del tooltip real
+  React.useLayoutEffect(function(){
+    if(tipRef.current){
+      setTipHeight(tipRef.current.offsetHeight);
+    }
+  },[stepIndex,bounds]);
+
+  // Recalcular en resize
+  React.useEffect(function(){
+    function handleResize(){setRetryCount(function(n){return n+1;});}
+    window.addEventListener("resize",handleResize);
+    return function(){window.removeEventListener("resize",handleResize);};
+  },[]);
+
+  if(!step) return null;
+
+  var vh=window.innerHeight;
+  var vw=window.innerWidth;
+  var pad=step.pad||10;
+  var HIGHLIGHT_MAX_H=Math.round(vh*0.55); // permitir más que antes
+  var b=bounds?{
+    top:bounds.top,
+    left:bounds.left,
+    right:bounds.right,
+    width:bounds.width,
+    height:Math.min(bounds.height,HIGHLIGHT_MAX_H),
+    bottom:Math.min(bounds.bottom,bounds.top+HIGHLIGHT_MAX_H),
+    missing:bounds.missing
+  }:null;
+
+  // Posición del tooltip — usa altura REAL medida, fallback 180
+  var tH=tipHeight||180;
+  var tipPos;
+  if(!b||b.missing){
+    tipPos={bottom:24};
+  }else{
+    var spaceBelow=vh-b.bottom-pad-16;
+    var spaceAbove=b.top-pad-16;
+    if(spaceBelow>=tH){
+      tipPos={top:Math.round(b.bottom+pad+8)};
+    }else if(spaceAbove>=tH){
+      tipPos={top:Math.round(b.top-pad-8-tH)};
+    }else{
+      // No hay espacio suficiente — pegar al fondo
+      tipPos={bottom:16};
+    }
+  }
+
+  var title=step.title[lang]||step.title.es||step.title.en;
+  var body=step.body[lang]||step.body.es||step.body.en;
+  var isLast=stepIndex===steps.length-1;
+  var pct=((stepIndex+1)/steps.length)*100;
+  var nextLabel=isLast
+    ?(lang==="en"?"LISTO":lang==="fr"?"FINI":lang==="it"?"FATTO":lang==="de"?"FERTIG":"LISTO")
+    :(lang==="en"?"SIG →":lang==="fr"?"SUIV →":lang==="it"?"AVA →":lang==="de"?"WEI →":"SIG →");
+  var skipLabel=lang==="en"?"SKIP":lang==="fr"?"PASSER":lang==="it"?"SALTA":lang==="de"?"ÜBERSP":"OMITIR";
+
+  // Highlight overlay (4 rectángulos alrededor)
+  var highlight=b&&!b.missing?e("div",{style:{position:"fixed",inset:0,pointerEvents:"none",zIndex:9998}},
+    // Top
+    e("div",{style:{position:"absolute",top:0,left:0,right:0,height:Math.max(0,b.top-pad),
+      background:"rgba(0,0,0,0.85)",pointerEvents:"auto"}}),
+    // Bottom
+    e("div",{style:{position:"absolute",top:b.bottom+pad,left:0,right:0,bottom:0,
+      background:"rgba(0,0,0,0.85)",pointerEvents:"auto"}}),
+    // Left
+    e("div",{style:{position:"absolute",top:b.top-pad,height:b.height+pad*2,left:0,width:Math.max(0,b.left-pad),
+      background:"rgba(0,0,0,0.85)",pointerEvents:"auto"}}),
+    // Right
+    e("div",{style:{position:"absolute",top:b.top-pad,height:b.height+pad*2,left:b.right+pad,right:0,
+      background:"rgba(0,0,0,0.85)",pointerEvents:"auto"}}),
+    // Borde azul alrededor
+    e("div",{style:{position:"absolute",
+      top:b.top-pad,left:b.left-pad,
+      width:b.width+pad*2,height:b.height+pad*2,
+      borderRadius:14,pointerEvents:"none",
+      border:"2px solid rgba(72,120,255,1)",
+      boxShadow:"0 0 0 1px rgba(72,120,255,0.15),0 0 28px rgba(72,120,255,0.55)"}})
+  ):e("div",{style:{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",pointerEvents:"auto",zIndex:9998}});
+
+  // Tooltip
+  var MN="'DM Mono','SF Mono',monospace";
+  var BN="'Bebas Neue',cursive";
+  var tooltip=e("div",{ref:tipRef,style:Object.assign({
+    position:"fixed",left:16,right:16,
+    background:"#0e1118",borderRadius:18,
+    border:"1px solid rgba(72,120,255,0.25)",
+    borderTop:"1px solid rgba(130,175,255,0.4)",
+    padding:"18px 20px 16px",
+    boxShadow:"0 24px 56px rgba(0,0,0,0.8),0 0 40px rgba(72,120,255,0.08)",
+    pointerEvents:"auto",zIndex:9999
+  },tipPos)},
+    // Progress bar
+    e("div",{style:{display:"flex",alignItems:"center",gap:10,marginBottom:12}},
+      e("div",{style:{fontFamily:MN,fontSize:8,letterSpacing:3,color:"rgba(72,120,255,0.8)",flexShrink:0}},
+        (stepIndex+1)+" / "+steps.length),
+      e("div",{style:{flex:1,height:2,background:"rgba(255,255,255,0.06)",borderRadius:1,overflow:"hidden"}},
+        e("div",{style:{height:"100%",width:pct+"%",
+          background:"linear-gradient(90deg,rgba(72,120,255,0.9),rgba(130,175,255,1))",
+          borderRadius:1,transition:"width 0.3s ease"}}))
+    ),
+    // Title
+    e("div",{style:{fontFamily:BN,fontSize:22,letterSpacing:1.2,color:"rgba(240,242,245,0.98)",
+      lineHeight:1,marginBottom:8}},title),
+    // Body
+    e("div",{style:{fontSize:13,color:"rgba(240,242,245,0.72)",lineHeight:1.55,marginBottom:14,
+      fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif"},"data-keep-font":"1"},body),
+    // Buttons
+    e("div",{style:{display:"flex",gap:10,alignItems:"center"}},
+      e("div",{onClick:onEnd,style:{fontFamily:MN,fontSize:9,letterSpacing:2,
+        color:"rgba(255,255,255,0.25)",cursor:"pointer",padding:"8px 0",flexShrink:0}},skipLabel),
+      e("button",{onClick:onNext,style:{
+        flex:1,padding:"11px",borderRadius:12,border:"none",cursor:"pointer",
+        background:"linear-gradient(180deg,rgba(72,120,255,0.95),rgba(50,90,200,0.9))",
+        borderTop:"1px solid rgba(130,175,255,0.45)",
+        color:"#fff",fontFamily:MN,fontSize:10,fontWeight:700,letterSpacing:3,
+        boxShadow:"0 0 20px rgba(72,120,255,0.25)"
+      }},nextLabel)
+    )
+  );
+
+  return e("div",{style:{position:"fixed",inset:0,zIndex:9998,pointerEvents:"none"}},
+    highlight,
+    tooltip
+  );
+}
+
+// Definición de pasos del tour — 7 pasos focalizados en el dashboard
+var FORJA_TOUR_STEPS=[
+  {anchor:"mode-selector",pad:6,tab:"train",
+   title:{es:"MODO",en:"MODE",fr:"MODE",it:"MODO",de:"MODUS"},
+   body:{
+     es:"FORJA genera tu rutina automática, o elige un atleta como guía.",
+     en:"FORJA builds your routine, or pick an athlete as your template.",
+     fr:"FORJA génère ta routine, ou choisis un athlète comme guide.",
+     it:"FORJA genera la tua routine, o scegli un atleta come guida.",
+     de:"FORJA erstellt dein Programm, oder wähle einen Athleten."
+   }},
+  {anchor:"hero-heart",pad:8,tab:"train",
+   title:{es:"TU CORAZÓN",en:"YOUR HEART",fr:"TON CŒUR",it:"IL TUO CUORE",de:"DEIN HERZ"},
+   body:{
+     es:"Late cuando entrenas. Muestra tu edad cardiovascular real, calculada con tu VO2max.",
+     en:"Beats when you train. Shows your real cardiovascular age from your VO2max.",
+     fr:"Bat quand tu t'entraînes. Montre ton âge cardiovasculaire réel via VO2max.",
+     it:"Batte quando ti alleni. Mostra la tua età cardiovascolare reale dal VO2max.",
+     de:"Schlägt beim Training. Zeigt dein echtes kardiovaskuläres Alter via VO2max."
+   }},
+  {anchor:"cal-day",pad:8,tab:"train",
+   title:{es:"SEMANA",en:"WEEK",fr:"SEMAINE",it:"SETTIMANA",de:"WOCHE"},
+   body:{
+     es:"Tu programa de 7 días. El día resaltado es hoy. Verde = completado.",
+     en:"Your 7-day program. Highlighted is today. Green = completed.",
+     fr:"Ton programme 7 jours. Surligné = aujourd'hui. Vert = fait.",
+     it:"Il tuo programma 7 giorni. Evidenziato = oggi. Verde = fatto.",
+     de:"Dein 7-Tage-Programm. Markiert = heute. Grün = erledigt."
+   }},
+  {anchor:"start-workout",pad:6,tab:"train",
+   title:{es:"ENTRENA",en:"TRAIN",fr:"ENTRAÎNE",it:"ALLENA",de:"TRAINIERE"},
+   body:{
+     es:"Toca la mancuerna para empezar tu sesión del día.",
+     en:"Tap the dumbbell to start today's session.",
+     fr:"Touche l'haltère pour commencer la séance du jour.",
+     it:"Tocca il manubrio per iniziare la sessione.",
+     de:"Antippen um die heutige Sitzung zu starten."
+   }},
+  {anchor:"vol-weekly",pad:8,tab:"train",
+   title:{es:"VOLUMEN",en:"VOLUME",fr:"VOLUME",it:"VOLUME",de:"VOLUMEN"},
+   body:{
+     es:"Sets por músculo vs. recomendados. Verde = perfecto, rojo = te falta.",
+     en:"Sets per muscle vs. recommended. Green = perfect, red = train more.",
+     fr:"Séries par muscle. Vert = parfait, rouge = plus de travail.",
+     it:"Serie per muscolo. Verde = perfetto, rosso = lavora di più.",
+     de:"Sätze pro Muskel. Grün = perfekt, Rot = mehr trainieren."
+   }},
+  {anchor:"tab-body",pad:6,tab:"train",
+   title:{es:"CUERPO 3D",en:"3D BODY",fr:"CORPS 3D",it:"CORPO 3D",de:"3D-KÖRPER"},
+   body:{
+     es:"Aquí abres tu maniquí 3D interactivo con el estado de cada músculo.",
+     en:"This opens your interactive 3D mannequin with each muscle's state.",
+     fr:"Ouvre ton mannequin 3D avec l'état de chaque muscle.",
+     it:"Apre il tuo manichino 3D con lo stato di ogni muscolo.",
+     de:"Öffnet dein 3D-Modell mit dem Status jedes Muskels."
+   }},
+  {anchor:"mannequin",pad:4,tab:"body",needsTabSwitch:true,
+   title:{es:"MANIQUÍ 3D",en:"3D MANNEQUIN",fr:"MANNEQUIN 3D",it:"MANICHINO 3D",de:"3D-MODELL"},
+   body:{
+     es:"Toca un músculo para ver XP. Arrastra para girar. Rojo=activo, verde=listo.",
+     en:"Tap a muscle for XP. Drag to rotate. Red=active, green=ready.",
+     fr:"Touche un muscle pour l'XP. Glisse pour tourner. Rouge=actif, vert=prêt.",
+     it:"Tocca un muscolo per XP. Trascina per ruotare. Rosso=attivo, verde=pronto.",
+     de:"Tippe Muskel für XP. Ziehen zum Drehen. Rot=aktiv, Grün=bereit."
+   }}
+];
+
+
 function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk,showSet,setShowSet,setShowBotChat,mono,profile,tab,setTab,setSel,sel,sp,sr,setStep}){
   var e=React.createElement;
   var[showAthletes,setShowAthletes]=React.useState(false);
@@ -5062,57 +5319,6 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   },[w]);
   const sd=useCallback(n=>{setDone(n);FStore.saveDone(w,n);},[w]);
   useEffect(()=>{
-    if(tourStep===8){
-      const el=document.querySelector('[data-tour="vol-weekly"]');
-      if(el){
-        const r=el.getBoundingClientRect();
-        const target=window.scrollY+r.top+r.height/2-window.innerHeight/2;
-        window.scrollTo({top:Math.max(0,Math.round(target)),behavior:'instant'});
-        setScrollVersion(v=>v+1);
-      }
-    }
-    if(tourStep===9){
-      const el=document.querySelector('[data-tour="carga-semanal"]');
-      if(el){
-        const r=el.getBoundingClientRect();
-        const target=window.scrollY+r.top+r.height/2-window.innerHeight/2;
-        window.scrollTo({top:Math.max(0,Math.round(target)),behavior:'instant'});
-        setScrollVersion(v=>v+1);
-      }
-    }
-    if(tourStep===10){
-      window.scrollTo({top:0,behavior:'instant'});
-      setScrollVersion(v=>v+1);
-    }
-    if(tourStep===11||tourStep===13){
-      const cvs=document.getElementById('forja-canvas-3d');
-      const el=cvs||document.querySelector('[data-tour="mannequin"]');
-      if(el){
-        window.scrollTo({top:Math.max(0,el.offsetTop-115),behavior:'instant'});
-        setScrollVersion(v=>v+1);
-      }
-    }
-    if(tourStep===12){
-      const el=document.querySelector('[data-tour="balance-score"]');
-      if(el){
-        const r=el.getBoundingClientRect();
-        const target=window.scrollY+r.top+r.height/2-window.innerHeight/2;
-        window.scrollTo({top:Math.max(0,Math.round(target)),behavior:'instant'});
-        setScrollVersion(v=>v+1);
-      }
-    }
-    if(tourStep===14||tourStep===15){
-      const id=tourStep===14?'fix-my-balance':'prs-section';
-      const el=document.querySelector('[data-tour="'+id+'"]');
-      if(el){
-        const r=el.getBoundingClientRect();
-        const target=window.scrollY+r.top+r.height/2-window.innerHeight/2;
-        window.scrollTo({top:Math.max(0,Math.round(target)),behavior:'instant'});
-        setScrollVersion(v=>v+1);
-      }
-    }
-  },[tourStep]);
-  useEffect(()=>{
     const active = typeof tourStep === 'number' && tourStep >= 0;
     if(active){
       document.body.style.overflow='hidden';
@@ -5357,6 +5563,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
               <>
                 {/* Mancuerna */}
                 <div id="forja-dumbbell-wrap"
+                  data-tour="start-workout"
                   style={{width:"100%",height:260,borderRadius:16,overflow:"hidden",position:"relative",background:C.bg,cursor:"pointer",marginBottom:10}}
                   onClick={()=>{if(day&&day.ex&&day.ex.length)setInWorkout(true);}}
                 >
@@ -5874,164 +6081,11 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
           </div>
         </div>
       )}
-      {(tourAskVisible||(tourStep!==null&&tourStep!==-1&&(tourStep<4||tourStep>7)))&&(()=>{
+      {tourAskVisible&&tourReady&&tourStep===null&&(()=>{
         const MN_="'SF Mono','Fira Code',monospace";
         const BN_="'Bebas Neue',cursive";
-        const es_=lang==="es"||lang==="pt";
-        const BLUE="rgba(72,120,255,1)";
-        const BLUE_GLOW="rgba(72,120,255,0.5)";
-
-        // Definición de pasos — cada uno con su data-tour id y textos
-        const TOUR_STEPS=[
-          {id:"cal-day",
-           t:{es:"Tu semana",en:"Your week",fr:"Ta semaine",it:"La tua settimana",de:"Deine Woche"},
-           x:{es:"El día resaltado es hoy. Toca cualquier día para ver tu rutina — los días completados brillan en verde.",
-              en:"The highlighted day is today. Tap any day to see your routine — completed days glow green.",
-              fr:"Le jour surligné c'est aujourd'hui. Touche n'importe quel jour pour ta routine.",
-              it:"Il giorno evidenziato è oggi. Tocca qualsiasi giorno per la tua routine.",
-              de:"Der markierte Tag ist heute. Tippe auf einen Tag um dein Programm zu sehen."},
-           pad:10},
-          {id:"day-progress",
-           t:{es:"Corazón + métricas",en:"Heart + metrics",fr:"Cœur + métriques",it:"Cuore + metriche",de:"Herz + Metriken"},
-           x:{es:"El corazón 3D late cuando completas el día entero — se congela si fallas. La edad cardiovascular se calcula con tu VO2max según el modelo científico NTNU.",
-              en:"The 3D heart beats when you complete the full day — freezes if you skip. Cardiovascular age uses your VO2max via the NTNU scientific model.",
-              fr:"Le cœur 3D bat quand tu complètes la journée entière. L'âge cardiovasculaire utilise ton VO2max via le modèle NTNU.",
-              it:"Il cuore 3D batte quando completi l'intera giornata. L'età cardiovascolare usa il tuo VO2max secondo il modello NTNU.",
-              de:"Das 3D-Herz schlägt wenn du den ganzen Tag abschließt. Kardiovaskuläres Alter per NTNU-Modell."},
-           pad:12},
-          
-          {id:"vol-weekly",
-           t:{es:"Volumen muscular",en:"Muscle volume",fr:"Volume musculaire",it:"Volume muscolare",de:"Muskelvolumen"},
-           x:{es:"Barras de cuántos sets hiciste por músculo vs. el rango recomendado. Verde = perfecto, rojo = trabaja más esa zona.",
-              en:"Bars showing sets per muscle vs. recommended range. Green = perfect, red = work that zone more.",
-              fr:"Barres de séries par muscle vs. recommandations. Vert = parfait, rouge = travaille plus cette zone.",
-              it:"Barre di serie per muscolo vs. raccomandazioni. Verde = perfetto, rosso = lavora di più.",
-              de:"Balken: Sätze pro Muskel vs. Empfehlungen. Grün = perfekt, Rot = mehr trainieren."},
-           pad:10},
-          {id:"carga-semanal",
-           t:{es:"Carga ACWR",en:"ACWR load",fr:"Charge ACWR",it:"Carico ACWR",de:"ACWR-Last"},
-           x:{es:"Mide si entrenas más de lo normal. Óptimo: 0.8–1.3. Por encima de 1.5 hay riesgo de lesión. Se calcula al guardar sets.",
-              en:"Measures training above your baseline. Optimal: 0.8–1.3. Above 1.5 = injury risk. Calculated when saving sets.",
-              fr:"Mesure si tu dépasses ta charge habituelle. Optimal: 0.8–1.3. Au-dessus de 1.5 = risque.",
-              it:"Misura se superi il tuo carico. Ottimale: 0.8–1.3. Sopra 1.5 = rischio infortuni.",
-              de:"Misst ob du über deiner Last trainierst. Optimal: 0.8–1.3. Über 1.5 = Verletzungsrisiko."},
-           pad:10},
-          {id:"tab-body",
-           t:{es:"Pestaña Cuerpo",en:"Body tab",fr:"Onglet Corps",it:"Tab Corpo",de:"Tab Körper"},
-           x:{es:"Toca SIGUIENTE para ir al maniquí 3D interactivo — aquí vive todo el análisis muscular.",
-              en:"Tap NEXT to go to the interactive 3D mannequin — all muscle analysis lives here.",
-              fr:"Touche SUIVANT pour aller au mannequin 3D interactif.",
-              it:"Tocca AVANTI per il manichino 3D interattivo.",
-              de:"WEITER um zum 3D-Mannequin zu gehen."},
-           pad:8,
-           onEnter:()=>{setTabR("body");}},
-          {id:"mannequin",
-           t:{es:"Maniquí muscular",en:"Muscle mannequin",fr:"Mannequin musculaire",it:"Manichino muscolare",de:"Muskel-Mannequin"},
-           x:{es:"Cada músculo tiene color según tu último entreno: rojo=activo hoy, naranja=recuperando, verde=listo. Tócalo para ver XP y nivel. Gíralo arrastrando.",
-              en:"Each muscle is colored by your last training: red=active today, orange=recovering, green=ready. Tap it for XP and level. Drag to rotate.",
-              fr:"Chaque muscle: rouge=actif, orange=récup, vert=prêt. Touche pour XP et niveau. Glisse pour tourner.",
-              it:"Ogni muscolo: rosso=attivo, arancione=recupero, verde=pronto. Tocca per XP. Trascina per ruotare.",
-              de:"Jeder Muskel: rot=aktiv, orange=Erholung, grün=bereit. Tippen für XP. Ziehen zum Drehen."},
-           pad:4,
-           onEnter:()=>{window.scrollTo({top:0,behavior:"instant"});}},
-          {id:"balance-score",
-           t:{es:"Balance Score + XP",en:"Balance Score + XP",fr:"Score équilibre + XP",it:"Score equilibrio + XP",de:"Balance Score + XP"},
-           x:{es:"Cada set suma XP al músculo trabajado. Sube de nivel y brilla más — de gris a corona dorada en nivel 10. Para 7+ días y el nivel baja. El Balance Score mide lo completo de tu entrenamiento.",
-              en:"Every set gives XP to the trained muscle. Level up and it glows brighter — gray to gold crown at level 10. Stop 7+ days and the level drops. Balance Score measures training completeness.",
-              fr:"Chaque série donne de l'XP. Monte de niveau — de gris à couronne dorée au niveau 10. Arrêter 7+ jours baisse le niveau.",
-              it:"Ogni serie dà XP. Sali di livello — da grigio a corona d'oro al livello 10. Fermarsi 7+ giorni abbassa il livello.",
-              de:"Jeder Satz gibt XP. Level auf — von grau zur Goldkrone bei Level 10. 7+ Tage Pause senkt den Level."},
-           pad:10},
-          {id:"fix-my-balance",
-           t:{es:"Fix My Balance",en:"Fix My Balance",fr:"Corriger l'équilibre",it:"Correggi equilibrio",de:"Balance verbessern"},
-           x:{es:"Te dice qué músculos llevan más de 14 días sin trabajar y cuánto Balance Score ganarías entrenándolos. Tu hoja de ruta para no descuidar ninguna zona.",
-              en:"Shows muscles not trained in 14+ days and how much Balance Score you'd gain. Your roadmap to never neglect a zone.",
-              fr:"Montre les muscles non entraînés 14+ jours et comment améliorer ton score.",
-              it:"Mostra i muscoli non allenati da 14+ giorni e come migliorare il punteggio.",
-              de:"Zeigt Muskeln 14+ Tage ohne Training und wie du den Score verbesserst."},
-           pad:10},
-          {id:"prs-section",
-           t:{es:"PRs y progresión",en:"PRs & progression",fr:"Records & progression",it:"Record & progressione",de:"Bestleistungen"},
-           x:{es:"FORJA calcula tu 1RM estimado (fórmula Epley) automáticamente en cada ejercicio. Ve tu récord, la curva de progresión y el tonelaje semanal — la métrica real de si estás progresando.",
-              en:"FORJA auto-calculates your estimated 1RM (Epley formula) for every exercise. See your record, progression curve, and weekly tonnage — the real progress metric.",
-              fr:"FORJA calcule ton 1RM estimé (Epley) automatiquement. Vois ton record et la progression.",
-              it:"FORJA calcola il 1RM stimato (Epley) automaticamente. Vedi il record e la progressione.",
-              de:"FORJA berechnet dein 1WM (Epley) automatisch. Sieh Bestleistung und Progression."},
-           pad:10},
-        ];
-
-        // Mapeo tourStep → índice en TOUR_STEPS
-        const T_MAP={0:0,1:1,3:2,8:3,9:4,10:5,11:6,12:7,13:8};
-        const si_=T_MAP[tourStep];
-        const step_=si_!==undefined?TOUR_STEPS[si_]:null;
         const lang_=lang||"es";
-        const stepTitle=step_?(step_.t[lang_]||step_.t.en):"";
-        const stepText=step_?(step_.x[lang_]||step_.x.en):"";
-
-        // Obtener bounds del elemento
-        const el_=step_?document.querySelector('[data-tour="'+step_.id+'"]'):null;
-        const rawB_=el_?el_.getBoundingClientRect():null;
-        const pad_=step_?step_.pad||8:8;
-        const vh_=window.innerHeight;
-        const vw_=window.innerWidth;
-        // Limitar el height del bounds para no partir de un elemento gigante
-        const MAX_EL_H=Math.round(vh_*0.38);
-        const rawB=rawB_?{
-          top:rawB_.top,
-          left:rawB_.left,
-          right:rawB_.right,
-          width:rawB_.width,
-          height:Math.min(rawB_.height,MAX_EL_H),
-          bottom:Math.min(rawB_.bottom, rawB_.top+MAX_EL_H),
-        }:null;
-
-        // Calcular posición del tooltip — inteligente
-        const tooltipH=220;
-        const spaceBelow=rawB?(vh_-rawB.bottom-pad_):0;
-        const spaceAbove=rawB?(rawB.top-pad_):0;
-        // Siempre dejar al menos 80px de margen en la parte inferior para el botón
-        const minBottom=90;
-        const tipPos=rawB?(
-          spaceBelow>=tooltipH+16?
-            {top:Math.min(Math.round(rawB.bottom+pad_+8), vh_-tooltipH-minBottom)}:
-          spaceAbove>=tooltipH+16?
-            {bottom:Math.round(vh_-rawB.top+pad_+8)}:
-            {bottom:minBottom}
-        ):{bottom:minBottom};
-
-        const totalSteps=9;
-        const displayStep=si_!==undefined?si_+1:1;
-
-        const endTour_=()=>{
-          try{localStorage.setItem("fv8_toured","1");}catch(_){}
-          setTourAskVisible(false);
-          setTourStep(-1);
-          if(tourOriginalSel!==null){setSel(tourOriginalSel);setTourOriginalSel(null);}
-        };
-
-        const nextStep_=()=>{
-          // Saltar tourStep 2 — ya no existe en T_MAP
-          var ns=tourStep+1;
-          if(ns===2) ns=3;
-          if(ns>=14){endTour_();return;}
-          // tourStep 4-7: WorkoutScreen
-          if(ns===4){
-            if(day&&day.ex&&day.ex.length){setInWorkout(true);setTourStep(ns);}
-            else{setTabR("train");setTourStep(8);}
-            return;
-          }
-          // tourStep 8: volver a BannerDashboard tab train
-          if(ns===8){setInWorkout(false);setTabR("train");}
-          // tourStep 3: vol-weekly necesita tab train
-          if(ns===3){setTabR("train");}
-          // tourStep 10-13: tab cuerpo
-          if(ns>=10&&ns<=13){setTabR("body");}
-          const nextDef=T_MAP[ns]!==undefined?TOUR_STEPS[T_MAP[ns]]:null;
-          if(nextDef&&nextDef.onEnter) nextDef.onEnter();
-          setTourStep(ns);
-        };
-
-        if(tourAskVisible&&tourReady&&tourStep===null) return(
+        return(
           <div style={{position:"fixed",inset:0,zIndex:9000,
             background:"rgba(0,0,0,0.82)",backdropFilter:"blur(4px)",
             display:"flex",alignItems:"flex-end",justifyContent:"center",padding:"0 0 40px"}}>
@@ -6044,9 +6098,9 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                 {lang_==="en"?"QUICK TOUR":lang_==="fr"?"VISITE RAPIDE":lang_==="it"?"TOUR RAPIDO":lang_==="de"?"SCHNELLTOUR":"TOUR RÁPIDO"}
               </div>
               <div style={{fontFamily:MN_,fontSize:11,color:"rgba(240,242,245,0.45)",lineHeight:1.6,marginBottom:24}}>
-                {lang_==="en"?"10 steps to master FORJA. Takes 2 minutes.":lang_==="fr"?"10 étapes pour maîtriser FORJA. 2 minutes.":lang_==="it"?"10 passi per padroneggiare FORJA. 2 minuti.":lang_==="de"?"10 Schritte um FORJA zu meistern. 2 Minuten.":"10 pasos para dominar FORJA. 2 minutos."}
+                {lang_==="en"?"7 steps. Takes 1 minute.":lang_==="fr"?"7 étapes. 1 minute.":lang_==="it"?"7 passi. 1 minuto.":lang_==="de"?"7 Schritte. 1 Minute.":"7 pasos. 1 minuto."}
               </div>
-              <button onClick={()=>{setTabR("train");setTourStep(0);}} style={{
+              <button onClick={()=>{setTabR("train");setTourStep(0);setTourAskVisible(false);}} style={{
                 width:"100%",padding:"14px",borderRadius:14,border:"none",
                 background:"linear-gradient(180deg,rgba(72,120,255,0.9),rgba(50,90,200,0.85))",
                 borderTop:"1px solid rgba(130,175,255,0.4)",
@@ -6061,85 +6115,34 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
             </div>
           </div>
         );
-
-        if(!step_||tourStep===null||tourStep===-1) return null;
-
-        return(
-          <div style={{position:"fixed",inset:0,zIndex:9000,pointerEvents:"none"}}>
-            {/* Overlay oscuro en 4 partes alrededor del elemento */}
-            {rawB?<>
-              <div style={{position:"fixed",top:0,left:0,right:0,
-                height:Math.max(0,rawB.top-pad_),
-                background:"rgba(0,0,0,0.88)",pointerEvents:"all"}}/>
-              <div style={{position:"fixed",left:0,right:0,
-                top:rawB.bottom+pad_,bottom:0,
-                background:"rgba(0,0,0,0.88)",pointerEvents:"all"}}/>
-              <div style={{position:"fixed",
-                top:rawB.top-pad_,height:rawB.height+pad_*2,
-                left:0,width:Math.max(0,rawB.left-pad_),
-                background:"rgba(0,0,0,0.88)",pointerEvents:"all"}}/>
-              <div style={{position:"fixed",
-                top:rawB.top-pad_,height:rawB.height+pad_*2,
-                left:rawB.right+pad_,right:0,
-                background:"rgba(0,0,0,0.88)",pointerEvents:"all"}}/>
-              {/* Border azul FORJA alrededor del elemento */}
-              <div style={{position:"fixed",
-                top:rawB.top-pad_,left:rawB.left-pad_,
-                width:rawB.width+pad_*2,height:rawB.height+pad_*2,
-                borderRadius:16,pointerEvents:"none",
-                border:"2px solid "+BLUE,
-                boxShadow:"0 0 0 1px rgba(72,120,255,0.2),0 0 20px "+BLUE_GLOW}}/>
-            </>:
-              <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.88)",pointerEvents:"all"}}/>
-            }
-
-            {/* Tooltip */}
-            <div style={{
-              position:"fixed",left:16,right:16,
-              ...tipPos,
-              background:"#0e1118",borderRadius:18,
-              border:"1px solid rgba(255,255,255,0.08)",
-              borderTop:"1px solid rgba(255,255,255,0.12)",
-              padding:"18px 20px 16px",
-              boxShadow:"0 20px 48px rgba(0,0,0,0.8)",
-              pointerEvents:"all",zIndex:2}}>
-              {/* Progress bar */}
-              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
-                <div style={{fontFamily:MN_,fontSize:7,letterSpacing:3,color:"rgba(72,120,255,0.7)"}}>
-                  {displayStep} / {totalSteps}
-                </div>
-                <div style={{flex:1,height:2,background:"rgba(255,255,255,0.06)",borderRadius:1,overflow:"hidden"}}>
-                  <div style={{height:"100%",width:(displayStep/totalSteps*100)+"%",
-                    background:"linear-gradient(90deg,rgba(72,120,255,0.8),rgba(130,175,255,0.9))",
-                    borderRadius:1,transition:"width 0.3s ease"}}/>
-                </div>
-              </div>
-              <div style={{fontFamily:BN_,fontSize:22,color:"rgba(240,242,245,0.95)",
-                letterSpacing:1,lineHeight:1,marginBottom:8}}>{stepTitle}</div>
-              <div style={{fontFamily:MN_,fontSize:11,color:"rgba(240,242,245,0.5)",
-                lineHeight:1.65,marginBottom:16}}>{stepText}</div>
-              <div style={{display:"flex",gap:8}}>
-                <div onClick={endTour_}
-                  style={{fontFamily:MN_,fontSize:9,letterSpacing:2,color:"rgba(255,255,255,0.18)",
-                    cursor:"pointer",padding:"10px 0",flex:"0 0 auto"}}>
-                  {lang_==="en"?"SKIP":lang_==="fr"?"PASSER":lang_==="it"?"SALTA":lang_==="de"?"ÜBERSPRINGEN":"OMITIR"}
-                </div>
-                <button onClick={nextStep_} style={{
-                  flex:1,padding:"11px",borderRadius:12,border:"none",cursor:"pointer",
-                  background:"linear-gradient(180deg,rgba(72,120,255,0.9),rgba(50,90,200,0.85))",
-                  borderTop:"1px solid rgba(130,175,255,0.4)",
-                  color:"#fff",fontFamily:MN_,fontSize:10,fontWeight:700,letterSpacing:3,
-                  boxShadow:"0 0 16px rgba(72,120,255,0.2)"}}>
-                  {si_===totalSteps-1?
-                    (lang_==="en"?"DONE ✓":lang_==="fr"?"TERMINÉ ✓":lang_==="it"?"FATTO ✓":lang_==="de"?"FERTIG ✓":"LISTO ✓"):
-                    (lang_==="en"?"NEXT →":lang_==="fr"?"SUIVANT →":lang_==="it"?"AVANTI →":lang_==="de"?"WEITER →":"SIGUIENTE →")
-                  }
-                </button>
-              </div>
-            </div>
-          </div>
-        );
       })()}
+      {typeof tourStep==="number"&&tourStep>=0&&tourStep<FORJA_TOUR_STEPS.length&&(
+        React.createElement(ForjaTour,{
+          steps:FORJA_TOUR_STEPS,
+          stepIndex:tourStep,
+          lang:lang||"es",
+          onStepChange:function(step){
+            if(step.tab&&step.tab!==tab){
+              setTabR(step.tab);
+            }
+          },
+          onNext:function(){
+            if(tourStep>=FORJA_TOUR_STEPS.length-1){
+              try{localStorage.setItem("fv8_toured","1");}catch(_){}
+              setTourStep(-1);
+              if(tourOriginalSel!==null){setSel(tourOriginalSel);setTourOriginalSel(null);}
+            }else{
+              setTourStep(tourStep+1);
+            }
+          },
+          onEnd:function(){
+            try{localStorage.setItem("fv8_toured","1");}catch(_){}
+            setTourAskVisible(false);
+            setTourStep(-1);
+            if(tourOriginalSel!==null){setSel(tourOriginalSel);setTourOriginalSel(null);}
+          }
+        })
+      )}
   </>);
 }
 function ExpressTimer({day, lang, profile, onDone, onBack}){
