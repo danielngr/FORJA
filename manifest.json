@@ -2,11 +2,11 @@
   "id": "/FORJA/",
   "name": "FORJA - Tu entrenador personal",
   "short_name": "FORJA",
-  "description": "Tu entrenador personal inteligente. Rutinas de famosos, seguimiento de fuerza y progresión real.",
+  "description": "Tu entrenador personal inteligente. Rutinas de famosos, seguimiento de fuerza y progresion real.",
   "start_url": "/FORJA/?source=pwa",
   "scope": "/FORJA/",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui", "browser"],
+  "display_override": ["window-controls-overlay", "tabbed", "standalone", "minimal-ui", "browser"],
   "orientation": "portrait-primary",
   "background_color": "#04080f",
   "theme_color": "#04080f",
@@ -14,7 +14,12 @@
   "dir": "ltr",
   "categories": ["health", "fitness", "sports", "lifestyle"],
   "prefer_related_applications": false,
-  "related_applications": [],
+  "related_applications": [
+    {
+      "platform": "webapp",
+      "url": "https://danielngr.github.io/FORJA/manifest.json"
+    }
+  ],
   "launch_handler": {
     "client_mode": "auto"
   },
@@ -22,6 +27,9 @@
   "scope_extensions": [
     {"origin": "https://danielngr.github.io"}
   ],
+  "note_taking": {
+    "new_note_url": "/FORJA/?action=new-workout-note"
+  },
   "icons": [
     {
       "src": "icons/icon-192.png",
