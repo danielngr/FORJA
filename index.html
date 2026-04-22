@@ -697,14 +697,14 @@ const ES_TO_META={
   "fondos":"dips","fondos en banco":"bench dips","pullover cable":"barbell pullover",
   "peso muerto":"deadlift","peso muerto rumano":"romanian deadlift",
   "peso muerto piernas rectas":"romanian deadlift","peso muerto 1 pierna":"romanian deadlift",
-  "dominadas":"pull up","dominadas agarre supino":"chin up","dominadas lastradas":"pull up",
+  "dominadas":"pull up","dominadas agarre supino":"chin up",
   "jalón polea":"lat pulldown","remo con barra":"barbell row","remo con mancuerna":"dumbbell row",
   "remo sentado cable":"cable row","remo pendlay":"pendlay row","remo en t":"barbell row",
   "remo australiano":"barbell row","hiperextensión":"supermans",
   "press banca mancuerna":"dumbbell bench press","press militar mancuerna":"dumbbell shoulder press",
   "sentadilla":"squat","sentadilla frontal":"front squat","sentadilla goblet":"goblet squat",
-  "sentadilla búlgara":"bulgarian split squat","sentadilla peso corporal":"squat",
-  "sentadilla con salto":"squat","prensa de piernas":"leg press",
+  "sentadilla búlgara":"bulgarian split squat",
+  "prensa de piernas":"leg press",
   "extensión cuádriceps":"leg extension","curl femoral":"leg curl",
   "hip thrust":"hip thrust","glute bridge":"hip thrust","pantorrilla de pie":"calf raise",
   "pantorrilla sentado":"seated calf raise","pantorrilla":"calf raise","zancadas":"romanian deadlift",
@@ -739,14 +739,13 @@ const ES_TO_META={
   "curl inverso":"reverse curl",
   "press arnold":"dumbbell shoulder press",
   "pullover cable":"barbell pullover","pullover mancuerna":"barbell pullover",
-  "hiperextensión":"supermans","extensión de espalda":"supermans",
+  "hiperextensión":"supermans",
   "glute bridge":"hip thrust",
   "aperturas inclinado":"dumbbell chest fly",
-  "encogimientos":"barbell shrug","encogimientos mancuerna":"dumbbell shrug",
+  "encogimientos barra":"barbell shrug","encogimientos mancuerna":"dumbbell shrug",
   "pájaros":"dumbbell rear delt fly","pájaros cable":"dumbbell laying reverse fly",
   "elevaciones frontales":"dumbbell front raise",
   "rotación con cable":"cable face pull",
-  "press inclinado cable":"cable fly",
   "tríceps por encima":"overhead tricep extension","tríceps mancuerna":"overhead tricep extension",
   // -- Celebs routines additions --------------------------------------
   "remo barra":"barbell row","remo con barra":"barbell row","remo barra inclinado":"barbell row",
@@ -2006,11 +2005,28 @@ function getWeekNum(){
 }
 function buildRoutine7(splits,selectedDays,goal,eq=[],weekOffset=null){
   const r=Array(7).fill(null);
-  const adapted=splits.map(d=>({...d,ex:d.ex.map(e=>{
-    const goalApplied=applyGoal(e,goal);
-    const exName=canDoAuto(goalApplied.e,eq);
-    return {...goalApplied,e:exName};
-  })}));
+  const adapted=splits.map(d=>{
+    // Apply goal + equipment substitution to each exercise
+    const processedEx=d.ex.map(e=>{
+      const goalApplied=applyGoal(e,goal);
+      const exName=canDoAuto(goalApplied.e,eq);
+      return {...goalApplied,e:exName};
+    });
+    // Deduplicate: if two exercises ended up with same name (after substitution),
+    // keep only the first occurrence. This prevents "Sentadilla peso corporal x2"
+    // when the user lacks equipment and multiple different exercises collapse
+    // into the same bodyweight substitute.
+    const seen=new Set();
+    const deduped=[];
+    for(const ex of processedEx){
+      const key=(ex.e||"").toLowerCase().trim();
+      if(!key)continue;
+      if(seen.has(key))continue;
+      seen.add(key);
+      deduped.push(ex);
+    }
+    return {...d,ex:deduped};
+  });
   const wk = weekOffset !== null ? weekOffset : getWeekNum();
   const isWeekB = (wk % 2 === 0);
   const half = Math.floor(adapted.length / 2);
@@ -2067,8 +2083,7 @@ const FREE_CELEB_LIMIT = FORJA_PRICING.freeAthletes;
 // Useful for testing, demos, investor presentations, App Store review team
 // ════════════════════════════════════════════════════════════════════
 const FORJA_ADMIN_EMAILS = [
-  // Add your email here to keep PRO access
-  // "danielngr@example.com",
+  "daniel.ngr.rz@gmail.com",
 ];
 const EXPRESS_GROUPS=[
   {id:"tren_superior",
