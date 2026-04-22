@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="0"/>
 <title>FORJA</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
@@ -14,8 +17,8 @@
 html,body{height:100%;background:#04080f;}
 body{overscroll-behavior:none;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right);font-family:'Jumpshot',system-ui,-apple-system,sans-serif;font-weight:400;}
 body,body *,body *::before,body *::after{font-family:'Jumpshot',system-ui,sans-serif!important;}
-/* Elementos con fontFamily mono explícito mantienen DM Mono para legibilidad */
-[style*="SF Mono"],[style*="monospace"],[style*="DM Mono"]{font-family:'DM Mono','SF Mono',monospace!important;letter-spacing:0.02em!important;}
+/* Excepción: solo elementos con data-keep-font (para caracteres que Jumpshot renderiza mal como Ñ) */
+[data-keep-font],[data-keep-font] *{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif!important;}
 input,button,textarea,select{font-family:inherit;}
 input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;}
 input[type=number]{-moz-appearance:textfield;}
@@ -3736,13 +3739,12 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
 
   var e=React.createElement;
 
-  var deltaLine=null;
-  if(weeklyDelta!==undefined&&weeklyDelta!==null){
-    deltaLine=e("div",{style:{
-      fontSize:9,fontFamily:mono,color:deltaColor||"rgba(255,255,255,0.55)",
-      letterSpacing:1.2,marginTop:4,textTransform:"uppercase"
-    }},(deltaSign||"")+(deltaAbs!==undefined?deltaAbs:"0.0")+" ESTA SEMANA");
-  }
+  var hasDelta=weeklyDelta!==undefined&&weeklyDelta!==null;
+  var deltaText=(hasDelta?(deltaSign||""):"↑")+(deltaAbs!==undefined&&deltaAbs!==null?deltaAbs:"0.0")+" ESTA SEMANA";
+  var deltaLine=e("div",{style:{
+    fontSize:11,color:deltaColor||"rgba(255,255,255,0.55)",
+    letterSpacing:1.8,marginTop:5,textTransform:"uppercase",fontWeight:400
+  }},deltaText);
 
   var isPerfect=trainTotal>0&&trainDone>=trainTotal;
   var pct=trainTotal>0?trainDone/trainTotal:0;
@@ -3853,38 +3855,11 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
             textShadow:"0 2px 20px rgba(0,0,0,0.9),0 0 30px rgba(0,0,0,0.7)"
           }},fitnessAge!==undefined&&fitnessAge!==null?fitnessAge:"—"),
           e("span",{style:{
-            fontSize:10,fontWeight:600,color:"#ff2a45",
-            letterSpacing:1.5,fontFamily:mono,
-            textShadow:"0 0 12px rgba(255,42,69,0.5)",
-            display:"inline-flex",alignItems:"baseline"
-          }},
-            "A",
-            e("span",{style:{position:"relative",display:"inline-block"}},
-              "N",
-              e("svg",{
-                viewBox:"0 0 20 8",
-                style:{
-                  position:"absolute",
-                  top:"-0.45em",left:"50%",
-                  transform:"translateX(-50%)",
-                  width:"0.85em",height:"0.4em",
-                  overflow:"visible",
-                  pointerEvents:"none"
-                }
-              },
-                e("path",{
-                  d:"M 2 5 Q 6 0 10 4 T 18 3",
-                  fill:"none",
-                  stroke:"#ff2a45",
-                  strokeWidth:"2.2",
-                  strokeLinecap:"round",
-                  strokeLinejoin:"round",
-                  style:{filter:"drop-shadow(0 0 4px rgba(255,42,69,0.6))"}
-                })
-              )
-            ),
-            "OS"
-          )
+            fontSize:12,fontWeight:500,color:"rgba(255,255,255,0.55)",
+            letterSpacing:3,
+            marginLeft:2,marginBottom:4,
+            textShadow:"0 1px 8px rgba(0,0,0,0.8)"
+          }},"AÑOS")
         ),
         deltaLine
       )
@@ -9576,23 +9551,13 @@ function bone(a, b, w2) {
 
 <script>
 (function(){
-  function isMono(fontFam){
-    if(!fontFam)return false;
-    var f=fontFam.toLowerCase();
-    return f.indexOf('mono')!==-1||f.indexOf('sf mono')!==-1||f.indexOf('fira code')!==-1||f.indexOf('courier')!==-1;
-  }
   function forceFont(el){
     if(el.nodeType!==1)return;
     if(!el.style)return;
+    // Respetar elementos con data-keep-font
+    if(el.getAttribute&&el.getAttribute('data-keep-font'))return;
     var ff=el.style.fontFamily;
-    // Si ya tiene fuente mono, dejar intacta con DM Mono
-    if(isMono(ff)){
-      if(ff.indexOf('DM Mono')===-1){
-        el.style.setProperty('font-family',"'DM Mono','SF Mono',monospace",'important');
-      }
-      return;
-    }
-    // Si no es mono y no tiene Jumpshot, forzar Jumpshot
+    // Forzar Jumpshot en cualquier elemento con fontFamily inline
     if(ff&&ff.indexOf('Jumpshot')===-1){
       el.style.setProperty('font-family',"'Jumpshot',system-ui,sans-serif",'important');
     }
