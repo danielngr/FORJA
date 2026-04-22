@@ -8341,66 +8341,60 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
       // ═══ AURA ASCENDENTE: update particle positions ═══
       const aura=auraRef.current;
       if(aura){
-        // Get current level from closure (via state machine)
-        // We re-read isPro() + level each frame — lightweight check
+        // Re-check PRO and current level on each frame (cheap)
         const proActive=(typeof isPro==='function')&&isPro();
-        // Read level from global override OR muscle XP (closure captures latest state)
         let level=1;
         try{
           const mxp=mxpRef.current||{};
           const total=Object.values(mxp).reduce((s,z)=>s+(z&&z.xp||0),0);
           level=xpToLevel(total);
         }catch(_){}
-        // Also honor dev override (stored on window for cross-component access)
+        // Honor dev override
         if(typeof window.__forjaAuraLevel==='number')level=window.__forjaAuraLevel;
 
-        // Determine active particle count based on level (0 = aura off)
+        // Active particle count based on level
         let activeCount=0;
         if(proActive && level>=2){
-          if(level<=3)activeCount=8;       // tier 1: low
-          else if(level<=6)activeCount=18; // tier 2: mid
-          else activeCount=30;             // tier 3: high
+          if(level<=3)activeCount=8;
+          else if(level<=6)activeCount=18;
+          else activeCount=30;
         }
 
-        // Get color for current level (fallback to gray)
+        // Color for current level
         const colorHex=AURA_COLS[Math.max(0,Math.min(9,level-1))];
         const[cr,cg,cb]=hexToNormalizedRGB(colorHex);
 
-        // Update each particle
+        // One-time debug log when active count changes
+        if(window.__forjaAuraLastCount!==activeCount){
+          console.log('[FORJA AURA] level='+level+' count='+activeCount+' color='+colorHex+' pro='+proActive);
+          window.__forjaAuraLastCount=activeCount;
+        }
+
         for(let i=0;i<aura.maxParticles;i++){
           if(i>=activeCount){
-            // Not active: hide off-screen
             aura.pos[i*3+1]=-1000;
             aura.col[i*3]=0;aura.col[i*3+1]=0;aura.col[i*3+2]=0;
             continue;
           }
-          // Advance life (0..1)
-          aura.life[i]+=dt*0.25*aura.speed[i]; // ~4 seconds per cycle
+          aura.life[i]+=dt*0.25*aura.speed[i];
           if(aura.life[i]>=1){
-            // Respawn: reset with fresh jitter
             aura.initParticle(i,false);
           }
           const lifeT=aura.life[i];
-          // Vertical position: from bottom to top of body
           const yRange=aura.bodyTop-aura.bodyBottom;
-          const y=aura.bodyBottom+lifeT*yRange*1.1; // go slightly above head
-          // Lateral position: side of body + wobble
-          // bodyWidth/2 is half body, + small offset so particles float OUTSIDE silhouette
+          const y=aura.bodyBottom+lifeT*yRange*1.1;
           const sideOffset=aura.bodyWidth*0.55;
           const wobbleX=Math.sin(lifeT*Math.PI*2+i*0.5)*0.15;
-          const x=aura.bodyCenter.x+aura.side[i]*sideOffset+wobbleX+aura.jitter[i*2]*0.2;
-          // Depth: slight forward wobble
+          const x=aura.bodyCenterX+aura.side[i]*sideOffset+wobbleX+aura.jitter[i*2]*0.2;
           const z=Math.sin(lifeT*Math.PI+i*0.3)*0.3+aura.jitter[i*2+1]*0.3;
 
           aura.pos[i*3]=x;
           aura.pos[i*3+1]=y;
           aura.pos[i*3+2]=z;
 
-          // Fade in at birth (first 15%), fade out at death (last 30%)
           let alpha=1;
           if(lifeT<0.15)alpha=lifeT/0.15;
           else if(lifeT>0.7)alpha=1-(lifeT-0.7)/0.3;
-          // Apply color with alpha (additive blending means we just scale RGB)
           aura.col[i*3]=cr*alpha;
           aura.col[i*3+1]=cg*alpha;
           aura.col[i*3+2]=cb*alpha;
@@ -8453,51 +8447,67 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
         scene.add(group); modelRef.current=group;
         refreshMats(stRef.current);
 
+        // Force matrix update so subsequent bounding box calcs are correct
+        group.updateMatrixWorld(true);
+
         // ══════════════════════════════════════════════════════════
         // AURA ASCENDENTE — Partículas que suben a los costados del cuerpo
-        // Reacciona a globalLevel: más nivel = más partículas + color cálido
-        // Solo activa si isPro() y globalLevel >= 2
+        // Añadidas como HIJAS del group para que roten/escalen con el modelo
+        // Usamos coordenadas LOCALES (pre-transformación) del modelo original
         // ══════════════════════════════════════════════════════════
-        const MAX_PARTICLES=40; // suficiente para nivel 10
+        const MAX_PARTICLES=40;
         const auraPos=new Float32Array(MAX_PARTICLES*3);
         const auraCol=new Float32Array(MAX_PARTICLES*3);
-        const auraLife=new Float32Array(MAX_PARTICLES); // 0..1, reset when reaches 1
-        const auraSpeed=new Float32Array(MAX_PARTICLES); // velocity multiplier
-        const auraSide=new Float32Array(MAX_PARTICLES); // -1 left, +1 right
-        const auraJitter=new Float32Array(MAX_PARTICLES*2); // lateral + depth wobble
-        // Get body bounds so particles follow body shape
-        const bodyBox=new THREE.Box3().setFromObject(group);
-        const bodySize=bodyBox.getSize(new THREE.Vector3());
-        const bodyCenter=bodyBox.getCenter(new THREE.Vector3());
-        const bodyBottom=bodyCenter.y-bodySize.y/2;
-        const bodyTop=bodyCenter.y+bodySize.y/2;
-        const bodyWidth=bodySize.x;
+        const auraLife=new Float32Array(MAX_PARTICLES);
+        const auraSpeed=new Float32Array(MAX_PARTICLES);
+        const auraSide=new Float32Array(MAX_PARTICLES);
+        const auraJitter=new Float32Array(MAX_PARTICLES*2);
+
+        // Get bounds in LOCAL space (before group's own transform)
+        // size was computed above on the original group — use it directly
+        const bodyHeight=size.y;
+        const bodyWidthLocal=size.x;
+        // Model origin after `group.position.sub(center)` is at center of body
+        // So body extends from -bodyHeight/2 to +bodyHeight/2 on Y axis
+        const localBottomY=-bodyHeight/2;
+        const localTopY=bodyHeight/2;
+
         function initParticle(i,randomLife){
           auraLife[i]=randomLife?Math.random():0;
-          auraSpeed[i]=0.5+Math.random()*0.7; // varied speed
+          auraSpeed[i]=0.5+Math.random()*0.7;
           auraSide[i]=Math.random()<0.5?-1:1;
-          auraJitter[i*2]=(Math.random()-0.5)*0.6;      // lateral wobble
-          auraJitter[i*2+1]=(Math.random()-0.5)*0.8;    // depth wobble (z)
+          auraJitter[i*2]=(Math.random()-0.5)*0.6;
+          auraJitter[i*2+1]=(Math.random()-0.5)*0.8;
         }
         for(let i=0;i<MAX_PARTICLES;i++){
-          initParticle(i,true); // distribute lives so they don't all spawn at once
-          auraPos[i*3]=0;auraPos[i*3+1]=-1000;auraPos[i*3+2]=0; // off-screen initially
+          initParticle(i,true);
+          auraPos[i*3]=0;auraPos[i*3+1]=-1000;auraPos[i*3+2]=0;
         }
         const auraGeo=new THREE.BufferGeometry();
         auraGeo.setAttribute("position",new THREE.BufferAttribute(auraPos,3));
         auraGeo.setAttribute("color",new THREE.BufferAttribute(auraCol,3));
         const auraMat=new THREE.PointsMaterial({
-          size:0.14,vertexColors:true,transparent:true,opacity:0.9,
+          size:0.8,vertexColors:true,transparent:true,opacity:1.0,
           sizeAttenuation:true,blending:THREE.AdditiveBlending,depthWrite:false
         });
         const auraPoints=new THREE.Points(auraGeo,auraMat);
-        scene.add(auraPoints);
-        // Store refs so we can update from animate loop
+        // IMPORTANT: add as CHILD of group so particles inherit group's transform
+        group.add(auraPoints);
+        console.log('[FORJA AURA] particle system created',{
+          bodyHeight:bodyHeight,
+          bodyWidth:bodyWidthLocal,
+          localBottomY:localBottomY,
+          localTopY:localTopY,
+          groupScale:group.scale.x,
+          groupPos:group.position.toArray()
+        });
         auraRef.current={
           points:auraPoints,geo:auraGeo,pos:auraPos,col:auraCol,
           life:auraLife,speed:auraSpeed,side:auraSide,jitter:auraJitter,
           initParticle:initParticle,
-          bodyBottom:bodyBottom,bodyTop:bodyTop,bodyWidth:bodyWidth,bodyCenter:bodyCenter,
+          bodyBottom:localBottomY,bodyTop:localTopY,
+          bodyWidth:bodyWidthLocal,
+          bodyCenterX:0,
           maxParticles:MAX_PARTICLES
         };
 
