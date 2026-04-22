@@ -4651,41 +4651,173 @@ function ProfileSheet({show,onClose,profile,lang,mono,sp,setStep}){
           )
         ),
 
-        // ── PRO BANNER ──
-        e("div",{style:{
-          margin:"0 16px 24px",padding:"20px",
-          borderRadius:18,
-          background:"linear-gradient(135deg,rgba(72,120,255,0.12),rgba(40,60,200,0.06))",
-          border:"1px solid rgba(72,120,255,0.2)",
-          borderTop:"1px solid rgba(130,175,255,0.3)",
-          position:"relative",overflow:"hidden",
-        }},
-          e("div",{style:{
-            position:"absolute",top:-30,right:-20,
-            fontFamily:BN,fontSize:80,color:"rgba(72,120,255,0.05)",
-            lineHeight:1,pointerEvents:"none",userSelect:"none",letterSpacing:2,
-          }},"PRO"),
-          e("div",{style:{fontFamily:MN,fontSize:8,letterSpacing:4,
-            color:"rgba(130,175,255,0.6)",marginBottom:8}},"FORJA PRO"),
-          e("div",{style:{fontFamily:BN,fontSize:26,color:"rgba(150,195,255,0.95)",
-            letterSpacing:1,lineHeight:1,marginBottom:12}},
-            l==="en"?"ALL FEATURES ACTIVE":"TODAS LAS FUNCIONES ACTIVAS"),
-          e("div",{style:{display:"flex",flexDirection:"column",gap:6}},
-            ["🏆 "+(l==="en"?"18 Athlete Programs":"18 Programas de Atletas"),
-             "🧬 "+(l==="en"?"Muscle Heatmap 3D":"Mapa Muscular 3D"),
-             "❤️ "+(l==="en"?"Cardiovascular Age (NTNU)":"Edad Cardiovascular NTNU"),
-            ].map(function(txt,i){
-              return e("div",{key:i,style:{
-                fontFamily:MN,fontSize:10,color:"rgba(130,175,255,0.7)",
-                letterSpacing:0.5,display:"flex",alignItems:"center",gap:8,
+        // ── SESSION (Google login / logout) ──
+        (function(){
+          var anon=(typeof isUserAnonymous==='function')?isUserAnonymous():true;
+          var email=(typeof getUserEmail==='function')?getUserEmail():null;
+          if(anon){
+            return e("div",{
+              onClick:function(){
+                try{if(typeof doGoogleSignIn==='function')doGoogleSignIn();}catch(_){}
+              },
+              style:{
+                margin:"0 16px 24px",padding:"16px 20px",
+                borderRadius:18,cursor:"pointer",
+                background:"rgba(66,133,244,0.08)",
+                border:"1px solid rgba(66,133,244,0.25)",
+                borderTop:"1px solid rgba(120,170,255,0.35)",
+                display:"flex",alignItems:"center",gap:16,
               }},
-                e("div",{style:{width:4,height:4,borderRadius:"50%",
-                  background:"rgba(72,120,255,0.6)",flexShrink:0}}),
-                txt
-              );
-            })
-          )
-        ),
+              e("div",{style:{
+                width:44,height:44,borderRadius:14,flexShrink:0,
+                background:"rgba(66,133,244,0.12)",
+                border:"1px solid rgba(66,133,244,0.25)",
+                display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,
+              }},"☁️"),
+              e("div",{style:{flex:1}},
+                e("div",{style:{fontFamily:BN,fontSize:20,color:"rgba(170,200,255,0.95)",letterSpacing:1,lineHeight:1,
+                  marginBottom:4}},l==="en"?"SIGN IN WITH GOOGLE":"ENTRAR CON GOOGLE"),
+                e("div",{style:{fontFamily:MN,fontSize:9,color:"rgba(170,200,255,0.5)",letterSpacing:0.5}},
+                  l==="en"?"Sync across devices":l==="fr"?"Sync multi-appareils":l==="it"?"Sync tra dispositivi":l==="de"?"Geräte synchronisieren":"Sincroniza tus dispositivos")
+              ),
+              e("div",{style:{
+                fontFamily:MN,fontSize:14,color:"rgba(170,200,255,0.7)",
+              }},"→")
+            );
+          }
+          // User IS logged in
+          return e("div",{
+            style:{
+              margin:"0 16px 24px",padding:"16px 20px",
+              borderRadius:18,
+              background:"rgba(63,207,142,0.05)",
+              border:"1px solid rgba(63,207,142,0.2)",
+              borderTop:"1px solid rgba(100,230,160,0.25)",
+              display:"flex",alignItems:"center",gap:16,
+            }},
+            e("div",{style:{
+              width:44,height:44,borderRadius:14,flexShrink:0,
+              background:"rgba(63,207,142,0.1)",
+              border:"1px solid rgba(63,207,142,0.25)",
+              display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,
+            }},"✓"),
+            e("div",{style:{flex:1,minWidth:0}},
+              e("div",{style:{fontFamily:BN,fontSize:18,color:"rgba(180,240,210,0.95)",letterSpacing:1,lineHeight:1,
+                marginBottom:4,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},
+                email||"GOOGLE"),
+              e("div",{style:{fontFamily:MN,fontSize:9,color:"rgba(180,240,210,0.5)",letterSpacing:0.5}},
+                l==="en"?"Connected · Tap to sign out":l==="fr"?"Connecté · Toucher pour déconnecter":l==="it"?"Connesso · Tocca per uscire":l==="de"?"Verbunden · Tippen zum Abmelden":"Conectado · Toca para salir")
+            ),
+            e("div",{
+              onClick:function(){
+                try{
+                  if(confirm(l==="en"?"Sign out?":l==="fr"?"Déconnecter?":l==="it"?"Uscire?":l==="de"?"Abmelden?":"¿Cerrar sesión?")){
+                    if(typeof doSignOut==='function')doSignOut();
+                  }
+                }catch(_){}
+              },
+              style:{
+                fontFamily:MN,fontSize:8,fontWeight:700,letterSpacing:1.5,
+                color:"rgba(255,255,255,0.5)",
+                padding:"6px 10px",borderRadius:8,cursor:"pointer",
+                border:"1px solid rgba(255,255,255,0.15)",
+                background:"rgba(255,255,255,0.03)",flexShrink:0,
+              }},
+              l==="en"?"SIGN OUT":l==="fr"?"SORTIR":l==="it"?"USCIRE":l==="de"?"AUSLOGGEN":"SALIR"
+            )
+          );
+        })(),
+
+        // ── PRO BANNER ──
+        (function(){
+          var userIsPro=isPro();
+          if(userIsPro){
+            // User IS PRO — show "all features active"
+            return e("div",{style:{
+              margin:"0 16px 24px",padding:"20px",
+              borderRadius:18,
+              background:"linear-gradient(135deg,rgba(72,120,255,0.12),rgba(40,60,200,0.06))",
+              border:"1px solid rgba(72,120,255,0.2)",
+              borderTop:"1px solid rgba(130,175,255,0.3)",
+              position:"relative",overflow:"hidden",
+            }},
+              e("div",{style:{
+                position:"absolute",top:-30,right:-20,
+                fontFamily:BN,fontSize:80,color:"rgba(72,120,255,0.05)",
+                lineHeight:1,pointerEvents:"none",userSelect:"none",letterSpacing:2,
+              }},"PRO"),
+              e("div",{style:{fontFamily:MN,fontSize:8,letterSpacing:4,
+                color:"rgba(130,175,255,0.6)",marginBottom:8}},"FORJA PRO"),
+              e("div",{style:{fontFamily:BN,fontSize:26,color:"rgba(150,195,255,0.95)",
+                letterSpacing:1,lineHeight:1,marginBottom:12}},
+                l==="en"?"ALL FEATURES ACTIVE":"TODAS LAS FUNCIONES ACTIVAS"),
+              e("div",{style:{display:"flex",flexDirection:"column",gap:6}},
+                ["🏆 "+(l==="en"?FORJA_PRICING.totalAthletes+" Athlete Programs":FORJA_PRICING.totalAthletes+" Programas de Atletas"),
+                 "🧬 "+(l==="en"?"Muscle Heatmap 3D":"Mapa Muscular 3D"),
+                 "❤️ "+(l==="en"?"Cardiovascular Age (NTNU)":"Edad Cardiovascular NTNU"),
+                ].map(function(txt,i){
+                  return e("div",{key:i,style:{
+                    fontFamily:MN,fontSize:10,color:"rgba(130,175,255,0.7)",
+                    letterSpacing:0.5,display:"flex",alignItems:"center",gap:8,
+                  }},
+                    e("div",{style:{width:4,height:4,borderRadius:"50%",
+                      background:"rgba(72,120,255,0.6)",flexShrink:0}}),
+                    txt
+                  );
+                })
+              )
+            );
+          }
+          // User is NOT PRO — show upgrade CTA
+          return e("div",{
+            onClick:function(){
+              if(window.__forjaSetPaywall)window.__forjaSetPaywall(true);
+            },
+            style:{
+              margin:"0 16px 24px",padding:"20px",
+              borderRadius:18,cursor:"pointer",
+              background:"linear-gradient(135deg,rgba(192,168,112,0.12),rgba(160,136,80,0.06))",
+              border:"1px solid rgba(192,168,112,0.25)",
+              borderTop:"1px solid rgba(230,210,160,0.35)",
+              position:"relative",overflow:"hidden",
+            }},
+            e("div",{style:{
+              position:"absolute",top:-30,right:-20,
+              fontFamily:BN,fontSize:80,color:"rgba(192,168,112,0.06)",
+              lineHeight:1,pointerEvents:"none",userSelect:"none",letterSpacing:2,
+            }},"PRO"),
+            e("div",{style:{fontFamily:MN,fontSize:8,letterSpacing:4,
+              color:"rgba(230,210,160,0.75)",marginBottom:8}},"FORJA PRO"),
+            e("div",{style:{fontFamily:BN,fontSize:26,color:"rgba(240,225,180,0.95)",
+              letterSpacing:1,lineHeight:1,marginBottom:6}},
+              l==="en"?"UNLOCK FULL POTENTIAL":"DESBLOQUEA TU POTENCIAL"),
+            e("div",{style:{fontFamily:MN,fontSize:10,color:"rgba(255,255,255,0.55)",
+              letterSpacing:0.5,marginBottom:14,lineHeight:1.4}},
+              l==="en"?(FORJA_PRICING.yearly.priceStr+"/year · "+FORJA_PRICING.trialDays+"-day free trial"):(FORJA_PRICING.yearly.priceStr+"/año · "+FORJA_PRICING.trialDays+" días gratis")),
+            e("div",{style:{display:"flex",flexDirection:"column",gap:6,marginBottom:14}},
+              ["🏆 "+(l==="en"?FORJA_PRICING.totalAthletes+" Athlete Programs":FORJA_PRICING.totalAthletes+" Programas de Atletas"),
+               "✏️ "+(l==="en"?"Custom Builder":"Builder Personalizado"),
+               "☁️ "+(l==="en"?"Multi-device Sync":"Sync Multi-dispositivo"),
+              ].map(function(txt,i){
+                return e("div",{key:i,style:{
+                  fontFamily:MN,fontSize:10,color:"rgba(255,255,255,0.7)",
+                  letterSpacing:0.5,display:"flex",alignItems:"center",gap:8,
+                }},
+                  e("div",{style:{width:4,height:4,borderRadius:"50%",
+                    background:"rgba(192,168,112,0.7)",flexShrink:0}}),
+                  txt
+                );
+              })
+            ),
+            e("div",{style:{
+              padding:"12px",borderRadius:12,textAlign:"center",
+              background:"linear-gradient(135deg,#c0a870,#a08850)",
+              color:"#fff",fontFamily:MN,fontSize:10,fontWeight:700,letterSpacing:2,
+            }},
+              l==="en"?"START FREE TRIAL →":"INICIAR PRUEBA GRATIS →"
+            )
+          );
+        })(),
 
         // ── VERSION + RESET ──
         e("div",{style:{margin:"0 16px",display:"flex",gap:8}},
