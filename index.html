@@ -4463,7 +4463,9 @@ function ProfileSheet({show,onClose,profile,lang,mono,sp,setStep}){
     onClick:function(ev){if(ev.target===ev.currentTarget)close();},
     style:{
       position:"fixed",inset:0,zIndex:9500,
-      background:"rgba(0,0,0,0.85)",
+      background:"rgba(0,0,0,0.96)",
+      backdropFilter:"blur(12px)",
+      WebkitBackdropFilter:"blur(12px)",
       display:"flex",flexDirection:"column",justifyContent:"flex-end",
       opacity:closing?0:1,transition:"opacity 0.3s ease",
     }},
