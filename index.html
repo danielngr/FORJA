@@ -4399,11 +4399,27 @@ function ProfileSheet({show,onClose,profile,lang,mono,sp,setStep}){
         // 1. Delete user data from all tables
         // Wrap each delete in try/catch so one failure doesn't stop the rest
         var userId=user.id;
-        var tables=["user_profiles","user_logs","strength_history","muscle_xp","pro_users"];
+        // Real tables in FORJA's Supabase (confirmed via schema query)
+        var tables=[
+          "user_profiles",     // profile settings & preferences
+          "exercise_logs",     // sets/reps/weight logged per exercise
+          "strength_history",  // PRs and 1RM progression
+          "muscle_xp",         // XP per muscle zone (for maniqui colors)
+          "sessions",          // workout session records
+          "daily_load",        // ACWR daily load tracking
+          "pro_users",         // PRO subscription status (if table exists)
+          "pro_waitlist"       // waitlist intent logs (if table exists)
+        ];
         for(var i=0;i<tables.length;i++){
           try{
             var delResult=await sb.from(tables[i]).delete().eq("user_id",userId);
-            if(delResult&&delResult.error)console.warn("Failed to delete from "+tables[i],delResult.error);
+            if(delResult&&delResult.error){
+              var em=delResult.error.message||"";
+              // Silently ignore "table does not exist" errors for optional tables
+              if(em.indexOf("does not exist")<0 && em.indexOf("schema cache")<0 && em.indexOf("Could not find")<0){
+                console.warn("Failed to delete from "+tables[i],delResult.error);
+              }
+            }
           }catch(e){console.warn("Failed to delete from "+tables[i],e);}
         }
 
@@ -4581,180 +4597,89 @@ function ProfileSheet({show,onClose,profile,lang,mono,sp,setStep}){
   // ════════════════════════════════════════════════════════════════
   // DELETE ACCOUNT MODAL — 2 steps: warning → slider confirm
   // ════════════════════════════════════════════════════════════════
-  var DeleteModal=showDelete?e("div",{style:{
-    position:"fixed",inset:0,zIndex:9999,
-    background:"rgba(0,0,0,0.96)",
-    backdropFilter:"blur(14px)",
-    WebkitBackdropFilter:"blur(14px)",
-    display:"flex",flexDirection:"column",
-    alignItems:"center",justifyContent:"center",
-    padding:24,
-  }},
-    // Loading overlay while deleting
-    deleting?e("div",{style:{
-      width:"100%",maxWidth:320,padding:"40px 24px",
-      textAlign:"center",
-    }},
-      e("div",{style:{fontSize:40,marginBottom:20}},"⏳"),
-      e("div",{style:{fontFamily:BN,fontSize:22,color:"rgba(220,80,80,0.9)",
-        letterSpacing:1,marginBottom:8}},
-        l==="en"?"DELETING...":"BORRANDO..."),
-      e("div",{style:{fontFamily:"'SF Mono','Courier New',monospace",fontSize:11,
-        color:"rgba(240,242,245,0.5)",lineHeight:1.6}},
-        l==="en"?"Removing your data permanently":"Eliminando tus datos permanentemente")
-    ):
-    // STEP 1 — Warning with consequences list
-    deleteStep===1?e("div",{style:{
-      width:"100%",maxWidth:340,
-      background:"#0a0d16",
-      borderRadius:24,
-      border:"1px solid rgba(220,50,50,0.3)",
-      borderTop:"1px solid rgba(220,80,80,0.5)",
-      padding:"28px 24px 24px",
-    }},
-      e("div",{style:{textAlign:"center",marginBottom:20}},
-        e("div",{style:{fontSize:40,marginBottom:12}},"⚠️"),
-        e("div",{style:{fontFamily:BN,fontSize:26,color:"rgba(220,80,80,0.95)",
-          letterSpacing:1,marginBottom:8,lineHeight:1.1}},
-          l==="en"?"DELETE ACCOUNT":"BORRAR CUENTA"),
-        e("div",{style:{fontFamily:"'SF Mono','Courier New',monospace",fontSize:11,
-          color:"rgba(240,242,245,0.55)",lineHeight:1.5,letterSpacing:0.5}},
-          l==="en"
-            ?"This action is permanent and cannot be undone."
-            :"Esta acción es permanente y no se puede deshacer.")
-      ),
-      // What will be deleted list
-      e("div",{style:{
-        background:"rgba(220,50,50,0.04)",
-        border:"1px solid rgba(220,50,50,0.15)",
-        borderRadius:14,padding:"14px 16px",marginBottom:20,
-      }},
-        e("div",{style:{fontFamily:"'SF Mono','Courier New',monospace",fontSize:8,
-          color:"rgba(220,80,80,0.7)",letterSpacing:2,marginBottom:10}},
-          l==="en"?"WILL BE PERMANENTLY DELETED:":"SE BORRARÁ PERMANENTEMENTE:"),
-        e("div",{style:{display:"flex",flexDirection:"column",gap:6}},
-          [
-            l==="en"?"Your account and email":"Tu cuenta y email",
-            l==="en"?"All workouts and sessions":"Todos los entrenos y sesiones",
-            l==="en"?"Personal records (PRs)":"Récords personales (PRs)",
-            l==="en"?"Body heatmap progress":"Progreso del mapa corporal",
-            l==="en"?"Muscle XP and levels":"XP y niveles musculares",
-            l==="en"?"PRO subscription status":"Estado de suscripción PRO",
-          ].map(function(txt,i){
-            return e("div",{key:i,style:{display:"flex",alignItems:"center",gap:8,
-              fontFamily:"'SF Mono','Courier New',monospace",fontSize:10,
-              color:"rgba(240,242,245,0.75)"}},
-              e("div",{style:{width:3,height:3,borderRadius:"50%",
-                background:"rgba(220,80,80,0.7)",flexShrink:0}}),
-              txt
-            );
-          })
-        )
-      ),
-      // Important note about subscription
-      e("div",{style:{
-        background:"rgba(230,180,60,0.06)",
-        border:"1px solid rgba(230,180,60,0.2)",
-        borderRadius:12,padding:"12px 14px",marginBottom:20,
-      }},
-        e("div",{style:{fontFamily:"'SF Mono','Courier New',monospace",fontSize:9,
-          color:"rgba(230,180,60,0.85)",letterSpacing:1,lineHeight:1.5}},
-          l==="en"
-            ?"📌 If you have an active subscription, cancel it first in Settings → Apple ID → Subscriptions. Deleting your account here does NOT cancel billing."
-            :"📌 Si tienes suscripción activa, cancélala primero en Ajustes → Apple ID → Suscripciones. Borrar tu cuenta aquí NO cancela el cobro.")
-      ),
-      // Buttons
-      e("button",{
-        onClick:function(){setDeleteStep(2);},
-        style:{
-          width:"100%",padding:"14px",borderRadius:14,border:"none",cursor:"pointer",
-          background:"linear-gradient(135deg,rgba(220,60,60,0.9),rgba(180,30,30,0.95))",
-          color:"#fff",
-          fontFamily:"'SF Mono','Courier New',monospace",
-          fontSize:11,letterSpacing:2,fontWeight:700,marginBottom:10,
-        }},l==="en"?"I UNDERSTAND · CONTINUE":"ENTIENDO · CONTINUAR"),
-      e("button",{
-        onClick:function(){setShowDelete(false);setDeleteStep(1);setDeleteSliderX(0);},
-        style:{
-          width:"100%",padding:"12px",borderRadius:14,border:"none",cursor:"pointer",
-          background:"rgba(255,255,255,0.05)",
-          color:"rgba(255,255,255,0.5)",
-          fontFamily:"'SF Mono','Courier New',monospace",
-          fontSize:10,letterSpacing:2,
-        }},l==="en"?"CANCEL":"CANCELAR")
-    ):
-    // STEP 2 — Slider confirmation
-    e("div",{style:{
-      width:"100%",maxWidth:340,
-      background:"#0a0d16",
-      borderRadius:24,
-      border:"1px solid rgba(220,50,50,0.4)",
-      borderTop:"1px solid rgba(220,80,80,0.6)",
-      padding:"28px 24px 24px",
-      textAlign:"center",
-    }},
-      e("div",{style:{fontSize:40,marginBottom:16}},"🗑️"),
-      e("div",{style:{fontFamily:BN,fontSize:26,color:"rgba(220,80,80,0.95)",
-        letterSpacing:1,marginBottom:8}},
-        l==="en"?"LAST CHANCE":"ÚLTIMA CONFIRMACIÓN"),
-      e("div",{style:{fontFamily:"'SF Mono','Courier New',monospace",fontSize:11,
-        color:"rgba(240,242,245,0.55)",lineHeight:1.6,marginBottom:24}},
-        l==="en"
-          ?"Slide the button all the way to permanently delete your account."
-          :"Desliza el botón hasta el final para borrar tu cuenta permanentemente."),
-      // Slider
-      e("div",{style:{
-        width:SLIDER_W,height:56,borderRadius:999,
-        background:"rgba(220,50,50,0.1)",
-        border:"1px solid rgba(220,50,50,0.25)",
-        position:"relative",margin:"0 auto 16px",
-        overflow:"hidden",userSelect:"none",
-      }},
-        // Track fill
-        e("div",{style:{
-          position:"absolute",left:2,top:2,bottom:2,
-          width:deleteSliderX+THUMB_W-2,borderRadius:999,
-          background:"rgba(220,50,50,"+(deleteSliderX/MAX_X*0.4)+")",
-          transition:"background 0.1s",
-        }}),
-        // Label
-        e("div",{style:{
-          position:"absolute",inset:0,
-          display:"flex",alignItems:"center",justifyContent:"center",
-          fontFamily:"'SF Mono','Courier New',monospace",
-          fontSize:10,letterSpacing:3,fontWeight:700,
-          color:"rgba(220,80,80,"+(1-deleteSliderX/MAX_X*0.8)+")",
-          pointerEvents:"none",
-        }},l==="en"?"SLIDE TO DELETE ACCOUNT":"DESLIZA PARA BORRAR CUENTA"),
-        // Thumb
-        e("div",{
-          onMouseDown:function(ev){ev.preventDefault();onDeleteSliderStart(ev.clientX);},
-          onTouchStart:function(ev){onDeleteSliderStart(ev.touches[0].clientX);},
-          style:{
-            position:"absolute",top:2,bottom:2,
-            left:2+deleteSliderX,
-            width:THUMB_W,borderRadius:999,
-            background:"linear-gradient(135deg,rgba(220,60,60,0.95),rgba(160,20,20,1))",
-            border:"1px solid rgba(255,100,100,0.4)",
-            borderTop:"1px solid rgba(255,150,150,0.5)",
-            display:"flex",alignItems:"center",justifyContent:"center",
-            cursor:"grab",fontSize:18,
-            boxShadow:"0 2px 16px rgba(220,50,50,0.5)",
-            transition:deleteDraggingRef.current?"none":"left 0.3s cubic-bezier(0.34,1.56,0.64,1)",
-          }
-        },"→")
-      ),
-      e("button",{
-        onClick:function(){setDeleteStep(1);setDeleteSliderX(0);},
-        style:{
-          width:"100%",padding:"12px",borderRadius:14,border:"none",cursor:"pointer",
-          background:"rgba(255,255,255,0.05)",
-          color:"rgba(255,255,255,0.4)",
-          fontFamily:"'SF Mono','Courier New',monospace",
-          fontSize:10,letterSpacing:2,marginTop:6,
-        }},l==="en"?"← GO BACK":"← VOLVER")
-    )
-  ):null;
+  var DeleteModal=null;
+  if(showDelete){
+    var deleteInner=null;
+    if(deleting){
+      // Loading state
+      deleteInner=e("div",{style:{width:"100%",maxWidth:320,padding:"40px 24px",textAlign:"center"}},
+        e("div",{style:{fontSize:40,marginBottom:20}},"⏳"),
+        e("div",{style:{fontFamily:BN,fontSize:22,color:"rgba(220,80,80,0.9)",letterSpacing:1,marginBottom:8}},
+          l==="en"?"DELETING...":"BORRANDO..."),
+        e("div",{style:{fontFamily:"'SF Mono','Courier New',monospace",fontSize:11,color:"rgba(240,242,245,0.5)",lineHeight:1.6}},
+          l==="en"?"Removing your data permanently":"Eliminando tus datos permanentemente")
+      );
+    }else if(deleteStep===1){
+      // STEP 1 — Warning
+      var deletedList=[
+        l==="en"?"Your account and email":"Tu cuenta y email",
+        l==="en"?"All workouts and sessions":"Todos los entrenos y sesiones",
+        l==="en"?"Personal records (PRs)":"Récords personales (PRs)",
+        l==="en"?"Body heatmap progress":"Progreso del mapa corporal",
+        l==="en"?"Muscle XP and levels":"XP y niveles musculares",
+        l==="en"?"PRO subscription status":"Estado de suscripción PRO"
+      ];
+      deleteInner=e("div",{style:{width:"100%",maxWidth:340,background:"#0a0d16",borderRadius:24,border:"1px solid rgba(220,50,50,0.3)",borderTop:"1px solid rgba(220,80,80,0.5)",padding:"28px 24px 24px"}},
+        e("div",{style:{textAlign:"center",marginBottom:20}},
+          e("div",{style:{fontSize:40,marginBottom:12}},"⚠️"),
+          e("div",{style:{fontFamily:BN,fontSize:26,color:"rgba(220,80,80,0.95)",letterSpacing:1,marginBottom:8,lineHeight:1.1}},
+            l==="en"?"DELETE ACCOUNT":"BORRAR CUENTA"),
+          e("div",{style:{fontFamily:"'SF Mono','Courier New',monospace",fontSize:11,color:"rgba(240,242,245,0.55)",lineHeight:1.5,letterSpacing:0.5}},
+            l==="en"?"This action is permanent and cannot be undone.":"Esta acción es permanente y no se puede deshacer.")
+        ),
+        e("div",{style:{background:"rgba(220,50,50,0.04)",border:"1px solid rgba(220,50,50,0.15)",borderRadius:14,padding:"14px 16px",marginBottom:20}},
+          e("div",{style:{fontFamily:"'SF Mono','Courier New',monospace",fontSize:8,color:"rgba(220,80,80,0.7)",letterSpacing:2,marginBottom:10}},
+            l==="en"?"WILL BE PERMANENTLY DELETED:":"SE BORRARÁ PERMANENTEMENTE:"),
+          e("div",{style:{display:"flex",flexDirection:"column",gap:6}},
+            deletedList.map(function(txt,i){
+              return e("div",{key:i,style:{display:"flex",alignItems:"center",gap:8,fontFamily:"'SF Mono','Courier New',monospace",fontSize:10,color:"rgba(240,242,245,0.75)"}},
+                e("div",{style:{width:3,height:3,borderRadius:"50%",background:"rgba(220,80,80,0.7)",flexShrink:0}}),
+                txt
+              );
+            })
+          )
+        ),
+        e("div",{style:{background:"rgba(230,180,60,0.06)",border:"1px solid rgba(230,180,60,0.2)",borderRadius:12,padding:"12px 14px",marginBottom:20}},
+          e("div",{style:{fontFamily:"'SF Mono','Courier New',monospace",fontSize:9,color:"rgba(230,180,60,0.85)",letterSpacing:1,lineHeight:1.5}},
+            l==="en"?"📌 If you have an active subscription, cancel it first in Settings → Apple ID → Subscriptions. Deleting your account here does NOT cancel billing.":"📌 Si tienes suscripción activa, cancélala primero en Ajustes → Apple ID → Suscripciones. Borrar tu cuenta aquí NO cancela el cobro.")
+        ),
+        e("button",{
+          onClick:function(){setDeleteStep(2);},
+          style:{width:"100%",padding:"14px",borderRadius:14,border:"none",cursor:"pointer",background:"linear-gradient(135deg,rgba(220,60,60,0.9),rgba(180,30,30,0.95))",color:"#fff",fontFamily:"'SF Mono','Courier New',monospace",fontSize:11,letterSpacing:2,fontWeight:700,marginBottom:10}
+        },l==="en"?"I UNDERSTAND · CONTINUE":"ENTIENDO · CONTINUAR"),
+        e("button",{
+          onClick:function(){setShowDelete(false);setDeleteStep(1);setDeleteSliderX(0);},
+          style:{width:"100%",padding:"12px",borderRadius:14,border:"none",cursor:"pointer",background:"rgba(255,255,255,0.05)",color:"rgba(255,255,255,0.5)",fontFamily:"'SF Mono','Courier New',monospace",fontSize:10,letterSpacing:2}
+        },l==="en"?"CANCEL":"CANCELAR")
+      );
+    }else{
+      // STEP 2 — Slider
+      deleteInner=e("div",{style:{width:"100%",maxWidth:340,background:"#0a0d16",borderRadius:24,border:"1px solid rgba(220,50,50,0.4)",borderTop:"1px solid rgba(220,80,80,0.6)",padding:"28px 24px 24px",textAlign:"center"}},
+        e("div",{style:{fontSize:40,marginBottom:16}},"🗑️"),
+        e("div",{style:{fontFamily:BN,fontSize:26,color:"rgba(220,80,80,0.95)",letterSpacing:1,marginBottom:8}},
+          l==="en"?"LAST CHANCE":"ÚLTIMA CONFIRMACIÓN"),
+        e("div",{style:{fontFamily:"'SF Mono','Courier New',monospace",fontSize:11,color:"rgba(240,242,245,0.55)",lineHeight:1.6,marginBottom:24}},
+          l==="en"?"Slide the button all the way to permanently delete your account.":"Desliza el botón hasta el final para borrar tu cuenta permanentemente."),
+        e("div",{style:{width:SLIDER_W,height:56,borderRadius:999,background:"rgba(220,50,50,0.1)",border:"1px solid rgba(220,50,50,0.25)",position:"relative",margin:"0 auto 16px",overflow:"hidden",userSelect:"none"}},
+          e("div",{style:{position:"absolute",left:2,top:2,bottom:2,width:deleteSliderX+THUMB_W-2,borderRadius:999,background:"rgba(220,50,50,"+(deleteSliderX/MAX_X*0.4)+")",transition:"background 0.1s"}}),
+          e("div",{style:{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'SF Mono','Courier New',monospace",fontSize:10,letterSpacing:3,fontWeight:700,color:"rgba(220,80,80,"+(1-deleteSliderX/MAX_X*0.8)+")",pointerEvents:"none"}},
+            l==="en"?"SLIDE TO DELETE ACCOUNT":"DESLIZA PARA BORRAR CUENTA"),
+          e("div",{
+            onMouseDown:function(ev){ev.preventDefault();onDeleteSliderStart(ev.clientX);},
+            onTouchStart:function(ev){onDeleteSliderStart(ev.touches[0].clientX);},
+            style:{position:"absolute",top:2,bottom:2,left:2+deleteSliderX,width:THUMB_W,borderRadius:999,background:"linear-gradient(135deg,rgba(220,60,60,0.95),rgba(160,20,20,1))",border:"1px solid rgba(255,100,100,0.4)",borderTop:"1px solid rgba(255,150,150,0.5)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"grab",fontSize:18,boxShadow:"0 2px 16px rgba(220,50,50,0.5)",transition:deleteDraggingRef.current?"none":"left 0.3s cubic-bezier(0.34,1.56,0.64,1)"}
+          },"→")
+        ),
+        e("button",{
+          onClick:function(){setDeleteStep(1);setDeleteSliderX(0);},
+          style:{width:"100%",padding:"12px",borderRadius:14,border:"none",cursor:"pointer",background:"rgba(255,255,255,0.05)",color:"rgba(255,255,255,0.4)",fontFamily:"'SF Mono','Courier New',monospace",fontSize:10,letterSpacing:2,marginTop:6}
+        },l==="en"?"← GO BACK":"← VOLVER")
+      );
+    }
+    DeleteModal=e("div",{
+      style:{position:"fixed",inset:0,zIndex:9999,background:"rgba(0,0,0,0.96)",backdropFilter:"blur(14px)",WebkitBackdropFilter:"blur(14px)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:24}
+    },deleteInner);
+  }
 
   return e("div",{
     onClick:function(ev){if(ev.target===ev.currentTarget)close();},
@@ -4953,27 +4878,23 @@ function ProfileSheet({show,onClose,profile,lang,mono,sp,setStep}){
 
         // ── SESSION (Google login / logout) ──
         (function(){
-          // Read auth state directly from Supabase's localStorage session
-          // This is more reliable than the global _user variable which may lag
+          // Read auth state directly from Supabase localStorage session
           var email=null;
           var isLoggedIn=false;
           try{
-            // Supabase stores the session in localStorage with a key like "sb-PROJECT_REF-auth-token"
             var projectRef=null;
-            try{
-              if(typeof FORJA_SUPABASE_URL!=='undefined'){
-                var m=FORJA_SUPABASE_URL.match(/\/\/([^.]+)/);
-                if(m)projectRef=m[1];
-              }
-            }catch(_){}
-            // Try to find the auth token key
-            var storageKey=projectRef?('sb-'+projectRef+'-auth-token'):null;
-            var raw=storageKey?localStorage.getItem(storageKey):null;
-            // Fallback: scan all keys for auth-token suffix
+            if(typeof FORJA_SUPABASE_URL!=='undefined'){
+              var m=FORJA_SUPABASE_URL.match(/\/\/([^.]+)/);
+              if(m)projectRef=m[1];
+            }
+            var raw=null;
+            if(projectRef){
+              raw=localStorage.getItem('sb-'+projectRef+'-auth-token');
+            }
             if(!raw){
-              for(var k in localStorage){
-                if(k.indexOf('sb-')===0&&k.indexOf('-auth-token')>0){
-                  raw=localStorage.getItem(k);
+              for(var kk in localStorage){
+                if(kk.indexOf('sb-')===0&&kk.indexOf('-auth-token')>0){
+                  raw=localStorage.getItem(kk);
                   if(raw)break;
                 }
               }
@@ -4987,7 +4908,6 @@ function ProfileSheet({show,onClose,profile,lang,mono,sp,setStep}){
               }
             }
           }catch(_){}
-          // Also fallback to isUserAnonymous() if the above didn't work
           if(!isLoggedIn){
             try{
               if(typeof isUserAnonymous==='function'&&!isUserAnonymous()){
@@ -5008,54 +4928,50 @@ function ProfileSheet({show,onClose,profile,lang,mono,sp,setStep}){
                 background:"rgba(66,133,244,0.08)",
                 border:"1px solid rgba(66,133,244,0.25)",
                 borderTop:"1px solid rgba(120,170,255,0.35)",
-                display:"flex",alignItems:"center",gap:16,
-              }},
+                display:"flex",alignItems:"center",gap:16
+              }
+            },
               e("div",{style:{
                 width:44,height:44,borderRadius:14,flexShrink:0,
                 background:"rgba(66,133,244,0.12)",
                 border:"1px solid rgba(66,133,244,0.25)",
-                display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,
+                display:"flex",alignItems:"center",justifyContent:"center",fontSize:20
               }},"☁️"),
               e("div",{style:{flex:1}},
-                e("div",{style:{fontFamily:BN,fontSize:20,color:"rgba(170,200,255,0.95)",letterSpacing:1,lineHeight:1,
-                  marginBottom:4}},l==="en"?"SIGN IN WITH GOOGLE":"ENTRAR CON GOOGLE"),
+                e("div",{style:{fontFamily:BN,fontSize:20,color:"rgba(170,200,255,0.95)",letterSpacing:1,lineHeight:1,marginBottom:4}},
+                  l==="en"?"SIGN IN WITH GOOGLE":"ENTRAR CON GOOGLE"),
                 e("div",{style:{fontFamily:MN,fontSize:9,color:"rgba(170,200,255,0.5)",letterSpacing:0.5}},
-                  l==="en"?"Sync across devices":l==="fr"?"Sync multi-appareils":l==="it"?"Sync tra dispositivi":l==="de"?"Geräte synchronisieren":"Sincroniza tus dispositivos")
+                  l==="en"?"Sync across devices":"Sincroniza tus dispositivos")
               ),
-              e("div",{style:{
-                fontFamily:MN,fontSize:14,color:"rgba(170,200,255,0.7)",
-              }},"→")
+              e("div",{style:{fontFamily:MN,fontSize:14,color:"rgba(170,200,255,0.7)"}},"→")
             );
           }
+
           // User IS logged in
-          return e("div",{
-            style:{
-              margin:"0 16px 24px",padding:"16px 20px",
-              borderRadius:18,
-              background:"rgba(63,207,142,0.05)",
-              border:"1px solid rgba(63,207,142,0.2)",
-              borderTop:"1px solid rgba(100,230,160,0.25)",
-              display:"flex",alignItems:"center",gap:16,
-            }},
+          return e("div",{style:{
+            margin:"0 16px 24px",padding:"16px 20px",
+            borderRadius:18,
+            background:"rgba(63,207,142,0.05)",
+            border:"1px solid rgba(63,207,142,0.2)",
+            borderTop:"1px solid rgba(100,230,160,0.25)",
+            display:"flex",alignItems:"center",gap:16
+          }},
             e("div",{style:{
               width:44,height:44,borderRadius:14,flexShrink:0,
               background:"rgba(63,207,142,0.1)",
               border:"1px solid rgba(63,207,142,0.25)",
-              display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,
+              display:"flex",alignItems:"center",justifyContent:"center",fontSize:20
             }},"✓"),
             e("div",{style:{flex:1,minWidth:0}},
-              e("div",{style:{fontFamily:BN,fontSize:18,color:"rgba(180,240,210,0.95)",letterSpacing:1,lineHeight:1,
-                marginBottom:4,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},
+              e("div",{style:{fontFamily:BN,fontSize:18,color:"rgba(180,240,210,0.95)",letterSpacing:1,lineHeight:1,marginBottom:4,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},
                 email||"GOOGLE"),
               e("div",{style:{fontFamily:MN,fontSize:9,color:"rgba(180,240,210,0.5)",letterSpacing:0.5}},
-                l==="en"?"Connected · Tap to sign out":l==="fr"?"Connecté · Toucher pour déconnecter":l==="it"?"Connesso · Tocca per uscire":l==="de"?"Verbunden · Tippen zum Abmelden":"Conectado · Toca para salir")
+                l==="en"?"Connected · Tap to sign out":"Conectado · Toca para salir")
             ),
             e("div",{
               onClick:function(){
                 try{
-                  if(confirm(l==="en"?"Sign out?":l==="fr"?"Déconnecter?":l==="it"?"Uscire?":l==="de"?"Abmelden?":"¿Cerrar sesión?")){
-                    if(typeof doSignOut==='function')doSignOut();
-                  }
+                  if(typeof doSignOut==='function')doSignOut();
                 }catch(_){}
               },
               style:{
@@ -5063,9 +4979,10 @@ function ProfileSheet({show,onClose,profile,lang,mono,sp,setStep}){
                 color:"rgba(255,255,255,0.5)",
                 padding:"6px 10px",borderRadius:8,cursor:"pointer",
                 border:"1px solid rgba(255,255,255,0.15)",
-                background:"rgba(255,255,255,0.03)",flexShrink:0,
-              }},
-              l==="en"?"SIGN OUT":l==="fr"?"SORTIR":l==="it"?"USCIRE":l==="de"?"AUSLOGGEN":"SALIR"
+                background:"rgba(255,255,255,0.03)",flexShrink:0
+              }
+            },
+              l==="en"?"SIGN OUT":"SALIR"
             )
           );
         })(),
