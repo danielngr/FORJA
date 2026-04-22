@@ -8123,10 +8123,13 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
   const stRef      = React.useRef({});
   const rafRef     = React.useRef(null);
   const [loaded,     setLoaded]     = React.useState(false);
+  // DEV: allow overriding level via window.__forjaTestLevel for testing aura colors
+  const [devLevelOverride,setDevLevelOverride]=React.useState(null);
   const globalLevel=React.useMemo(()=>{
+    if(devLevelOverride!==null)return devLevelOverride;
     const totalXP=Object.values(muscleXP||{}).reduce((s,z)=>s+(z?.xp||0),0);
     return xpToLevel(totalXP);
-  },[muscleXP]);
+  },[muscleXP,devLevelOverride]);
   const AURA_COLS=['#2a3040','#2d4a6e','#1a6b8a','#1a9e7a','#2da84a','#8ab82d','#e8a020','#e86020','#d42020','#FFD700'];
   React.useEffect(()=>{
     const cvs=cvsRef.current;
@@ -8499,6 +8502,27 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
     })(),
     e("div",{ref:wrapRef,"data-tour":"mannequin",style:{position:"relative",height:480,touchAction:"none",marginBottom:0},onClick:handleClick},
       e("canvas",{ref:cvsRef,id:"forja-canvas-3d",style:{display:"block",width:"100%",height:"100%"}}),
+      // DEV: temporary button to cycle through aura levels 1→10 for visual testing
+      isPro()&&e("div",{
+        onClick:(ev)=>{
+          ev.stopPropagation();
+          setDevLevelOverride(function(prev){
+            // Cycle: null (real) → 1 → 2 → 3 ... → 10 → null
+            if(prev===null)return 1;
+            if(prev>=10)return null;
+            return prev+1;
+          });
+        },
+        style:{position:"absolute",top:8,left:8,zIndex:11,padding:"6px 12px",borderRadius:20,
+          background:"rgba(13,15,20,0.85)",border:"1px solid rgba(192,168,112,0.6)",
+          cursor:"pointer",display:"flex",alignItems:"center",gap:6,
+          backdropFilter:"blur(6px)"}
+      },
+        e("span",{style:{fontSize:11}},"⚡"),
+        e("span",{style:{fontFamily:"'SF Mono','Fira Code',monospace",fontSize:8,color:"#c0a870",letterSpacing:1.5,fontWeight:700}},
+          devLevelOverride===null?"AURA TEST · TAP":"LVL "+devLevelOverride+" · NEXT"
+        )
+      ),
       !isPro()&&e("div",{
         onClick:()=>{try{window.dispatchEvent(new CustomEvent("forja:showPro"));}catch(_){}},
         style:{position:"absolute",top:8,right:8,zIndex:10,padding:"4px 10px",borderRadius:20,
