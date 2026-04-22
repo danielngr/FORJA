@@ -4316,10 +4316,29 @@ function ProfileSheet({show,onClose,profile,lang,mono,sp,setStep}){
   var[deleting,setDeleting]=React.useState(false);
   var[sliderX,setSliderX]=React.useState(0);
   var[deleteSliderX,setDeleteSliderX]=React.useState(0);
+  // Forced re-render counter — increments when auth state changes
+  // so isUserAnonymous() gets re-evaluated after Google login
+  var[authTick,setAuthTick]=React.useState(0);
   var sliderRef=React.useRef(null);
   var deleteSliderRef=React.useRef(null);
   var draggingRef=React.useRef(false);
   var deleteDraggingRef=React.useRef(false);
+
+  // Listen for auth changes and force re-render
+  React.useEffect(function(){
+    try{
+      var sb=(typeof getSb==='function')?getSb():null;
+      if(!sb)return;
+      var sub=sb.auth.onAuthStateChange(function(event,session){
+        // Any auth change — force re-render so isUserAnonymous() gets re-checked
+        setAuthTick(function(t){return t+1;});
+      });
+      return function(){
+        try{sub&&sub.data&&sub.data.subscription&&sub.data.subscription.unsubscribe();}catch(_){}
+      };
+    }catch(_){}
+  },[]);
+
   if(!show&&!closing) return null;
 
   var SLIDER_W=260;
@@ -4928,9 +4947,51 @@ function ProfileSheet({show,onClose,profile,lang,mono,sp,setStep}){
 
         // ── SESSION (Google login / logout) ──
         (function(){
-          var anon=(typeof isUserAnonymous==='function')?isUserAnonymous():true;
-          var email=(typeof getUserEmail==='function')?getUserEmail():null;
-          if(anon){
+          // Read auth state directly from Supabase's localStorage session
+          // This is more reliable than the global _user variable which may lag
+          var email=null;
+          var isLoggedIn=false;
+          try{
+            // Supabase stores the session in localStorage with a key like "sb-PROJECT_REF-auth-token"
+            var projectRef=null;
+            try{
+              if(typeof FORJA_SUPABASE_URL!=='undefined'){
+                var m=FORJA_SUPABASE_URL.match(/\/\/([^.]+)/);
+                if(m)projectRef=m[1];
+              }
+            }catch(_){}
+            // Try to find the auth token key
+            var storageKey=projectRef?('sb-'+projectRef+'-auth-token'):null;
+            var raw=storageKey?localStorage.getItem(storageKey):null;
+            // Fallback: scan all keys for auth-token suffix
+            if(!raw){
+              for(var k in localStorage){
+                if(k.indexOf('sb-')===0&&k.indexOf('-auth-token')>0){
+                  raw=localStorage.getItem(k);
+                  if(raw)break;
+                }
+              }
+            }
+            if(raw){
+              var parsed=JSON.parse(raw);
+              var u=parsed&&(parsed.user||(parsed.currentSession&&parsed.currentSession.user));
+              if(u&&u.email&&u.app_metadata&&u.app_metadata.provider!=='anonymous'){
+                email=u.email;
+                isLoggedIn=true;
+              }
+            }
+          }catch(_){}
+          // Also fallback to isUserAnonymous() if the above didn't work
+          if(!isLoggedIn){
+            try{
+              if(typeof isUserAnonymous==='function'&&!isUserAnonymous()){
+                isLoggedIn=true;
+                email=(typeof getUserEmail==='function')?getUserEmail():null;
+              }
+            }catch(_){}
+          }
+
+          if(!isLoggedIn){
             return e("div",{
               onClick:function(){
                 try{if(typeof doGoogleSignIn==='function')doGoogleSignIn();}catch(_){}
@@ -5124,9 +5185,42 @@ function ProfileSheet({show,onClose,profile,lang,mono,sp,setStep}){
 
         // ── DELETE ACCOUNT (Apple Guideline 5.1.1(v) requirement) ──
         (function(){
-          var anon=(typeof isUserAnonymous==='function')?isUserAnonymous():true;
+          // Detect login state reliably by reading Supabase session from localStorage
+          var isLoggedIn=false;
+          try{
+            var projectRef=null;
+            try{
+              if(typeof FORJA_SUPABASE_URL!=='undefined'){
+                var m=FORJA_SUPABASE_URL.match(/\/\/([^.]+)/);
+                if(m)projectRef=m[1];
+              }
+            }catch(_){}
+            var storageKey=projectRef?('sb-'+projectRef+'-auth-token'):null;
+            var raw=storageKey?localStorage.getItem(storageKey):null;
+            if(!raw){
+              for(var k in localStorage){
+                if(k.indexOf('sb-')===0&&k.indexOf('-auth-token')>0){
+                  raw=localStorage.getItem(k);
+                  if(raw)break;
+                }
+              }
+            }
+            if(raw){
+              var parsed=JSON.parse(raw);
+              var u=parsed&&(parsed.user||(parsed.currentSession&&parsed.currentSession.user));
+              if(u&&u.email&&u.app_metadata&&u.app_metadata.provider!=='anonymous'){
+                isLoggedIn=true;
+              }
+            }
+          }catch(_){}
+          // Fallback to isUserAnonymous()
+          if(!isLoggedIn){
+            try{
+              if(typeof isUserAnonymous==='function'&&!isUserAnonymous())isLoggedIn=true;
+            }catch(_){}
+          }
           // Only show delete account button if user has a real account (not anonymous)
-          if(anon) return null;
+          if(!isLoggedIn) return null;
           return e("div",{
             onClick:function(){setShowDelete(true);setDeleteStep(1);setDeleteSliderX(0);},
             style:{
