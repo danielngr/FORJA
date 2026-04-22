@@ -8208,6 +8208,7 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
   const camRef     = React.useRef(null);
   const stRef      = React.useRef({});
   const rafRef     = React.useRef(null);
+  const auraRef    = React.useRef(null); // ascending particle aura system
   const [loaded,     setLoaded]     = React.useState(false);
   // DEV: allow overriding level via window.__forjaTestLevel for testing aura colors
   const [devLevelOverride,setDevLevelOverride]=React.useState(null);
@@ -8220,21 +8221,10 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
   React.useEffect(()=>{
     const cvs=cvsRef.current;
     if(!cvs) return;
-    const i=Math.max(0,globalLevel-1); // 0-9
-    const col=AURA_COLS[Math.min(9,i)];
-    if(globalLevel<=1){
-      cvs.style.filter='none';
-    } else if(!isPro()) {
-      cvs.style.filter='drop-shadow(0 0 4px rgba(255,255,255,0.08))';
-    } else {
-      const sz1=3+i*3, sz2=7+i*6, sz3=13+i*9;
-      const h=n=>Math.round(n*255).toString(16).padStart(2,'0');
-      cvs.style.filter=[
-        `drop-shadow(0 0 ${sz1}px ${col}${h(.5+i*.04)})`,
-        `drop-shadow(0 0 ${sz2}px ${col}${h(.22+i*.025)})`,
-        `drop-shadow(0 0 ${sz3}px ${col}${h(.08+i*.01)})`,
-      ].join(' ');
-    }
+    // NOTE: the old CSS filter drop-shadow "glow" has been replaced
+    // by real 3D particles rising around the body (see main useEffect).
+    // We keep filter='none' to not compete with the particle system.
+    cvs.style.filter='none';
   },[globalLevel,loaded]);
   const [progress,   setProgress]   = React.useState(0);
   const [pTxt,       setPTxt]       = React.useState("iniciando...");
@@ -8335,10 +8325,90 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
     window.addEventListener("pointermove",onMove);
     window.addEventListener("pointerup",onUp);
     const t0=performance.now();
+    // Helper: parse hex color to normalized RGB (0..1)
+    function hexToNormalizedRGB(hex){
+      const h=hex.replace('#','');
+      return[parseInt(h.slice(0,2),16)/255,parseInt(h.slice(2,4),16)/255,parseInt(h.slice(4,6),16)/255];
+    }
+    let lastFrameTime=t0;
     function animate(t){
       rafRef.current=requestAnimationFrame(animate);
+      const dt=Math.min(0.05,(t-lastFrameTime)/1000); // delta time in seconds, capped
+      lastFrameTime=t;
       if(auto&&modelRef.current){ rotY=(t-t0)*0.00022+(typeof rotOffset!=='undefined'?rotOffset:0); applyRot(); }
       if(!drag&&!auto&&Math.abs(mom)>0.0002){ rotY+=mom; applyRot(); mom*=0.92; }
+
+      // ═══ AURA ASCENDENTE: update particle positions ═══
+      const aura=auraRef.current;
+      if(aura){
+        // Get current level from closure (via state machine)
+        // We re-read isPro() + level each frame — lightweight check
+        const proActive=(typeof isPro==='function')&&isPro();
+        // Read level from global override OR muscle XP (closure captures latest state)
+        let level=1;
+        try{
+          const mxp=mxpRef.current||{};
+          const total=Object.values(mxp).reduce((s,z)=>s+(z&&z.xp||0),0);
+          level=xpToLevel(total);
+        }catch(_){}
+        // Also honor dev override (stored on window for cross-component access)
+        if(typeof window.__forjaAuraLevel==='number')level=window.__forjaAuraLevel;
+
+        // Determine active particle count based on level (0 = aura off)
+        let activeCount=0;
+        if(proActive && level>=2){
+          if(level<=3)activeCount=8;       // tier 1: low
+          else if(level<=6)activeCount=18; // tier 2: mid
+          else activeCount=30;             // tier 3: high
+        }
+
+        // Get color for current level (fallback to gray)
+        const colorHex=AURA_COLS[Math.max(0,Math.min(9,level-1))];
+        const[cr,cg,cb]=hexToNormalizedRGB(colorHex);
+
+        // Update each particle
+        for(let i=0;i<aura.maxParticles;i++){
+          if(i>=activeCount){
+            // Not active: hide off-screen
+            aura.pos[i*3+1]=-1000;
+            aura.col[i*3]=0;aura.col[i*3+1]=0;aura.col[i*3+2]=0;
+            continue;
+          }
+          // Advance life (0..1)
+          aura.life[i]+=dt*0.25*aura.speed[i]; // ~4 seconds per cycle
+          if(aura.life[i]>=1){
+            // Respawn: reset with fresh jitter
+            aura.initParticle(i,false);
+          }
+          const lifeT=aura.life[i];
+          // Vertical position: from bottom to top of body
+          const yRange=aura.bodyTop-aura.bodyBottom;
+          const y=aura.bodyBottom+lifeT*yRange*1.1; // go slightly above head
+          // Lateral position: side of body + wobble
+          // bodyWidth/2 is half body, + small offset so particles float OUTSIDE silhouette
+          const sideOffset=aura.bodyWidth*0.55;
+          const wobbleX=Math.sin(lifeT*Math.PI*2+i*0.5)*0.15;
+          const x=aura.bodyCenter.x+aura.side[i]*sideOffset+wobbleX+aura.jitter[i*2]*0.2;
+          // Depth: slight forward wobble
+          const z=Math.sin(lifeT*Math.PI+i*0.3)*0.3+aura.jitter[i*2+1]*0.3;
+
+          aura.pos[i*3]=x;
+          aura.pos[i*3+1]=y;
+          aura.pos[i*3+2]=z;
+
+          // Fade in at birth (first 15%), fade out at death (last 30%)
+          let alpha=1;
+          if(lifeT<0.15)alpha=lifeT/0.15;
+          else if(lifeT>0.7)alpha=1-(lifeT-0.7)/0.3;
+          // Apply color with alpha (additive blending means we just scale RGB)
+          aura.col[i*3]=cr*alpha;
+          aura.col[i*3+1]=cg*alpha;
+          aura.col[i*3+2]=cb*alpha;
+        }
+        aura.geo.attributes.position.needsUpdate=true;
+        aura.geo.attributes.color.needsUpdate=true;
+      }
+
       ren.render(scene,cam);
     }
     rafRef.current=requestAnimationFrame(animate);
@@ -8382,6 +8452,55 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
         group.scale.setScalar(17/Math.max(size.x,size.y,size.z));
         scene.add(group); modelRef.current=group;
         refreshMats(stRef.current);
+
+        // ══════════════════════════════════════════════════════════
+        // AURA ASCENDENTE — Partículas que suben a los costados del cuerpo
+        // Reacciona a globalLevel: más nivel = más partículas + color cálido
+        // Solo activa si isPro() y globalLevel >= 2
+        // ══════════════════════════════════════════════════════════
+        const MAX_PARTICLES=40; // suficiente para nivel 10
+        const auraPos=new Float32Array(MAX_PARTICLES*3);
+        const auraCol=new Float32Array(MAX_PARTICLES*3);
+        const auraLife=new Float32Array(MAX_PARTICLES); // 0..1, reset when reaches 1
+        const auraSpeed=new Float32Array(MAX_PARTICLES); // velocity multiplier
+        const auraSide=new Float32Array(MAX_PARTICLES); // -1 left, +1 right
+        const auraJitter=new Float32Array(MAX_PARTICLES*2); // lateral + depth wobble
+        // Get body bounds so particles follow body shape
+        const bodyBox=new THREE.Box3().setFromObject(group);
+        const bodySize=bodyBox.getSize(new THREE.Vector3());
+        const bodyCenter=bodyBox.getCenter(new THREE.Vector3());
+        const bodyBottom=bodyCenter.y-bodySize.y/2;
+        const bodyTop=bodyCenter.y+bodySize.y/2;
+        const bodyWidth=bodySize.x;
+        function initParticle(i,randomLife){
+          auraLife[i]=randomLife?Math.random():0;
+          auraSpeed[i]=0.5+Math.random()*0.7; // varied speed
+          auraSide[i]=Math.random()<0.5?-1:1;
+          auraJitter[i*2]=(Math.random()-0.5)*0.6;      // lateral wobble
+          auraJitter[i*2+1]=(Math.random()-0.5)*0.8;    // depth wobble (z)
+        }
+        for(let i=0;i<MAX_PARTICLES;i++){
+          initParticle(i,true); // distribute lives so they don't all spawn at once
+          auraPos[i*3]=0;auraPos[i*3+1]=-1000;auraPos[i*3+2]=0; // off-screen initially
+        }
+        const auraGeo=new THREE.BufferGeometry();
+        auraGeo.setAttribute("position",new THREE.BufferAttribute(auraPos,3));
+        auraGeo.setAttribute("color",new THREE.BufferAttribute(auraCol,3));
+        const auraMat=new THREE.PointsMaterial({
+          size:0.14,vertexColors:true,transparent:true,opacity:0.9,
+          sizeAttenuation:true,blending:THREE.AdditiveBlending,depthWrite:false
+        });
+        const auraPoints=new THREE.Points(auraGeo,auraMat);
+        scene.add(auraPoints);
+        // Store refs so we can update from animate loop
+        auraRef.current={
+          points:auraPoints,geo:auraGeo,pos:auraPos,col:auraCol,
+          life:auraLife,speed:auraSpeed,side:auraSide,jitter:auraJitter,
+          initParticle:initParticle,
+          bodyBottom:bodyBottom,bodyTop:bodyTop,bodyWidth:bodyWidth,bodyCenter:bodyCenter,
+          maxParticles:MAX_PARTICLES
+        };
+
         setProgress(100); setPTxt(es?"listo":lang==="fr"?"prêt":lang==="it"?"pronto":lang==="de"?"bereit":"ready");
         setTimeout(()=>setLoaded(true),300);
       })
@@ -8594,9 +8713,11 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
           ev.stopPropagation();
           setDevLevelOverride(function(prev){
             // Cycle: null (real) → 1 → 2 → 3 ... → 10 → null
-            if(prev===null)return 1;
-            if(prev>=10)return null;
-            return prev+1;
+            const next=prev===null?1:(prev>=10?null:prev+1);
+            // Sync with global so animate loop sees it immediately
+            if(next===null){try{delete window.__forjaAuraLevel;}catch(_){}}
+            else{window.__forjaAuraLevel=next;}
+            return next;
           });
         },
         style:{position:"absolute",top:8,left:8,zIndex:11,padding:"6px 12px",borderRadius:20,
