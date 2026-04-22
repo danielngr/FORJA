@@ -8393,8 +8393,8 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
           aura.pos[i*3+2]=z;
 
           let alpha=1;
-          if(lifeT<0.15)alpha=lifeT/0.15;
-          else if(lifeT>0.7)alpha=1-(lifeT-0.7)/0.3;
+          if(lifeT<0.15)alpha=0.5+(lifeT/0.15)*0.5; // min 50% alpha even at birth
+          else if(lifeT>0.7)alpha=0.5+(1-(lifeT-0.7)/0.3)*0.5; // min 50% at death
           aura.col[i*3]=cr*alpha;
           aura.col[i*3+1]=cg*alpha;
           aura.col[i*3+2]=cb*alpha;
@@ -8450,6 +8450,18 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
         // Force matrix update so subsequent bounding box calcs are correct
         group.updateMatrixWorld(true);
 
+        // Guard against double initialization (React StrictMode in dev)
+        if(auraRef.current && auraRef.current.points){
+          try{
+            if(auraRef.current.points.parent){
+              auraRef.current.points.parent.remove(auraRef.current.points);
+            }
+            auraRef.current.geo.dispose();
+            auraRef.current.points.material.dispose();
+          }catch(_){}
+          auraRef.current=null;
+        }
+
         // ══════════════════════════════════════════════════════════
         // AURA ASCENDENTE — Partículas que suben a los costados del cuerpo
         // Añadidas como HIJAS del group para que roten/escalen con el modelo
@@ -8487,20 +8499,21 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
         auraGeo.setAttribute("position",new THREE.BufferAttribute(auraPos,3));
         auraGeo.setAttribute("color",new THREE.BufferAttribute(auraCol,3));
         const auraMat=new THREE.PointsMaterial({
-          size:0.8,vertexColors:true,transparent:true,opacity:1.0,
-          sizeAttenuation:true,blending:THREE.AdditiveBlending,depthWrite:false
+          size:2.5,vertexColors:true,transparent:true,opacity:1.0,
+          sizeAttenuation:false,blending:THREE.AdditiveBlending,depthWrite:false,depthTest:false
         });
         const auraPoints=new THREE.Points(auraGeo,auraMat);
         // IMPORTANT: add as CHILD of group so particles inherit group's transform
         group.add(auraPoints);
-        console.log('[FORJA AURA] particle system created',{
-          bodyHeight:bodyHeight,
-          bodyWidth:bodyWidthLocal,
-          localBottomY:localBottomY,
-          localTopY:localTopY,
-          groupScale:group.scale.x,
-          groupPos:group.position.toArray()
-        });
+        console.log('[FORJA AURA] particle system created: '+JSON.stringify({
+          bodyHeight:bodyHeight.toFixed(2),
+          bodyWidth:bodyWidthLocal.toFixed(2),
+          localBottomY:localBottomY.toFixed(2),
+          localTopY:localTopY.toFixed(2),
+          groupScale:group.scale.x.toFixed(3),
+          groupPosY:group.position.y.toFixed(2),
+          particleSize:auraMat.size
+        }));
         auraRef.current={
           points:auraPoints,geo:auraGeo,pos:auraPos,col:auraCol,
           life:auraLife,speed:auraSpeed,side:auraSide,jitter:auraJitter,
