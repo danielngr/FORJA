@@ -404,20 +404,49 @@ const FStore={
   },
 
   async loadProfile(){
+    const sb=getSB();
+    const user=await ensureAuth();
+
+    // Strategy: if user is authenticated, ALWAYS fetch from Supabase (source of truth)
+    // localStorage is only used as offline fallback when no auth/connection
+    if(sb && user){
+      syncDot('syncing');
+      try{
+        const{data,error}=await sb.from('user_profiles')
+          .select('profile_data,routine_data')
+          .eq('user_id',user.id)
+          .maybeSingle();
+
+        if(error){
+          // Network/RLS error — fall back to localStorage cache
+          console.warn('loadProfile: Supabase error, using cache',error);
+          syncDot('error');
+        } else if(data && data.profile_data){
+          // Got fresh data from Supabase — update cache and return
+          try{localStorage.setItem('fv8p',JSON.stringify(data.profile_data));}catch(_){}
+          try{localStorage.setItem('fv8r',JSON.stringify(data.routine_data));}catch(_){}
+          syncDot('ok');
+          return{profile:data.profile_data,routine:data.routine_data};
+        } else {
+          // No row in Supabase — user is fresh (new signup, or post-delete)
+          // Clear any stale localStorage that may belong to a previous account
+          try{localStorage.removeItem('fv8p');}catch(_){}
+          try{localStorage.removeItem('fv8r');}catch(_){}
+          syncDot('ok');
+          return null; // triggers onboarding
+        }
+      }catch(e){
+        console.warn('loadProfile: exception, falling back to cache',e);
+        syncDot('error');
+      }
+    }
+
+    // Fallback: use localStorage (offline mode or no auth)
     try{
       const p=localStorage.getItem('fv8p');const r=localStorage.getItem('fv8r');
       if(p)return{profile:JSON.parse(p),routine:r?JSON.parse(r):null};
     }catch(_){}
-    const sb=getSB();const user=await ensureAuth();
-    if(!sb||!user)return null;
-    syncDot('syncing');
-    const{data}=await sb.from('user_profiles').select('profile_data,routine_data').eq('user_id',user.id).maybeSingle();
-    if(data){
-      try{localStorage.setItem('fv8p',JSON.stringify(data.profile_data));}catch(_){}
-      try{localStorage.setItem('fv8r',JSON.stringify(data.routine_data));}catch(_){}
-      syncDot('ok');
-      return{profile:data.profile_data,routine:data.routine_data};
-    }
+
     return null;
   },
 
@@ -448,26 +477,42 @@ const FStore={
   },
 
   async loadLogs(){
+    const sb=getSB();
+    const user=await ensureAuth();
+
+    // Strategy: always fetch from Supabase if authenticated (source of truth)
+    if(sb && user){
+      syncDot('syncing');
+      try{
+        const{data,error}=await sb.from('exercise_logs')
+          .select('exercise_id,exercise_name,logged_at,weight_kg,reps,estimated_1rm')
+          .eq('user_id',user.id).order('logged_at',{ascending:false}).limit(1000);
+
+        if(error){
+          console.warn('loadLogs: Supabase error, using cache',error);
+          syncDot('error');
+        } else if(data){
+          const logs={};
+          const nm={};
+          data.forEach(row=>{
+            if(!logs[row.exercise_id])logs[row.exercise_id]=[];
+            logs[row.exercise_id].push({d:row.logged_at,w:row.weight_kg,r:row.reps,rm:row.estimated_1rm});
+            if(row.exercise_name&&row.exercise_name!==row.exercise_id)nm[row.exercise_id]=row.exercise_name;
+          });
+          try{localStorage.setItem('fv8l',JSON.stringify(logs));}catch(_){}
+          try{const existing=JSON.parse(localStorage.getItem('fv8_nm')||'{}');localStorage.setItem('fv8_nm',JSON.stringify({...nm,...existing}));}catch(_){}
+          syncDot('ok');
+          return logs;
+        }
+      }catch(e){
+        console.warn('loadLogs: exception',e);
+        syncDot('error');
+      }
+    }
+
+    // Fallback: localStorage cache
     try{const raw=localStorage.getItem('fv8l');if(raw)return JSON.parse(raw);}catch(_){}
-    const sb=getSB();const user=await ensureAuth();
-    if(!sb||!user)return{};
-    syncDot('syncing');
-    try{
-      const{data}=await sb.from('exercise_logs')
-        .select('exercise_id,exercise_name,logged_at,weight_kg,reps,estimated_1rm')
-        .eq('user_id',user.id).order('logged_at',{ascending:false}).limit(1000);
-      if(!data)return{};
-      const logs={};
-      const nm={};
-      data.forEach(row=>{
-        if(!logs[row.exercise_id])logs[row.exercise_id]=[];
-        logs[row.exercise_id].push({d:row.logged_at,w:row.weight_kg,r:row.reps,rm:row.estimated_1rm});
-        if(row.exercise_name&&row.exercise_name!==row.exercise_id)nm[row.exercise_id]=row.exercise_name;
-      });
-      try{localStorage.setItem('fv8l',JSON.stringify(logs));}catch(_){}
-      try{const existing=JSON.parse(localStorage.getItem('fv8_nm')||'{}');localStorage.setItem('fv8_nm',JSON.stringify({...nm,...existing}));}catch(_){}
-      syncDot('ok');return logs;
-    }catch(e){syncDot('error');return{};}
+    return{};
   },
 
   async saveSession(dayLabel,exercises,durationSecs){
@@ -502,6 +547,25 @@ const FStore={
     try{const r=localStorage.getItem(`fv8m:${dateKey}`);return r?JSON.parse(r):{};}catch(_){return{};}
   },
   loadMuscleXP(){
+    try{const r=localStorage.getItem('fv8_mxp');return r?JSON.parse(r):{};}catch(_){return{};}
+  },
+  async loadMuscleXPAsync(){
+    const sb=getSB();
+    const user=await ensureAuth();
+    if(sb && user){
+      try{
+        const{data,error}=await sb.from('muscle_xp').select('xp_data').eq('user_id',user.id).maybeSingle();
+        if(!error && data && data.xp_data){
+          try{localStorage.setItem('fv8_mxp',JSON.stringify(data.xp_data));}catch(_){}
+          return data.xp_data;
+        } else if(!error && !data){
+          // No data in Supabase — clear stale cache
+          try{localStorage.removeItem('fv8_mxp');}catch(_){}
+          return {};
+        }
+      }catch(e){console.warn('loadMuscleXPAsync error',e);}
+    }
+    // Fallback: localStorage
     try{const r=localStorage.getItem('fv8_mxp');return r?JSON.parse(r):{};}catch(_){return{};}
   },
   saveMuscleXP(data){
@@ -5959,6 +6023,28 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
     setAcwr(computeACWR(localLoads));
     FStore.loadACWR().then(loads=>setAcwr(computeACWR(loads)));
   },[w]);
+  // Listen for data refresh events (fired after login/auth changes)
+  // This keeps logs/xp in sync when the user logs in with a different account
+  useEffect(()=>{
+    const onXPLoaded=function(ev){
+      const xp=ev&&ev.detail&&ev.detail.xp;
+      if(xp)setMuscleXP(xp);
+    };
+    const onDataRefresh=function(){
+      // Re-fetch logs from Supabase
+      FStore.loadLogs().then(l=>setLogs(l)).catch(function(){});
+    };
+    try{
+      window.addEventListener('forja:muscleXPLoaded',onXPLoaded);
+      window.addEventListener('forja:dataRefresh',onDataRefresh);
+    }catch(_){}
+    return function(){
+      try{
+        window.removeEventListener('forja:muscleXPLoaded',onXPLoaded);
+        window.removeEventListener('forja:dataRefresh',onDataRefresh);
+      }catch(_){}
+    };
+  },[]);
   const sd=useCallback(n=>{setDone(n);FStore.saveDone(w,n);},[w]);
   useEffect(()=>{
     const active = typeof tourStep === 'number' && tourStep >= 0;
@@ -8837,6 +8923,19 @@ function App(){
               if(wasPro){
                 try{window.dispatchEvent(new CustomEvent('forja:proStatusChanged',{detail:{isPro:true}}));}catch(_){}
               }
+            }).catch(function(){});
+          }
+        }catch(_){}
+        // Also refresh logs and muscle XP from Supabase so stale localStorage
+        // from a previous session doesn't override fresh cloud data
+        try{
+          FStore.loadLogs().catch(function(){});
+        }catch(_){}
+        try{
+          if(typeof FStore.loadMuscleXPAsync==='function'){
+            FStore.loadMuscleXPAsync().then(function(xp){
+              // Trigger event so components that use muscleXP refresh
+              try{window.dispatchEvent(new CustomEvent('forja:muscleXPLoaded',{detail:{xp:xp}}));}catch(_){}
             }).catch(function(){});
           }
         }catch(_){}
