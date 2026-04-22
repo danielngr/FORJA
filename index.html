@@ -11,7 +11,8 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html,body{height:100%;background:#04080f;}
-body{overscroll-behavior:none;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right);}
+body{overscroll-behavior:none;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right);font-family:'Archivo',system-ui,-apple-system,sans-serif;font-weight:400;}
+input,button,textarea,select{font-family:inherit;}
 input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;}
 input[type=number]{-moz-appearance:textfield;}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -88,7 +89,7 @@ input[type=number]{-moz-appearance:textfield;}
 <meta name="apple-mobile-web-app-title" content="FORJA"/>
 <link rel="apple-touch-icon" href="icons/icon-192.png"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,700&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,700&family=DM+Mono:wght@300;400;500&family=Archivo:wght@300;400;500;600;700;800;900&family=Archivo+Black&display=swap" rel="stylesheet"/>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%2304080f'/><text y='.9em' font-size='72' font-family='Arial Black,sans-serif' font-weight='900' fill='%23BFA98A' x='50%' text-anchor='middle' dominant-baseline='hanging'>F</text></svg>"/>
 <script>if('serviceWorker' in navigator && location.hostname==='danielngr.github.io'){window.addEventListener('load',()=>navigator.serviceWorker.register('/FORJA/sw.js').catch(()=>{}));}</script>
 </head>
@@ -3405,15 +3406,8 @@ function translateMuscle(name, lang){
   }
   return name; // fallback: return original
 }
-function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ageDiff,weeklyDelta,deltaSign,deltaColor,deltaAbs,onShowNTNU}){
-  var canvasRef=React.useRef(null);
-  var fogRef=React.useRef(null);
-  var tRef=React.useRef(0);
-  var beatTRef=React.useRef(0);
-  var animIdRef=React.useRef(null);
-  var fogAnimIdRef=React.useRef(null);
-  var heartModelRef=React.useRef(null);
-  var iceMeshRef=React.useRef(null);
+function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ageDiff,weeklyDelta,deltaSign,deltaColor,deltaAbs,onShowNTNU,greeting,userName,streak,lvl,lvlName,lvlNext,lvlColor,xpPct,trainDone,trainTotal,ringDash,lastPRName,lastPRVal}){
+  var heartStageRef=React.useRef(null);
   var isAliveRef=React.useRef(false);
 
   var dayExs=day?(day.ex||[]):[];
@@ -3421,459 +3415,476 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
   var[testAlive,setTestAlive]=React.useState(false);
   var isAlive=(dayExs.length>0&&doneCount===dayExs.length)||testAlive;
   isAliveRef.current=isAlive;
-  var ecgRef=React.useRef(null);
-  var ecgAnimRef=React.useRef(null);
-  var ecgPosRef=React.useRef(0);
-
-  // ECG canvas — barrido tipo monitor de hospital
-  React.useEffect(function(){
-    var canvas=ecgRef.current;
-    if(!canvas) return;
-    var ctx=canvas.getContext("2d");
-    var dpr=window.devicePixelRatio||1;
-    var W=canvas.offsetWidth||200;
-    var H=32;
-    canvas.width=Math.round(W*dpr);
-    canvas.height=Math.round(H*dpr);
-    ctx.scale(dpr,dpr);
-
-    // Señal QRS: 1 ciclo completo en px
-    // [x_norm 0-1, y_norm -1 a 1]
-    // ECG exacto: spike R abrupto, onda T redondeada, flatline larga
-    var BEAT=[
-      [0.00, 0.00],
-      [0.18, 0.00],                                  // flatline pre-spike
-      [0.19,-0.08],                                  // Q mini bajada
-      [0.20, 0.00],[0.21, 0.40],[0.215,0.80],       // subida rapida R
-      [0.22, 1.00],                                  // PICO R
-      [0.225,0.50],[0.23, 0.10],[0.235,-0.12],      // bajada rapida + S mini
-      [0.24, 0.00],
-      [0.26, 0.00],                                  // pausa post-QRS
-      [0.29, 0.05],[0.33, 0.22],[0.38, 0.30],       // onda T — sube suave
-      [0.43, 0.22],[0.48, 0.08],[0.52, 0.00],       // onda T — baja suave
-      [1.00, 0.00],                                  // flatline larga
-    ];
-    var CYCLE_PX=55; // pixels por latido
-    var xPos=0;
-    var prevY=H/2;
-
-    // Variación sutil en amplitud y timing por latido
-    var beatCount=0;
-    var beatAmp=1.0;
-    var prevCycle=-1;
-    function getY(x){
-      var cycle=Math.floor(x/CYCLE_PX);
-      if(cycle!==prevCycle){
-        prevCycle=cycle;
-        beatCount++;
-        // Variación aleatoria suave en amplitud ±15%
-        beatAmp=0.85+Math.random()*0.30;
-        // Cada ~5 latidos uno más fuerte
-        if(beatCount%5===0) beatAmp=1.15+Math.random()*0.15;
-      }
-      var xn=(x%CYCLE_PX)/CYCLE_PX;
-      for(var i=1;i<BEAT.length;i++){
-        if(xn<=BEAT[i][0]){
-          var t=(xn-BEAT[i-1][0])/(BEAT[i][0]-BEAT[i-1][0]);
-          var yn=BEAT[i-1][1]+(BEAT[i][1]-BEAT[i-1][1])*t;
-          return H/2-yn*(H*0.44)*beatAmp;
-        }
-      }
-      return H/2;
-    }
-
-    function loop(){
-      ecgAnimRef.current=requestAnimationFrame(loop);
-
-      if(!isAliveRef.current){
-        ctx.clearRect(0,0,W,H);
-        ctx.beginPath();
-        ctx.setLineDash([2,5]);
-        ctx.moveTo(0,H/2);ctx.lineTo(W,H/2);
-        ctx.strokeStyle="rgba(100,150,255,0.3)";
-        ctx.lineWidth=1;ctx.stroke();
-        ctx.setLineDash([]);
-        return;
-      }
-
-      var step=1.4;
-      xPos+=step;
-      var wrapped=xPos>W;
-      if(wrapped) xPos=xPos-W;
-
-      var curY=getY(xPos);
-
-      // Borrar zona adelante del cursor
-      ctx.clearRect(xPos,0,22,H);
-
-      // Dibujar segmento (no dibujar si hubo wrap)
-      if(!wrapped){
-        ctx.beginPath();
-        ctx.moveTo(xPos-step,prevY);
-        ctx.lineTo(xPos,curY);
-        ctx.strokeStyle="rgba(255,50,50,0.95)";
-        ctx.lineWidth=1.6;
-        ctx.lineCap="round";
-        ctx.shadowColor="rgba(255,30,30,0.6)";
-        ctx.shadowBlur=4;
-        ctx.stroke();
-        ctx.shadowBlur=0;
-      }
-
-      prevY=curY;
-    }
-    loop();
-    return function(){cancelAnimationFrame(ecgAnimRef.current);};
-  },[isAlive]);
 
   React.useEffect(function(){
-    var canvas=canvasRef.current;
-    var fogCanvas=fogRef.current;
-    if(!canvas||!fogCanvas||!window.THREE||!window.THREE.GLTFLoader) return;
-    var card=canvas.parentElement;
-    var W=card.offsetWidth;
-    var H=160;
-    var dpr=Math.min(window.devicePixelRatio||1,2);
+    var stage=heartStageRef.current;
+    if(!stage) return;
+    if(typeof THREE==="undefined") return;
 
-    var renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:true,alpha:true});
-    renderer.setSize(W,H);renderer.setPixelRatio(dpr);
-    renderer.setClearColor(0x000000,0);
-    renderer.physicallyCorrectLights=true;
-    renderer.toneMapping=THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure=1.4;
-    renderer.outputEncoding=THREE.sRGBEncoding;
+    var width=stage.clientWidth;
+    var height=stage.clientHeight;
+    if(width===0||height===0) return;
+
+    function taubinField(x,y,z){
+      var X=x,Y=z,Z=y;
+      var X2=X*X,Y2=Y*Y,Z2=Z*Z;
+      var a=X2+(9*Y2)/4+Z2-1;
+      return a*a*a-X2*Z*Z*Z-(9*Y2*Z*Z*Z)/80;
+    }
+    function fieldGradAndValue(x,y,z){
+      var eps=0.015;
+      var f0=taubinField(x,y,z);
+      var gx=(taubinField(x+eps,y,z)-taubinField(x-eps,y,z))/(2*eps);
+      var gy=(taubinField(x,y+eps,z)-taubinField(x,y-eps,z))/(2*eps);
+      var gz=(taubinField(x,y,z+eps)-taubinField(x,y,z-eps))/(2*eps);
+      return{f:f0,gx:gx,gy:gy,gz:gz};
+    }
+    function surfaceNormal(x,y,z){
+      var eps=0.015;
+      var nx=taubinField(x+eps,y,z)-taubinField(x-eps,y,z);
+      var ny=taubinField(x,y+eps,z)-taubinField(x,y-eps,z);
+      var nz=taubinField(x,y,z+eps)-taubinField(x,y,z-eps);
+      var nL=Math.sqrt(nx*nx+ny*ny+nz*nz)+1e-6;
+      return{x:nx/nL,y:ny/nL,z:nz/nL};
+    }
+
+    var RES=36;
+    var BMIN=-1.35, BMAX=1.35;
+    var ss=(BMAX-BMIN)/(RES-1);
+    var fg=new Float32Array(RES*RES*RES);
+    function gidx(i,j,k){return i+j*RES+k*RES*RES;}
+    for(var kk=0;kk<RES;kk++)for(var jj=0;jj<RES;jj++)for(var ii=0;ii<RES;ii++){
+      fg[gidx(ii,jj,kk)]=taubinField(BMIN+ii*ss,BMIN+jj*ss,BMIN+kk*ss);
+    }
+
+    var edgeTable=new Int32Array([0x0,0x109,0x203,0x30a,0x406,0x50f,0x605,0x70c,0x80c,0x905,0xa0f,0xb06,0xc0a,0xd03,0xe09,0xf00,0x190,0x99,0x393,0x29a,0x596,0x49f,0x795,0x69c,0x99c,0x895,0xb9f,0xa96,0xd9a,0xc93,0xf99,0xe90,0x230,0x339,0x33,0x13a,0x636,0x73f,0x435,0x53c,0xa3c,0xb35,0x83f,0x936,0xe3a,0xf33,0xc39,0xd30,0x3a0,0x2a9,0x1a3,0xaa,0x7a6,0x6af,0x5a5,0x4ac,0xbac,0xaa5,0x9af,0x8a6,0xfaa,0xea3,0xda9,0xca0,0x460,0x569,0x663,0x76a,0x66,0x16f,0x265,0x36c,0xc6c,0xd65,0xe6f,0xf66,0x86a,0x963,0xa69,0xb60,0x5f0,0x4f9,0x7f3,0x6fa,0x1f6,0xff,0x3f5,0x2fc,0xdfc,0xcf5,0xfff,0xef6,0x9fa,0x8f3,0xbf9,0xaf0,0x650,0x759,0x453,0x55a,0x256,0x35f,0x55,0x15c,0xe5c,0xf55,0xc5f,0xd56,0xa5a,0xb53,0x859,0x950,0x7c0,0x6c9,0x5c3,0x4ca,0x3c6,0x2cf,0x1c5,0xcc,0xfcc,0xec5,0xdcf,0xcc6,0xbca,0xac3,0x9c9,0x8c0,0x8c0,0x9c9,0xac3,0xbca,0xcc6,0xdcf,0xec5,0xfcc,0xcc,0x1c5,0x2cf,0x3c6,0x4ca,0x5c3,0x6c9,0x7c0,0x950,0x859,0xb53,0xa5a,0xd56,0xc5f,0xf55,0xe5c,0x15c,0x55,0x35f,0x256,0x55a,0x453,0x759,0x650,0xaf0,0xbf9,0x8f3,0x9fa,0xef6,0xfff,0xcf5,0xdfc,0x2fc,0x3f5,0xff,0x1f6,0x6fa,0x7f3,0x4f9,0x5f0,0xb60,0xa69,0x963,0x86a,0xf66,0xe6f,0xd65,0xc6c,0x36c,0x265,0x16f,0x66,0x76a,0x663,0x569,0x460,0xca0,0xda9,0xea3,0xfaa,0x8a6,0x9af,0xaa5,0xbac,0x4ac,0x5a5,0x6af,0x7a6,0xaa,0x1a3,0x2a9,0x3a0,0xd30,0xc39,0xf33,0xe3a,0x936,0x83f,0xb35,0xa3c,0x53c,0x435,0x73f,0x636,0x13a,0x33,0x339,0x230,0xe90,0xf99,0xc93,0xd9a,0xa96,0xb9f,0x895,0x99c,0x69c,0x795,0x49f,0x596,0x29a,0x393,0x99,0x190,0xf00,0xe09,0xd03,0xc0a,0xb06,0xa0f,0x905,0x80c,0x70c,0x605,0x50f,0x406,0x30a,0x203,0x109,0x0]);
+
+    var triTable=new Int32Array([-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,8,3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,1,9,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1,8,3,9,8,1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1,2,10,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,8,3,1,2,10,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,9,2,10,0,2,9,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,2,8,3,2,10,8,10,9,8,-1,-1,-1,-1,-1,-1,-1,3,11,2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,11,2,8,11,0,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1,9,0,2,3,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1,11,2,1,9,11,9,8,11,-1,-1,-1,-1,-1,-1,-1,3,10,1,11,10,3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,10,1,0,8,10,8,11,10,-1,-1,-1,-1,-1,-1,-1,3,9,0,3,11,9,11,10,9,-1,-1,-1,-1,-1,-1,-1,9,8,10,10,8,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,4,7,8,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,4,3,0,7,3,4,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,1,9,8,4,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,4,1,9,4,7,1,7,3,1,-1,-1,-1,-1,-1,-1,-1,1,2,10,8,4,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,3,4,7,3,0,4,1,2,10,-1,-1,-1,-1,-1,-1,-1,9,2,10,9,0,2,8,4,7,-1,-1,-1,-1,-1,-1,-1,2,10,9,2,9,7,2,7,3,7,9,4,-1,-1,-1,-1,8,4,7,3,11,2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,11,4,7,11,2,4,2,0,4,-1,-1,-1,-1,-1,-1,-1,9,0,1,8,4,7,2,3,11,-1,-1,-1,-1,-1,-1,-1,4,7,11,9,4,11,9,11,2,9,2,1,-1,-1,-1,-1,3,10,1,3,11,10,7,8,4,-1,-1,-1,-1,-1,-1,-1,1,11,10,1,4,11,1,0,4,7,11,4,-1,-1,-1,-1,4,7,8,9,0,11,9,11,10,11,0,3,-1,-1,-1,-1,4,7,11,4,11,9,9,11,10,-1,-1,-1,-1,-1,-1,-1,9,5,4,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,9,5,4,0,8,3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,5,4,1,5,0,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,8,5,4,8,3,5,3,1,5,-1,-1,-1,-1,-1,-1,-1,1,2,10,9,5,4,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,3,0,8,1,2,10,4,9,5,-1,-1,-1,-1,-1,-1,-1,5,2,10,5,4,2,4,0,2,-1,-1,-1,-1,-1,-1,-1,2,10,5,3,2,5,3,5,4,3,4,8,-1,-1,-1,-1,9,5,4,2,3,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,11,2,0,8,11,4,9,5,-1,-1,-1,-1,-1,-1,-1,0,5,4,0,1,5,2,3,11,-1,-1,-1,-1,-1,-1,-1,2,1,5,2,5,8,2,8,11,4,8,5,-1,-1,-1,-1,10,3,11,10,1,3,9,5,4,-1,-1,-1,-1,-1,-1,-1,4,9,5,0,8,1,8,10,1,8,11,10,-1,-1,-1,-1,5,4,0,5,0,11,5,11,10,11,0,3,-1,-1,-1,-1,5,4,8,5,8,10,10,8,11,-1,-1,-1,-1,-1,-1,-1,9,7,8,5,7,9,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,9,3,0,9,5,3,5,7,3,-1,-1,-1,-1,-1,-1,-1,0,7,8,0,1,7,1,5,7,-1,-1,-1,-1,-1,-1,-1,1,5,3,3,5,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,9,7,8,9,5,7,10,1,2,-1,-1,-1,-1,-1,-1,-1,10,1,2,9,5,0,5,3,0,5,7,3,-1,-1,-1,-1,8,0,2,8,2,5,8,5,7,10,5,2,-1,-1,-1,-1,2,10,5,2,5,3,3,5,7,-1,-1,-1,-1,-1,-1,-1,7,9,5,7,8,9,3,11,2,-1,-1,-1,-1,-1,-1,-1,9,5,7,9,7,2,9,2,0,2,7,11,-1,-1,-1,-1,2,3,11,0,1,8,1,7,8,1,5,7,-1,-1,-1,-1,11,2,1,11,1,7,7,1,5,-1,-1,-1,-1,-1,-1,-1,9,5,8,8,5,7,10,1,3,10,3,11,-1,-1,-1,-1,5,7,0,5,0,9,7,11,0,1,0,10,11,10,0,-1,11,10,0,11,0,3,10,5,0,8,0,7,5,7,0,-1,11,10,5,7,11,5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,10,6,5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,8,3,5,10,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,9,0,1,5,10,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1,8,3,1,9,8,5,10,6,-1,-1,-1,-1,-1,-1,-1,1,6,5,2,6,1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1,6,5,1,2,6,3,0,8,-1,-1,-1,-1,-1,-1,-1,9,6,5,9,0,6,0,2,6,-1,-1,-1,-1,-1,-1,-1,5,9,8,5,8,2,5,2,6,3,2,8,-1,-1,-1,-1,2,3,11,10,6,5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,11,0,8,11,2,0,10,6,5,-1,-1,-1,-1,-1,-1,-1,0,1,9,2,3,11,5,10,6,-1,-1,-1,-1,-1,-1,-1,5,10,6,1,9,2,9,11,2,9,8,11,-1,-1,-1,-1,6,3,11,6,5,3,5,1,3,-1,-1,-1,-1,-1,-1,-1,0,8,11,0,11,5,0,5,1,5,11,6,-1,-1,-1,-1,3,11,6,0,3,6,0,6,5,0,5,9,-1,-1,-1,-1,6,5,9,6,9,11,11,9,8,-1,-1,-1,-1,-1,-1,-1,5,10,6,4,7,8,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,4,3,0,4,7,3,6,5,10,-1,-1,-1,-1,-1,-1,-1,1,9,0,5,10,6,8,4,7,-1,-1,-1,-1,-1,-1,-1,10,6,5,1,9,7,1,7,3,7,9,4,-1,-1,-1,-1,6,1,2,6,5,1,4,7,8,-1,-1,-1,-1,-1,-1,-1,1,2,5,5,2,6,3,0,4,3,4,7,-1,-1,-1,-1,8,4,7,9,0,5,0,6,5,0,2,6,-1,-1,-1,-1,7,3,9,7,9,4,3,2,9,5,9,6,2,6,9,-1,3,11,2,7,8,4,10,6,5,-1,-1,-1,-1,-1,-1,-1,5,10,6,4,7,2,4,2,0,2,7,11,-1,-1,-1,-1,0,1,9,4,7,8,2,3,11,5,10,6,-1,-1,-1,-1,9,2,1,9,11,2,9,4,11,7,11,4,5,10,6,-1,8,4,7,3,11,5,3,5,1,5,11,6,-1,-1,-1,-1,5,1,11,5,11,6,1,0,11,7,11,4,0,4,11,-1,0,5,9,0,6,5,0,3,6,11,6,3,8,4,7,-1,6,5,9,6,9,11,4,7,9,7,11,9,-1,-1,-1,-1,10,4,9,6,4,10,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,4,10,6,4,9,10,0,8,3,-1,-1,-1,-1,-1,-1,-1,10,0,1,10,6,0,6,4,0,-1,-1,-1,-1,-1,-1,-1,8,3,1,8,1,6,8,6,4,6,1,10,-1,-1,-1,-1,1,4,9,1,2,4,2,6,4,-1,-1,-1,-1,-1,-1,-1,3,0,8,1,2,9,2,4,9,2,6,4,-1,-1,-1,-1,0,2,4,4,2,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,8,3,2,8,2,4,4,2,6,-1,-1,-1,-1,-1,-1,-1,10,4,9,10,6,4,11,2,3,-1,-1,-1,-1,-1,-1,-1,0,8,2,2,8,11,4,9,10,4,10,6,-1,-1,-1,-1,3,11,2,0,1,6,0,6,4,6,1,10,-1,-1,-1,-1,6,4,1,6,1,10,4,8,1,2,1,11,8,11,1,-1,9,6,4,9,3,6,9,1,3,11,6,3,-1,-1,-1,-1,8,11,1,8,1,0,11,6,1,9,1,4,6,4,1,-1,3,11,6,3,6,0,0,6,4,-1,-1,-1,-1,-1,-1,-1,6,4,8,11,6,8,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,7,10,6,7,8,10,8,9,10,-1,-1,-1,-1,-1,-1,-1,0,7,3,0,10,7,0,9,10,6,7,10,-1,-1,-1,-1,10,6,7,1,10,7,1,7,8,1,8,0,-1,-1,-1,-1,10,6,7,10,7,1,1,7,3,-1,-1,-1,-1,-1,-1,-1,1,2,6,1,6,8,1,8,9,8,6,7,-1,-1,-1,-1,2,6,9,2,9,1,6,7,9,0,9,3,7,3,9,-1,7,8,0,7,0,6,6,0,2,-1,-1,-1,-1,-1,-1,-1,7,3,2,6,7,2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,2,3,11,10,6,8,10,8,9,8,6,7,-1,-1,-1,-1,2,0,7,2,7,11,0,9,7,6,7,10,9,10,7,-1,1,8,0,1,7,8,1,10,7,6,7,10,2,3,11,-1,11,2,1,11,1,7,10,6,1,6,7,1,-1,-1,-1,-1,8,9,6,8,6,7,9,1,6,11,6,3,1,3,6,-1,0,9,1,11,6,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,7,8,0,7,0,6,3,11,0,11,6,0,-1,-1,-1,-1,7,11,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,7,6,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,3,0,8,11,7,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,1,9,11,7,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,8,1,9,8,3,1,11,7,6,-1,-1,-1,-1,-1,-1,-1,10,1,2,6,11,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1,2,10,3,0,8,6,11,7,-1,-1,-1,-1,-1,-1,-1,2,9,0,2,10,9,6,11,7,-1,-1,-1,-1,-1,-1,-1,6,11,7,2,10,3,10,8,3,10,9,8,-1,-1,-1,-1,7,2,3,6,2,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,7,0,8,7,6,0,6,2,0,-1,-1,-1,-1,-1,-1,-1,2,7,6,2,3,7,0,1,9,-1,-1,-1,-1,-1,-1,-1,1,6,2,1,8,6,1,9,8,8,7,6,-1,-1,-1,-1,10,7,6,10,1,7,1,3,7,-1,-1,-1,-1,-1,-1,-1,10,7,6,1,7,10,1,8,7,1,0,8,-1,-1,-1,-1,0,3,7,0,7,10,0,10,9,6,10,7,-1,-1,-1,-1,7,6,10,7,10,8,8,10,9,-1,-1,-1,-1,-1,-1,-1,6,8,4,11,8,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,3,6,11,3,0,6,0,4,6,-1,-1,-1,-1,-1,-1,-1,8,6,11,8,4,6,9,0,1,-1,-1,-1,-1,-1,-1,-1,9,4,6,9,6,3,9,3,1,11,3,6,-1,-1,-1,-1,6,8,4,6,11,8,2,10,1,-1,-1,-1,-1,-1,-1,-1,1,2,10,3,0,11,0,6,11,0,4,6,-1,-1,-1,-1,4,11,8,4,6,11,0,2,9,2,10,9,-1,-1,-1,-1,10,9,3,10,3,2,9,4,3,11,3,6,4,6,3,-1,8,2,3,8,4,2,4,6,2,-1,-1,-1,-1,-1,-1,-1,0,4,2,4,6,2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1,9,0,2,3,4,2,4,6,4,3,8,-1,-1,-1,-1,1,9,4,1,4,2,2,4,6,-1,-1,-1,-1,-1,-1,-1,8,1,3,8,6,1,8,4,6,6,10,1,-1,-1,-1,-1,10,1,0,10,0,6,6,0,4,-1,-1,-1,-1,-1,-1,-1,4,6,3,4,3,8,6,10,3,0,3,9,10,9,3,-1,10,9,4,6,10,4,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,4,9,5,7,6,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,8,3,4,9,5,11,7,6,-1,-1,-1,-1,-1,-1,-1,5,0,1,5,4,0,7,6,11,-1,-1,-1,-1,-1,-1,-1,11,7,6,8,3,4,3,5,4,3,1,5,-1,-1,-1,-1,9,5,4,10,1,2,7,6,11,-1,-1,-1,-1,-1,-1,-1,6,11,7,1,2,10,0,8,3,4,9,5,-1,-1,-1,-1,7,6,11,5,4,10,4,2,10,4,0,2,-1,-1,-1,-1,3,4,8,3,5,4,3,2,5,10,5,2,11,7,6,-1,7,2,3,7,6,2,5,4,9,-1,-1,-1,-1,-1,-1,-1,9,5,4,0,8,6,0,6,2,6,8,7,-1,-1,-1,-1,3,6,2,3,7,6,1,5,0,5,4,0,-1,-1,-1,-1,6,2,8,6,8,7,2,1,8,4,8,5,1,5,8,-1,9,5,4,10,1,6,1,7,6,1,3,7,-1,-1,-1,-1,1,6,10,1,7,6,1,0,7,8,7,0,9,5,4,-1,4,0,10,4,10,5,0,3,10,6,10,7,3,7,10,-1,7,6,10,7,10,8,5,4,10,4,8,10,-1,-1,-1,-1,6,9,5,6,11,9,11,8,9,-1,-1,-1,-1,-1,-1,-1,3,6,11,0,6,3,0,5,6,0,9,5,-1,-1,-1,-1,0,11,8,0,5,11,0,1,5,5,6,11,-1,-1,-1,-1,6,11,3,6,3,5,5,3,1,-1,-1,-1,-1,-1,-1,-1,1,2,10,9,5,11,9,11,8,11,5,6,-1,-1,-1,-1,0,11,3,0,6,11,0,9,6,5,6,9,1,2,10,-1,11,8,5,11,5,6,8,0,5,10,5,2,0,2,5,-1,6,11,3,6,3,5,2,10,3,10,5,3,-1,-1,-1,-1,5,8,9,5,2,8,5,6,2,3,8,2,-1,-1,-1,-1,9,5,6,9,6,0,0,6,2,-1,-1,-1,-1,-1,-1,-1,1,5,8,1,8,0,5,6,8,3,8,2,6,2,8,-1,1,5,6,2,1,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1,3,6,1,6,10,3,8,6,5,6,9,8,9,6,-1,10,1,0,10,0,6,9,5,0,5,6,0,-1,-1,-1,-1,0,3,8,5,6,10,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,10,5,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,11,5,10,7,5,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,11,5,10,11,7,5,8,3,0,-1,-1,-1,-1,-1,-1,-1,5,11,7,5,10,11,1,9,0,-1,-1,-1,-1,-1,-1,-1,10,7,5,10,11,7,9,8,1,8,3,1,-1,-1,-1,-1,11,1,2,11,7,1,7,5,1,-1,-1,-1,-1,-1,-1,-1,0,8,3,1,2,7,1,7,5,7,2,11,-1,-1,-1,-1,9,7,5,9,2,7,9,0,2,2,11,7,-1,-1,-1,-1,7,5,2,7,2,11,5,9,2,3,2,8,9,8,2,-1,2,5,10,2,3,5,3,7,5,-1,-1,-1,-1,-1,-1,-1,8,2,0,8,5,2,8,7,5,10,2,5,-1,-1,-1,-1,9,0,1,5,10,3,5,3,7,3,10,2,-1,-1,-1,-1,9,8,2,9,2,1,8,7,2,10,2,5,7,5,2,-1,1,3,5,3,7,5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,8,7,0,7,1,1,7,5,-1,-1,-1,-1,-1,-1,-1,9,0,3,9,3,5,5,3,7,-1,-1,-1,-1,-1,-1,-1,9,8,7,5,9,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,5,8,4,5,10,8,10,11,8,-1,-1,-1,-1,-1,-1,-1,5,0,4,5,11,0,5,10,11,11,3,0,-1,-1,-1,-1,0,1,9,8,4,10,8,10,11,10,4,5,-1,-1,-1,-1,10,11,4,10,4,5,11,3,4,9,4,1,3,1,4,-1,2,5,1,2,8,5,2,11,8,4,5,8,-1,-1,-1,-1,0,4,11,0,11,3,4,5,11,2,11,1,5,1,11,-1,0,2,5,0,5,9,2,11,5,4,5,8,11,8,5,-1,9,4,5,2,11,3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,2,5,10,3,5,2,3,4,5,3,8,4,-1,-1,-1,-1,5,10,2,5,2,4,4,2,0,-1,-1,-1,-1,-1,-1,-1,3,10,2,3,5,10,3,8,5,4,5,8,0,1,9,-1,5,10,2,5,2,4,1,9,2,9,4,2,-1,-1,-1,-1,8,4,5,8,5,3,3,5,1,-1,-1,-1,-1,-1,-1,-1,0,4,5,1,0,5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,8,4,5,8,5,3,9,0,5,0,3,5,-1,-1,-1,-1,9,4,5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,4,11,7,4,9,11,9,10,11,-1,-1,-1,-1,-1,-1,-1,0,8,3,4,9,7,9,11,7,9,10,11,-1,-1,-1,-1,1,10,11,1,11,4,1,4,0,7,4,11,-1,-1,-1,-1,3,1,4,3,4,8,1,10,4,7,4,11,10,11,4,-1,4,11,7,9,11,4,9,2,11,9,1,2,-1,-1,-1,-1,9,7,4,9,11,7,9,1,11,2,11,1,0,8,3,-1,11,7,4,11,4,2,2,4,0,-1,-1,-1,-1,-1,-1,-1,11,7,4,11,4,2,8,3,4,3,2,4,-1,-1,-1,-1,2,9,10,2,7,9,2,3,7,7,4,9,-1,-1,-1,-1,9,10,7,9,7,4,10,2,7,8,7,0,2,0,7,-1,3,7,10,3,10,2,7,4,10,1,10,0,4,0,10,-1,1,10,2,8,7,4,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,4,9,1,4,1,7,7,1,3,-1,-1,-1,-1,-1,-1,-1,4,9,1,4,1,7,0,8,1,8,7,1,-1,-1,-1,-1,4,0,3,7,4,3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,4,8,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,9,10,8,10,11,8,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,3,0,9,3,9,11,11,9,10,-1,-1,-1,-1,-1,-1,-1,0,1,10,0,10,8,8,10,11,-1,-1,-1,-1,-1,-1,-1,3,1,10,11,3,10,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1,2,11,1,11,9,9,11,8,-1,-1,-1,-1,-1,-1,-1,3,0,9,3,9,11,1,2,9,2,11,9,-1,-1,-1,-1,0,2,11,8,0,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,3,2,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,2,3,8,2,8,10,10,8,9,-1,-1,-1,-1,-1,-1,-1,9,10,2,0,9,2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,2,3,8,2,8,10,0,1,8,1,10,8,-1,-1,-1,-1,1,10,2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1,3,8,9,1,8,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,9,1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,3,8,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1]);
+
+    var cornerOffset=[[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]];
+    var edgeCorners=[[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
+    function lerpVert(iso,p1,p2,v1,v2){if(Math.abs(iso-v1)<1e-6)return[p1[0],p1[1],p1[2]];if(Math.abs(iso-v2)<1e-6)return[p2[0],p2[1],p2[2]];if(Math.abs(v1-v2)<1e-6)return[p1[0],p1[1],p1[2]];var mu=(iso-v1)/(v2-v1);return[p1[0]+mu*(p2[0]-p1[0]),p1[1]+mu*(p2[1]-p1[1]),p1[2]+mu*(p2[2]-p1[2])];}
+
+    var triangles=[];
+    for(var k2=0;k2<RES-1;k2++)for(var j2=0;j2<RES-1;j2++)for(var i2=0;i2<RES-1;i2++){
+      var cv=new Array(8),cp=new Array(8);
+      for(var c=0;c<8;c++){
+        var ci=i2+cornerOffset[c][0],cj=j2+cornerOffset[c][1],ck=k2+cornerOffset[c][2];
+        cv[c]=fg[gidx(ci,cj,ck)];
+        cp[c]=[BMIN+ci*ss,BMIN+cj*ss,BMIN+ck*ss];
+      }
+      var cix=0;
+      for(var cc=0;cc<8;cc++)if(cv[cc]<0)cix|=(1<<cc);
+      var edges=edgeTable[cix];
+      if(edges===0)continue;
+      var vl=new Array(12);
+      for(var ee=0;ee<12;ee++){
+        if(edges&(1<<ee)){var ab=edgeCorners[ee];vl[ee]=lerpVert(0,cp[ab[0]],cp[ab[1]],cv[ab[0]],cv[ab[1]]);}
+      }
+      var bi=cix*16;
+      for(var tt=0;tt<16;tt+=3){
+        var e0=triTable[bi+tt];if(e0===-1)break;
+        triangles.push({v0:vl[e0],v1:vl[triTable[bi+tt+1]],v2:vl[triTable[bi+tt+2]]});
+      }
+    }
+
+    function triArea(t){var ax=t.v1[0]-t.v0[0],ay=t.v1[1]-t.v0[1],az=t.v1[2]-t.v0[2];var bx=t.v2[0]-t.v0[0],by=t.v2[1]-t.v0[1],bz=t.v2[2]-t.v0[2];var cx=ay*bz-az*by,cy=az*bx-ax*bz,cz=ax*by-ay*bx;return 0.5*Math.sqrt(cx*cx+cy*cy+cz*cz);}
+    var areas=new Float32Array(triangles.length),totalArea=0;
+    for(var ti=0;ti<triangles.length;ti++){areas[ti]=triArea(triangles[ti]);totalArea+=areas[ti];}
+    // Densidad reforzada en el valle del corazon
+    var weights=new Float32Array(triangles.length);
+    var totalWeight=0;
+    for(var twi=0;twi<triangles.length;twi++){
+      var triW=triangles[twi];
+      var cxC=(triW.v0[0]+triW.v1[0]+triW.v2[0])/3;
+      var cyC=(triW.v0[1]+triW.v1[1]+triW.v2[1])/3;
+      var czC=(triW.v0[2]+triW.v1[2]+triW.v2[2])/3;
+      var distXZ=Math.sqrt(cxC*cxC+czC*czC);
+      var valleBoost=0;
+      if(cyC>0.15&&distXZ<0.35){valleBoost=1.8;}
+      else if(cyC>0.05&&distXZ<0.5){valleBoost=0.8;}
+      weights[twi]=areas[twi]*(1+valleBoost);
+      totalWeight+=weights[twi];
+    }
+    var cumArea=new Float32Array(triangles.length),cum=0;
+    for(var ti2=0;ti2<triangles.length;ti2++){cum+=weights[ti2];cumArea[ti2]=cum;}
+    totalArea=totalWeight;
+    function pickTri(r){var lo=0,hi=triangles.length-1;while(lo<hi){var m=(lo+hi)>>1;if(cumArea[m]<r)lo=m+1;else hi=m;}return lo;}
+    function sampleTri(tri){var u=Math.random(),v=Math.random();if(u+v>1){u=1-u;v=1-v;}var w=1-u-v;return[tri.v0[0]*w+tri.v1[0]*u+tri.v2[0]*v,tri.v0[1]*w+tri.v1[1]*u+tri.v2[1]*v,tri.v0[2]*w+tri.v1[2]*u+tri.v2[2]*v];}
+    function randomSurfacePoint(){var r=Math.random()*totalArea;var tri=triangles[pickTri(r)];return sampleTri(tri);}
+
+    function hash3(x,y,z){var s=Math.sin(x*12.9898+y*78.233+z*37.719)*43758.5453;return s-Math.floor(s);}
+    function noise3(x,y,z){var ix=Math.floor(x),iy=Math.floor(y),iz=Math.floor(z);var fx=x-ix,fy=y-iy,fz=z-iz;var uu=fx*fx*(3-2*fx),vv=fy*fy*(3-2*fy),ww=fz*fz*(3-2*fz);var c000=hash3(ix,iy,iz),c100=hash3(ix+1,iy,iz);var c010=hash3(ix,iy+1,iz),c110=hash3(ix+1,iy+1,iz);var c001=hash3(ix,iy,iz+1),c101=hash3(ix+1,iy,iz+1);var c011=hash3(ix,iy+1,iz+1),c111=hash3(ix+1,iy+1,iz+1);var x00=c000*(1-uu)+c100*uu,x10=c010*(1-uu)+c110*uu;var x01=c001*(1-uu)+c101*uu,x11=c011*(1-uu)+c111*uu;var y0=x00*(1-vv)+x10*vv,y1=x01*(1-vv)+x11*vv;return y0*(1-ww)+y1*ww;}
 
     var scene=new THREE.Scene();
-    var cam=new THREE.PerspectiveCamera(18,W/H,0.1,100);
-    cam.position.set(12.5,1.1,44);cam.lookAt(8.0,1.1,0);
+    var camera=new THREE.PerspectiveCamera(40,width/height,0.1,100);
+    camera.position.z=5.5;
 
-    var envTexture=null;
-    if(window.THREE.RoomEnvironment){
-      var pmrem=new THREE.PMREMGenerator(renderer);
-      pmrem.compileCubemapShader();
-      envTexture=pmrem.fromScene(new THREE.RoomEnvironment()).texture;
-      scene.environment=envTexture;
+    var renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,premultipliedAlpha:false});
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+    renderer.setSize(width,height);
+    renderer.setClearColor(0x000000,0);
+    stage.appendChild(renderer.domElement);
+
+    var COUNT=40000;
+    var surfaceX=new Float32Array(COUNT);
+    var surfaceY=new Float32Array(COUNT);
+    var surfaceZ=new Float32Array(COUNT);
+    var heightOffset=new Float32Array(COUNT);
+    var heightVelocity=new Float32Array(COUNT);
+    var posArray=new Float32Array(COUNT*3);
+    var sizes=new Float32Array(COUNT);
+    var baseAlphas=new Float32Array(COUNT);
+    var tints=new Float32Array(COUNT);
+    var phases=new Float32Array(COUNT);
+    var lifeArr=new Float32Array(COUNT);
+    var lifespan=new Float32Array(COUNT);
+    var aliveAlphas=new Float32Array(COUNT);
+    var distFromCenter=new Float32Array(COUNT);
+
+    function spawnParticle(i,startLife){
+      var pt=randomSurfacePoint();
+      surfaceX[i]=pt[0];surfaceY[i]=pt[1];surfaceZ[i]=pt[2];
+      heightOffset[i]=0;heightVelocity[i]=0;
+      distFromCenter[i]=Math.sqrt(pt[0]*pt[0]+pt[1]*pt[1]+pt[2]*pt[2]);
+      var isMacro=Math.random()<0.22;
+      if(isMacro){
+        sizes[i]=0.022+Math.random()*0.018;
+        baseAlphas[i]=0.75+Math.random()*0.25;
+        tints[i]=1.0;
+      }else{
+        sizes[i]=0.011+Math.random()*0.013;
+        baseAlphas[i]=0.4+Math.random()*0.35;
+        tints[i]=0.75+Math.random()*0.2;
+      }
+      phases[i]=Math.random()*Math.PI*2;
+      lifespan[i]=1.8+Math.random()*2.2;
+      lifeArr[i]=startLife!==undefined?startLife:Math.random();
+    }
+    for(var pi=0;pi<COUNT;pi++)spawnParticle(pi,Math.random());
+
+    var baseGeometry=new THREE.PlaneGeometry(1,1);
+    var instancePosAttr=new THREE.InstancedBufferAttribute(posArray,3);
+    instancePosAttr.setUsage(THREE.DynamicDrawUsage);
+    var instanceAlphaAttr=new THREE.InstancedBufferAttribute(aliveAlphas,1);
+    instanceAlphaAttr.setUsage(THREE.DynamicDrawUsage);
+    var ig=new THREE.InstancedBufferGeometry();
+    ig.index=baseGeometry.index;
+    ig.attributes.position=baseGeometry.attributes.position;
+    ig.attributes.uv=baseGeometry.attributes.uv;
+    ig.setAttribute("instancePosition",instancePosAttr);
+    ig.setAttribute("instanceSize",new THREE.InstancedBufferAttribute(sizes,1));
+    ig.setAttribute("instanceAlpha",instanceAlphaAttr);
+    ig.setAttribute("instancePhase",new THREE.InstancedBufferAttribute(phases,1));
+    ig.setAttribute("instanceTint",new THREE.InstancedBufferAttribute(tints,1));
+
+    var vsh="attribute vec3 instancePosition; attribute float instanceSize; attribute float instanceAlpha; attribute float instancePhase; attribute float instanceTint; uniform float uTime; varying vec2 vUv; varying float vAlpha; varying float vDepth; varying float vTint; void main() { vec3 pos = instancePosition; vec4 mv = modelViewMatrix * vec4(pos, 1.0); mv.xy += position.xy * instanceSize; gl_Position = projectionMatrix * mv; float tw = 0.7 + 0.3 * sin(uTime*2.2 + instancePhase*2.5); vAlpha = instanceAlpha * tw; vUv = uv; vDepth = mv.z; vTint = instanceTint; }";
+    var fsh="varying vec2 vUv; varying float vAlpha; varying float vDepth; varying float vTint; void main() { vec2 c = vUv - 0.5; float d = length(c); if (d > 0.5) discard; float soft = smoothstep(0.5, 0.1, d); float depthFade = smoothstep(-8.0, -4.0, vDepth); float alpha = soft * vAlpha * (0.5 + depthFade*0.5); vec3 bright = vec3(0.98, 0.25, 0.42); vec3 dim = vec3(0.62, 0.10, 0.22); vec3 base = mix(dim, bright, vTint); vec3 color = mix(base*0.65, base, depthFade); gl_FragColor = vec4(color, alpha); }";
+
+    var material=new THREE.ShaderMaterial({
+      uniforms:{uTime:{value:0}},
+      vertexShader:vsh,
+      fragmentShader:fsh,
+      transparent:true,
+      depthWrite:false,
+      depthTest:false,
+      blending:THREE.NormalBlending
+    });
+
+    var mesh=new THREE.Mesh(ig,material);
+    scene.add(mesh);
+
+    var waves=[];
+    var HC=0.86,WS=0.9,WW=0.35,WMA=2.0;
+    var lastPhase=0;
+    function updateWaves(t){
+      var p=(t%HC)/HC;
+      if(p<lastPhase)waves.push({emitTime:t});
+      if(waves.length>4)waves.shift();
+      lastPhase=p;
+      for(var wi=waves.length-1;wi>=0;wi--)if(t-waves[wi].emitTime>WMA)waves.splice(wi,1);
+    }
+    function waveDisp(d,t){
+      var total=0;
+      for(var wi=0;wi<waves.length;wi++){
+        var age=t-waves[wi].emitTime;
+        var wr=age*WS;
+        var df=d-wr;
+        var bump=Math.exp(-Math.pow(df/WW,2)*4);
+        var fade=Math.max(0,1-age/WMA);
+        total+=bump*fade;
+      }
+      return total;
+    }
+    function heartBeatInt(t){
+      var p=(t%HC)/HC;
+      var s1=Math.exp(-Math.pow((p-0.08)*13,2));
+      var s2=Math.exp(-Math.pow((p-0.24)*15,2))*0.4;
+      return s1+s2;
     }
 
-    scene.add(new THREE.AmbientLight(0x6688bb,2.5));
-    var key=new THREE.DirectionalLight(0xaaccff,2.5);key.position.set(2,5,4);scene.add(key);
-    var fill=new THREE.DirectionalLight(0x4488ff,3);fill.position.set(-3,2,3);scene.add(fill);
-    var cold=new THREE.DirectionalLight(0x88bbff,2.5);cold.position.set(0,-2,-3);scene.add(cold);
-    var iceLight=new THREE.PointLight(0x88ccff,8,6);iceLight.position.set(2.0,0.5,2.5);scene.add(iceLight);
-    var botLight=new THREE.PointLight(0x4488cc,3,5);botLight.position.set(1.5,-2,2);scene.add(botLight);
-    var sideLight=new THREE.PointLight(0x88bbff,2,5);sideLight.position.set(-2,1,2);scene.add(sideLight);
-
-    new THREE.GLTFLoader().load(
-      "https://pub-28277a6ce79d49479afd0cb1bba27b44.r2.dev/HEARTS/frozen_heart.glb",
-      function(gltf){
-        var model=gltf.scene;
-        heartModelRef.current=model;
-        var box=new THREE.Box3().setFromObject(model);
-        var center=box.getCenter(new THREE.Vector3());
-        var size=box.getSize(new THREE.Vector3());
-        var scale=0.6/Math.max(size.x,size.y,size.z);
-        model.scale.setScalar(scale);
-        model.position.set(15.5-center.x*scale,-center.y*scale,-center.z*scale);
-        var meshes=[];
-        model.traverse(function(c){if(c.isMesh)meshes.push(c);});
-        meshes.forEach(function(child,idx){
-          var m=child.material;
-          if(envTexture){m.envMap=envTexture;m.envMapIntensity=2.5;}
-          if(idx===1){
-            m.transparent=false;m.opacity=1.0;m.depthWrite=true;
-            child.renderOrder=0;m.needsUpdate=true;
-          } else {
-            iceMeshRef.current=child;
-            child.material=new THREE.MeshPhysicalMaterial({
-              color:new THREE.Color(0.65,0.85,1.0),
-              roughness:0.0,metalness:0.0,transmission:0.94,thickness:1.8,
-              transparent:true,ior:1.31,clearcoat:1.0,clearcoatRoughness:0.0,
-              reflectivity:1.0,envMap:envTexture,envMapIntensity:5.0,
-              attenuationColor:new THREE.Color(0.3,0.6,1.0),attenuationDistance:1.2,
-              side:THREE.DoubleSide,depthWrite:false,
-            });
-            child.renderOrder=1;
-          }
-        });
-        scene.add(model);
-      }
-    );
+    var FLOW_SPEED=0.006;
+    var DISPLAY_SCALE=1.1;
+    var BREATH_AMP=0.08;
+    var WAVE_AMP=0.15;
+    var startT=performance.now();
+    var lastT=startT;
+    var animId=null;
+    var disposed=false;
 
     function animate(){
-      animIdRef.current=requestAnimationFrame(animate);
-      tRef.current+=0.008;
-      var t=tRef.current;
-      var alive=isAliveRef.current;
-      var model=heartModelRef.current;
-      var iceMesh=iceMeshRef.current;
-      if(model){
-        model.rotation.y=t*0.6;
-        model.rotation.x=Math.sin(t*0.4)*0.12;
-        if(alive){
-          beatTRef.current+=0.06;
-          var bt=beatTRef.current;
-          // Latido doble más dramático — lub-DUB fuerte
-          var b1=Math.pow(Math.max(0,Math.sin(bt*2.0)),3);
-          var b2=Math.pow(Math.max(0,Math.sin(bt*2.0-0.7)),4)*0.75;
-          var beat=b1+b2;var s=1+beat*0.09;
-          model.scale.set(s,s,s);
-          // Luz blanca suave pero presente
-          iceLight.intensity=4+beat*12;botLight.intensity=2+beat*6;
-          sideLight.intensity=2+beat*4;
-          iceLight.color.set(0xffffff);botLight.color.set(0xeef5ff);
-          sideLight.color.set(0xffffff);
-          if(iceMesh)iceMesh.visible=false;
-        } else {
-          model.scale.set(1,1,1);
-          iceLight.intensity=8+Math.sin(t*1.2)*2.5;botLight.intensity=3;sideLight.intensity=2;
-          iceLight.color.set(0x88ccff);botLight.color.set(0x4488cc);sideLight.color.set(0x88bbff);
-          if(iceMesh)iceMesh.visible=true;
+      if(disposed)return;
+      var now=performance.now();
+      var t=(now-startT)/1000;
+      var dt=Math.min(0.05,(now-lastT)/1000);
+      lastT=now;
+
+      material.uniforms.uTime.value=t;
+      updateWaves(t);
+      var beat=heartBeatInt(t);
+
+      for(var i=0;i<COUNT;i++){
+        lifeArr[i]+=dt/lifespan[i];
+        if(lifeArr[i]>=1.0){spawnParticle(i,0);continue;}
+
+        var lf=Math.sin(lifeArr[i]*Math.PI);
+        aliveAlphas[i]=baseAlphas[i]*lf*lf;
+
+        var sx=surfaceX[i],sy=surfaceY[i],sz=surfaceZ[i];
+        var tss=t*0.15;
+        var fxv=(noise3(sx+10+tss,sy,sz)-0.5)*2.0;
+        var fyv=(noise3(sx,sy+20+tss,sz)-0.5)*2.0;
+        var fzv=(noise3(sx,sy,sz+30+tss)-0.5)*2.0;
+        var epsG=0.015;
+        var nxf=taubinField(sx+epsG,sy,sz)-taubinField(sx-epsG,sy,sz);
+        var nyf=taubinField(sx,sy+epsG,sz)-taubinField(sx,sy-epsG,sz);
+        var nzf=taubinField(sx,sy,sz+epsG)-taubinField(sx,sy,sz-epsG);
+        var nL=Math.sqrt(nxf*nxf+nyf*nyf+nzf*nzf)+1e-6;
+        var ux=nxf/nL,uy=nyf/nL,uz=nzf/nL;
+        var dp=fxv*ux+fyv*uy+fzv*uz;
+        sx+=(fxv-dp*ux)*FLOW_SPEED;
+        sy+=(fyv-dp*uy)*FLOW_SPEED;
+        sz+=(fzv-dp*uz)*FLOW_SPEED;
+
+        var g=fieldGradAndValue(sx,sy,sz);
+        var g2=g.gx*g.gx+g.gy*g.gy+g.gz*g.gz;
+        if(g2>1e-8){
+          var pj=g.f/g2;
+          sx-=g.gx*pj;sy-=g.gy*pj;sz-=g.gz*pj;
         }
+        surfaceX[i]=sx;surfaceY[i]=sy;surfaceZ[i]=sz;
+        distFromCenter[i]=Math.sqrt(sx*sx+sy*sy+sz*sz);
+
+        var target=beat*BREATH_AMP+waveDisp(distFromCenter[i],t)*WAVE_AMP;
+        var accel=(target-heightOffset[i])*18-heightVelocity[i]*5.5;
+        heightVelocity[i]+=accel*dt;
+        heightOffset[i]+=heightVelocity[i]*dt;
+
+        var n=surfaceNormal(sx,sy,sz);
+        var idx3=i*3;
+        posArray[idx3]=(sx+n.x*heightOffset[i])*DISPLAY_SCALE;
+        posArray[idx3+1]=(sy+n.y*heightOffset[i])*DISPLAY_SCALE;
+        posArray[idx3+2]=(sz+n.z*heightOffset[i])*DISPLAY_SCALE;
       }
-      renderer.render(scene,cam);
+      instancePosAttr.needsUpdate=true;
+      instanceAlphaAttr.needsUpdate=true;
+      renderer.render(scene,camera);
+      animId=requestAnimationFrame(animate);
     }
     animate();
 
-    fogCanvas.width=W*dpr;fogCanvas.height=H*dpr;
-    fogCanvas.style.width=W+"px";fogCanvas.style.height=H+"px";
-    var fctx=fogCanvas.getContext("2d");fctx.scale(dpr,dpr);
-    var ft=0;
-    function fogLoop(){
-      fogAnimIdRef.current=requestAnimationFrame(fogLoop);
-      ft+=0.012;fctx.clearRect(0,0,W,H);
-      var cx=W*0.67,cy=H*0.5;
-      if(isAliveRef.current){
-        // Latido en canvas — sincronizado con la animación 3D
-        var pulse=Math.pow(Math.max(0,Math.sin(ft*2.0)),3)+Math.pow(Math.max(0,Math.sin(ft*2.0-0.7)),4)*0.75;
-        pulse=Math.min(1,pulse);
-
-        // Aura suave centrada en el corazón
-        var aw=fctx.createRadialGradient(cx,cy,0,cx,cy,H*0.75);
-        aw.addColorStop(0,"rgba(255,255,255,"+(0.15+pulse*0.18)+")");
-        aw.addColorStop(.3,"rgba(220,235,255,"+(0.06+pulse*0.10)+")");
-        aw.addColorStop(.7,"rgba(180,210,255,"+(0.02+pulse*0.04)+")");
-        aw.addColorStop(1,"rgba(0,0,0,0)");
-        fctx.fillStyle=aw;fctx.fillRect(0,0,W,H);
-
-        // Rim superior sutil
-        var rimW=fctx.createLinearGradient(0,0,W,0);
-        rimW.addColorStop(0,"rgba(255,255,255,0)");
-        rimW.addColorStop(.25,"rgba(255,255,255,"+(0.25+pulse*0.35)+")");
-        rimW.addColorStop(.5,"rgba(255,255,255,"+(0.45+pulse*0.25)+")");
-        rimW.addColorStop(.75,"rgba(255,255,255,"+(0.25+pulse*0.35)+")");
-        rimW.addColorStop(1,"rgba(255,255,255,0)");
-        fctx.fillStyle=rimW;fctx.fillRect(0,0,W,1.8);
-        return;
-      }
-      var a2=fctx.createRadialGradient(cx,cy,H*0.05,cx,cy,W*0.9);
-      a2.addColorStop(0,"rgba(100,180,255,"+(0.12+Math.sin(ft*.6)*.04)+")");
-      a2.addColorStop(.5,"rgba(50,120,220,"+(0.06+Math.sin(ft*.4)*.02)+")");
-      a2.addColorStop(1,"rgba(0,0,0,0)");
-      fctx.fillStyle=a2;fctx.fillRect(0,0,W,H);
-      var a1=fctx.createRadialGradient(cx,cy,4,cx,cy,H*0.65);
-      a1.addColorStop(0,"rgba(140,210,255,"+(0.28+Math.sin(ft*.8)*.08)+")");
-      a1.addColorStop(.35,"rgba(70,150,255,"+(0.12+Math.sin(ft*.6)*.03)+")");
-      a1.addColorStop(1,"rgba(0,0,0,0)");
-      fctx.fillStyle=a1;fctx.fillRect(0,0,W,H);
-      var rim=fctx.createLinearGradient(0,0,W,0);
-      rim.addColorStop(0,"rgba(180,220,255,0)");
-      rim.addColorStop(.25,"rgba(200,235,255,"+(0.35+Math.sin(ft*.6)*.1)+")");
-      rim.addColorStop(.5,"rgba(220,245,255,"+(0.55+Math.sin(ft*.8)*.15)+")");
-      rim.addColorStop(.75,"rgba(200,235,255,"+(0.35+Math.sin(ft*.6)*.1)+")");
-      rim.addColorStop(1,"rgba(180,220,255,0)");
-      fctx.fillStyle=rim;fctx.fillRect(0,0,W,1.5);
+    function handleResize(){
+      if(disposed)return;
+      var w=stage.clientWidth;
+      var h=stage.clientHeight;
+      if(w===0||h===0)return;
+      camera.aspect=w/h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w,h);
     }
-    fogLoop();
+    window.addEventListener("resize",handleResize);
 
     return function(){
-      if(animIdRef.current)cancelAnimationFrame(animIdRef.current);
-      if(fogAnimIdRef.current)cancelAnimationFrame(fogAnimIdRef.current);
-      renderer.dispose();
+      disposed=true;
+      if(animId!==null)cancelAnimationFrame(animId);
+      window.removeEventListener("resize",handleResize);
+      try{
+        scene.remove(mesh);
+        ig.dispose();
+        baseGeometry.dispose();
+        material.dispose();
+        renderer.dispose();
+        if(renderer.domElement&&renderer.domElement.parentNode){
+          renderer.domElement.parentNode.removeChild(renderer.domElement);
+        }
+      }catch(err){}
     };
   },[]);
 
-  // Modo compact: solo el canvas del corazon sin texto
   if(compact){
     return React.createElement("div",{
       onClick:onStart,
       style:{width:130,height:130,borderRadius:16,position:"relative",cursor:"pointer",
         background:"transparent",overflow:"hidden",flexShrink:0}},
-      React.createElement("canvas",{ref:canvasRef,style:{position:"absolute",inset:0,width:"100%",height:"100%",zIndex:1,pointerEvents:"none"}}),
-      React.createElement("canvas",{ref:fogRef,style:{position:"absolute",inset:0,width:"100%",height:"100%",zIndex:2,pointerEvents:"none"}})
+      React.createElement("div",{ref:heartStageRef,style:{position:"absolute",inset:0,width:"100%",height:"100%",zIndex:1,pointerEvents:"none"}})
     );
   }
 
-  var handleClick=function(){
-    if(onStart){onStart();return;}
-    // Toggle estado vivo/congelado — simular ejercicios completados
-    window.dispatchEvent(new CustomEvent("forja:toggleDay",{detail:{sel:sel}}));
-  };
-  return React.createElement("div",{
-    onClick:function(){setTestAlive(function(v){return !v;});},
+  var e=React.createElement;
+
+  var deltaLine=null;
+  if(weeklyDelta!==undefined&&weeklyDelta!==null){
+    deltaLine=e("div",{style:{
+      fontSize:9,fontFamily:mono,color:deltaColor||"rgba(255,255,255,0.55)",
+      letterSpacing:1.2,marginTop:4,textTransform:"uppercase"
+    }},(deltaSign||"")+(deltaAbs!==undefined?deltaAbs:"0.0")+" ESTA SEMANA");
+  }
+
+  var isPerfect=trainTotal>0&&trainDone>=trainTotal;
+  var pct=trainTotal>0?trainDone/trainTotal:0;
+  var glowColor=isPerfect?"rgba(255,215,0,0.8)":pct>=0.7?"rgba(63,207,142,0.8)":"rgba(80,140,255,0.8)";
+  var numColor=isPerfect?"#FFD700":pct>=0.7?"#3fcf8e":"#fff";
+  var stop1=isPerfect?"#FFF176":pct>=0.7?"#3fcf8e":"rgba(130,190,255,0.8)";
+  var stop2=isPerfect?"#FFD700":pct>=0.7?"#26a866":"#4878ff";
+
+  return e("div",{
     style:{
-      width:"100%",height:148,borderRadius:20,position:"relative",
-      overflow:"hidden",cursor:"pointer",
-      background:isAlive
-        ?"linear-gradient(135deg,#12060a 0%,#1a080c 100%)"
-        :"linear-gradient(135deg,#060a14 0%,#08101e 100%)",
-      transition:"background 1s ease",
       position:"relative",
-    }},
-
-    // Fog
-    React.createElement("canvas",{ref:fogRef,style:{
-      position:"absolute",inset:0,width:"100%",height:"100%",
-      pointerEvents:"none",opacity:isAlive?0:0.4,transition:"opacity 1.2s ease",
+      borderRadius:24,
+      overflow:"hidden",
+      margin:"12px 18px 0",
+      padding:"14px 14px 12px",
+      background:"radial-gradient(ellipse at 30% 15%, rgba(80,20,35,0.4) 0%, rgba(80,20,35,0) 50%),radial-gradient(ellipse at 75% 85%, rgba(40,10,20,0.45) 0%, rgba(40,10,20,0) 50%),linear-gradient(135deg, rgba(22,8,14,0.92) 0%, rgba(10,4,7,0.96) 50%, rgba(4,2,3,0.98) 100%)",
+      backdropFilter:"blur(40px) saturate(180%)",
+      WebkitBackdropFilter:"blur(40px) saturate(180%)",
+      border:"0.5px solid rgba(255,255,255,0.08)",
+      boxShadow:"0 0 0 1px rgba(255,255,255,0.04),0 16px 40px rgba(0,0,0,0.5),0 0 50px rgba(200,30,50,0.06),inset 0 1px 0 rgba(255,255,255,0.09),inset 0 -1px 0 rgba(0,0,0,0.3)"
+    }
+  },
+    e("div",{style:{
+      position:"absolute",top:0,left:0,right:0,height:"50%",
+      background:"linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.01) 40%, rgba(255,255,255,0) 100%)",
+      pointerEvents:"none",zIndex:1
     }}),
-
-    // Glow radial de fondo
-    React.createElement("div",{style:{
-      position:"absolute",top:-40,left:-40,
-      width:220,height:220,borderRadius:"50%",
-      background:isAlive
-        ?"radial-gradient(circle,rgba(255,40,40,0.1) 0%,transparent 65%)"
-        :"radial-gradient(circle,rgba(40,90,255,0.07) 0%,transparent 65%)",
-      transition:"background 1s ease",
-      pointerEvents:"none",
+    e("div",{style:{
+      position:"absolute",top:0,left:0,width:"40%",height:1,
+      background:"linear-gradient(90deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 100%)",
+      pointerEvents:"none",zIndex:2
     }}),
-
-    React.createElement("div",{style:{
-      position:"relative",zIndex:1,height:"100%",
-      display:"flex",alignItems:"center",padding:"0 22px",gap:22,
+    e("div",{style:{
+      display:"flex",alignItems:"flex-start",justifyContent:"space-between",
+      position:"relative",zIndex:10,marginBottom:6
     }},
-
-      // Corazón con anillo delgado tipo AW
-      React.createElement("div",{style:{position:"relative",width:76,height:76,flexShrink:0}},
-
-        // SVG anillo
-        React.createElement("svg",{
-          width:76,height:76,viewBox:"0 0 76 76",
-          style:{position:"absolute",inset:0},
-        },
-          React.createElement("defs",null,
-            React.createElement("linearGradient",{id:"rg2",x1:"0%",y1:"0%",x2:"0%",y2:"100%"},
-              React.createElement("stop",{offset:"0%",stopColor:isAlive?"#ff6b6b":"#6b9fff"}),
-              React.createElement("stop",{offset:"100%",stopColor:isAlive?"#e8001c":"#0055ff"})
-            )
-          ),
-          // Track muy sutil
-          React.createElement("circle",{cx:38,cy:38,r:32,fill:"none",
-            stroke:isAlive?"rgba(255,30,30,0.08)":"rgba(40,100,255,0.08)",
-            strokeWidth:4}),
-          // Anillo delgado de progreso
-          React.createElement("circle",{cx:38,cy:38,r:32,fill:"none",
-            stroke:"url(#rg2)",strokeWidth:3.5,strokeLinecap:"round",
-            strokeDasharray:201.1,
-            strokeDashoffset:dayExs.length>0?Math.max(4,201.1*(1-doneCount/dayExs.length)):201.1,
-            transform:"rotate(-90 38 38)",
-            style:{transition:"stroke-dashoffset 1s cubic-bezier(0.34,1.56,0.64,1)"},
+      e("div",null,
+        e("div",{style:{fontSize:10,color:"rgba(255,255,255,0.4)",marginBottom:2,fontFamily:mono,letterSpacing:0.5}},greeting||""),
+        e("div",{style:{fontSize:22,fontWeight:700,color:"#fff",letterSpacing:-0.5,lineHeight:1}},userName||"")
+      ),
+      e("div",{style:{
+        padding:"4px 10px",borderRadius:20,
+        background:"rgba(255,255,255,0.06)",
+        backdropFilter:"blur(20px)",
+        WebkitBackdropFilter:"blur(20px)",
+        border:"0.5px solid rgba(255,255,255,0.15)",
+        display:"flex",alignItems:"center",gap:4
+      }},
+        e("span",{style:{fontSize:11}},"⚡"),
+        e("span",{style:{fontSize:12,fontWeight:700,color:"rgba(255,220,180,0.95)"}},streak||0),
+        e("span",{style:{fontSize:8,fontFamily:mono,letterSpacing:1.2,color:"rgba(255,220,180,0.5)"}}," DÍAS")
+      )
+    ),
+    onShowNTNU?e("button",{onClick:onShowNTNU,style:{
+      position:"absolute",top:52,right:12,zIndex:21,
+      width:20,height:20,borderRadius:"50%",
+      background:"rgba(255,255,255,0.06)",
+      backdropFilter:"blur(20px)",
+      WebkitBackdropFilter:"blur(20px)",
+      border:"0.5px solid rgba(255,255,255,0.18)",
+      color:"rgba(255,255,255,0.7)",
+      fontSize:10,fontWeight:600,
+      display:"flex",alignItems:"center",justifyContent:"center",
+      cursor:"pointer",padding:0
+    }},"?"):null,
+    e("div",{style:{
+      position:"relative",width:"100%",
+      aspectRatio:"2.4 / 1",
+      marginTop:2,marginBottom:8,
+      display:"flex",alignItems:"center",justifyContent:"center"
+    }},
+      e("div",{ref:heartStageRef,style:{
+        position:"absolute",top:"50%",left:"50%",
+        transform:"translate(-50%,-50%)",
+        width:"52%",height:"180%",zIndex:3,pointerEvents:"none"
+      }}),
+      e("div",{style:{
+        position:"absolute",top:"35%",left:"50%",
+        transform:"translate(-50%,-50%)",
+        zIndex:10,textAlign:"center",
+        padding:"0 20px",
+        width:"100%",
+        pointerEvents:"none"
+      }},
+        e("div",{style:{
+          fontSize:8,letterSpacing:2,color:"rgba(255,255,255,0.55)",
+          textTransform:"uppercase",marginBottom:2,fontFamily:mono,fontWeight:500
+        }},"edad cv"),
+        e("div",{style:{
+          display:"flex",justifyContent:"center",alignItems:"baseline",gap:6
+        }},
+          e("span",{style:{
+            fontSize:64,fontWeight:900,color:"#fff",
+            fontFamily:"'Archivo Black','Archivo',sans-serif",
+            lineHeight:0.9,letterSpacing:-2.5,
+            textShadow:"0 2px 20px rgba(0,0,0,0.9),0 0 30px rgba(0,0,0,0.7)"
+          }},fitnessAge!==undefined&&fitnessAge!==null?fitnessAge:"—"),
+          e("span",{style:{
+            fontSize:10,fontWeight:600,color:"#ff2a45",
+            letterSpacing:1.5,fontFamily:mono,
+            textShadow:"0 0 12px rgba(255,42,69,0.5)"
+          }},"AÑOS")
+        ),
+        deltaLine
+      )
+    ),
+    e("div",{style:{
+      display:"flex",alignItems:"center",gap:10,position:"relative",zIndex:10,marginTop:2
+    }},
+      e("div",{style:{position:"relative",width:54,height:54,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}},
+        e("svg",{width:"54",height:"54",viewBox:"0 0 64 64",style:{position:"absolute",overflow:"visible"}},
+          e("defs",null,e("linearGradient",{id:"rgHero",x1:"0%",y1:"0%",x2:"100%",y2:"100%"},
+            e("stop",{offset:"0%",stopColor:stop1}),
+            e("stop",{offset:"100%",stopColor:stop2})
+          )),
+          e("circle",{cx:"32",cy:"32",r:"26",fill:"none",stroke:"rgba(255,255,255,0.06)",strokeWidth:"5"}),
+          e("circle",{cx:"32",cy:"32",r:"26",fill:"none",stroke:"url(#rgHero)",strokeWidth:"5",
+            strokeDasharray:ringDash||"0 999",strokeLinecap:"round",transform:"rotate(-90 32 32)",
+            style:{filter:"drop-shadow(0 0 "+(isPerfect?"8px":"4px")+" "+glowColor+")"}
           })
         ),
-
-        // Corazón SVG minimalista en el centro
-        React.createElement("div",{style:{
-          position:"absolute",inset:0,
-          display:"flex",alignItems:"center",justifyContent:"center",
-        }},
-          React.createElement("svg",{
-            width:30,height:28,viewBox:"0 0 30 28",
-            style:isAlive?{
-              animation:"heartbeat 0.8s ease-in-out infinite",
-              filter:"drop-shadow(0 0 8px rgba(255,30,30,0.8)) drop-shadow(0 0 16px rgba(255,30,30,0.4))",
-            }:{
-              filter:"drop-shadow(0 0 4px rgba(60,120,255,0.5))",
-              opacity:0.7,
-            },
-          },
-            // Corazón limpio tipo SF Symbol
-            React.createElement("path",{
-              d:"M15 25.5C15 25.5 2 17.5 2 9.5C2 5.9 4.9 3 8.5 3C10.8 3 12.8 4.1 15 6.2C17.2 4.1 19.2 3 21.5 3C25.1 3 28 5.9 28 9.5C28 17.5 15 25.5 15 25.5Z",
-              fill:isAlive?"#ff2d2d":"#4a8cff",
-              style:{transition:"fill 0.8s ease"},
-            })
-          )
+        e("div",{style:{textAlign:"center",position:"relative",zIndex:1}},
+          e("div",{style:{fontSize:11,fontWeight:800,color:numColor,lineHeight:1}},(trainDone||0)+"/"+(trainTotal||0)),
+          e("div",{style:{fontSize:5,fontFamily:mono,letterSpacing:2,color:"rgba(255,255,255,0.32)",marginTop:2}},isPerfect?"TOP":"SEM")
         )
       ),
-
-      // Divisor
-      React.createElement("div",{style:{
-        width:1,height:72,flexShrink:0,
-        background:"linear-gradient(180deg,transparent,rgba(255,255,255,0.08),transparent)",
-      }}),
-
-      // Métricas
-      React.createElement("div",{style:{flex:1,minWidth:0}},
-
-        // Status
-        React.createElement("div",{style:{
-          fontFamily:"'SF Mono','Courier New',monospace",
-          fontSize:8,letterSpacing:2,marginBottom:10,
-          color:isAlive?"rgba(255,140,140,1.0)":"rgba(160,200,255,0.9)",
-        }},
-          testAlive
-            ?(lang==="en"?"HEART ALIVE ↑":"CORAZÓN ACTIVO ↑")
-            :dayExs.length===0
-              ?(lang==="en"?"REST DAY":"DESCANSO")
-              :isAlive
-                ?(lang==="en"?"HEART ALIVE ↑":"CORAZÓN ACTIVO ↑")
-                :(doneCount+"/"+dayExs.length+" "+(lang==="en"?"SETS DONE":"COMPLETADOS"))
+      e("div",{style:{flex:1,minWidth:0}},
+        e("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:3}},
+          e("div",{style:{display:"flex",alignItems:"center",gap:4}},
+            e("span",{style:{fontSize:8,fontFamily:mono,letterSpacing:2,color:"rgba(255,180,180,0.75)",fontWeight:600}},lvlName||""),
+            lvl!==undefined&&lvl<10&&lvlNext?e("span",{style:{fontSize:7,color:"rgba(255,255,255,0.2)",fontFamily:mono}},"→ "+lvlNext):null
+          ),
+          e("span",{style:{fontSize:7,fontFamily:mono,color:"rgba(255,255,255,0.25)"}},(xpPct||0)+"%")
         ),
-
-        // Número grande
-        React.createElement("div",{style:{
-          display:"flex",alignItems:"flex-end",gap:4,marginBottom:2,lineHeight:1,
-        }},
-          React.createElement("span",{style:{
-            fontFamily:"'Bebas Neue',cursive",
-            fontSize:56,lineHeight:0.88,
-            color:isAlive?"#ff4444":"rgba(150,195,255,0.95)",
-            transition:"color 0.8s ease",
-            textShadow:isAlive
-              ?"0 0 40px rgba(255,30,30,0.4),0 0 80px rgba(255,30,30,0.15)"
-              :"0 0 30px rgba(72,120,255,0.25)",
-          }},fitnessAge!=null?fitnessAge:"—"),
-          fitnessAge!=null?React.createElement("div",{style:{paddingBottom:6,marginLeft:2}},
-            React.createElement("div",{style:{
-              fontFamily:"'SF Mono','Courier New',monospace",
-              fontSize:11,color:"rgba(255,255,255,0.75)",
-              letterSpacing:0.5,lineHeight:1.4,
-            }},lang==="en"?"yrs":"años"),
-            weeklyDelta!==null&&deltaAbs?React.createElement("div",{style:{
-              fontFamily:"'SF Mono','Courier New',monospace",
-              fontSize:9,
-              color:isAlive?"rgba(255,130,130,0.95)":"rgba(160,195,255,0.9)",
-            }},deltaSign+deltaAbs):null
-          ):null
+        e("div",{style:{height:2,borderRadius:1,overflow:"hidden",background:"rgba(255,255,255,0.06)",marginBottom:6}},
+          e("div",{style:{width:(xpPct||0)+"%",height:"100%",background:"linear-gradient(90deg,"+(lvlColor||"#ff6080")+"88,"+(lvlColor||"#ff6080")+")",borderRadius:1,boxShadow:"0 0 8px "+(lvlColor||"#ff6080")+"88",transition:"width 0.8s ease"}})
         ),
-
-        // Sublabel + ?
-        React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6,marginBottom:10}},
-          React.createElement("div",{style:{
-            fontFamily:"'SF Mono','Courier New',monospace",
-            fontSize:7,letterSpacing:1.5,color:"rgba(255,255,255,0.55)",
-          }},lang==="en"?"CV AGE · NTNU":"EDAD CV · NTNU"),
-          React.createElement("div",{
-            onClick:function(e){e.stopPropagation();e.preventDefault();if(onShowNTNU)onShowNTNU();},
-            style:{
-              width:18,height:18,borderRadius:"50%",flexShrink:0,
-              background:"rgba(72,120,255,0.15)",
-              border:"1px solid rgba(72,120,255,0.5)",
-              display:"flex",alignItems:"center",justifyContent:"center",
-              cursor:"pointer",
-              fontFamily:"'SF Mono','Courier New',monospace",
-              fontSize:10,fontWeight:700,color:"rgba(130,175,255,0.9)",
-              letterSpacing:0,
-            }
-          },"?")
-        ),
-
-
-
-        // ECG delgado
-        React.createElement("canvas",{
-          ref:ecgRef,
-          style:{display:"block",width:"100%",height:32,borderRadius:2},
-        })
+        e("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between"}},
+          e("div",{style:{minWidth:0,flex:1}},
+            e("div",{style:{fontSize:6,fontFamily:mono,letterSpacing:2,color:"rgba(255,255,255,0.3)",marginBottom:1}},"ÚLTIMO PR"),
+            e("div",{style:{fontSize:10,fontWeight:700,color:"rgba(255,255,255,0.82)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},
+              lastPRName||(lang==="es"?"Sin registros":"No logs"))
+          ),
+          lastPRVal?e("div",{style:{padding:"2px 7px",borderRadius:10,background:"rgba(255,215,0,0.08)",border:"1px solid rgba(255,215,0,0.3)",flexShrink:0,marginLeft:6}},
+            e("span",{style:{fontSize:8,fontWeight:700,color:"rgba(255,215,0,0.88)"}},"PR "+lastPRVal)):null
+        )
       )
     )
   );
@@ -4744,107 +4755,18 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
     e(ModeSelectorBar,{profile:profile,lang:lang,mono:mono,
       onShowAthletes:function(){setShowAthletes(true);}}),
 
-    // Card glass principal
-    e("div",{"data-tour":"day-progress",style:{
-      margin:"12px 18px 0",
-      background:"linear-gradient(135deg,rgba(20,35,90,0.92) 0%,rgba(10,18,50,0.95) 100%)",
-      borderRadius:24,
-      borderTop:"1.5px solid rgba(255,255,255,0.45)",
-      borderLeft:"0.5px solid rgba(255,255,255,0.18)",
-      borderRight:"0.5px solid rgba(255,255,255,0.18)",
-      borderBottom:"0.5px solid rgba(255,255,255,0.05)",
-      boxShadow:"inset 0 1.5px 0 rgba(255,255,255,0.4),0 16px 48px rgba(0,0,30,0.6)",
-      overflow:"hidden",padding:"18px 16px 16px",position:"relative"
-    }},
-      e("div",{style:{position:"absolute",top:-42,left:-24,width:190,height:120,background:"radial-gradient(ellipse,rgba(255,255,255,0.12) 0%,transparent 68%)",transform:"rotate(-22deg)",pointerEvents:"none",zIndex:0}}),
-      e("div",{style:{position:"absolute",inset:0,borderRadius:24,background:"linear-gradient(148deg,rgba(255,255,255,0.1) 0%,rgba(255,255,255,0.02) 22%,transparent 64%)",pointerEvents:"none",zIndex:0}}),
-
-      // Saludo + pill racha
-      e("div",{style:{display:"flex",alignItems:"flex-end",justifyContent:"space-between",marginBottom:14,position:"relative",zIndex:1}},
-        e("div",null,
-          e("div",{style:{fontSize:11,color:"rgba(255,255,255,0.32)",marginBottom:3,fontFamily:mono}},greeting),
-          e("div",{style:{fontSize:24,fontWeight:700,color:"#fff",letterSpacing:-0.5,lineHeight:1}},userName)
-        ),
-        e("div",{style:{padding:"5px 11px",borderRadius:20,background:"rgba(50,110,255,0.12)",border:"1px solid rgba(120,175,255,0.5)",display:"flex",alignItems:"center",gap:5}},
-          e("span",{style:{fontSize:13}},"⚡"),
-          e("span",{style:{fontSize:13,fontWeight:700,color:"rgba(190,220,255,0.96)"}},streak),
-          e("span",{style:{fontSize:8,fontFamily:mono,letterSpacing:1.5,color:"rgba(100,155,255,0.6)"}}," DÍAS")
-        )
-      ),
-
-      // Rectángulo HOY con corazón — igual al boceto
-      e(FrozenHeartBanner,{day:(sel!==undefined?routine&&routine[sel]:todayR),done:done,sel:(sel!==undefined?sel:tdi),lang:lang,mono:mono,compact:false,
-        onShowNTNU:function(){setShowNTNU(true);},
-        onStart:null,fitnessAge:fitnessAge,ageDiff:ageDiff,weeklyDelta:weeklyDelta,
-        deltaSign:deltaSign,deltaColor:deltaColor,deltaAbs:deltaAbs}),
-
-      // Ring + XP
-      e("div",{style:{display:"flex",alignItems:"center",gap:12,marginTop:14,position:"relative",zIndex:1}},
-        e("div",{style:{position:"relative",width:64,height:64,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}},
-          (function(){
-            var isPerfect=trainTotal>0&&trainDone>=trainTotal;
-            var pct=trainTotal>0?trainDone/trainTotal:0;
-            // Color progresivo: azul→verde→dorado según progreso
-            var ringColor=isPerfect
-              ?"#FFD700"  // dorado semana perfecta
-              :pct>=0.7?"#3fcf8e"   // verde casi completo
-              :pct>=0.4?"#4898e8"   // azul medio
-              :"rgba(130,190,255,0.6)"; // azul tenue inicio
-            var glowColor=isPerfect?"rgba(255,215,0,0.8)":pct>=0.7?"rgba(63,207,142,0.8)":"rgba(80,140,255,0.8)";
-            var numColor=isPerfect?"#FFD700":pct>=0.7?"#3fcf8e":"#fff";
-            var stop1=isPerfect?"#FFF176":pct>=0.7?"#3fcf8e":"rgba(130,190,255,0.8)";
-            var stop2=isPerfect?"#FFD700":pct>=0.7?"#26a866":"#4878ff";
-            return [
-              e("svg",{key:"svg",width:"64",height:"64",viewBox:"0 0 64 64",style:{position:"absolute",overflow:"visible"}},
-                e("defs",null,e("linearGradient",{id:"rg3",x1:"0%",y1:"0%",x2:"100%",y2:"100%"},
-                  e("stop",{offset:"0%",stopColor:stop1}),
-                  e("stop",{offset:"100%",stopColor:stop2})
-                )),
-                e("circle",{cx:"32",cy:"32",r:"26",fill:"none",stroke:"rgba(255,255,255,0.05)",strokeWidth:"5"}),
-                e("circle",{cx:"32",cy:"32",r:"26",fill:"none",stroke:"url(#rg3)",strokeWidth:"5",
-                  strokeDasharray:ringDash,strokeLinecap:"round",transform:"rotate(-90 32 32)",
-                  style:{filter:"drop-shadow(0 0 "+(isPerfect?"8px":"4px")+" "+glowColor+")"}
-                }),
-                isPerfect?e("circle",{cx:"32",cy:"32",r:"26",fill:"none",
-                  stroke:"rgba(255,215,0,0.15)",strokeWidth:"9",
-                  style:{filter:"blur(4px)"}
-                }):null
-              ),
-              e("div",{key:"txt",style:{textAlign:"center",position:"relative",zIndex:1}},
-                e("div",{style:{fontSize:13,fontWeight:800,color:numColor,lineHeight:1,
-                  textShadow:isPerfect?"0 0 12px rgba(255,215,0,0.8)":"none",
-                  transition:"color 0.5s ease"
-                }},trainDone+"/"+trainTotal),
-                e("div",{style:{fontSize:6,fontFamily:mono,letterSpacing:2,
-                  color:isPerfect?"rgba(255,215,0,0.6)":"rgba(255,255,255,0.28)",marginTop:2
-                }},isPerfect?"🏆":"SEM")
-              )
-            ];
-          })()
-        ),
-        e("div",{style:{flex:1}},
-          e("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:4}},
-            e("div",{style:{display:"flex",alignItems:"center",gap:5}},
-              e("span",{style:{fontSize:8,fontFamily:mono,letterSpacing:2,color:"rgba(185,215,255,0.65)",fontWeight:600}},lvlName),
-              lvl<10?e("span",{style:{fontSize:8,color:"rgba(255,255,255,0.18)",fontFamily:mono}},"→ "+lvlNext):null
-            ),
-            e("span",{style:{fontSize:7,fontFamily:mono,color:"rgba(255,255,255,0.2)"}},xpPct+"%")
-          ),
-          e("div",{style:{height:2,borderRadius:1,overflow:"hidden",background:"rgba(255,255,255,0.06)",marginBottom:10}},
-            e("div",{style:{width:xpPct+"%",height:"100%",background:"linear-gradient(90deg,"+lvlColor+"88,"+lvlColor+")",borderRadius:1,boxShadow:"0 0 8px "+lvlColor+"88",transition:"width 0.8s ease"}})
-          ),
-          e("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between"}},
-            e("div",null,
-              e("div",{style:{fontSize:7,fontFamily:mono,letterSpacing:2,color:"rgba(255,255,255,0.25)",marginBottom:2}},"ÚLTIMO PR"),
-              e("div",{style:{fontSize:11,fontWeight:700,color:"rgba(255,255,255,0.85)",maxWidth:100,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},
-                lastPRName||(lang==="es"?"Sin registros":"No logs"))
-            ),
-            lastPRVal?e("div",{style:{padding:"3px 8px",borderRadius:10,background:"rgba(255,215,0,0.08)",border:"1px solid rgba(255,215,0,0.35)"}},
-              e("span",{style:{fontSize:9,fontWeight:700,color:"rgba(255,215,0,0.85)"}},"🏆 "+lastPRVal)):null
-          )
-        )
-      )
-    ),
+    // Hero inmersivo con corazon ECG + todos los datos (saludo, streak, XP, nivel, PR)
+    e(FrozenHeartBanner,{
+      day:(sel!==undefined?routine&&routine[sel]:todayR),done:done,sel:(sel!==undefined?sel:tdi),
+      lang:lang,mono:mono,compact:false,
+      onShowNTNU:function(){setShowNTNU(true);},
+      onStart:null,fitnessAge:fitnessAge,ageDiff:ageDiff,weeklyDelta:weeklyDelta,
+      deltaSign:deltaSign,deltaColor:deltaColor,deltaAbs:deltaAbs,
+      greeting:greeting,userName:userName,streak:streak,
+      lvl:lvl,lvlName:lvlName,lvlNext:lvlNext,lvlColor:lvlColor,xpPct:xpPct,
+      trainDone:trainDone,trainTotal:trainTotal,ringDash:ringDash,
+      lastPRName:lastPRName,lastPRVal:lastPRVal
+    }),
 
     // Cuadro de días — liquid glass bubble
     e("div",{"data-tour":"cal-day",style:{
