@@ -2897,7 +2897,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                   <div>
                     <div
                       onClick={()=>setExpandedEx(ei===expandedEx?null:ei)}
-                      style={{fontSize:24,fontWeight:900,letterSpacing:-1,textTransform:"uppercase",color:C2.tx,lineHeight:1,cursor:"pointer",display:"flex",alignItems:"center",gap:8}}>
+                      style={{fontSize:24,fontWeight:900,letterSpacing:1.5,textTransform:"uppercase",color:C2.tx,lineHeight:1.05,cursor:"pointer",display:"flex",alignItems:"center",gap:8}}>
                       {ex.e}
                       <span style={{fontSize:11,color:C2.tx3,fontFamily:mono,opacity:0.5}}>{expandedEx===ei?"▲":"▼"}</span>
                     </div>
@@ -4838,11 +4838,11 @@ var FORJA_TOUR_STEPS=[
   {anchor:"hero-heart",pad:8,tab:"train",
    title:{es:"TU CORAZÓN",en:"YOUR HEART",fr:"TON CŒUR",it:"IL TUO CUORE",de:"DEIN HERZ"},
    body:{
-     es:"Late cuando entrenas. Muestra tu edad cardiovascular real, calculada con tu VO2max.",
-     en:"Beats when you train. Shows your real cardiovascular age from your VO2max.",
-     fr:"Bat quand tu t'entraînes. Montre ton âge cardiovasculaire réel via VO2max.",
-     it:"Batte quando ti alleni. Mostra la tua età cardiovascolare reale dal VO2max.",
-     de:"Schlägt beim Training. Zeigt dein echtes kardiovaskuläres Alter via VO2max."
+     es:"Tu edad cardiovascular real, calculada con tu VO2max según el modelo científico NTNU.",
+     en:"Your real cardiovascular age, calculated from your VO2max using the scientific NTNU model.",
+     fr:"Ton âge cardiovasculaire réel, calculé via ton VO2max selon le modèle scientifique NTNU.",
+     it:"La tua età cardiovascolare reale, calcolata dal VO2max secondo il modello scientifico NTNU.",
+     de:"Dein echtes kardiovaskuläres Alter, berechnet via VO2max nach dem NTNU-Modell."
    }},
   {anchor:"cal-day",pad:8,tab:"train",
    title:{es:"SEMANA",en:"WEEK",fr:"SEMAINE",it:"SETTIMANA",de:"WOCHE"},
