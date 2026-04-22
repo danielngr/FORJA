@@ -4675,12 +4675,14 @@ function ForjaTour({steps,stepIndex,onNext,onEnd,onStepChange,lang}){
         var isFullyVisible=r1.top>=60 && r1.bottom<=(vh-100);
         if(!isFullyVisible){
           var targetY=window.scrollY+r1.top-(vh/2)+(r1.height/2);
-          window.scrollTo({top:Math.max(0,targetY),behavior:"smooth"});
-          setTimeout(function(){
+          // Instant (no smooth) — el scroll ocurre bajo el overlay negro, invisible al usuario
+          window.scrollTo({top:Math.max(0,targetY),behavior:"instant"});
+          // Un frame para que el browser aplique el scroll
+          requestAnimationFrame(function(){
             if(cancelled) return;
             var r2=el.getBoundingClientRect();
             setBounds({top:r2.top,left:r2.left,right:r2.right,bottom:r2.bottom,width:r2.width,height:r2.height});
-          },380);
+          });
         }else{
           setBounds({top:r1.top,left:r1.left,right:r1.right,bottom:r1.bottom,width:r1.width,height:r1.height});
         }
@@ -4688,14 +4690,14 @@ function ForjaTour({steps,stepIndex,onNext,onEnd,onStepChange,lang}){
     }
 
     // Esperar un poco después de que onStepChange haga sus cosas (cambio de tab)
-    var delay=step.needsTabSwitch?450:120;
+    var delay=step.needsTabSwitch?380:40;
     setTimeout(measure,delay);
 
     return function(){cancelled=true;};
   },[stepIndex,retryCount]);
 
-  // Reset retry al cambiar de paso
-  React.useEffect(function(){setRetryCount(0);setBounds(null);setTipHeight(0);},[stepIndex]);
+  // Reset retry al cambiar de paso (pero NO reset bounds — mantenemos el anterior hasta tener el nuevo)
+  React.useEffect(function(){setRetryCount(0);setTipHeight(0);},[stepIndex]);
 
   // Medir altura del tooltip real
   React.useLayoutEffect(function(){
@@ -4755,26 +4757,28 @@ function ForjaTour({steps,stepIndex,onNext,onEnd,onStepChange,lang}){
   var skipLabel=lang==="en"?"SKIP":lang==="fr"?"PASSER":lang==="it"?"SALTA":lang==="de"?"ÜBERSP":"OMITIR";
 
   // Highlight overlay (4 rectángulos alrededor)
+  var TRANS="top 0.28s cubic-bezier(0.4,0,0.2,1), bottom 0.28s cubic-bezier(0.4,0,0.2,1), left 0.28s cubic-bezier(0.4,0,0.2,1), right 0.28s cubic-bezier(0.4,0,0.2,1), width 0.28s cubic-bezier(0.4,0,0.2,1), height 0.28s cubic-bezier(0.4,0,0.2,1)";
   var highlight=b&&!b.missing?e("div",{style:{position:"fixed",inset:0,pointerEvents:"none",zIndex:9998}},
     // Top
     e("div",{style:{position:"absolute",top:0,left:0,right:0,height:Math.max(0,b.top-pad),
-      background:"rgba(0,0,0,0.85)",pointerEvents:"auto"}}),
+      background:"rgba(0,0,0,0.85)",pointerEvents:"auto",transition:TRANS}}),
     // Bottom
     e("div",{style:{position:"absolute",top:b.bottom+pad,left:0,right:0,bottom:0,
-      background:"rgba(0,0,0,0.85)",pointerEvents:"auto"}}),
+      background:"rgba(0,0,0,0.85)",pointerEvents:"auto",transition:TRANS}}),
     // Left
     e("div",{style:{position:"absolute",top:b.top-pad,height:b.height+pad*2,left:0,width:Math.max(0,b.left-pad),
-      background:"rgba(0,0,0,0.85)",pointerEvents:"auto"}}),
+      background:"rgba(0,0,0,0.85)",pointerEvents:"auto",transition:TRANS}}),
     // Right
     e("div",{style:{position:"absolute",top:b.top-pad,height:b.height+pad*2,left:b.right+pad,right:0,
-      background:"rgba(0,0,0,0.85)",pointerEvents:"auto"}}),
+      background:"rgba(0,0,0,0.85)",pointerEvents:"auto",transition:TRANS}}),
     // Borde azul alrededor
     e("div",{style:{position:"absolute",
       top:b.top-pad,left:b.left-pad,
       width:b.width+pad*2,height:b.height+pad*2,
       borderRadius:14,pointerEvents:"none",
       border:"2px solid rgba(72,120,255,1)",
-      boxShadow:"0 0 0 1px rgba(72,120,255,0.15),0 0 28px rgba(72,120,255,0.55)"}})
+      boxShadow:"0 0 0 1px rgba(72,120,255,0.15),0 0 28px rgba(72,120,255,0.55)",
+      transition:TRANS}})
   ):e("div",{style:{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",pointerEvents:"auto",zIndex:9998}});
 
   // Tooltip
@@ -4787,7 +4791,8 @@ function ForjaTour({steps,stepIndex,onNext,onEnd,onStepChange,lang}){
     borderTop:"1px solid rgba(130,175,255,0.4)",
     padding:"18px 20px 16px",
     boxShadow:"0 24px 56px rgba(0,0,0,0.8),0 0 40px rgba(72,120,255,0.08)",
-    pointerEvents:"auto",zIndex:9999
+    pointerEvents:"auto",zIndex:9999,
+    transition:"top 0.28s cubic-bezier(0.4,0,0.2,1), bottom 0.28s cubic-bezier(0.4,0,0.2,1)"
   },tipPos)},
     // Progress bar
     e("div",{style:{display:"flex",alignItems:"center",gap:10,marginBottom:12}},
