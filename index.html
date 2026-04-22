@@ -809,10 +809,28 @@ function exMetaKey(name){
 async function checkProStatus(){
   try{
     var sb=getSB(); var user=await ensureAuth();
-    if(!sb||!user)return false;
-    var res=await sb.from('pro_users').select('id,expires_at').eq('user_id',user.id).maybeSingle();
-    if(!res||!res.data)return false;
-    if(res.data.expires_at&&new Date(res.data.expires_at)<new Date())return false;
+    if(!sb||!user){
+      // Don't nuke cache if we can't connect — keep last known state
+      return false;
+    }
+    var res=await sb.from('pro_users').select('id,expires_at,status').eq('user_id',user.id).maybeSingle();
+    if(!res||!res.data){
+      // No row = not PRO — update cache
+      try{localStorage.setItem('fv8_pro','0');}catch(_){}
+      return false;
+    }
+    // Check expiration
+    if(res.data.expires_at && new Date(res.data.expires_at)<new Date()){
+      try{localStorage.setItem('fv8_pro','0');}catch(_){}
+      return false;
+    }
+    // Check status field (if exists)
+    if(res.data.status && res.data.status!=='active' && res.data.status!=='trialing'){
+      try{localStorage.setItem('fv8_pro','0');}catch(_){}
+      return false;
+    }
+    // User IS PRO — cache it
+    try{localStorage.setItem('fv8_pro','1');}catch(_){}
     return true;
   }catch(_){return false;}
 }
@@ -2157,8 +2175,14 @@ function isPro(){
         userEmail=parsed && parsed.user && parsed.user.email;
       }
     }catch(_){}
-    if(userEmail && FORJA_ADMIN_EMAILS.indexOf(userEmail.toLowerCase())>=0){
-      return true;
+    if(userEmail){
+      var emailLower=userEmail.toLowerCase().trim();
+      var whitelistLower=FORJA_ADMIN_EMAILS.map(function(x){return (x||"").toLowerCase().trim();});
+      if(whitelistLower.indexOf(emailLower)>=0){
+        // Cache it for consistency
+        try{localStorage.setItem('fv8_pro','1');}catch(_){}
+        return true;
+      }
     }
     // 2. Check cached PRO status (updated by checkProStatus on login)
     var cached=localStorage.getItem('fv8_pro');
@@ -4054,6 +4078,13 @@ function CelebCard({celeb,lang,mono,profile,onActivate}){
   const BN="'Bebas Neue',cursive";
   const langKey=lang==="en"?"en":"es";
   const isFree=celeb.id==="rock";
+  // Reactive PRO state — re-renders when PRO status changes via event
+  const [proTick,setProTick]=React.useState(0);
+  React.useEffect(function(){
+    const handler=function(){setProTick(function(t){return t+1;});};
+    try{window.addEventListener('forja:proStatusChanged',handler);}catch(_){}
+    return function(){try{window.removeEventListener('forja:proStatusChanged',handler);}catch(_){}};
+  },[]);
   const userIsPro=isPro();
   const isActive=profile&&profile.mode==="celebrity"&&profile.celebrity===celeb.id;
   const unlocked=isFree||userIsPro;
@@ -4111,6 +4142,12 @@ function CelebCard({celeb,lang,mono,profile,onActivate}){
           border:"1px solid rgba(63,207,142,0.35)",padding:"4px 8px",borderRadius:8,flexShrink:0}}>
           FREE
         </div>
+      ):userIsPro?(
+        // User is PRO but hasn't selected this athlete — show available badge
+        <div style={{fontFamily:MN,fontSize:7,color:"rgba(192,168,112,0.8)",
+          border:"1px solid rgba(192,168,112,0.3)",padding:"4px 8px",borderRadius:8,flexShrink:0}}>
+          PRO ✓
+        </div>
       ):(
         <div style={{display:"flex",alignItems:"center",gap:4,flexShrink:0,
           padding:"4px 9px",borderRadius:8,
@@ -4128,6 +4165,13 @@ function AthleteSheet({show,onClose,lang,mono,profile,sp,sr}){
   const MN=mono||"'SF Mono','Courier New',monospace";
   const BN="'Bebas Neue',cursive";
   const[closing,setClosing]=React.useState(false);
+  // Reactive PRO state — re-renders when PRO status changes via event
+  const [proTick,setProTick]=React.useState(0);
+  React.useEffect(function(){
+    const handler=function(){setProTick(function(t){return t+1;});};
+    try{window.addEventListener('forja:proStatusChanged',handler);}catch(_){}
+    return function(){try{window.removeEventListener('forja:proStatusChanged',handler);}catch(_){}};
+  },[]);
   if(!show&&!closing) return null;
 
   const close=()=>{setClosing(true);setTimeout(()=>{setClosing(false);onClose();},260);};
@@ -4230,7 +4274,7 @@ function AthleteSheet({show,onClose,lang,mono,profile,sp,sr}){
           </div>
           {women.map(c=><CelebCard key={c.id} celeb={c} lang={lang} mono={mono} profile={profile} onActivate={activate}/>)}
 
-          <div style={{marginTop:16,padding:"16px",borderRadius:16,
+          {!userIsPro&&<div style={{marginTop:16,padding:"16px",borderRadius:16,
             background:"rgba(72,120,255,0.07)",border:"1px solid rgba(72,120,255,0.2)",
             borderTop:"1px solid rgba(130,175,255,0.3)",textAlign:"center"}}>
             <div style={{fontFamily:MN,fontSize:8,letterSpacing:3,
@@ -4259,7 +4303,7 @@ function AthleteSheet({show,onClose,lang,mono,profile,sp,sr}){
               boxShadow:"0 0 24px rgba(72,120,255,0.3)"}}>
               {langKey==="en"?"START FREE TRIAL →":"INICIAR PRUEBA GRATIS →"}
             </button>
-          </div>
+          </div>}
         </div>
       </div>
     </div>
@@ -8717,6 +8761,19 @@ function App(){
         setAuthChecked(true);
        
         window.__forjaOnboardingDone=function(p,r,s){setProfile(p);if(r)setRoutine(r);window._fss(s||99);};
+        // Refresh PRO status from Supabase in background
+        // This updates localStorage('fv8_pro') so isPro() returns correct value
+        try{
+          if(typeof checkProStatus==='function'){
+            checkProStatus().then(function(wasPro){
+              // If PRO status changed, trigger re-render
+              // The isPro() function now reads the updated localStorage
+              if(wasPro){
+                try{window.dispatchEvent(new CustomEvent('forja:proStatusChanged',{detail:{isPro:true}}));}catch(_){}
+              }
+            }).catch(function(){});
+          }
+        }catch(_){}
       }).catch(()=>{setReady(true);setAuthChecked(true);});
     };
     const search=window.location.search;
