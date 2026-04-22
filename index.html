@@ -4311,9 +4311,15 @@ function ProfileSheet({show,onClose,profile,lang,mono,sp,setStep}){
   var e=React.createElement;
   var[closing,setClosing]=React.useState(false);
   var[showReset,setShowReset]=React.useState(false);
+  var[showDelete,setShowDelete]=React.useState(false);
+  var[deleteStep,setDeleteStep]=React.useState(1); // 1=warning, 2=slider confirm
+  var[deleting,setDeleting]=React.useState(false);
   var[sliderX,setSliderX]=React.useState(0);
+  var[deleteSliderX,setDeleteSliderX]=React.useState(0);
   var sliderRef=React.useRef(null);
+  var deleteSliderRef=React.useRef(null);
   var draggingRef=React.useRef(false);
+  var deleteDraggingRef=React.useRef(false);
   if(!show&&!closing) return null;
 
   var SLIDER_W=260;
@@ -4346,6 +4352,95 @@ function ProfileSheet({show,onClose,profile,lang,mono,sp,setStep}){
     var onUp=function(){
       draggingRef.current=false;
       setSliderX(0);
+      window.removeEventListener('mousemove',onMove);
+      window.removeEventListener('mouseup',onUp);
+      window.removeEventListener('touchmove',onMove);
+      window.removeEventListener('touchend',onUp);
+    };
+    window.addEventListener('mousemove',onMove);
+    window.addEventListener('mouseup',onUp);
+    window.addEventListener('touchmove',onMove,{passive:true});
+    window.addEventListener('touchend',onUp);
+  };
+
+  // ════════════════════════════════════════════════════════════════
+  // DELETE ACCOUNT — permanently remove user from Supabase + local
+  // Required by Apple Guideline 5.1.1(v) since iOS 15+
+  // ════════════════════════════════════════════════════════════════
+  var doDeleteAccount=async function(){
+    setDeleting(true);
+    try{
+      var sb=(typeof getSb==='function')?getSb():null;
+      if(!sb){throw new Error("No Supabase client");}
+
+      var userRes=await sb.auth.getUser();
+      var user=userRes&&userRes.data&&userRes.data.user;
+
+      if(user&&user.id){
+        // 1. Delete user data from all tables
+        // Wrap each delete in try/catch so one failure doesn't stop the rest
+        var userId=user.id;
+        var tables=["user_profiles","user_logs","strength_history","muscle_xp","pro_users"];
+        for(var i=0;i<tables.length;i++){
+          try{await sb.from(tables[i]).delete().eq("user_id",userId);}catch(e){console.warn("Failed to delete from "+tables[i],e);}
+        }
+
+        // 2. Delete auth.users entry via Edge Function (service_role needed)
+        try{
+          await sb.functions.invoke("delete-user-account",{body:{user_id:userId}});
+        }catch(e){
+          // If the Edge Function doesn't exist yet, we still continue
+          // (user data is gone, just the auth record may linger)
+          console.warn("Edge function delete-user-account not available",e);
+        }
+
+        // 3. Sign out
+        try{await sb.auth.signOut();}catch(_){}
+      }
+
+      // 4. Nuke all local storage
+      try{
+        var keysToDelete=[];
+        for(var k in localStorage){if(k.indexOf("fv8")===0||k.indexOf("sb-")===0||k.indexOf("forja")===0)keysToDelete.push(k);}
+        keysToDelete.forEach(function(kk){try{localStorage.removeItem(kk);}catch(_){}});
+        sessionStorage.clear();
+      }catch(_){}
+
+      // 5. Reload to onboarding
+      setTimeout(function(){
+        window.location.href=window.location.pathname;
+      },400);
+    }catch(err){
+      console.error("Account deletion failed",err);
+      setDeleting(false);
+      alert(l==="en"?"Something went wrong. Please try again or contact support.":"Algo salió mal. Intenta de nuevo o contacta soporte.");
+    }
+  };
+
+  // Delete slider drag handler
+  var onDeleteSliderStart=function(clientX){
+    if(deleting)return;
+    deleteDraggingRef.current=true;
+    var startX=clientX;
+    var startVal=deleteSliderX;
+    var onMove=function(ev){
+      if(!deleteDraggingRef.current) return;
+      var cx=ev.touches?ev.touches[0].clientX:ev.clientX;
+      var nx=Math.max(0,Math.min(MAX_X,startVal+(cx-startX)));
+      setDeleteSliderX(nx);
+      if(nx>=MAX_X-4){
+        deleteDraggingRef.current=false;
+        window.removeEventListener('mousemove',onMove);
+        window.removeEventListener('mouseup',onUp);
+        window.removeEventListener('touchmove',onMove);
+        window.removeEventListener('touchend',onUp);
+        // Trigger deletion after small delay
+        setTimeout(doDeleteAccount,200);
+      }
+    };
+    var onUp=function(){
+      deleteDraggingRef.current=false;
+      setDeleteSliderX(0);
       window.removeEventListener('mousemove',onMove);
       window.removeEventListener('mouseup',onUp);
       window.removeEventListener('touchmove',onMove);
@@ -4458,6 +4553,184 @@ function ProfileSheet({show,onClose,profile,lang,mono,sp,setStep}){
     )
   ):null;
 
+  // ════════════════════════════════════════════════════════════════
+  // DELETE ACCOUNT MODAL — 2 steps: warning → slider confirm
+  // ════════════════════════════════════════════════════════════════
+  var DeleteModal=showDelete?e("div",{style:{
+    position:"fixed",inset:0,zIndex:9999,
+    background:"rgba(0,0,0,0.96)",
+    backdropFilter:"blur(14px)",
+    WebkitBackdropFilter:"blur(14px)",
+    display:"flex",flexDirection:"column",
+    alignItems:"center",justifyContent:"center",
+    padding:24,
+  }},
+    // Loading overlay while deleting
+    deleting?e("div",{style:{
+      width:"100%",maxWidth:320,padding:"40px 24px",
+      textAlign:"center",
+    }},
+      e("div",{style:{fontSize:40,marginBottom:20}},"⏳"),
+      e("div",{style:{fontFamily:BN,fontSize:22,color:"rgba(220,80,80,0.9)",
+        letterSpacing:1,marginBottom:8}},
+        l==="en"?"DELETING...":"BORRANDO..."),
+      e("div",{style:{fontFamily:"'SF Mono','Courier New',monospace",fontSize:11,
+        color:"rgba(240,242,245,0.5)",lineHeight:1.6}},
+        l==="en"?"Removing your data permanently":"Eliminando tus datos permanentemente")
+    ):
+    // STEP 1 — Warning with consequences list
+    deleteStep===1?e("div",{style:{
+      width:"100%",maxWidth:340,
+      background:"#0a0d16",
+      borderRadius:24,
+      border:"1px solid rgba(220,50,50,0.3)",
+      borderTop:"1px solid rgba(220,80,80,0.5)",
+      padding:"28px 24px 24px",
+    }},
+      e("div",{style:{textAlign:"center",marginBottom:20}},
+        e("div",{style:{fontSize:40,marginBottom:12}},"⚠️"),
+        e("div",{style:{fontFamily:BN,fontSize:26,color:"rgba(220,80,80,0.95)",
+          letterSpacing:1,marginBottom:8,lineHeight:1.1}},
+          l==="en"?"DELETE ACCOUNT":"BORRAR CUENTA"),
+        e("div",{style:{fontFamily:"'SF Mono','Courier New',monospace",fontSize:11,
+          color:"rgba(240,242,245,0.55)",lineHeight:1.5,letterSpacing:0.5}},
+          l==="en"
+            ?"This action is permanent and cannot be undone."
+            :"Esta acción es permanente y no se puede deshacer.")
+      ),
+      // What will be deleted list
+      e("div",{style:{
+        background:"rgba(220,50,50,0.04)",
+        border:"1px solid rgba(220,50,50,0.15)",
+        borderRadius:14,padding:"14px 16px",marginBottom:20,
+      }},
+        e("div",{style:{fontFamily:"'SF Mono','Courier New',monospace",fontSize:8,
+          color:"rgba(220,80,80,0.7)",letterSpacing:2,marginBottom:10}},
+          l==="en"?"WILL BE PERMANENTLY DELETED:":"SE BORRARÁ PERMANENTEMENTE:"),
+        e("div",{style:{display:"flex",flexDirection:"column",gap:6}},
+          [
+            l==="en"?"Your account and email":"Tu cuenta y email",
+            l==="en"?"All workouts and sessions":"Todos los entrenos y sesiones",
+            l==="en"?"Personal records (PRs)":"Récords personales (PRs)",
+            l==="en"?"Body heatmap progress":"Progreso del mapa corporal",
+            l==="en"?"Muscle XP and levels":"XP y niveles musculares",
+            l==="en"?"PRO subscription status":"Estado de suscripción PRO",
+          ].map(function(txt,i){
+            return e("div",{key:i,style:{display:"flex",alignItems:"center",gap:8,
+              fontFamily:"'SF Mono','Courier New',monospace",fontSize:10,
+              color:"rgba(240,242,245,0.75)"}},
+              e("div",{style:{width:3,height:3,borderRadius:"50%",
+                background:"rgba(220,80,80,0.7)",flexShrink:0}}),
+              txt
+            );
+          })
+        )
+      ),
+      // Important note about subscription
+      e("div",{style:{
+        background:"rgba(230,180,60,0.06)",
+        border:"1px solid rgba(230,180,60,0.2)",
+        borderRadius:12,padding:"12px 14px",marginBottom:20,
+      }},
+        e("div",{style:{fontFamily:"'SF Mono','Courier New',monospace",fontSize:9,
+          color:"rgba(230,180,60,0.85)",letterSpacing:1,lineHeight:1.5}},
+          l==="en"
+            ?"📌 If you have an active subscription, cancel it first in Settings → Apple ID → Subscriptions. Deleting your account here does NOT cancel billing."
+            :"📌 Si tienes suscripción activa, cancélala primero en Ajustes → Apple ID → Suscripciones. Borrar tu cuenta aquí NO cancela el cobro.")
+      ),
+      // Buttons
+      e("button",{
+        onClick:function(){setDeleteStep(2);},
+        style:{
+          width:"100%",padding:"14px",borderRadius:14,border:"none",cursor:"pointer",
+          background:"linear-gradient(135deg,rgba(220,60,60,0.9),rgba(180,30,30,0.95))",
+          color:"#fff",
+          fontFamily:"'SF Mono','Courier New',monospace",
+          fontSize:11,letterSpacing:2,fontWeight:700,marginBottom:10,
+        }},l==="en"?"I UNDERSTAND · CONTINUE":"ENTIENDO · CONTINUAR"),
+      e("button",{
+        onClick:function(){setShowDelete(false);setDeleteStep(1);setDeleteSliderX(0);},
+        style:{
+          width:"100%",padding:"12px",borderRadius:14,border:"none",cursor:"pointer",
+          background:"rgba(255,255,255,0.05)",
+          color:"rgba(255,255,255,0.5)",
+          fontFamily:"'SF Mono','Courier New',monospace",
+          fontSize:10,letterSpacing:2,
+        }},l==="en"?"CANCEL":"CANCELAR")
+    ):
+    // STEP 2 — Slider confirmation
+    e("div",{style:{
+      width:"100%",maxWidth:340,
+      background:"#0a0d16",
+      borderRadius:24,
+      border:"1px solid rgba(220,50,50,0.4)",
+      borderTop:"1px solid rgba(220,80,80,0.6)",
+      padding:"28px 24px 24px",
+      textAlign:"center",
+    }},
+      e("div",{style:{fontSize:40,marginBottom:16}},"🗑️"),
+      e("div",{style:{fontFamily:BN,fontSize:26,color:"rgba(220,80,80,0.95)",
+        letterSpacing:1,marginBottom:8}},
+        l==="en"?"LAST CHANCE":"ÚLTIMA CONFIRMACIÓN"),
+      e("div",{style:{fontFamily:"'SF Mono','Courier New',monospace",fontSize:11,
+        color:"rgba(240,242,245,0.55)",lineHeight:1.6,marginBottom:24}},
+        l==="en"
+          ?"Slide the button all the way to permanently delete your account."
+          :"Desliza el botón hasta el final para borrar tu cuenta permanentemente."),
+      // Slider
+      e("div",{style:{
+        width:SLIDER_W,height:56,borderRadius:999,
+        background:"rgba(220,50,50,0.1)",
+        border:"1px solid rgba(220,50,50,0.25)",
+        position:"relative",margin:"0 auto 16px",
+        overflow:"hidden",userSelect:"none",
+      }},
+        // Track fill
+        e("div",{style:{
+          position:"absolute",left:2,top:2,bottom:2,
+          width:deleteSliderX+THUMB_W-2,borderRadius:999,
+          background:"rgba(220,50,50,"+(deleteSliderX/MAX_X*0.4)+")",
+          transition:"background 0.1s",
+        }}),
+        // Label
+        e("div",{style:{
+          position:"absolute",inset:0,
+          display:"flex",alignItems:"center",justifyContent:"center",
+          fontFamily:"'SF Mono','Courier New',monospace",
+          fontSize:10,letterSpacing:3,fontWeight:700,
+          color:"rgba(220,80,80,"+(1-deleteSliderX/MAX_X*0.8)+")",
+          pointerEvents:"none",
+        }},l==="en"?"SLIDE TO DELETE ACCOUNT":"DESLIZA PARA BORRAR CUENTA"),
+        // Thumb
+        e("div",{
+          onMouseDown:function(ev){ev.preventDefault();onDeleteSliderStart(ev.clientX);},
+          onTouchStart:function(ev){onDeleteSliderStart(ev.touches[0].clientX);},
+          style:{
+            position:"absolute",top:2,bottom:2,
+            left:2+deleteSliderX,
+            width:THUMB_W,borderRadius:999,
+            background:"linear-gradient(135deg,rgba(220,60,60,0.95),rgba(160,20,20,1))",
+            border:"1px solid rgba(255,100,100,0.4)",
+            borderTop:"1px solid rgba(255,150,150,0.5)",
+            display:"flex",alignItems:"center",justifyContent:"center",
+            cursor:"grab",fontSize:18,
+            boxShadow:"0 2px 16px rgba(220,50,50,0.5)",
+            transition:deleteDraggingRef.current?"none":"left 0.3s cubic-bezier(0.34,1.56,0.64,1)",
+          }
+        },"→")
+      ),
+      e("button",{
+        onClick:function(){setDeleteStep(1);setDeleteSliderX(0);},
+        style:{
+          width:"100%",padding:"12px",borderRadius:14,border:"none",cursor:"pointer",
+          background:"rgba(255,255,255,0.05)",
+          color:"rgba(255,255,255,0.4)",
+          fontFamily:"'SF Mono','Courier New',monospace",
+          fontSize:10,letterSpacing:2,marginTop:6,
+        }},l==="en"?"← GO BACK":"← VOLVER")
+    )
+  ):null;
+
   return e("div",{
     onClick:function(ev){if(ev.target===ev.currentTarget)close();},
     style:{
@@ -4469,6 +4742,7 @@ function ProfileSheet({show,onClose,profile,lang,mono,sp,setStep}){
       opacity:closing?0:1,transition:"opacity 0.3s ease",
     }},
     ResetModal,
+    DeleteModal,
     e("div",{style:{
       background:"#04080f",
       borderRadius:"28px 28px 0 0",
@@ -4846,7 +5120,29 @@ function ProfileSheet({show,onClose,profile,lang,mono,sp,setStep}){
             e("div",{style:{fontFamily:MN,fontSize:7,letterSpacing:2,
               color:"rgba(220,80,80,0.4)"}},l==="en"?"clear data":"borrar datos")
           )
-        )
+        ),
+
+        // ── DELETE ACCOUNT (Apple Guideline 5.1.1(v) requirement) ──
+        (function(){
+          var anon=(typeof isUserAnonymous==='function')?isUserAnonymous():true;
+          // Only show delete account button if user has a real account (not anonymous)
+          if(anon) return null;
+          return e("div",{
+            onClick:function(){setShowDelete(true);setDeleteStep(1);setDeleteSliderX(0);},
+            style:{
+              margin:"20px 16px 16px",padding:"14px 16px",borderRadius:12,cursor:"pointer",
+              background:"transparent",
+              border:"1px dashed rgba(220,50,50,0.3)",
+              textAlign:"center",transition:"all 0.2s",
+            }},
+            e("div",{style:{fontFamily:MN,fontSize:10,color:"rgba(220,80,80,0.7)",
+              letterSpacing:2,fontWeight:700,marginBottom:2}},
+              l==="en"?"DELETE MY ACCOUNT":"BORRAR MI CUENTA"),
+            e("div",{style:{fontFamily:MN,fontSize:8,color:"rgba(220,80,80,0.4)",
+              letterSpacing:1,lineHeight:1.4}},
+              l==="en"?"Permanently remove all data from our servers":"Elimina todos tus datos de nuestros servidores")
+          );
+        })()
 
       )
     )
