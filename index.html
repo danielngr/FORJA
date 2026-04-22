@@ -2032,6 +2032,7 @@ function buildRoutine7(splits,selectedDays,goal,eq=[],weekOffset=null){
 }
 // ════════════════════════════════════════════════════════════════════
 // FORJA PRO — Pricing configuration (single source of truth)
+// Monetization strategy: Apple In-App Purchase (IAP) via StoreKit
 // ════════════════════════════════════════════════════════════════════
 const FORJA_PRICING = {
   monthly: {
@@ -2039,7 +2040,8 @@ const FORJA_PRICING = {
     priceStr: "$7.99",
     period: "mes",
     periodEn: "month",
-    stripeLink: "https://buy.stripe.com/REPLACE_WITH_MONTHLY_LINK"
+    // Apple IAP product ID — must match App Store Connect exactly
+    iapProductId: "forja_pro_monthly"
   },
   yearly: {
     price: 49.99,
@@ -2048,7 +2050,8 @@ const FORJA_PRICING = {
     periodEn: "year",
     monthlyEquivalent: 4.17,
     savingsPct: 48,
-    stripeLink: "https://buy.stripe.com/REPLACE_WITH_YEARLY_LINK"
+    // Apple IAP product ID — must match App Store Connect exactly
+    iapProductId: "forja_pro_yearly"
   },
   trialDays: 7,
   // Total number of athletes available (9 men + 9 women)
@@ -2061,10 +2064,10 @@ const FREE_CELEB_LIMIT = FORJA_PRICING.freeAthletes;
 
 // ════════════════════════════════════════════════════════════════════
 // Admin whitelist — emails that always have PRO access
-// Useful for testing, demos, investor presentations
+// Useful for testing, demos, investor presentations, App Store review team
 // ════════════════════════════════════════════════════════════════════
 const FORJA_ADMIN_EMAILS = [
-  // Add your email here to keep PRO access after the fix
+  // Add your email here to keep PRO access
   // "danielngr@example.com",
 ];
 const EXPRESS_GROUPS=[
@@ -4227,16 +4230,12 @@ function AthleteSheet({show,onClose,lang,mono,profile,sp,sr}){
               {langKey==="en"?("or "+FORJA_PRICING.yearly.priceStr+"/year · "+FORJA_PRICING.trialDays+"-day free trial"):("o "+FORJA_PRICING.yearly.priceStr+"/año · "+FORJA_PRICING.trialDays+" días gratis")}
             </div>
             <button onClick={()=>{
-              try{
-                var link=FORJA_PRICING.yearly.stripeLink;
-                if(link&&link.indexOf("REPLACE")<0){
-                  window.open(link,"_blank");
-                }else{
-                  if(window.__forjaSetPaywall)window.__forjaSetPaywall(true);
-                }
-              }catch(e){
+              // Close AthleteSheet and open the main paywall modal
+              // handleSubscribe inside it will detect iOS vs web and route accordingly
+              if(window.__forjaCloseAthleteSheet)window.__forjaCloseAthleteSheet();
+              setTimeout(function(){
                 if(window.__forjaSetPaywall)window.__forjaSetPaywall(true);
-              }
+              },280);
             }} style={{width:"100%",padding:"14px",borderRadius:12,border:"none",
               cursor:"pointer",
               background:"linear-gradient(135deg,rgba(72,120,255,0.9),rgba(100,150,255,0.8))",
@@ -5720,24 +5719,46 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
     var footerLabel=isSpanish?("✓ Rutinas auto · Tracking · "+FORJA_PRICING.freeAthletes+" atletas — siempre gratis"):isFrench?("✓ Routines auto · Tracking · "+FORJA_PRICING.freeAthletes+" athlètes — toujours gratuit"):isItalian?("✓ Routine auto · Tracking · "+FORJA_PRICING.freeAthletes+" atleti — sempre gratis"):isGerman?("✓ Auto-Routinen · Tracking · "+FORJA_PRICING.freeAthletes+" Athleten — immer kostenlos"):("✓ Auto routines · Tracking · "+FORJA_PRICING.freeAthletes+" athletes — always free");
 
     var handleSubscribe=function(){
-      var link=planConfig.stripeLink;
-      if(link && link.indexOf("REPLACE")<0){
-        // Real Stripe link — open in new tab
+      // Detect if running inside the native iOS app
+      var isInIOSApp=(function(){
         try{
-          var userId=null;
-          var cached=localStorage.getItem('sb-'+(FORJA_SUPABASE_URL.match(/\/\/([^.]+)/)||[])[1]+'-auth-token');
-          if(cached){var p=JSON.parse(cached);userId=p&&p.user&&p.user.id;}
-          // Append client_reference_id so webhook can link payment → user
-          var finalLink=link+(link.indexOf("?")>=0?"&":"?")+"client_reference_id="+encodeURIComponent(userId||"anonymous");
-          window.open(finalLink,"_blank");
-        }catch(e){window.open(link,"_blank");}
-        setShowProModal(false);
+          // PWABuilder iOS injects a custom user agent
+          if(/FORJA-iOS/i.test(navigator.userAgent))return true;
+          // webkit message handlers exist only in native WKWebView bridge
+          if(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.iap)return true;
+          return false;
+        }catch(e){return false;}
+      })();
+
+      if(isInIOSApp){
+        // ════════════════════════════════════════════════════════════
+        // NATIVE iOS APP — Apple IAP via StoreKit bridge
+        // ════════════════════════════════════════════════════════════
+        try{
+          var productId=selectedPlan==="yearly"?"forja_pro_yearly":"forja_pro_monthly";
+          window.webkit.messageHandlers.iap.postMessage({
+            action:"purchase",
+            productId:productId,
+            plan:selectedPlan
+          });
+          // Swift side will call window.__forjaOnIAPResult({success,error})
+          // That handler updates pro_users + closes modal
+        }catch(e){
+          alert(isSpanish?"Error al iniciar compra. Intenta de nuevo.":"Error starting purchase. Try again.");
+        }
       }else{
-        // Waitlist fallback if Stripe not yet configured
-        var msg=isSpanish?"¡Gracias por tu interés! Te avisaremos cuando el pago esté disponible. 🙏":isFrench?"Merci de ton intérêt! On te prévient dès que le paiement est disponible. 🙏":isItalian?"Grazie per l'interesse! Ti avviseremo quando il pagamento sarà disponibile. 🙏":isGerman?"Danke für dein Interesse! Wir benachrichtigen dich, sobald Zahlung verfügbar ist. 🙏":"Thanks for your interest! We'll let you know when payment is available. 🙏";
-        alert(msg);
+        // ════════════════════════════════════════════════════════════
+        // PWA WEB — Show "Download in App Store" message
+        // Monetization lives in iOS app, web is preview only
+        // ════════════════════════════════════════════════════════════
+        var msg=isSpanish?"FORJA PRO está disponible en la App Store.\n\n¿Descargar la app ahora?":
+                isFrench?"FORJA PRO est disponible sur l'App Store.\n\nTélécharger l'app maintenant?":
+                isItalian?"FORJA PRO è disponibile su App Store.\n\nScaricare l'app ora?":
+                isGerman?"FORJA PRO ist im App Store verfügbar.\n\nApp jetzt herunterladen?":
+                "FORJA PRO is available on the App Store.\n\nDownload the app now?";
+        var confirmed=confirm(msg);
         try{
-          // Log the intent for future waitlist email
+          // Log intent for waitlist even on web
           var sbCli=getSb();
           if(sbCli){
             var uEmail=null;
@@ -5750,10 +5771,34 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
             }).then(function(){},function(){});
           }
         }catch(_){}
+        if(confirmed){
+          // Replace with your real App Store URL once published
+          var appStoreURL=window.__forjaAppStoreURL||"https://apps.apple.com/app/forja";
+          window.open(appStoreURL,"_blank");
+        }
         window.__forjaProIntent=true;
         setShowProModal(false);
       }
     };
+
+    // Handler for when StoreKit completes (called from Swift side)
+    if(typeof window!=='undefined'){
+      window.__forjaOnIAPResult=function(result){
+        try{
+          if(result && result.success){
+            // Update local cache — Swift already wrote to pro_users via Supabase
+            localStorage.setItem('fv8_pro','1');
+            setShowProModal(false);
+            // Force re-render
+            if(window.location && window.location.reload){
+              setTimeout(function(){window.location.reload();},300);
+            }
+          }else{
+            alert(isSpanish?"La compra no se complet\u00f3.":"Purchase was not completed.");
+          }
+        }catch(e){}
+      };
+    }
 
     return(
     <div style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(0,0,0,0.9)",display:"flex",alignItems:"center",justifyContent:"center",padding:24}} onClick={()=>setShowProModal(false)}>
