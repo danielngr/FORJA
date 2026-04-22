@@ -3946,26 +3946,68 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
       }},
         e("div",{style:{
           fontSize:8,letterSpacing:2,color:"rgba(255,255,255,0.55)",
-          textTransform:"uppercase",marginBottom:2,fontFamily:mono,fontWeight:500
+          textTransform:"uppercase",marginBottom:2,fontFamily:mono,fontWeight:500,
+          pointerEvents:"none"
         }},"edad cv"),
+        // Wrapper that holds both the age number AND the PRO badge overlay
         e("div",{style:{
-          display:"flex",justifyContent:"center",alignItems:"baseline",gap:6
+          position:"relative",display:"inline-block",
+          pointerEvents:"auto"
         }},
-          e("span",{style:{
-            fontSize:68,fontWeight:400,color:"#fff",
-            fontFamily:"'Jumpshot',sans-serif",
-            lineHeight:0.9,letterSpacing:-1,
-            textShadow:"0 2px 20px rgba(0,0,0,0.9),0 0 30px rgba(0,0,0,0.7)"
-          }},fitnessAge!==undefined&&fitnessAge!==null?fitnessAge:"—"),
-          e("span",{style:{
-            fontSize:12,fontWeight:500,color:"rgba(255,255,255,0.55)",
-            letterSpacing:3,
-            marginLeft:2,marginBottom:4,
-            textShadow:"0 1px 8px rgba(0,0,0,0.8)"
-          }},"AÑOS")
+          // The age number (blurred if not PRO)
+          e("div",{
+            style:{
+              display:"flex",justifyContent:"center",alignItems:"baseline",gap:6,
+              filter:(typeof isPro==='function'&&!isPro())?"blur(8px)":"none",
+              transition:"filter 0.3s",
+              cursor:(typeof isPro==='function'&&!isPro())?"pointer":"default"
+            },
+            onClick:(typeof isPro==='function'&&!isPro())?function(ev){
+              ev.stopPropagation();
+              if(window.__forjaSetPaywall)window.__forjaSetPaywall(true);
+            }:null
+          },
+            e("span",{style:{
+              fontSize:68,fontWeight:400,color:"#fff",
+              fontFamily:"'Jumpshot',sans-serif",
+              lineHeight:0.9,letterSpacing:-1,
+              textShadow:"0 2px 20px rgba(0,0,0,0.9),0 0 30px rgba(0,0,0,0.7)"
+            }},fitnessAge!==undefined&&fitnessAge!==null?fitnessAge:"—"),
+            e("span",{style:{
+              fontSize:12,fontWeight:500,color:"rgba(255,255,255,0.55)",
+              letterSpacing:3,
+              marginLeft:2,marginBottom:4,
+              textShadow:"0 1px 8px rgba(0,0,0,0.8)"
+            }},"AÑOS")
+          ),
+          // PRO badge overlay — absolutely centered over the age number
+          (typeof isPro==='function'&&!isPro())?e("div",{
+            onClick:function(ev){
+              ev.stopPropagation();
+              if(window.__forjaSetPaywall)window.__forjaSetPaywall(true);
+            },
+            style:{
+              position:"absolute",
+              top:"50%",left:"50%",
+              transform:"translate(-50%,-50%)",
+              padding:"6px 14px",borderRadius:20,cursor:"pointer",
+              background:"rgba(13,15,20,0.9)",
+              border:"1px solid rgba(192,168,112,0.6)",
+              display:"flex",alignItems:"center",gap:6,
+              whiteSpace:"nowrap",
+              boxShadow:"0 4px 20px rgba(0,0,0,0.6)",
+              pointerEvents:"auto",zIndex:20
+            }
+          },
+            e("span",{style:{fontSize:11}},"🔒"),
+            e("span",{style:{
+              fontFamily:"'SF Mono','Fira Code',monospace",
+              fontSize:8,color:"#c0a870",letterSpacing:2,fontWeight:700
+            }},"DESBLOQUEAR · PRO")
+          ):null
         ),
-        deltaLine
-      )
+        (typeof isPro==='function'&&isPro())?deltaLine:null
+      ),
     ),
     e("div",{style:{
       display:"flex",alignItems:"center",gap:10,position:"relative",zIndex:10,marginTop:2
@@ -6183,7 +6225,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
         <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:20}}>
           {[
             {icon:"🏆",text:{es:"Los "+FORJA_PRICING.totalAthletes+" atletas desbloqueados",en:"All "+FORJA_PRICING.totalAthletes+" athletes unlocked",fr:"Les "+FORJA_PRICING.totalAthletes+" athlètes débloqués",it:"Tutti i "+FORJA_PRICING.totalAthletes+" atleti sbloccati",de:"Alle "+FORJA_PRICING.totalAthletes+" Athleten freigeschaltet",pt:"Todos os "+FORJA_PRICING.totalAthletes+" atletas"}},
-            {icon:"✏️",text:{es:"Rutina personalizada desde cero",en:"Custom routine builder",fr:"Créateur de routine perso",it:"Routine personalizzata",de:"Eigener Routinen-Editor",pt:"Rotina personalizada"}},
+            {icon:"❤️",text:{es:"Edad Cardiovascular (modelo NTNU)",en:"Cardiovascular Age (NTNU model)",fr:"Âge Cardiovasculaire (NTNU)",it:"Età Cardiovascolare (NTNU)",de:"Herz-Alter (NTNU-Modell)",pt:"Idade Cardiovascular (NTNU)"}},
             {icon:"🎨",text:{es:"Maniquí con colores XP y glow",en:"Mannequin with XP colors & glow",fr:"Mannequin avec couleurs XP",it:"Manichino con colori XP",de:"Mannequin mit XP-Farben",pt:"Manequim com cores XP"}},
             {icon:"📊",text:{es:"Historial y PRs ilimitados",en:"Unlimited history & PRs",fr:"Historique illimité",it:"Cronologia illimitata",de:"Unbegrenzte Historie",pt:"Histórico ilimitado"}},
             {icon:"☁️",text:{es:"Sync en todos tus dispositivos",en:"Multi-device sync",fr:"Sync multi-appareils",it:"Sync multi-dispositivo",de:"Sync auf allen Geräten",pt:"Sync em todos dispositivos"}},
