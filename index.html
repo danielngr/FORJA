@@ -8382,14 +8382,18 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
           }
           const lifeT=aura.life[i];
           const yRange=aura.bodyTop-aura.bodyBottom;
-          const y=aura.bodyBottom+lifeT*yRange*1.1;
+          const y=aura.bodyTop-yRange*0.05+lifeT*yRange*1.1-yRange*1.1*0.5 + (aura.bodyBottom+aura.bodyTop)/2 - (aura.bodyBottom+aura.bodyTop)/2;
+          // simpler: go from bottom to top+10%
+          const yPos=aura.bodyBottom+lifeT*yRange*1.1;
+          // Lateral: body edge + wobble (in world units)
           const sideOffset=aura.bodyWidth*0.55;
-          const wobbleX=Math.sin(lifeT*Math.PI*2+i*0.5)*0.15;
-          const x=aura.bodyCenterX+aura.side[i]*sideOffset+wobbleX+aura.jitter[i*2]*0.2;
-          const z=Math.sin(lifeT*Math.PI+i*0.3)*0.3+aura.jitter[i*2+1]*0.3;
+          const wobbleX=Math.sin(lifeT*Math.PI*2+i*0.5)*aura.bodyWidth*0.08;
+          const x=aura.bodyCenterX+aura.side[i]*sideOffset+wobbleX+aura.jitter[i*2];
+          // Depth: slight forward/back wobble
+          const z=Math.sin(lifeT*Math.PI+i*0.3)*aura.bodyWidth*0.3+aura.jitter[i*2+1];
 
           aura.pos[i*3]=x;
-          aura.pos[i*3+1]=y;
+          aura.pos[i*3+1]=yPos;
           aura.pos[i*3+2]=z;
 
           let alpha=1;
@@ -8463,10 +8467,19 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
         }
 
         // ══════════════════════════════════════════════════════════
-        // AURA ASCENDENTE — Partículas que suben a los costados del cuerpo
-        // Añadidas como HIJAS del group para que roten/escalen con el modelo
-        // Usamos coordenadas LOCALES (pre-transformación) del modelo original
+        // AURA ASCENDENTE — Partículas en WORLD coordinates
+        // Se añaden al `scene` (no al group) para no ser afectadas por
+        // la rotación/escala del modelo. Usamos el bounding box del
+        // modelo YA transformado para saber dónde está visualmente.
         // ══════════════════════════════════════════════════════════
+        const worldBox=new THREE.Box3().setFromObject(group);
+        const worldSize=worldBox.getSize(new THREE.Vector3());
+        const worldCenter=worldBox.getCenter(new THREE.Vector3());
+        const worldBottomY=worldBox.min.y;
+        const worldTopY=worldBox.max.y;
+        const worldWidth=worldSize.x;
+        const worldCenterX=worldCenter.x;
+
         const MAX_PARTICLES=40;
         const auraPos=new Float32Array(MAX_PARTICLES*3);
         const auraCol=new Float32Array(MAX_PARTICLES*3);
@@ -8475,21 +8488,12 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
         const auraSide=new Float32Array(MAX_PARTICLES);
         const auraJitter=new Float32Array(MAX_PARTICLES*2);
 
-        // Get bounds in LOCAL space (before group's own transform)
-        // size was computed above on the original group — use it directly
-        const bodyHeight=size.y;
-        const bodyWidthLocal=size.x;
-        // Model origin after `group.position.sub(center)` is at center of body
-        // So body extends from -bodyHeight/2 to +bodyHeight/2 on Y axis
-        const localBottomY=-bodyHeight/2;
-        const localTopY=bodyHeight/2;
-
         function initParticle(i,randomLife){
           auraLife[i]=randomLife?Math.random():0;
           auraSpeed[i]=0.5+Math.random()*0.7;
           auraSide[i]=Math.random()<0.5?-1:1;
-          auraJitter[i*2]=(Math.random()-0.5)*0.6;
-          auraJitter[i*2+1]=(Math.random()-0.5)*0.8;
+          auraJitter[i*2]=(Math.random()-0.5)*worldWidth*0.3;
+          auraJitter[i*2+1]=(Math.random()-0.5)*worldWidth*0.3;
         }
         for(let i=0;i<MAX_PARTICLES;i++){
           initParticle(i,true);
@@ -8498,29 +8502,29 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
         const auraGeo=new THREE.BufferGeometry();
         auraGeo.setAttribute("position",new THREE.BufferAttribute(auraPos,3));
         auraGeo.setAttribute("color",new THREE.BufferAttribute(auraCol,3));
+        // Size in world units (body is ~17 units tall, so 0.4 is very visible)
         const auraMat=new THREE.PointsMaterial({
-          size:2.5,vertexColors:true,transparent:true,opacity:1.0,
-          sizeAttenuation:false,blending:THREE.AdditiveBlending,depthWrite:false,depthTest:false
+          size:0.45,vertexColors:true,transparent:true,opacity:1.0,
+          sizeAttenuation:true,blending:THREE.AdditiveBlending,depthWrite:false,depthTest:false
         });
         const auraPoints=new THREE.Points(auraGeo,auraMat);
-        // IMPORTANT: add as CHILD of group so particles inherit group's transform
-        group.add(auraPoints);
+        // Add to SCENE (not group) — particles are static in world space
+        scene.add(auraPoints);
         console.log('[FORJA AURA] particle system created: '+JSON.stringify({
-          bodyHeight:bodyHeight.toFixed(2),
-          bodyWidth:bodyWidthLocal.toFixed(2),
-          localBottomY:localBottomY.toFixed(2),
-          localTopY:localTopY.toFixed(2),
-          groupScale:group.scale.x.toFixed(3),
-          groupPosY:group.position.y.toFixed(2),
+          worldHeight:worldSize.y.toFixed(2),
+          worldWidth:worldWidth.toFixed(2),
+          worldBottomY:worldBottomY.toFixed(2),
+          worldTopY:worldTopY.toFixed(2),
+          worldCenterX:worldCenterX.toFixed(2),
           particleSize:auraMat.size
         }));
         auraRef.current={
           points:auraPoints,geo:auraGeo,pos:auraPos,col:auraCol,
           life:auraLife,speed:auraSpeed,side:auraSide,jitter:auraJitter,
           initParticle:initParticle,
-          bodyBottom:localBottomY,bodyTop:localTopY,
-          bodyWidth:bodyWidthLocal,
-          bodyCenterX:0,
+          bodyBottom:worldBottomY,bodyTop:worldTopY,
+          bodyWidth:worldWidth,
+          bodyCenterX:worldCenterX,
           maxParticles:MAX_PARTICLES
         };
 
