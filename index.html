@@ -7273,41 +7273,57 @@ function MiniAnatomy({activeZones=[], workedZones=[], xpDeltas={}, intensity='me
   const intensityColor=intensity==='intense'?'#f0612a':intensity==='soft'?'#4caf8e':'#3fcf8e';
   const w=view==='both'?size*1.6:size;
   const h=size*1.8;
-  // SVG paths simplificados pero anatómicamente reconocibles del cuerpo
-  // Coordenadas relativas a viewBox 100x180 (front) y se duplica para back
-  // Front view paths
+  // SVG paths inspired by FORJA's low-poly anatomical mannequin
+  // Defined musculature, t-pose-ish stance, faceted edges (videogame-realistic)
+  // viewBox 100x180 — proportions match a stylized warrior/athlete physique
   const FRONT={
-    head:    "M50 8 Q57 8 58 16 Q58 23 57 26 Q56 31 50 32 Q44 31 43 26 Q42 23 42 16 Q43 8 50 8",
-    pecho:   "M36 38 Q50 36 64 38 L66 50 Q50 53 34 50 Z",
-    abdomen: "M40 53 Q50 55 60 53 L59 70 Q50 72 41 70 Z",
-    oblicuos:"M34 50 L40 53 L41 70 L33 67 Z M66 50 L60 53 L59 70 L67 67 Z",
-    hombro_izq:"M30 36 Q26 38 25 44 Q26 47 30 46 Q34 44 36 39 Z",
-    hombro_der:"M70 36 Q74 38 75 44 Q74 47 70 46 Q66 44 64 39 Z",
-    bicep_izq:"M26 47 Q22 52 22 60 Q23 67 27 67 Q31 65 30 58 Q29 50 28 47 Z",
-    bicep_der:"M74 47 Q78 52 78 60 Q77 67 73 67 Q69 65 70 58 Q71 50 72 47 Z",
-    antebrazo_izq:"M22 67 Q20 75 21 84 Q23 89 27 88 Q29 80 28 71 Z",
-    antebrazo_der:"M78 67 Q80 75 79 84 Q77 89 73 88 Q71 80 72 71 Z",
-    quad:    "M40 73 Q44 76 44 95 Q43 110 41 118 Q38 119 36 117 Q35 100 36 86 Q37 76 40 73 Z M60 73 Q56 76 56 95 Q57 110 59 118 Q62 119 64 117 Q65 100 64 86 Q63 76 60 73 Z",
-    gemelos: "M37 122 Q36 135 37 148 Q39 152 42 151 Q43 138 42 124 Z M63 122 Q64 135 63 148 Q61 152 58 151 Q57 138 58 124 Z",
-    tibia:   "M41 122 L42 152 L41 162 L39 161 Q39 140 40 122 Z M59 122 L58 152 L59 162 L61 161 Q61 140 60 122 Z",
+    head:    "M50 5 L57 7 L60 13 L60 22 L58 27 L54 31 L46 31 L42 27 L40 22 L40 13 L43 7 Z",
+    neck:    "M45 31 L55 31 L56 36 L44 36 Z",
+    pecho:   "M30 38 L50 36 L70 38 L72 48 L65 56 L52 58 L48 58 L35 56 L28 48 Z",
+    abdomen: "M40 58 L60 58 L60 64 L57 67 L57 72 L43 72 L43 67 L40 64 Z",
+    oblicuos:"M30 52 L40 58 L43 67 L43 72 L34 71 L29 64 Z M70 52 L60 58 L57 67 L57 72 L66 71 L71 64 Z",
+    hombro_izq:"M28 38 L20 42 L17 50 L20 55 L28 52 L32 46 L30 40 Z",
+    hombro_der:"M72 38 L80 42 L83 50 L80 55 L72 52 L68 46 L70 40 Z",
+    bicep_izq:"M17 50 L13 60 L13 70 L18 73 L23 68 L23 56 L20 52 Z",
+    bicep_der:"M83 50 L87 60 L87 70 L82 73 L77 68 L77 56 L80 52 Z",
+    antebrazo_izq:"M13 73 L11 82 L13 92 L18 94 L22 90 L22 78 L18 74 Z",
+    antebrazo_der:"M87 73 L89 82 L87 92 L82 94 L78 90 L78 78 L82 74 Z",
+    quad:    "M37 73 L43 73 L46 78 L47 95 L46 110 L43 122 L38 122 L34 110 L33 95 L34 80 Z M53 73 L57 73 L66 80 L67 95 L66 110 L62 122 L57 122 L54 110 L53 95 L54 78 Z",
+    gemelos: "M36 124 L43 124 L44 138 L42 152 L38 152 L34 138 Z M58 124 L62 124 L66 138 L62 152 L58 152 L56 138 Z",
+    tibia:   "M40 124 L42 152 L41 162 L39 161 L38 145 L39 124 Z M60 124 L62 145 L61 161 L59 162 L58 152 Z",
   };
-  // Back view paths (mirror of front, with back-specific muscles)
   const BACK={
-    head:    "M50 8 Q57 8 58 16 Q58 23 57 26 Q56 31 50 32 Q44 31 43 26 Q42 23 42 16 Q43 8 50 8",
-    trapecio:"M36 33 Q50 30 64 33 L62 44 Q50 41 38 44 Z",
-    dorsal:  "M34 44 Q50 47 66 44 L67 58 Q50 60 33 58 Z",
-    espalda_baja:"M37 60 Q50 62 63 60 L62 70 Q50 72 38 70 Z",
-    romboides:"M42 38 L58 38 L57 46 L43 46 Z",
-    hombro_izq:"M30 36 Q26 38 25 44 Q26 47 30 46 Q34 44 36 39 Z",
-    hombro_der:"M70 36 Q74 38 75 44 Q74 47 70 46 Q66 44 64 39 Z",
-    tricep_izq:"M26 47 Q22 52 22 60 Q23 67 27 67 Q31 65 30 58 Q29 50 28 47 Z",
-    tricep_der:"M74 47 Q78 52 78 60 Q77 67 73 67 Q69 65 70 58 Q71 50 72 47 Z",
-    antebrazo_izq:"M22 67 Q20 75 21 84 Q23 89 27 88 Q29 80 28 71 Z",
-    antebrazo_der:"M78 67 Q80 75 79 84 Q77 89 73 88 Q71 80 72 71 Z",
-    gluteos: "M40 70 Q50 72 60 70 L62 86 Q50 89 38 86 Z",
-    isquiotibiales:"M40 88 Q44 90 44 105 Q43 118 41 118 Q38 119 36 117 Q35 100 36 90 Z M60 88 Q56 90 56 105 Q57 118 59 118 Q62 119 64 117 Q65 100 64 90 Z",
-    gemelos: "M37 122 Q36 135 37 148 Q39 152 42 151 Q43 138 42 124 Z M63 122 Q64 135 63 148 Q61 152 58 151 Q57 138 58 124 Z",
+    head:    "M50 5 L57 7 L60 13 L60 22 L58 27 L54 31 L46 31 L42 27 L40 22 L40 13 L43 7 Z",
+    neck:    "M45 31 L55 31 L56 36 L44 36 Z",
+    trapecio:"M30 36 L50 33 L70 36 L66 48 L52 46 L48 46 L34 48 Z",
+    dorsal:  "M28 48 L34 48 L48 50 L52 50 L66 48 L72 48 L72 64 L66 70 L52 70 L48 70 L34 70 L28 64 Z",
+    espalda_baja:"M34 70 L52 70 L66 70 L65 78 L60 82 L40 82 L35 78 Z",
+    romboides:"M42 42 L58 42 L57 50 L43 50 Z",
+    hombro_izq:"M28 38 L20 42 L17 50 L20 55 L28 52 L32 46 L30 40 Z",
+    hombro_der:"M72 38 L80 42 L83 50 L80 55 L72 52 L68 46 L70 40 Z",
+    tricep_izq:"M17 50 L13 60 L13 70 L18 73 L23 68 L23 56 L20 52 Z",
+    tricep_der:"M83 50 L87 60 L87 70 L82 73 L77 68 L77 56 L80 52 Z",
+    antebrazo_izq:"M13 73 L11 82 L13 92 L18 94 L22 90 L22 78 L18 74 Z",
+    antebrazo_der:"M87 73 L89 82 L87 92 L82 94 L78 90 L78 78 L82 74 Z",
+    gluteos: "M35 78 L65 78 L67 88 L65 95 L52 96 L48 96 L35 95 L33 88 Z",
+    isquiotibiales:"M37 96 L46 96 L47 110 L46 122 L43 122 L34 110 L34 100 Z M54 96 L63 96 L66 100 L66 110 L57 122 L54 122 L53 110 Z",
+    gemelos: "M36 124 L43 124 L44 138 L42 152 L38 152 L34 138 Z M58 124 L62 138 L62 152 L58 152 L56 138 L57 124 Z",
   };
+  // Muscle definition lines (drawn over zones to suggest detailed musculature)
+  const MUSCLE_LINES_FRONT=[
+    "M50 38 L50 56", // sternum line
+    "M42 44 L42 56", // left pec inner line
+    "M58 44 L58 56", // right pec inner line
+    "M50 58 L50 72", // linea alba (abs center)
+    "M44 62 L56 62", // ab division 1
+    "M44 67 L56 67", // ab division 2
+  ];
+  const MUSCLE_LINES_BACK=[
+    "M50 36 L50 70", // spine line
+    "M40 50 L40 65", // left lat line
+    "M60 50 L60 65", // right lat line
+    "M50 78 L50 96", // glute crack
+  ];
   // Helper: get fill color for a zone
   function getFill(zone){
     const isActive=activeZones.includes(zone);
@@ -7352,10 +7368,15 @@ function MiniAnatomy({activeZones=[], workedZones=[], xpDeltas={}, intensity='me
   return(
     <div style={{display:'inline-flex',gap:8,position:'relative'}}>
       {(view==='front'||view==='both')&&(
-        <svg width={size} height={h} viewBox="0 0 100 180" style={{display:'block'}}>
-          {/* Head (always neutral) */}
-          <path d={FRONT.head} fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.15)" strokeWidth="0.3"/>
-          {/* Body zones */}
+        <svg width={size} height={h} viewBox="0 0 100 170" style={{display:'block'}}>
+          {/* Faceted body silhouette outline — low-poly look matching FORJA mannequin */}
+          <path d="M50 5 L57 7 L60 13 L60 22 L58 27 L54 31 L55 36 L70 38 L80 42 L83 50 L87 60 L89 82 L87 92 L82 94 L78 90 L80 73 L72 73 L66 80 L67 95 L62 122 L66 138 L62 152 L58 152 L60 124 L54 73 L46 73 L40 124 L42 152 L38 152 L34 138 L38 122 L33 95 L34 80 L28 73 L20 73 L22 90 L18 94 L13 92 L11 82 L13 60 L17 50 L20 42 L30 38 L45 36 L46 31 L42 27 L40 22 L40 13 L43 7 Z"
+            fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.18)" strokeWidth="0.6"
+            strokeLinejoin="round"/>
+          {/* Head + Neck (always neutral, structural) */}
+          <path d={FRONT.head} fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.2)" strokeWidth="0.4" strokeLinejoin="round"/>
+          <path d={FRONT.neck} fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.15)" strokeWidth="0.3"/>
+          {/* Body zones (interactive) */}
           {Z('pecho',FRONT.pecho)}
           {Z('abdomen',FRONT.abdomen)}
           {Z('oblicuos',FRONT.oblicuos)}
@@ -7368,16 +7389,20 @@ function MiniAnatomy({activeZones=[], workedZones=[], xpDeltas={}, intensity='me
           {Z('quad',FRONT.quad)}
           {Z('gemelos',FRONT.gemelos)}
           {Z('tibia',FRONT.tibia)}
-          {/* Subtle base outline so the body silhouette reads even when no zones active */}
-          <path d="M50 8 Q57 8 58 16 Q58 23 57 26 Q56 31 50 32 L36 38 Q26 38 25 44 Q22 52 22 60 Q20 75 21 84 Q23 89 27 88 L34 80 L36 86 L36 117 L37 148 L41 162 L41 122 L40 73 L41 70 L40 53 L36 38 Z"
-            fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="0.5"/>
-          <path d="M50 8 Q43 8 42 16 Q42 23 43 26 Q44 31 50 32 L64 38 Q74 38 75 44 Q78 52 78 60 Q80 75 79 84 Q77 89 73 88 L66 80 L64 86 L64 117 L63 148 L59 162 L59 122 L60 73 L59 70 L60 53 L64 38 Z"
-            fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="0.5"/>
+          {/* Muscle definition detail lines (always visible, sharp) */}
+          {MUSCLE_LINES_FRONT.map((d,i)=>(
+            <path key={i} d={d} fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="0.4" strokeLinecap="round"/>
+          ))}
         </svg>
       )}
       {(view==='back'||view==='both')&&(
-        <svg width={size} height={h} viewBox="0 0 100 180" style={{display:'block'}}>
-          <path d={BACK.head} fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.15)" strokeWidth="0.3"/>
+        <svg width={size} height={h} viewBox="0 0 100 170" style={{display:'block'}}>
+          {/* Back silhouette */}
+          <path d="M50 5 L57 7 L60 13 L60 22 L58 27 L54 31 L55 36 L70 36 L80 42 L83 50 L87 60 L89 82 L87 92 L82 94 L78 90 L80 73 L67 78 L66 95 L62 122 L66 138 L62 152 L58 152 L60 124 L54 96 L46 96 L40 124 L42 152 L38 152 L34 138 L38 122 L34 95 L33 78 L20 73 L22 90 L18 94 L13 92 L11 82 L13 60 L17 50 L20 42 L30 36 L45 36 L46 31 L42 27 L40 22 L40 13 L43 7 Z"
+            fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.18)" strokeWidth="0.6"
+            strokeLinejoin="round"/>
+          <path d={BACK.head} fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.2)" strokeWidth="0.4" strokeLinejoin="round"/>
+          <path d={BACK.neck} fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.15)" strokeWidth="0.3"/>
           {Z('trapecio',BACK.trapecio)}
           {Z('dorsal',BACK.dorsal)}
           {Z('romboides',BACK.romboides)}
@@ -7391,9 +7416,10 @@ function MiniAnatomy({activeZones=[], workedZones=[], xpDeltas={}, intensity='me
           {Z('gluteos',BACK.gluteos)}
           {Z('isquiotibiales',BACK.isquiotibiales)}
           {Z('gemelos',BACK.gemelos)}
-          {/* Body silhouette outline */}
-          <path d="M50 8 Q57 8 58 16 L64 33 L66 44 L67 58 L62 70 L60 88 L64 117 L63 148 L59 162 L59 122 L40 122 L41 162 L37 148 L36 117 L40 88 L38 70 L33 58 L34 44 L36 33 L42 16 Q43 8 50 8 Z"
-            fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="0.5"/>
+          {/* Back muscle definition lines */}
+          {MUSCLE_LINES_BACK.map((d,i)=>(
+            <path key={i} d={d} fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="0.4" strokeLinecap="round"/>
+          ))}
         </svg>
       )}
       {/* XP delta floating numbers */}
