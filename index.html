@@ -6983,140 +6983,121 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
           );
         })()}
       </div>
-      {showExpress&&(
+      {showExpress&&(()=>{
+        // ════════════════════════════════════════════════════════════════
+        // EXPRESS MODAL — fullscreen card stack (no genérico, no maniquí)
+        // 4 cards verticales con identidad visual única por grupo
+        // Cada card es un "póster" con SVG glyph + gradiente + stats
+        // ════════════════════════════════════════════════════════════════
+        const intColor=expressIntensity==='intense'?'#f0612a':expressIntensity==='soft'?'#4caf8e':'#3fcf8e';
+        // Visual identity per group — each one feels different
+        const GROUP_DESIGN={
+          tren_superior:{
+            bg:'linear-gradient(135deg,#1a2a4f 0%,#0e1530 100%)',
+            accent:'#5e8eff',accentDim:'rgba(94,142,255,0.12)',
+            // Stylized glyph: angular pec/shoulder shape
+            glyph:(<svg viewBox="0 0 60 60" width="100%" height="100%" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M30 8 L20 14 L14 24 L18 32 L30 30 L42 32 L46 24 L40 14 Z" opacity="0.9"/>
+              <path d="M14 24 L8 30 L10 40 L16 44" opacity="0.7"/>
+              <path d="M46 24 L52 30 L50 40 L44 44" opacity="0.7"/>
+              <path d="M30 30 L30 50" opacity="0.4"/>
+              <path d="M22 38 L38 38" opacity="0.3"/>
+            </svg>),
+            tag:{es:"FUERZA · EMPUJE",en:"POWER · PUSH",it:"FORZA · SPINTA",fr:"FORCE · POUSSÉE",pt:"FORÇA · EMPURRE",de:"KRAFT · STOSS"},
+          },
+          tren_inferior:{
+            bg:'linear-gradient(135deg,#3d1a4f 0%,#1a0e30 100%)',
+            accent:'#c45eff',accentDim:'rgba(196,94,255,0.12)',
+            glyph:(<svg viewBox="0 0 60 60" width="100%" height="100%" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 8 L26 6 L30 8 L34 6 L38 8" opacity="0.6"/>
+              <path d="M22 12 L20 28 L18 44 L20 52 L24 52 L26 44 L26 28 L24 12 Z" opacity="0.9"/>
+              <path d="M38 12 L40 28 L42 44 L40 52 L36 52 L34 44 L34 28 L36 12 Z" opacity="0.9"/>
+              <path d="M22 30 L26 28" opacity="0.4"/>
+              <path d="M38 30 L34 28" opacity="0.4"/>
+            </svg>),
+            tag:{es:"BASE · POTENCIA",en:"BASE · POWER",it:"BASE · POTENZA",fr:"BASE · PUISSANCE",pt:"BASE · POTÊNCIA",de:"BASIS · KRAFT"},
+          },
+          abdomen:{
+            bg:'linear-gradient(135deg,#4f3a1a 0%,#1a1408 100%)',
+            accent:'#ffb84d',accentDim:'rgba(255,184,77,0.12)',
+            glyph:(<svg viewBox="0 0 60 60" width="100%" height="100%" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="20" y="10" width="20" height="40" rx="4" opacity="0.9"/>
+              <line x1="30" y1="10" x2="30" y2="50" opacity="0.6"/>
+              <line x1="20" y1="20" x2="40" y2="20" opacity="0.5"/>
+              <line x1="20" y1="30" x2="40" y2="30" opacity="0.5"/>
+              <line x1="20" y1="40" x2="40" y2="40" opacity="0.5"/>
+              <circle cx="30" cy="30" r="2" fill="currentColor" opacity="0.8"/>
+            </svg>),
+            tag:{es:"NÚCLEO · ESTABILIDAD",en:"CORE · STABILITY",it:"NUCLEO · STABILITÀ",fr:"CENTRE · STABILITÉ",pt:"NÚCLEO · ESTABILIDADE",de:"KERN · STABILITÄT"},
+          },
+          hiit:{
+            bg:'linear-gradient(135deg,#4f1a1a 0%,#2a0808 100%)',
+            accent:'#ff5e5e',accentDim:'rgba(255,94,94,0.12)',
+            glyph:(<svg viewBox="0 0 60 60" width="100%" height="100%" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M30 5 L18 28 L26 28 L20 55 L42 26 L34 26 L40 5 Z" fill="currentColor" fillOpacity="0.15"/>
+              <path d="M30 5 L18 28 L26 28 L20 55 L42 26 L34 26 L40 5 Z"/>
+            </svg>),
+            tag:{es:"TODO EL CUERPO · CARDIO",en:"FULL BODY · CARDIO",it:"CORPO INTERO · CARDIO",fr:"CORPS ENTIER · CARDIO",pt:"CORPO INTEIRO · CARDIO",de:"GANZER KÖRPER · CARDIO"},
+          },
+        };
+        const orderedIds=['tren_superior','tren_inferior','abdomen','hiit'];
+        // Helper: count exercises and total sets for a group at current intensity/time
+        const computeStats=(groupId)=>{
+          const g=EXPRESS_GROUPS.find(x=>x.id===groupId);
+          if(!g)return{ex:0,sets:0,xp:0};
+          const intMul=EXPRESS_INTENSITY[expressIntensity]||EXPRESS_INTENSITY.medium;
+          // Use first circuit as representative
+          const circuit=g.circuits[0];
+          const adjusted=circuit.map(ex=>({...ex,s:Math.max(1,Math.round(ex.s*intMul.setMul))}));
+          const naturalSecs=adjusted.reduce((s,ex)=>s+ex.s*(ex.work*intMul.workMul+ex.rest*intMul.restMul),0);
+          const ratio=expressTime/(naturalSecs/60);
+          const totalSets=adjusted.reduce((s,ex)=>s+Math.max(1,Math.round(ex.s*ratio)),0);
+          const xpPerSet=expressIntensity==='intense'?6:expressIntensity==='soft'?3:5;
+          const zonesPerSet=g.zones.length||1;
+          return{ex:adjusted.length,sets:totalSets,xp:totalSets*xpPerSet*Math.min(3,zonesPerSet)};
+        };
+        return(
         <div onClick={()=>setShowExpress(false)} style={{position:"fixed",inset:0,zIndex:9000,
-          background:"rgba(0,0,0,0.7)",backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)",
-          display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
+          background:"rgba(0,0,0,0.85)",backdropFilter:"blur(10px)",WebkitBackdropFilter:"blur(10px)",
+          display:"flex",alignItems:"stretch",justifyContent:"center"}}>
           <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:520,
-            height:"95vh",
-            background:"linear-gradient(180deg,#1a1f2e 0%,#0f1320 60%)",
-            borderRadius:"28px 28px 0 0",
-            boxShadow:"0 -8px 40px rgba(0,0,0,0.6)",
+            background:"#080a0e",
             display:"flex",flexDirection:"column",
-            overflow:"hidden"}}>
-            {/* TOP: drag handle + header */}
-            <div style={{flexShrink:0,padding:"10px 18px 4px"}}>
-              <div style={{width:36,height:4,background:"rgba(255,255,255,0.18)",borderRadius:2,
-                margin:"0 auto 8px"}}/>
-              <div style={{textAlign:"center"}}>
-                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:30,letterSpacing:3,
+            overflow:"hidden",
+            paddingTop:"env(safe-area-inset-top)",
+            paddingBottom:"env(safe-area-inset-bottom)"}}>
+            {/* TOP BAR */}
+            <div style={{flexShrink:0,padding:"14px 18px 10px",
+              display:"flex",alignItems:"center",justifyContent:"space-between",
+              borderBottom:"1px solid rgba(255,255,255,0.04)"}}>
+              <div>
+                <div style={{fontFamily:mono,fontSize:7,color:"rgba(255,255,255,0.4)",letterSpacing:2.5,fontWeight:700,marginBottom:2}}>
+                  {lang==="es"||lang==="pt"?"MODO":lang==="it"?"MODO":lang==="de"?"MODUS":lang==="fr"?"MODE":"MODE"}
+                </div>
+                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,letterSpacing:3,
                   color:"#f0f2f5",lineHeight:1}}>
                   ⚡ EXPRESS
                 </div>
               </div>
+              <button onClick={()=>setShowExpress(false)} style={{background:"rgba(255,255,255,0.05)",
+                border:"none",borderRadius:10,width:36,height:36,cursor:"pointer",
+                color:"rgba(255,255,255,0.5)",fontSize:14,fontWeight:300,
+                display:"flex",alignItems:"center",justifyContent:"center"}}>
+                ✕
+              </button>
             </div>
-            {/* MIDDLE (FLEX): mannequin takes ALL remaining space */}
-            <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",
-              justifyContent:"center",position:"relative",
-              minHeight:0,padding:"8px 0"}}>
-              {(()=>{
-                const selectedGroup=EXPRESS_GROUPS.find(g=>g.id===expressGroup);
-                const zonesToHighlight=selectedGroup?selectedGroup.zones:[];
-                const intColor=expressIntensity==='intense'?'#f0612a':expressIntensity==='soft'?'#4caf8e':'#3fcf8e';
-                // Mannequin size: take 50% of viewport height (caps at 420px, mins at 280px)
-                const manSize=Math.max(280,Math.min(420,window.innerHeight*0.5));
-                return(
-                  <div style={{position:'relative',width:'100%',height:'100%',
-                    display:'flex',alignItems:'center',justifyContent:'center'}}>
-                    <MannequinMini
-                      groupZones={zonesToHighlight}
-                      intensity={expressIntensity}
-                      size={manSize}
-                      autoRotate={!expressGroup}
-                      onZoneClick={(zone)=>{
-                        const grp=expressGroupForZone(zone);
-                        if(grp){
-                          setExpressGroup(grp===expressGroup?null:grp);
-                          try{if(navigator.vibrate)navigator.vibrate(10);}catch(_){}
-                        }
-                      }}
-                    />
-                    {/* "Tap" affordance — top-center floating */}
-                    {!expressGroup&&(
-                      <div style={{position:'absolute',top:8,left:'50%',
-                        transform:'translateX(-50%)',
-                        padding:'9px 18px',borderRadius:24,
-                        background:'rgba(63,207,142,0.14)',
-                        border:'1px solid rgba(63,207,142,0.45)',
-                        backdropFilter:'blur(10px)',WebkitBackdropFilter:'blur(10px)',
-                        fontFamily:mono,fontSize:10,letterSpacing:2.5,color:'#3fcf8e',fontWeight:700,
-                        pointerEvents:'none',
-                        animation:'forjaTapPulse 2s ease-in-out infinite',
-                        whiteSpace:'nowrap',
-                        boxShadow:'0 4px 20px rgba(63,207,142,0.25)'}}>
-                        👆 {lang==="es"||lang==="pt"?"TOCA UN MÚSCULO":lang==="it"?"TOCCA UN MUSCOLO":lang==="de"?"TIPPE EINEN MUSKEL":lang==="fr"?"TOUCHE UN MUSCLE":"TAP A MUSCLE"}
-                      </div>
-                    )}
-                    {/* Selected group label — bottom-center floating */}
-                    {expressGroup&&(()=>{
-                      const g=EXPRESS_GROUPS.find(x=>x.id===expressGroup);
-                      return(
-                        <div style={{position:'absolute',bottom:6,left:'50%',
-                          transform:'translateX(-50%)',
-                          padding:'10px 18px',borderRadius:14,
-                          background:'rgba(8,10,14,0.85)',
-                          border:'1px solid '+intColor+'66',
-                          backdropFilter:'blur(8px)',WebkitBackdropFilter:'blur(8px)',
-                          textAlign:'center',
-                          boxShadow:'0 4px 24px '+intColor+'33',
-                          maxWidth:'85%',
-                          animation:'forjaLabelPop 0.3s ease-out'}}>
-                          <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,letterSpacing:2,
-                            color:intColor,lineHeight:1,
-                            textShadow:'0 0 14px '+intColor+'77'}}>
-                            {(g.label[lang]||g.label.es).toUpperCase()}
-                          </div>
-                          <div style={{fontFamily:mono,fontSize:7,color:"rgba(255,255,255,0.5)",
-                            letterSpacing:1.8,marginTop:5,fontWeight:700}}>
-                            {g.zones.slice(0,4).map(z=>z.replace(/_/g,' ').replace('izq','I').replace('der','D')).join(' · ').toUpperCase()}
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </div>
-                );
-              })()}
-              <style>{`
-                @keyframes forjaTapPulse {
-                  0%, 100% { opacity: 0.85; transform: translateX(-50%) translateY(0); }
-                  50% { opacity: 1; transform: translateX(-50%) translateY(-3px); }
-                }
-                @keyframes forjaLabelPop {
-                  0% { opacity: 0; transform: translateX(-50%) translateY(8px); }
-                  100% { opacity: 1; transform: translateX(-50%) translateY(0); }
-                }
-              `}</style>
-            </div>
-            {/* BOTTOM: controls + CTA (fixed at bottom) */}
-            <div style={{flexShrink:0,padding:"8px 18px 12px",
-              paddingBottom:"calc(12px + env(safe-area-inset-bottom))",
-              borderTop:"1px solid rgba(255,255,255,0.04)",
-              background:"rgba(0,0,0,0.2)"}}>
-              {/* HIIT chip — full body */}
-              <div style={{display:"flex",justifyContent:"center",marginBottom:10}}>
-                <button onClick={()=>{
-                  setExpressGroup(expressGroup==='hiit'?null:'hiit');
-                  try{if(navigator.vibrate)navigator.vibrate(8);}catch(_){}
-                }} style={{padding:"7px 16px",borderRadius:18,border:"none",cursor:"pointer",
-                  background:expressGroup==='hiit'?"rgba(240,97,42,0.18)":"rgba(255,255,255,0.04)",
-                  boxShadow:expressGroup==='hiit'?"0 0 0 1px #f0612aaa, 0 0 14px rgba(240,97,42,0.3)":"0 0 0 1px rgba(255,255,255,0.08)",
-                  fontFamily:mono,fontSize:9,color:expressGroup==='hiit'?'#f0612a':'rgba(255,255,255,0.55)',
-                  letterSpacing:2,fontWeight:700,
-                  display:"flex",alignItems:"center",gap:6,
-                  transition:"all .2s"}}>
-                  <span style={{fontSize:12}}>⚡</span>
-                  <span>HIIT · {lang==="es"||lang==="pt"?"CUERPO COMPLETO":lang==="it"?"CORPO INTERO":lang==="de"?"GANZER KÖRPER":lang==="fr"?"CORPS ENTIER":"FULL BODY"}</span>
-                </button>
-              </div>
-              {/* Inline labels + selectors row */}
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
+            {/* CONTROLS BAR — duration + intensity always visible */}
+            <div style={{flexShrink:0,padding:"12px 18px",
+              borderBottom:"1px solid rgba(255,255,255,0.04)",
+              background:"rgba(255,255,255,0.015)"}}>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
                 {/* Duration */}
                 <div>
-                  <div style={{fontFamily:mono,fontSize:7,color:"rgba(255,255,255,0.4)",letterSpacing:2,marginBottom:5,paddingLeft:2,fontWeight:700,textAlign:"center"}}>
+                  <div style={{fontFamily:mono,fontSize:7,color:"rgba(255,255,255,0.35)",letterSpacing:2,marginBottom:5,fontWeight:700}}>
                     {lang==="es"||lang==="pt"?"DURACIÓN":lang==="it"?"DURATA":lang==="de"?"DAUER":lang==="fr"?"DURÉE":"DURATION"}
                   </div>
                   <div style={{display:"flex",gap:3,padding:3,
-                    background:"rgba(0,0,0,0.3)",borderRadius:11,
+                    background:"rgba(0,0,0,0.4)",borderRadius:10,
                     border:"1px solid rgba(255,255,255,0.04)"}}>
                     {[10,15,20].map(mins=>{
                       const sel=expressTime===mins;
@@ -7124,13 +7105,12 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                       <button key={mins} onClick={()=>{
                         setExpressTime(mins);
                         try{if(navigator.vibrate)navigator.vibrate(5);}catch(_){}
-                      }}
-                        style={{flex:1,padding:"8px 0",borderRadius:8,border:"none",cursor:"pointer",
-                          background:sel?"rgba(255,255,255,0.14)":"transparent",
-                          color:sel?"#fff":"rgba(255,255,255,0.4)",
-                          fontFamily:mono,fontSize:10,letterSpacing:1,fontWeight:700,
-                          boxShadow:sel?"inset 0 1px 0 rgba(255,255,255,0.08), 0 2px 8px rgba(0,0,0,0.3)":"none",
-                          transition:"all .15s"}}>
+                      }} style={{flex:1,padding:"7px 0",borderRadius:7,border:"none",cursor:"pointer",
+                        background:sel?"rgba(255,255,255,0.14)":"transparent",
+                        color:sel?"#fff":"rgba(255,255,255,0.4)",
+                        fontFamily:mono,fontSize:10,letterSpacing:1,fontWeight:700,
+                        boxShadow:sel?"inset 0 1px 0 rgba(255,255,255,0.08)":"none",
+                        transition:"all .15s"}}>
                         {mins}
                       </button>
                     );})}
@@ -7138,43 +7118,54 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                 </div>
                 {/* Intensity */}
                 <div>
-                  <div style={{fontFamily:mono,fontSize:7,color:"rgba(255,255,255,0.4)",letterSpacing:2,marginBottom:5,paddingLeft:2,fontWeight:700,textAlign:"center"}}>
+                  <div style={{fontFamily:mono,fontSize:7,color:"rgba(255,255,255,0.35)",letterSpacing:2,marginBottom:5,fontWeight:700}}>
                     {lang==="es"||lang==="pt"?"INTENSIDAD":lang==="it"?"INTENSITÀ":lang==="de"?"INTENSITÄT":lang==="fr"?"INTENSITÉ":"INTENSITY"}
                   </div>
                   <div style={{display:"flex",gap:3,padding:3,
-                    background:"rgba(0,0,0,0.3)",borderRadius:11,
+                    background:"rgba(0,0,0,0.4)",borderRadius:10,
                     border:"1px solid rgba(255,255,255,0.04)"}}>
                     {[
-                      {id:"soft",icon:"🌱",color:"#4caf8e",bg:"rgba(76,175,142,0.22)"},
-                      {id:"medium",icon:"⚡",color:"#3fcf8e",bg:"rgba(63,207,142,0.22)"},
-                      {id:"intense",icon:"🔥",color:"#f0612a",bg:"rgba(240,97,42,0.22)"},
+                      {id:"soft",icon:"🌱",color:"#4caf8e"},
+                      {id:"medium",icon:"⚡",color:"#3fcf8e"},
+                      {id:"intense",icon:"🔥",color:"#f0612a"},
                     ].map(it=>{
                       const sel=expressIntensity===it.id;
                       return(
                       <button key={it.id} onClick={()=>{
                         setExpressIntensity(it.id);
                         try{if(navigator.vibrate)navigator.vibrate(5);}catch(_){}
-                      }}
-                        style={{flex:1,padding:"8px 0",borderRadius:8,border:"none",cursor:"pointer",
-                          background:sel?it.bg:"transparent",
-                          transition:"all .15s",
-                          boxShadow:sel?"inset 0 1px 0 rgba(255,255,255,0.1), 0 0 0 1px "+it.color+"55":"none",
-                          display:"flex",alignItems:"center",justifyContent:"center"}}>
+                      }} style={{flex:1,padding:"7px 0",borderRadius:7,border:"none",cursor:"pointer",
+                        background:sel?"rgba(255,255,255,0.14)":"transparent",
+                        transition:"all .15s",
+                        boxShadow:sel?"inset 0 1px 0 rgba(255,255,255,0.08), 0 0 0 1px "+it.color+"66":"none",
+                        display:"flex",alignItems:"center",justifyContent:"center"}}>
                         <span style={{fontSize:13,opacity:sel?1:0.4}}>{it.icon}</span>
                       </button>
                     );})}
                   </div>
                 </div>
               </div>
-              {/* Primary CTA */}
-              <button
-                disabled={!expressGroup}
-                onClick={()=>{
-                  if(!expressGroup) return;
+            </div>
+            {/* CARDS — scrollable list */}
+            <div style={{flex:1,overflowY:"auto",padding:"14px 14px 24px",
+              display:"flex",flexDirection:"column",gap:12}}>
+              <div style={{fontFamily:mono,fontSize:7,color:"rgba(255,255,255,0.35)",
+                letterSpacing:3,fontWeight:700,padding:"4px 6px 2px"}}>
+                {lang==="es"||lang==="pt"?"ELIGE TU FORJA":lang==="it"?"SCEGLI LA TUA FORGIA":lang==="de"?"WÄHLE DEINE SCHMIEDE":lang==="fr"?"CHOISIS TA FORGE":"CHOOSE YOUR FORGE"}
+              </div>
+              {orderedIds.map(gid=>{
+                const g=EXPRESS_GROUPS.find(x=>x.id===gid);
+                const design=GROUP_DESIGN[gid];
+                const stats=computeStats(gid);
+                const isSelected=expressGroup===gid;
+                const goLabel=(lang==="es"||lang==="pt"?"FORJAR":lang==="it"?"FORGIARE":lang==="de"?"SCHMIEDEN":lang==="fr"?"FORGER":"FORGE");
+                return(
+                <button key={gid} onClick={()=>{
+                  // Tap → either select+launch immediately, or just select
+                  // Strategy: tap-and-go (one tap launches at current settings)
                   try{if(navigator.vibrate)navigator.vibrate([10,30,10]);}catch(_){}
-                  const circuit=pickExpressCircuit(expressGroup,expressTime,expressIntensity);
+                  const circuit=pickExpressCircuit(gid,expressTime,expressIntensity);
                   if(!circuit) return;
-                  const g=EXPRESS_GROUPS.find(x=>x.id===expressGroup);
                   const expressDay={
                     l:(g.label[lang]||g.label.es)+' · '+expressTime+'min',
                     ex:circuit,
@@ -7185,26 +7176,103 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                   setExpressDay(expressDay);
                   setShowExpress(false);
                   setInWorkout(true);
-                }}
-                style={{width:"100%",padding:"15px",borderRadius:14,border:"none",
-                  cursor:expressGroup?"pointer":"not-allowed",
-                  background:expressGroup?(expressIntensity==='intense'?"linear-gradient(180deg,#ff7c45,#f0612a)":expressIntensity==='soft'?"linear-gradient(180deg,#5dd9a3,#4caf8e)":"linear-gradient(180deg,#4ddb9c,#3fcf8e)"):"rgba(255,255,255,0.04)",
-                  color:expressGroup?"#080a0e":"rgba(255,255,255,0.3)",
-                  fontFamily:mono,fontSize:11,fontWeight:800,letterSpacing:2.5,
-                  boxShadow:expressGroup?(expressIntensity==='intense'?"0 8px 24px rgba(240,97,42,0.35), inset 0 1px 0 rgba(255,255,255,0.25)":expressIntensity==='soft'?"0 8px 24px rgba(76,175,142,0.3), inset 0 1px 0 rgba(255,255,255,0.25)":"0 8px 24px rgba(63,207,142,0.3), inset 0 1px 0 rgba(255,255,255,0.25)"):"none",
-                  transition:"all .2s"}}>
-                {expressGroup
-                  ?(()=>{
-                    const g=EXPRESS_GROUPS.find(x=>x.id===expressGroup);
-                    const verb=lang==="es"||lang==="pt"?"FORJAR":lang==="it"?"FORGIARE":lang==="de"?"SCHMIEDEN":lang==="fr"?"FORGER":"FORGE";
-                    return verb+" "+(g.label[lang]||g.label.es).toUpperCase()+" ⚡";
-                  })()
-                  :(lang==="es"||lang==="pt"?"ELIGE UNA ZONA ↑":lang==="it"?"SCEGLI UNA ZONA ↑":lang==="de"?"WÄHLE EINE ZONE ↑":lang==="fr"?"CHOISIS UNE ZONE ↑":"PICK A ZONE ↑")}
-              </button>
+                }} style={{
+                  position:"relative",border:"none",cursor:"pointer",padding:0,
+                  borderRadius:18,overflow:"hidden",
+                  background:design.bg,
+                  boxShadow:"0 8px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06)",
+                  transition:"all .25s ease",
+                  textAlign:"left",
+                  minHeight:120,
+                }}>
+                  {/* Layered glow effect */}
+                  <div style={{position:"absolute",inset:0,
+                    background:"radial-gradient(circle at 80% 30%, "+design.accent+"22 0%, transparent 50%)",
+                    pointerEvents:"none"}}/>
+                  {/* Subtle line pattern (FORJA tech aesthetic) */}
+                  <svg style={{position:"absolute",inset:0,width:"100%",height:"100%",pointerEvents:"none",opacity:0.06}}>
+                    <defs>
+                      <pattern id={"grid-"+gid} width="20" height="20" patternUnits="userSpaceOnUse">
+                        <path d="M 20 0 L 0 0 0 20" fill="none" stroke={design.accent} strokeWidth="0.5"/>
+                      </pattern>
+                    </defs>
+                    <rect width="100%" height="100%" fill={"url(#grid-"+gid+")"}/>
+                  </svg>
+                  {/* CONTENT */}
+                  <div style={{position:"relative",display:"flex",alignItems:"stretch",
+                    padding:"16px 18px"}}>
+                    {/* Big glyph on left */}
+                    <div style={{flexShrink:0,width:80,height:80,
+                      color:design.accent,
+                      filter:"drop-shadow(0 0 12px "+design.accent+"66)",
+                      marginRight:14,opacity:0.92}}>
+                      {design.glyph}
+                    </div>
+                    {/* Text content */}
+                    <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"space-between",minWidth:0}}>
+                      <div>
+                        <div style={{fontFamily:mono,fontSize:7,color:design.accent,
+                          letterSpacing:2.5,fontWeight:700,marginBottom:4,opacity:0.9}}>
+                          {design.tag[lang]||design.tag.es}
+                        </div>
+                        <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,letterSpacing:1.5,
+                          color:"#f0f2f5",lineHeight:1}}>
+                          {(g.label[lang]||g.label.es).toUpperCase()}
+                        </div>
+                      </div>
+                      {/* Stats row */}
+                      <div style={{display:"flex",alignItems:"center",gap:10,marginTop:10,
+                        flexWrap:"wrap"}}>
+                        <div style={{fontFamily:mono,fontSize:8,color:"rgba(255,255,255,0.55)",
+                          letterSpacing:1.5,fontWeight:700,
+                          background:"rgba(0,0,0,0.3)",padding:"3px 8px",borderRadius:6,
+                          border:"1px solid rgba(255,255,255,0.06)"}}>
+                          {stats.ex} {lang==="es"||lang==="pt"?"EJ":lang==="it"?"ES":"EX"}
+                        </div>
+                        <div style={{fontFamily:mono,fontSize:8,color:"rgba(255,255,255,0.55)",
+                          letterSpacing:1.5,fontWeight:700,
+                          background:"rgba(0,0,0,0.3)",padding:"3px 8px",borderRadius:6,
+                          border:"1px solid rgba(255,255,255,0.06)"}}>
+                          {stats.sets} {lang==="es"||lang==="pt"?"SETS":"SETS"}
+                        </div>
+                        <div style={{fontFamily:mono,fontSize:8,color:"#FFD700",
+                          letterSpacing:1.5,fontWeight:700,
+                          background:"rgba(255,215,0,0.08)",padding:"3px 8px",borderRadius:6,
+                          border:"1px solid rgba(255,215,0,0.2)"}}>
+                          +{stats.xp} XP
+                        </div>
+                      </div>
+                    </div>
+                    {/* Right: forge arrow indicator */}
+                    <div style={{flexShrink:0,marginLeft:8,
+                      display:"flex",alignItems:"center"}}>
+                      <div style={{width:36,height:36,borderRadius:"50%",
+                        background:design.accent,
+                        display:"flex",alignItems:"center",justifyContent:"center",
+                        boxShadow:"0 4px 12px "+design.accent+"66, inset 0 1px 0 rgba(255,255,255,0.3)"}}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#080a0e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="9 18 15 12 9 6"/>
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Bottom: tap hint */}
+                  <div style={{position:"relative",
+                    padding:"8px 18px",
+                    background:"rgba(0,0,0,0.35)",
+                    borderTop:"1px solid rgba(255,255,255,0.05)",
+                    fontFamily:mono,fontSize:8,color:design.accent,
+                    letterSpacing:2.5,fontWeight:700,
+                    textAlign:"center",opacity:0.8}}>
+                    👆 {goLabel} · {expressTime} MIN · {(EXPRESS_INTENSITY[expressIntensity].label[lang]||EXPRESS_INTENSITY[expressIntensity].label.es)}
+                  </div>
+                </button>
+              );})}
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
       {tourAskVisible&&tourReady&&tourStep===null&&(()=>{
         const MN_="'SF Mono','Fira Code',monospace";
         const BN_="'Bebas Neue',cursive";
