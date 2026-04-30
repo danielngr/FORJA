@@ -6995,47 +6995,115 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
           tren_superior:{
             bg:'linear-gradient(135deg,#1a2a4f 0%,#0e1530 100%)',
             accent:'#5e8eff',accentDim:'rgba(94,142,255,0.12)',
-            // Stylized glyph: angular pec/shoulder shape
-            glyph:(<svg viewBox="0 0 60 60" width="100%" height="100%" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M30 8 L20 14 L14 24 L18 32 L30 30 L42 32 L46 24 L40 14 Z" opacity="0.9"/>
-              <path d="M14 24 L8 30 L10 40 L16 44" opacity="0.7"/>
-              <path d="M46 24 L52 30 L50 40 L44 44" opacity="0.7"/>
-              <path d="M30 30 L30 50" opacity="0.4"/>
-              <path d="M22 38 L38 38" opacity="0.3"/>
+            // Anatomical chest + shoulders silhouette — premium icon style
+            glyph:(<svg viewBox="0 0 80 80" width="100%" height="100%">
+              <defs>
+                <linearGradient id="g-ts" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#5e8eff" stopOpacity="0.95"/>
+                  <stop offset="100%" stopColor="#5e8eff" stopOpacity="0.55"/>
+                </linearGradient>
+              </defs>
+              {/* Neck */}
+              <path d="M36 8 L44 8 L44 16 L36 16 Z" fill="url(#g-ts)" opacity="0.5"/>
+              {/* Left pec */}
+              <path d="M14 22 Q22 18 36 18 L40 22 L40 38 Q40 42 36 42 L20 40 Q12 38 12 30 Q12 24 14 22 Z" fill="url(#g-ts)"/>
+              {/* Right pec */}
+              <path d="M66 22 Q58 18 44 18 L40 22 L40 38 Q40 42 44 42 L60 40 Q68 38 68 30 Q68 24 66 22 Z" fill="url(#g-ts)"/>
+              {/* Sternum line */}
+              <line x1="40" y1="20" x2="40" y2="40" stroke="#0e1530" strokeWidth="1.5" opacity="0.7"/>
+              {/* Left deltoid */}
+              <path d="M14 22 Q8 24 6 32 Q5 40 8 46 Q12 48 16 44 Q18 36 16 28 Z" fill="url(#g-ts)" opacity="0.85"/>
+              {/* Right deltoid */}
+              <path d="M66 22 Q72 24 74 32 Q75 40 72 46 Q68 48 64 44 Q62 36 64 28 Z" fill="url(#g-ts)" opacity="0.85"/>
+              {/* Bicep hint left */}
+              <path d="M8 46 Q6 54 8 62 Q10 66 14 64 Q16 56 16 48 Z" fill="url(#g-ts)" opacity="0.7"/>
+              {/* Bicep hint right */}
+              <path d="M72 46 Q74 54 72 62 Q70 66 66 64 Q64 56 64 48 Z" fill="url(#g-ts)" opacity="0.7"/>
+              {/* Pec inner curves (definition) */}
+              <path d="M22 28 Q30 32 38 32" fill="none" stroke="#0e1530" strokeWidth="1" opacity="0.4"/>
+              <path d="M58 28 Q50 32 42 32" fill="none" stroke="#0e1530" strokeWidth="1" opacity="0.4"/>
             </svg>),
             tag:{es:"FUERZA · EMPUJE",en:"POWER · PUSH",it:"FORZA · SPINTA",fr:"FORCE · POUSSÉE",pt:"FORÇA · EMPURRE",de:"KRAFT · STOSS"},
           },
           tren_inferior:{
             bg:'linear-gradient(135deg,#3d1a4f 0%,#1a0e30 100%)',
             accent:'#c45eff',accentDim:'rgba(196,94,255,0.12)',
-            glyph:(<svg viewBox="0 0 60 60" width="100%" height="100%" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M22 8 L26 6 L30 8 L34 6 L38 8" opacity="0.6"/>
-              <path d="M22 12 L20 28 L18 44 L20 52 L24 52 L26 44 L26 28 L24 12 Z" opacity="0.9"/>
-              <path d="M38 12 L40 28 L42 44 L40 52 L36 52 L34 44 L34 28 L36 12 Z" opacity="0.9"/>
-              <path d="M22 30 L26 28" opacity="0.4"/>
-              <path d="M38 30 L34 28" opacity="0.4"/>
+            // Anatomical legs — quads + calves silhouette
+            glyph:(<svg viewBox="0 0 80 80" width="100%" height="100%">
+              <defs>
+                <linearGradient id="g-ti" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#c45eff" stopOpacity="0.95"/>
+                  <stop offset="100%" stopColor="#c45eff" stopOpacity="0.55"/>
+                </linearGradient>
+              </defs>
+              {/* Hip/glute hint */}
+              <path d="M22 6 Q30 4 40 4 Q50 4 58 6 L58 14 Q50 16 40 16 Q30 16 22 14 Z" fill="url(#g-ti)" opacity="0.6"/>
+              {/* Left quad */}
+              <path d="M22 12 Q20 28 22 44 Q24 50 28 50 Q34 50 36 44 Q38 28 36 12 Z" fill="url(#g-ti)"/>
+              {/* Right quad */}
+              <path d="M58 12 Q60 28 58 44 Q56 50 52 50 Q46 50 44 44 Q42 28 44 12 Z" fill="url(#g-ti)"/>
+              {/* Quad inner definition */}
+              <path d="M28 18 Q30 30 28 42" fill="none" stroke="#1a0e30" strokeWidth="1" opacity="0.5"/>
+              <path d="M52 18 Q50 30 52 42" fill="none" stroke="#1a0e30" strokeWidth="1" opacity="0.5"/>
+              {/* Knee hint */}
+              <ellipse cx="29" cy="50" rx="6" ry="2" fill="url(#g-ti)" opacity="0.7"/>
+              <ellipse cx="51" cy="50" rx="6" ry="2" fill="url(#g-ti)" opacity="0.7"/>
+              {/* Left calf */}
+              <path d="M24 52 Q22 60 24 70 Q26 74 30 72 Q32 64 32 54 Z" fill="url(#g-ti)" opacity="0.85"/>
+              {/* Right calf */}
+              <path d="M56 52 Q58 60 56 70 Q54 74 50 72 Q48 64 48 54 Z" fill="url(#g-ti)" opacity="0.85"/>
             </svg>),
             tag:{es:"BASE · POTENCIA",en:"BASE · POWER",it:"BASE · POTENZA",fr:"BASE · PUISSANCE",pt:"BASE · POTÊNCIA",de:"BASIS · KRAFT"},
           },
           abdomen:{
             bg:'linear-gradient(135deg,#4f3a1a 0%,#1a1408 100%)',
             accent:'#ffb84d',accentDim:'rgba(255,184,77,0.12)',
-            glyph:(<svg viewBox="0 0 60 60" width="100%" height="100%" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="20" y="10" width="20" height="40" rx="4" opacity="0.9"/>
-              <line x1="30" y1="10" x2="30" y2="50" opacity="0.6"/>
-              <line x1="20" y1="20" x2="40" y2="20" opacity="0.5"/>
-              <line x1="20" y1="30" x2="40" y2="30" opacity="0.5"/>
-              <line x1="20" y1="40" x2="40" y2="40" opacity="0.5"/>
-              <circle cx="30" cy="30" r="2" fill="currentColor" opacity="0.8"/>
+            // Six-pack abs — clean blocks with center line
+            glyph:(<svg viewBox="0 0 80 80" width="100%" height="100%">
+              <defs>
+                <linearGradient id="g-ab" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#ffb84d" stopOpacity="0.95"/>
+                  <stop offset="100%" stopColor="#ffb84d" stopOpacity="0.55"/>
+                </linearGradient>
+              </defs>
+              {/* Outer torso shape */}
+              <path d="M20 12 Q24 8 40 8 Q56 8 60 12 L62 50 Q60 70 50 72 Q40 73 30 72 Q20 70 18 50 Z" fill="url(#g-ab)" opacity="0.35"/>
+              {/* 6-pack blocks — top row */}
+              <rect x="24" y="14" width="14" height="10" rx="2.5" fill="url(#g-ab)"/>
+              <rect x="42" y="14" width="14" height="10" rx="2.5" fill="url(#g-ab)"/>
+              {/* middle row */}
+              <rect x="24" y="26" width="14" height="10" rx="2.5" fill="url(#g-ab)"/>
+              <rect x="42" y="26" width="14" height="10" rx="2.5" fill="url(#g-ab)"/>
+              {/* bottom row */}
+              <rect x="24" y="38" width="14" height="10" rx="2.5" fill="url(#g-ab)"/>
+              <rect x="42" y="38" width="14" height="10" rx="2.5" fill="url(#g-ab)"/>
+              {/* Lower abs (V) */}
+              <path d="M28 50 L40 64 L52 50 Q48 56 40 58 Q32 56 28 50 Z" fill="url(#g-ab)" opacity="0.7"/>
+              {/* Center line (linea alba) */}
+              <line x1="40" y1="14" x2="40" y2="50" stroke="#1a1408" strokeWidth="1.5" opacity="0.8"/>
             </svg>),
             tag:{es:"NÚCLEO · ESTABILIDAD",en:"CORE · STABILITY",it:"NUCLEO · STABILITÀ",fr:"CENTRE · STABILITÉ",pt:"NÚCLEO · ESTABILIDADE",de:"KERN · STABILITÄT"},
           },
           hiit:{
             bg:'linear-gradient(135deg,#4f1a1a 0%,#2a0808 100%)',
             accent:'#ff5e5e',accentDim:'rgba(255,94,94,0.12)',
-            glyph:(<svg viewBox="0 0 60 60" width="100%" height="100%" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M30 5 L18 28 L26 28 L20 55 L42 26 L34 26 L40 5 Z" fill="currentColor" fillOpacity="0.15"/>
-              <path d="M30 5 L18 28 L26 28 L20 55 L42 26 L34 26 L40 5 Z"/>
+            // Heart with lightning — full body explosive
+            glyph:(<svg viewBox="0 0 80 80" width="100%" height="100%">
+              <defs>
+                <linearGradient id="g-hi" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#ff8585" stopOpacity="0.95"/>
+                  <stop offset="100%" stopColor="#ff5e5e" stopOpacity="0.55"/>
+                </linearGradient>
+              </defs>
+              {/* Heart shape */}
+              <path d="M40 70 Q20 56 14 38 Q10 22 22 18 Q32 16 40 28 Q48 16 58 18 Q70 22 66 38 Q60 56 40 70 Z"
+                fill="url(#g-hi)" opacity="0.85"/>
+              {/* ECG line through heart */}
+              <path d="M14 42 L24 42 L28 30 L34 54 L40 38 L44 46 L50 42 L66 42"
+                fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.95"/>
+              {/* Outer beat ring */}
+              <path d="M40 70 Q20 56 14 38 Q10 22 22 18 Q32 16 40 28 Q48 16 58 18 Q70 22 66 38 Q60 56 40 70 Z"
+                fill="none" stroke="#ff8585" strokeWidth="1" opacity="0.4"/>
             </svg>),
             tag:{es:"TODO EL CUERPO · CARDIO",en:"FULL BODY · CARDIO",it:"CORPO INTERO · CARDIO",fr:"CORPS ENTIER · CARDIO",pt:"CORPO INTEIRO · CARDIO",de:"GANZER KÖRPER · CARDIO"},
           },
@@ -7086,63 +7154,77 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                 ✕
               </button>
             </div>
-            {/* CONTROLS BAR — duration + intensity always visible */}
-            <div style={{flexShrink:0,padding:"12px 18px",
-              borderBottom:"1px solid rgba(255,255,255,0.04)",
-              background:"rgba(255,255,255,0.015)"}}>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-                {/* Duration */}
-                <div>
-                  <div style={{fontFamily:mono,fontSize:7,color:"rgba(255,255,255,0.35)",letterSpacing:2,marginBottom:5,fontWeight:700}}>
-                    {lang==="es"||lang==="pt"?"DURACIÓN":lang==="it"?"DURATA":lang==="de"?"DAUER":lang==="fr"?"DURÉE":"DURATION"}
+            {/* CONTROLS BAR — duration + intensity, BIG & visible */}
+            <div style={{flexShrink:0,padding:"16px 18px 18px",
+              borderBottom:"1px solid rgba(255,255,255,0.06)",
+              background:"linear-gradient(180deg,rgba(255,255,255,0.025) 0%,rgba(0,0,0,0.15) 100%)"}}>
+              {/* DURATION row */}
+              <div style={{marginBottom:14}}>
+                <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",marginBottom:8}}>
+                  <div style={{fontFamily:mono,fontSize:10,color:"rgba(255,255,255,0.7)",letterSpacing:2.5,fontWeight:700}}>
+                    ⏱ {lang==="es"||lang==="pt"?"DURACIÓN":lang==="it"?"DURATA":lang==="de"?"DAUER":lang==="fr"?"DURÉE":"DURATION"}
                   </div>
-                  <div style={{display:"flex",gap:3,padding:3,
-                    background:"rgba(0,0,0,0.4)",borderRadius:10,
-                    border:"1px solid rgba(255,255,255,0.04)"}}>
-                    {[10,15,20].map(mins=>{
-                      const sel=expressTime===mins;
-                      return(
-                      <button key={mins} onClick={()=>{
-                        setExpressTime(mins);
-                        try{if(navigator.vibrate)navigator.vibrate(5);}catch(_){}
-                      }} style={{flex:1,padding:"7px 0",borderRadius:7,border:"none",cursor:"pointer",
-                        background:sel?"rgba(255,255,255,0.14)":"transparent",
-                        color:sel?"#fff":"rgba(255,255,255,0.4)",
-                        fontFamily:mono,fontSize:10,letterSpacing:1,fontWeight:700,
-                        boxShadow:sel?"inset 0 1px 0 rgba(255,255,255,0.08)":"none",
-                        transition:"all .15s"}}>
-                        {mins}
-                      </button>
-                    );})}
+                  <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,letterSpacing:1.5,
+                    color:"#fff",lineHeight:1}}>
+                    {expressTime} <span style={{fontSize:12,opacity:0.5}}>MIN</span>
                   </div>
                 </div>
-                {/* Intensity */}
-                <div>
-                  <div style={{fontFamily:mono,fontSize:7,color:"rgba(255,255,255,0.35)",letterSpacing:2,marginBottom:5,fontWeight:700}}>
-                    {lang==="es"||lang==="pt"?"INTENSIDAD":lang==="it"?"INTENSITÀ":lang==="de"?"INTENSITÄT":lang==="fr"?"INTENSITÉ":"INTENSITY"}
+                <div style={{display:"flex",gap:6,padding:5,
+                  background:"rgba(0,0,0,0.5)",borderRadius:13,
+                  border:"1px solid rgba(255,255,255,0.06)"}}>
+                  {[10,15,20].map(mins=>{
+                    const sel=expressTime===mins;
+                    return(
+                    <button key={mins} onClick={()=>{
+                      setExpressTime(mins);
+                      try{if(navigator.vibrate)navigator.vibrate(5);}catch(_){}
+                    }} style={{flex:1,padding:"12px 0",borderRadius:9,border:"none",cursor:"pointer",
+                      background:sel?"linear-gradient(180deg,#3a4258,#2a3245)":"transparent",
+                      color:sel?"#fff":"rgba(255,255,255,0.45)",
+                      fontFamily:mono,fontSize:13,letterSpacing:1,fontWeight:800,
+                      boxShadow:sel?"inset 0 1px 0 rgba(255,255,255,0.18), 0 4px 10px rgba(0,0,0,0.4)":"none",
+                      transition:"all .15s",
+                      transform:sel?"scale(1.02)":"scale(1)"}}>
+                      {mins}
+                    </button>
+                  );})}
+                </div>
+              </div>
+              {/* INTENSITY row */}
+              <div>
+                <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",marginBottom:8}}>
+                  <div style={{fontFamily:mono,fontSize:10,color:"rgba(255,255,255,0.7)",letterSpacing:2.5,fontWeight:700}}>
+                    {expressIntensity==='intense'?'🔥':expressIntensity==='soft'?'🌱':'⚡'} {lang==="es"||lang==="pt"?"INTENSIDAD":lang==="it"?"INTENSITÀ":lang==="de"?"INTENSITÄT":lang==="fr"?"INTENSITÉ":"INTENSITY"}
                   </div>
-                  <div style={{display:"flex",gap:3,padding:3,
-                    background:"rgba(0,0,0,0.4)",borderRadius:10,
-                    border:"1px solid rgba(255,255,255,0.04)"}}>
-                    {[
-                      {id:"soft",icon:"🌱",color:"#4caf8e"},
-                      {id:"medium",icon:"⚡",color:"#3fcf8e"},
-                      {id:"intense",icon:"🔥",color:"#f0612a"},
-                    ].map(it=>{
-                      const sel=expressIntensity===it.id;
-                      return(
-                      <button key={it.id} onClick={()=>{
-                        setExpressIntensity(it.id);
-                        try{if(navigator.vibrate)navigator.vibrate(5);}catch(_){}
-                      }} style={{flex:1,padding:"7px 0",borderRadius:7,border:"none",cursor:"pointer",
-                        background:sel?"rgba(255,255,255,0.14)":"transparent",
-                        transition:"all .15s",
-                        boxShadow:sel?"inset 0 1px 0 rgba(255,255,255,0.08), 0 0 0 1px "+it.color+"66":"none",
-                        display:"flex",alignItems:"center",justifyContent:"center"}}>
-                        <span style={{fontSize:13,opacity:sel?1:0.4}}>{it.icon}</span>
-                      </button>
-                    );})}
+                  <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:22,letterSpacing:1.5,
+                    color:expressIntensity==='intense'?'#f0612a':expressIntensity==='soft'?'#4caf8e':'#3fcf8e',
+                    lineHeight:1,
+                    textShadow:'0 0 12px '+(expressIntensity==='intense'?'#f0612a':expressIntensity==='soft'?'#4caf8e':'#3fcf8e')+'66'}}>
+                    {EXPRESS_INTENSITY[expressIntensity].label[lang]||EXPRESS_INTENSITY[expressIntensity].label.es}
                   </div>
+                </div>
+                <div style={{display:"flex",gap:6,padding:5,
+                  background:"rgba(0,0,0,0.5)",borderRadius:13,
+                  border:"1px solid rgba(255,255,255,0.06)"}}>
+                  {[
+                    {id:"soft",icon:"🌱",color:"#4caf8e",bgGrad:"linear-gradient(180deg,#3a6b5c,#2a4f44)"},
+                    {id:"medium",icon:"⚡",color:"#3fcf8e",bgGrad:"linear-gradient(180deg,#2a6b50,#1f5040)"},
+                    {id:"intense",icon:"🔥",color:"#f0612a",bgGrad:"linear-gradient(180deg,#7a3015,#5c2310)"},
+                  ].map(it=>{
+                    const sel=expressIntensity===it.id;
+                    return(
+                    <button key={it.id} onClick={()=>{
+                      setExpressIntensity(it.id);
+                      try{if(navigator.vibrate)navigator.vibrate(5);}catch(_){}
+                    }} style={{flex:1,padding:"12px 0",borderRadius:9,border:"none",cursor:"pointer",
+                      background:sel?it.bgGrad:"transparent",
+                      transition:"all .15s",
+                      boxShadow:sel?"inset 0 1px 0 rgba(255,255,255,0.2), 0 4px 12px "+it.color+"44, 0 0 0 1px "+it.color+"88":"none",
+                      display:"flex",alignItems:"center",justifyContent:"center",
+                      transform:sel?"scale(1.02)":"scale(1)"}}>
+                      <span style={{fontSize:18,opacity:sel?1:0.35,filter:sel?'none':'grayscale(0.5)'}}>{it.icon}</span>
+                    </button>
+                  );})}
                 </div>
               </div>
             </div>
