@@ -6996,13 +6996,10 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
             <div style={{width:36,height:4,background:"rgba(255,255,255,0.18)",borderRadius:2,
               margin:"0 auto 10px"}}/>
             {/* Compact header */}
-            <div style={{textAlign:"center",marginBottom:8}}>
-              <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:24,letterSpacing:3,
+            <div style={{textAlign:"center",marginBottom:4}}>
+              <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,letterSpacing:3,
                 color:"#f0f2f5",lineHeight:1}}>
                 ⚡ EXPRESS
-              </div>
-              <div style={{fontFamily:mono,fontSize:7,color:"rgba(255,255,255,0.32)",letterSpacing:2.5,marginTop:4}}>
-                {lang==="es"||lang==="pt"?"TOCA UNA ZONA":lang==="it"?"TOCCA UNA ZONA":lang==="de"?"BERÜHRE EINE ZONE":lang==="fr"?"TOUCHE UNE ZONE":"TAP A ZONE"}
               </div>
             </div>
             {/* HERO: Interactive anatomy — tap to select Express group */}
@@ -7039,7 +7036,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                     <MannequinMini
                       groupZones={zonesToHighlight}
                       intensity={expressIntensity}
-                      size={220}
+                      size={280}
                       autoRotate={!expressGroup}
                       onZoneClick={(zone)=>{
                         const grp=expressGroupForZone(zone);
@@ -7049,6 +7046,27 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                         }
                       }}
                     />
+                    {/* "Tap to choose" affordance — only when no selection */}
+                    {!expressGroup&&(
+                      <div style={{position:'absolute',top:14,left:'50%',
+                        transform:'translateX(-50%)',
+                        padding:'7px 14px',borderRadius:20,
+                        background:'rgba(63,207,142,0.12)',
+                        border:'1px solid rgba(63,207,142,0.35)',
+                        backdropFilter:'blur(6px)',WebkitBackdropFilter:'blur(6px)',
+                        fontFamily:mono,fontSize:9,letterSpacing:2,color:'#3fcf8e',fontWeight:700,
+                        pointerEvents:'none',
+                        animation:'forjaTapPulse 2s ease-in-out infinite',
+                        whiteSpace:'nowrap'}}>
+                        👆 {lang==="es"||lang==="pt"?"TOCA UN MÚSCULO":lang==="it"?"TOCCA UN MUSCOLO":lang==="de"?"TIPPE EINEN MUSKEL":lang==="fr"?"TOUCHE UN MUSCLE":"TAP A MUSCLE"}
+                      </div>
+                    )}
+                    <style>{`
+                      @keyframes forjaTapPulse {
+                        0%, 100% { opacity: 0.85; transform: translateX(-50%) translateY(0); }
+                        50% { opacity: 1; transform: translateX(-50%) translateY(-2px); }
+                      }
+                    `}</style>
                   </div>
                 );
               })()}
