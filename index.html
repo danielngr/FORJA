@@ -6987,222 +6987,221 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
         <div onClick={()=>setShowExpress(false)} style={{position:"fixed",inset:0,zIndex:9000,
           background:"rgba(0,0,0,0.7)",backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)",
           display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
-          <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:480,
-            background:"linear-gradient(180deg,#1a1f2e 0%,#131720 30%)",
-            borderRadius:"28px 28px 0 0",padding:"12px 18px 20px",
+          <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:520,
+            height:"95vh",
+            background:"linear-gradient(180deg,#1a1f2e 0%,#0f1320 60%)",
+            borderRadius:"28px 28px 0 0",
             boxShadow:"0 -8px 40px rgba(0,0,0,0.6)",
-            paddingBottom:"calc(20px + env(safe-area-inset-bottom))"}}>
-            {/* Drag handle */}
-            <div style={{width:36,height:4,background:"rgba(255,255,255,0.18)",borderRadius:2,
-              margin:"0 auto 10px"}}/>
-            {/* Compact header */}
-            <div style={{textAlign:"center",marginBottom:4}}>
-              <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,letterSpacing:3,
-                color:"#f0f2f5",lineHeight:1}}>
-                ⚡ EXPRESS
+            display:"flex",flexDirection:"column",
+            overflow:"hidden"}}>
+            {/* TOP: drag handle + header */}
+            <div style={{flexShrink:0,padding:"10px 18px 4px"}}>
+              <div style={{width:36,height:4,background:"rgba(255,255,255,0.18)",borderRadius:2,
+                margin:"0 auto 8px"}}/>
+              <div style={{textAlign:"center"}}>
+                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:30,letterSpacing:3,
+                  color:"#f0f2f5",lineHeight:1}}>
+                  ⚡ EXPRESS
+                </div>
               </div>
             </div>
-            {/* HERO: Interactive anatomy — tap to select Express group */}
-            <div style={{display:"flex",flexDirection:"column",alignItems:"center",
-              padding:"4px 0 8px",position:"relative"}}>
-              {/* Get the selected group's zones for highlighting */}
+            {/* MIDDLE (FLEX): mannequin takes ALL remaining space */}
+            <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",
+              justifyContent:"center",position:"relative",
+              minHeight:0,padding:"8px 0"}}>
               {(()=>{
                 const selectedGroup=EXPRESS_GROUPS.find(g=>g.id===expressGroup);
                 const zonesToHighlight=selectedGroup?selectedGroup.zones:[];
                 const intColor=expressIntensity==='intense'?'#f0612a':expressIntensity==='soft'?'#4caf8e':'#3fcf8e';
-                // Generous hit areas overlaid on the anatomy SVG for finger-friendly tapping
-                // Each hit area corresponds to one Express group
-                const hitArea=(label,bounds,groupId)=>{
-                  const sel=expressGroup===groupId;
-                  return(
-                    <button onClick={(e)=>{
-                      e.stopPropagation();
-                      setExpressGroup(sel?null:groupId);
-                      try{if(navigator.vibrate)navigator.vibrate(8);}catch(_){}
-                    }} style={{
-                      position:'absolute',
-                      left:bounds.l,top:bounds.t,
-                      width:bounds.w,height:bounds.h,
-                      background:'transparent',
-                      border:'none',cursor:'pointer',
-                      padding:0,margin:0,
-                      // Subtle visual hint of the hit area when not selected
-                      opacity:sel?1:0.9,
-                    }} aria-label={label}/>
-                  );
-                };
+                // Mannequin size: take 50% of viewport height (caps at 420px, mins at 280px)
+                const manSize=Math.max(280,Math.min(420,window.innerHeight*0.5));
                 return(
-                  <div style={{position:'relative',display:'inline-block'}}>
+                  <div style={{position:'relative',width:'100%',height:'100%',
+                    display:'flex',alignItems:'center',justifyContent:'center'}}>
                     <MannequinMini
                       groupZones={zonesToHighlight}
                       intensity={expressIntensity}
-                      size={280}
+                      size={manSize}
                       autoRotate={!expressGroup}
                       onZoneClick={(zone)=>{
                         const grp=expressGroupForZone(zone);
                         if(grp){
                           setExpressGroup(grp===expressGroup?null:grp);
-                          try{if(navigator.vibrate)navigator.vibrate(8);}catch(_){}
+                          try{if(navigator.vibrate)navigator.vibrate(10);}catch(_){}
                         }
                       }}
                     />
-                    {/* "Tap to choose" affordance — only when no selection */}
+                    {/* "Tap" affordance — top-center floating */}
                     {!expressGroup&&(
-                      <div style={{position:'absolute',top:14,left:'50%',
+                      <div style={{position:'absolute',top:8,left:'50%',
                         transform:'translateX(-50%)',
-                        padding:'7px 14px',borderRadius:20,
-                        background:'rgba(63,207,142,0.12)',
-                        border:'1px solid rgba(63,207,142,0.35)',
-                        backdropFilter:'blur(6px)',WebkitBackdropFilter:'blur(6px)',
-                        fontFamily:mono,fontSize:9,letterSpacing:2,color:'#3fcf8e',fontWeight:700,
+                        padding:'9px 18px',borderRadius:24,
+                        background:'rgba(63,207,142,0.14)',
+                        border:'1px solid rgba(63,207,142,0.45)',
+                        backdropFilter:'blur(10px)',WebkitBackdropFilter:'blur(10px)',
+                        fontFamily:mono,fontSize:10,letterSpacing:2.5,color:'#3fcf8e',fontWeight:700,
                         pointerEvents:'none',
                         animation:'forjaTapPulse 2s ease-in-out infinite',
-                        whiteSpace:'nowrap'}}>
+                        whiteSpace:'nowrap',
+                        boxShadow:'0 4px 20px rgba(63,207,142,0.25)'}}>
                         👆 {lang==="es"||lang==="pt"?"TOCA UN MÚSCULO":lang==="it"?"TOCCA UN MUSCOLO":lang==="de"?"TIPPE EINEN MUSKEL":lang==="fr"?"TOUCHE UN MUSCLE":"TAP A MUSCLE"}
                       </div>
                     )}
-                    <style>{`
-                      @keyframes forjaTapPulse {
-                        0%, 100% { opacity: 0.85; transform: translateX(-50%) translateY(0); }
-                        50% { opacity: 1; transform: translateX(-50%) translateY(-2px); }
-                      }
-                    `}</style>
+                    {/* Selected group label — bottom-center floating */}
+                    {expressGroup&&(()=>{
+                      const g=EXPRESS_GROUPS.find(x=>x.id===expressGroup);
+                      return(
+                        <div style={{position:'absolute',bottom:6,left:'50%',
+                          transform:'translateX(-50%)',
+                          padding:'10px 18px',borderRadius:14,
+                          background:'rgba(8,10,14,0.85)',
+                          border:'1px solid '+intColor+'66',
+                          backdropFilter:'blur(8px)',WebkitBackdropFilter:'blur(8px)',
+                          textAlign:'center',
+                          boxShadow:'0 4px 24px '+intColor+'33',
+                          maxWidth:'85%',
+                          animation:'forjaLabelPop 0.3s ease-out'}}>
+                          <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,letterSpacing:2,
+                            color:intColor,lineHeight:1,
+                            textShadow:'0 0 14px '+intColor+'77'}}>
+                            {(g.label[lang]||g.label.es).toUpperCase()}
+                          </div>
+                          <div style={{fontFamily:mono,fontSize:7,color:"rgba(255,255,255,0.5)",
+                            letterSpacing:1.8,marginTop:5,fontWeight:700}}>
+                            {g.zones.slice(0,4).map(z=>z.replace(/_/g,' ').replace('izq','I').replace('der','D')).join(' · ').toUpperCase()}
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 );
               })()}
-              {/* Selected group label — dynamic and prominent */}
-              <div style={{marginTop:8,minHeight:48,display:"flex",flexDirection:"column",
-                alignItems:"center",justifyContent:"center"}}>
-                {expressGroup?(()=>{
-                  const g=EXPRESS_GROUPS.find(x=>x.id===expressGroup);
-                  const intColor=expressIntensity==='intense'?'#f0612a':expressIntensity==='soft'?'#4caf8e':'#3fcf8e';
-                  return(
-                    <div style={{textAlign:"center"}}>
-                      <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,letterSpacing:2,
-                        color:intColor,lineHeight:1,
-                        textShadow:'0 0 20px '+intColor+'66'}}>
-                        {(g.label[lang]||g.label.es).toUpperCase()}
-                      </div>
-                      <div style={{fontFamily:mono,fontSize:7,color:"rgba(255,255,255,0.4)",
-                        letterSpacing:2,marginTop:6,fontWeight:700}}>
-                        {g.zones.slice(0,4).map(z=>z.replace(/_/g,' ').replace('izq','I').replace('der','D')).join(' · ').toUpperCase()}
-                      </div>
-                    </div>
-                  );
-                })():(
-                  <div style={{fontFamily:mono,fontSize:9,color:"rgba(255,255,255,0.35)",
-                    letterSpacing:2,textAlign:"center",lineHeight:1.5}}>
-                    {lang==="es"||lang==="pt"?"↑ TOCA UNA ZONA DEL CUERPO":lang==="it"?"↑ TOCCA UNA ZONA DEL CORPO":lang==="de"?"↑ BERÜHRE EINE KÖRPERZONE":lang==="fr"?"↑ TOUCHE UNE ZONE DU CORPS":"↑ TAP A BODY ZONE"}
-                  </div>
-                )}
-              </div>
+              <style>{`
+                @keyframes forjaTapPulse {
+                  0%, 100% { opacity: 0.85; transform: translateX(-50%) translateY(0); }
+                  50% { opacity: 1; transform: translateX(-50%) translateY(-3px); }
+                }
+                @keyframes forjaLabelPop {
+                  0% { opacity: 0; transform: translateX(-50%) translateY(8px); }
+                  100% { opacity: 1; transform: translateX(-50%) translateY(0); }
+                }
+              `}</style>
             </div>
-            {/* Quick HIIT chip — full body alternative */}
-            <div style={{display:"flex",justifyContent:"center",marginBottom:14}}>
-              <button onClick={()=>{
-                setExpressGroup(expressGroup==='hiit'?null:'hiit');
-                try{if(navigator.vibrate)navigator.vibrate(8);}catch(_){}
-              }} style={{padding:"8px 18px",borderRadius:20,border:"none",cursor:"pointer",
-                background:expressGroup==='hiit'?"rgba(240,97,42,0.18)":"rgba(255,255,255,0.04)",
-                boxShadow:expressGroup==='hiit'?"0 0 0 1px #f0612aaa, 0 0 16px rgba(240,97,42,0.3)":"0 0 0 1px rgba(255,255,255,0.08)",
-                fontFamily:mono,fontSize:9,color:expressGroup==='hiit'?'#f0612a':'rgba(255,255,255,0.55)',
-                letterSpacing:2,fontWeight:700,
-                display:"flex",alignItems:"center",gap:6,
-                transition:"all .2s"}}>
-                <span style={{fontSize:13}}>⚡</span>
-                <span>HIIT · {lang==="es"||lang==="pt"?"CUERPO COMPLETO":lang==="it"?"CORPO INTERO":lang==="de"?"GANZER KÖRPER":lang==="fr"?"CORPS ENTIER":"FULL BODY"}</span>
+            {/* BOTTOM: controls + CTA (fixed at bottom) */}
+            <div style={{flexShrink:0,padding:"8px 18px 12px",
+              paddingBottom:"calc(12px + env(safe-area-inset-bottom))",
+              borderTop:"1px solid rgba(255,255,255,0.04)",
+              background:"rgba(0,0,0,0.2)"}}>
+              {/* HIIT chip — full body */}
+              <div style={{display:"flex",justifyContent:"center",marginBottom:10}}>
+                <button onClick={()=>{
+                  setExpressGroup(expressGroup==='hiit'?null:'hiit');
+                  try{if(navigator.vibrate)navigator.vibrate(8);}catch(_){}
+                }} style={{padding:"7px 16px",borderRadius:18,border:"none",cursor:"pointer",
+                  background:expressGroup==='hiit'?"rgba(240,97,42,0.18)":"rgba(255,255,255,0.04)",
+                  boxShadow:expressGroup==='hiit'?"0 0 0 1px #f0612aaa, 0 0 14px rgba(240,97,42,0.3)":"0 0 0 1px rgba(255,255,255,0.08)",
+                  fontFamily:mono,fontSize:9,color:expressGroup==='hiit'?'#f0612a':'rgba(255,255,255,0.55)',
+                  letterSpacing:2,fontWeight:700,
+                  display:"flex",alignItems:"center",gap:6,
+                  transition:"all .2s"}}>
+                  <span style={{fontSize:12}}>⚡</span>
+                  <span>HIIT · {lang==="es"||lang==="pt"?"CUERPO COMPLETO":lang==="it"?"CORPO INTERO":lang==="de"?"GANZER KÖRPER":lang==="fr"?"CORPS ENTIER":"FULL BODY"}</span>
+                </button>
+              </div>
+              {/* Inline labels + selectors row */}
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
+                {/* Duration */}
+                <div>
+                  <div style={{fontFamily:mono,fontSize:7,color:"rgba(255,255,255,0.4)",letterSpacing:2,marginBottom:5,paddingLeft:2,fontWeight:700,textAlign:"center"}}>
+                    {lang==="es"||lang==="pt"?"DURACIÓN":lang==="it"?"DURATA":lang==="de"?"DAUER":lang==="fr"?"DURÉE":"DURATION"}
+                  </div>
+                  <div style={{display:"flex",gap:3,padding:3,
+                    background:"rgba(0,0,0,0.3)",borderRadius:11,
+                    border:"1px solid rgba(255,255,255,0.04)"}}>
+                    {[10,15,20].map(mins=>{
+                      const sel=expressTime===mins;
+                      return(
+                      <button key={mins} onClick={()=>{
+                        setExpressTime(mins);
+                        try{if(navigator.vibrate)navigator.vibrate(5);}catch(_){}
+                      }}
+                        style={{flex:1,padding:"8px 0",borderRadius:8,border:"none",cursor:"pointer",
+                          background:sel?"rgba(255,255,255,0.14)":"transparent",
+                          color:sel?"#fff":"rgba(255,255,255,0.4)",
+                          fontFamily:mono,fontSize:10,letterSpacing:1,fontWeight:700,
+                          boxShadow:sel?"inset 0 1px 0 rgba(255,255,255,0.08), 0 2px 8px rgba(0,0,0,0.3)":"none",
+                          transition:"all .15s"}}>
+                        {mins}
+                      </button>
+                    );})}
+                  </div>
+                </div>
+                {/* Intensity */}
+                <div>
+                  <div style={{fontFamily:mono,fontSize:7,color:"rgba(255,255,255,0.4)",letterSpacing:2,marginBottom:5,paddingLeft:2,fontWeight:700,textAlign:"center"}}>
+                    {lang==="es"||lang==="pt"?"INTENSIDAD":lang==="it"?"INTENSITÀ":lang==="de"?"INTENSITÄT":lang==="fr"?"INTENSITÉ":"INTENSITY"}
+                  </div>
+                  <div style={{display:"flex",gap:3,padding:3,
+                    background:"rgba(0,0,0,0.3)",borderRadius:11,
+                    border:"1px solid rgba(255,255,255,0.04)"}}>
+                    {[
+                      {id:"soft",icon:"🌱",color:"#4caf8e",bg:"rgba(76,175,142,0.22)"},
+                      {id:"medium",icon:"⚡",color:"#3fcf8e",bg:"rgba(63,207,142,0.22)"},
+                      {id:"intense",icon:"🔥",color:"#f0612a",bg:"rgba(240,97,42,0.22)"},
+                    ].map(it=>{
+                      const sel=expressIntensity===it.id;
+                      return(
+                      <button key={it.id} onClick={()=>{
+                        setExpressIntensity(it.id);
+                        try{if(navigator.vibrate)navigator.vibrate(5);}catch(_){}
+                      }}
+                        style={{flex:1,padding:"8px 0",borderRadius:8,border:"none",cursor:"pointer",
+                          background:sel?it.bg:"transparent",
+                          transition:"all .15s",
+                          boxShadow:sel?"inset 0 1px 0 rgba(255,255,255,0.1), 0 0 0 1px "+it.color+"55":"none",
+                          display:"flex",alignItems:"center",justifyContent:"center"}}>
+                        <span style={{fontSize:13,opacity:sel?1:0.4}}>{it.icon}</span>
+                      </button>
+                    );})}
+                  </div>
+                </div>
+              </div>
+              {/* Primary CTA */}
+              <button
+                disabled={!expressGroup}
+                onClick={()=>{
+                  if(!expressGroup) return;
+                  try{if(navigator.vibrate)navigator.vibrate([10,30,10]);}catch(_){}
+                  const circuit=pickExpressCircuit(expressGroup,expressTime,expressIntensity);
+                  if(!circuit) return;
+                  const g=EXPRESS_GROUPS.find(x=>x.id===expressGroup);
+                  const expressDay={
+                    l:(g.label[lang]||g.label.es)+' · '+expressTime+'min',
+                    ex:circuit,
+                    isExpress:true,
+                    expressZones:g.zones,
+                    intensity:expressIntensity,
+                  };
+                  setExpressDay(expressDay);
+                  setShowExpress(false);
+                  setInWorkout(true);
+                }}
+                style={{width:"100%",padding:"15px",borderRadius:14,border:"none",
+                  cursor:expressGroup?"pointer":"not-allowed",
+                  background:expressGroup?(expressIntensity==='intense'?"linear-gradient(180deg,#ff7c45,#f0612a)":expressIntensity==='soft'?"linear-gradient(180deg,#5dd9a3,#4caf8e)":"linear-gradient(180deg,#4ddb9c,#3fcf8e)"):"rgba(255,255,255,0.04)",
+                  color:expressGroup?"#080a0e":"rgba(255,255,255,0.3)",
+                  fontFamily:mono,fontSize:11,fontWeight:800,letterSpacing:2.5,
+                  boxShadow:expressGroup?(expressIntensity==='intense'?"0 8px 24px rgba(240,97,42,0.35), inset 0 1px 0 rgba(255,255,255,0.25)":expressIntensity==='soft'?"0 8px 24px rgba(76,175,142,0.3), inset 0 1px 0 rgba(255,255,255,0.25)":"0 8px 24px rgba(63,207,142,0.3), inset 0 1px 0 rgba(255,255,255,0.25)"):"none",
+                  transition:"all .2s"}}>
+                {expressGroup
+                  ?(()=>{
+                    const g=EXPRESS_GROUPS.find(x=>x.id===expressGroup);
+                    const verb=lang==="es"||lang==="pt"?"FORJAR":lang==="it"?"FORGIARE":lang==="de"?"SCHMIEDEN":lang==="fr"?"FORGER":"FORGE";
+                    return verb+" "+(g.label[lang]||g.label.es).toUpperCase()+" ⚡";
+                  })()
+                  :(lang==="es"||lang==="pt"?"ELIGE UNA ZONA ↑":lang==="it"?"SCEGLI UNA ZONA ↑":lang==="de"?"WÄHLE EINE ZONE ↑":lang==="fr"?"CHOISIS UNE ZONE ↑":"PICK A ZONE ↑")}
               </button>
             </div>
-            {/* Time selector — improved contrast */}
-            <div style={{fontFamily:mono,fontSize:7,color:"rgba(255,255,255,0.4)",letterSpacing:2,marginBottom:8,paddingLeft:4,fontWeight:700}}>
-              {lang==="es"||lang==="pt"?"DURACIÓN":lang==="it"?"DURATA":lang==="de"?"DAUER":lang==="fr"?"DURÉE":"DURATION"}
-            </div>
-            <div style={{display:"flex",gap:6,padding:4,
-              background:"rgba(0,0,0,0.25)",borderRadius:14,marginBottom:14,
-              border:"1px solid rgba(255,255,255,0.04)"}}>
-              {[10,15,20].map(mins=>{
-                const sel=expressTime===mins;
-                return(
-                <button key={mins} onClick={()=>{
-                  setExpressTime(mins);
-                  try{if(navigator.vibrate)navigator.vibrate(5);}catch(_){}
-                }}
-                  style={{flex:1,padding:"11px 0",borderRadius:10,border:"none",cursor:"pointer",
-                    background:sel?"rgba(255,255,255,0.14)":"transparent",
-                    color:sel?"#fff":"rgba(255,255,255,0.4)",
-                    fontFamily:mono,fontSize:11,letterSpacing:1.5,fontWeight:700,
-                    boxShadow:sel?"inset 0 1px 0 rgba(255,255,255,0.08), 0 2px 8px rgba(0,0,0,0.3)":"none",
-                    transition:"all .15s"}}>
-                  {mins}<span style={{opacity:.6,marginLeft:2}}>min</span>
-                </button>
-              );})}
-            </div>
-            {/* Intensity selector — STRONG visual feedback */}
-            <div style={{fontFamily:mono,fontSize:7,color:"rgba(255,255,255,0.4)",letterSpacing:2,marginBottom:8,paddingLeft:4,fontWeight:700}}>
-              {lang==="es"||lang==="pt"?"INTENSIDAD":lang==="it"?"INTENSITÀ":lang==="de"?"INTENSITÄT":lang==="fr"?"INTENSITÉ":"INTENSITY"}
-            </div>
-            <div style={{display:"flex",gap:6,padding:4,
-              background:"rgba(0,0,0,0.25)",borderRadius:14,marginBottom:18,
-              border:"1px solid rgba(255,255,255,0.04)"}}>
-              {[
-                {id:"soft",icon:"🌱",color:"#4caf8e",bg:"rgba(76,175,142,0.22)"},
-                {id:"medium",icon:"⚡",color:"#3fcf8e",bg:"rgba(63,207,142,0.22)"},
-                {id:"intense",icon:"🔥",color:"#f0612a",bg:"rgba(240,97,42,0.22)"},
-              ].map(it=>{
-                const sel=expressIntensity===it.id;
-                return(
-                <button key={it.id} onClick={()=>{
-                  setExpressIntensity(it.id);
-                  try{if(navigator.vibrate)navigator.vibrate(5);}catch(_){}
-                }}
-                  style={{flex:1,padding:"11px 0",borderRadius:10,border:"none",cursor:"pointer",
-                    background:sel?it.bg:"transparent",
-                    transition:"all .15s",
-                    boxShadow:sel?"inset 0 1px 0 rgba(255,255,255,0.1), 0 2px 12px "+it.color+"44, 0 0 0 1px "+it.color+"55":"none",
-                    display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                  <span style={{fontSize:13,opacity:sel?1:0.45}}>{it.icon}</span>
-                  <span style={{fontFamily:mono,fontSize:9,letterSpacing:1.5,fontWeight:700,
-                    color:sel?it.color:"rgba(255,255,255,0.4)"}}>
-                    {EXPRESS_INTENSITY[it.id].label[lang]||EXPRESS_INTENSITY[it.id].label.es}
-                  </span>
-                </button>
-              );})}
-            </div>
-            {/* Primary action — adaptive copy */}
-            <button
-              disabled={!expressGroup}
-              onClick={()=>{
-                if(!expressGroup) return;
-                try{if(navigator.vibrate)navigator.vibrate([10,30,10]);}catch(_){}
-                const circuit=pickExpressCircuit(expressGroup,expressTime,expressIntensity);
-                if(!circuit) return;
-                const g=EXPRESS_GROUPS.find(x=>x.id===expressGroup);
-                const expressDay={
-                  l:(g.label[lang]||g.label.es)+' · '+expressTime+'min',
-                  ex:circuit,
-                  isExpress:true,
-                  expressZones:g.zones,
-                  intensity:expressIntensity,
-                };
-                setExpressDay(expressDay);
-                setShowExpress(false);
-                setInWorkout(true);
-              }}
-              style={{width:"100%",padding:"17px",borderRadius:16,border:"none",
-                cursor:expressGroup?"pointer":"not-allowed",
-                background:expressGroup?(expressIntensity==='intense'?"linear-gradient(180deg,#ff7c45,#f0612a)":expressIntensity==='soft'?"linear-gradient(180deg,#5dd9a3,#4caf8e)":"linear-gradient(180deg,#4ddb9c,#3fcf8e)"):"rgba(255,255,255,0.04)",
-                color:expressGroup?"#080a0e":"rgba(255,255,255,0.3)",
-                fontFamily:mono,fontSize:12,fontWeight:800,letterSpacing:3,
-                boxShadow:expressGroup?(expressIntensity==='intense'?"0 8px 24px rgba(240,97,42,0.35), inset 0 1px 0 rgba(255,255,255,0.25)":expressIntensity==='soft'?"0 8px 24px rgba(76,175,142,0.3), inset 0 1px 0 rgba(255,255,255,0.25)":"0 8px 24px rgba(63,207,142,0.3), inset 0 1px 0 rgba(255,255,255,0.25)"):"none",
-                transition:"all .2s"}}>
-              {expressGroup
-                ?(()=>{
-                  const g=EXPRESS_GROUPS.find(x=>x.id===expressGroup);
-                  const verb=lang==="es"||lang==="pt"?"FORJAR":lang==="it"?"FORGIARE":lang==="de"?"SCHMIEDEN":lang==="fr"?"FORGER":"FORGE";
-                  return verb+" "+(g.label[lang]||g.label.es).toUpperCase()+" ⚡";
-                })()
-                :(lang==="es"||lang==="pt"?"ELIGE UNA ZONA ↑":lang==="it"?"SCEGLI UNA ZONA ↑":lang==="de"?"WÄHLE EINE ZONE ↑":lang==="fr"?"CHOISIS UNE ZONE ↑":"PICK A ZONE ↑")}
-            </button>
           </div>
         </div>
       )}
