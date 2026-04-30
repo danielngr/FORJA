@@ -235,6 +235,26 @@ function getUserEmail(){
 function doGoogleSignIn(){
   const sb=getSB();
   if(!sb){ console.error('FORJA: Supabase not available'); return; }
+
+  // CRITICAL: Preserve onboarding/anonymous data before signing out
+  // Without this, completing onboarding then logging in with Google loses all data
+  // because we sign out the anonymous user (which clears localStorage in some flows)
+  try{
+    const pendingData={};
+    ['fv8p','fv8r','fv8l','fv8_mxp','fv8_dl','fv8_sh','fv8_lang','fv8_toured'].forEach(function(k){
+      const v=localStorage.getItem(k);
+      if(v)pendingData[k]=v;
+    });
+    if(Object.keys(pendingData).length>0){
+      // Use a special key that survives signOut cleanup
+      sessionStorage.setItem('forja_pending_migration',JSON.stringify({
+        data:pendingData,
+        timestamp:Date.now()
+      }));
+      console.log('FORJA: preserved '+Object.keys(pendingData).length+' keys for migration');
+    }
+  }catch(e){console.warn('FORJA: failed to preserve data',e);}
+
   console.log('FORJA: Signing out anonymous session before Google OAuth...');
   // Must sign out anonymous session first — otherwise Supabase ignores the OAuth response
   sb.auth.signOut().finally(function(){
@@ -251,6 +271,84 @@ function doGoogleSignIn(){
     }).catch(function(e){ console.error('FORJA: OAuth catch:', e.message); });
   });
 }
+
+// Restore pending migration data after OAuth login
+// Called after successful auth — restores localStorage and uploads to Supabase under new user_id
+async function migratePendingData(){
+  try{
+    const raw=sessionStorage.getItem('forja_pending_migration');
+    if(!raw)return false;
+    const pending=JSON.parse(raw);
+    if(!pending||!pending.data)return false;
+    // Check timestamp — discard if older than 10 minutes
+    if(Date.now()-pending.timestamp>10*60*1000){
+      sessionStorage.removeItem('forja_pending_migration');
+      return false;
+    }
+    console.log('FORJA: migrating '+Object.keys(pending.data).length+' keys to new account');
+    // Restore to localStorage
+    Object.keys(pending.data).forEach(function(k){
+      try{localStorage.setItem(k,pending.data[k]);}catch(_){}
+    });
+    // Upload profile + routine to Supabase under new user_id
+    const sb=getSB();
+    const u=await ensureAuth();
+    if(sb && u){
+      try{
+        if(pending.data.fv8p){
+          const profile=JSON.parse(pending.data.fv8p);
+          const routine=pending.data.fv8r?JSON.parse(pending.data.fv8r):null;
+          await sb.from('user_profiles').upsert({
+            user_id:u.id,
+            profile_data:profile,
+            routine_data:routine,
+            updated_at:new Date().toISOString()
+          },{onConflict:'user_id'});
+          console.log('FORJA: profile+routine migrated to Supabase');
+        }
+        if(pending.data.fv8_mxp){
+          const xp=JSON.parse(pending.data.fv8_mxp);
+          await sb.from('muscle_xp').upsert({
+            user_id:u.id,
+            xp_data:xp,
+            updated_at:new Date().toISOString()
+          },{onConflict:'user_id'});
+          console.log('FORJA: muscle XP migrated');
+        }
+        // Logs — convert object to rows
+        if(pending.data.fv8l){
+          const logs=JSON.parse(pending.data.fv8l);
+          const rows=[];
+          Object.keys(logs).forEach(function(exId){
+            (logs[exId]||[]).forEach(function(entry){
+              rows.push({
+                user_id:u.id,
+                exercise_id:exId,
+                logged_at:entry.d||new Date().toISOString(),
+                weight_kg:entry.w||0,
+                reps:entry.r||0,
+                estimated_1rm:entry.rm||0
+              });
+            });
+          });
+          if(rows.length>0){
+            // Insert in batches of 100
+            for(let i=0;i<rows.length;i+=100){
+              await sb.from('exercise_logs').insert(rows.slice(i,i+100));
+            }
+            console.log('FORJA: '+rows.length+' logs migrated');
+          }
+        }
+      }catch(e){console.error('FORJA: migration upload error',e);}
+    }
+    sessionStorage.removeItem('forja_pending_migration');
+    return true;
+  }catch(e){
+    console.error('FORJA: migration failed',e);
+    return false;
+  }
+}
+window.__forjaMigratePendingData=migratePendingData;
 
 function doSignOut(){
   const sb=getSB();
@@ -2209,14 +2307,31 @@ const EXPRESS_GROUPS=[
     [{e:"Elevación de piernas",s:3,work:40,rest:15},{e:"Plancha",s:3,work:45,rest:15},{e:"Russian twist",s:3,work:35,rest:15},{e:"Mountain climbers",s:2,work:30,rest:15}],
    ]},
 ]
-function pickExpressCircuit(groupId, targetMins){
+// Intensity multipliers — affect work duration, rest duration, and total sets
+// Soft: more rest, less work, fewer sets — for beginners or active recovery
+// Intermediate: balanced (baseline)
+// Intense: less rest, more work, more sets — challenge mode
+const EXPRESS_INTENSITY={
+  soft:     {workMul:0.85, restMul:1.30, setMul:0.85, label:{es:"SUAVE",en:"EASY",it:"FACILE",fr:"FACILE",pt:"FÁCIL",de:"LEICHT"}},
+  medium:   {workMul:1.00, restMul:1.00, setMul:1.00, label:{es:"INTERMEDIO",en:"MEDIUM",it:"MEDIO",fr:"MOYEN",pt:"MÉDIO",de:"MITTEL"}},
+  intense:  {workMul:1.20, restMul:0.70, setMul:1.20, label:{es:"INTENSIVO",en:"INTENSE",it:"INTENSO",fr:"INTENSE",pt:"INTENSO",de:"INTENSIV"}},
+};
+function pickExpressCircuit(groupId, targetMins, intensity){
   const g=EXPRESS_GROUPS.find(x=>x.id===groupId);
   if(!g) return null;
+  const intMul=EXPRESS_INTENSITY[intensity]||EXPRESS_INTENSITY.medium;
   const circuit=g.circuits[Math.floor(Math.random()*g.circuits.length)];
-  const naturalSecs=circuit.reduce((sum,ex)=>sum+ex.s*(ex.work+ex.rest),0);
+  // Apply intensity multipliers BEFORE matching to target time
+  const adjusted=circuit.map(ex=>({
+    ...ex,
+    s:Math.max(1,Math.round(ex.s*intMul.setMul)),
+    work:Math.max(15,Math.round(ex.work*intMul.workMul)),
+    rest:Math.max(10,Math.round(ex.rest*intMul.restMul)),
+  }));
+  const naturalSecs=adjusted.reduce((sum,ex)=>sum+ex.s*(ex.work+ex.rest),0);
   const naturalMins=naturalSecs/60;
   const ratio=targetMins/naturalMins;
-  return circuit.map(ex=>({
+  return adjusted.map(ex=>({
     ...ex,
     s:Math.max(1,Math.round(ex.s*ratio)),
     id:'exp_'+ex.e.toLowerCase().replace(/\s+/g,'_'),
@@ -5927,6 +6042,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   const[showExpress,setShowExpress]=useState(false);
   const[expressGroup,setExpressGroup]=useState(null);
   const[expressTime,setExpressTime]=useState(15);
+  const[expressIntensity,setExpressIntensity]=useState("medium");
   const[expressDay,setExpressDay]=useState(null);
   const[addEx,setAddEx]=useState(false);
   const[nex,setNex]=useState({e:"",s:3,r:"8-12"});
@@ -6172,15 +6288,19 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   if(inWorkout&&day&&day.ex&&day.ex.length){
     if(expressDay){
       return <ExpressTimer day={expressDay} lang={lang} profile={profile}
-        onDone={(zonesWorked)=>{
+        onDone={(zonesWorked,sessionXP)=>{
           if(zonesWorked&&zonesWorked.length){
             const newMxp={...JSON.parse(localStorage.getItem('fv8_mxp')||'{}')};
             zonesWorked.forEach(zk=>{
               if(!newMxp[zk])newMxp[zk]={xp:0,level:1};
               newMxp[zk].lastTrain=new Date().toISOString().slice(0,10);
-              newMxp[zk].xp=(newMxp[zk].xp||0)+20;
+              // Use granular XP per zone if provided, else fallback to flat 20
+              const gainedXP=(sessionXP&&sessionXP[zk])||20;
+              newMxp[zk].xp=(newMxp[zk].xp||0)+gainedXP;
             });
             try{localStorage.setItem('fv8_mxp',JSON.stringify(newMxp));}catch(_){}
+            // Sync to Supabase via FStore
+            try{if(typeof FStore!=='undefined'&&FStore.saveMuscleXP)FStore.saveMuscleXP(newMxp);}catch(_){}
           }
           const today=new Date().toISOString().slice(0,10);
           try{
@@ -6855,65 +6975,111 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
       </div>
       {showExpress&&(
         <div onClick={()=>setShowExpress(false)} style={{position:"fixed",inset:0,zIndex:9000,
-          background:"rgba(0,0,0,0.85)",display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
+          background:"rgba(0,0,0,0.7)",backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)",
+          display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
           <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:480,
-            background:"#131720",borderRadius:"24px 24px 0 0",padding:"24px 20px 40px",
-            boxShadow:"0 -8px 40px rgba(0,0,0,0.6)"}}>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
-              <div>
-                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,letterSpacing:2,color:"#f0f2f5",lineHeight:1}}>
-                  ⚡ {lang==="es"||lang==="pt"?"ENTRENO EXPRESS":lang==="it"?"ALLENAMENTO EXPRESS":lang==="de"?"EXPRESS-TRAINING":lang==="fr"?"ENTRAÎNEMENT EXPRESS":"EXPRESS WORKOUT"}
-                </div>
-                <div style={{fontFamily:mono,fontSize:8,color:"rgba(255,255,255,0.35)",letterSpacing:2,marginTop:4}}>
-                  {lang==="es"||lang==="pt"?"BODYWEIGHT · SIN EQUIPO":lang==="it"?"SOLO PESO CORPOREO":lang==="de"?"NUR KÖRPERGEWICHT":lang==="fr"?"POIDS DU CORPS UNIQUEMENT":"BODYWEIGHT · NO EQUIPMENT"}
-                </div>
+            background:"#131720",borderRadius:"28px 28px 0 0",padding:"12px 18px 32px",
+            boxShadow:"0 -8px 40px rgba(0,0,0,0.6)",
+            paddingBottom:"calc(32px + env(safe-area-inset-bottom))"}}>
+            {/* iOS-style drag handle */}
+            <div style={{width:36,height:4,background:"rgba(255,255,255,0.18)",borderRadius:2,
+              margin:"0 auto 18px"}}/>
+            {/* Compact header — single line */}
+            <div style={{textAlign:"center",marginBottom:22}}>
+              <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:30,letterSpacing:2,
+                color:"#f0f2f5",lineHeight:1}}>
+                ⚡ {lang==="es"||lang==="pt"?"EXPRESS":lang==="it"?"EXPRESS":lang==="de"?"EXPRESS":lang==="fr"?"EXPRESS":"EXPRESS"}
               </div>
-              <button onClick={()=>setShowExpress(false)} style={{background:"none",border:"none",
-                color:"rgba(255,255,255,0.4)",fontSize:20,cursor:"pointer",padding:"4px 8px"}}>✕</button>
+              <div style={{fontFamily:mono,fontSize:8,color:"rgba(255,255,255,0.35)",letterSpacing:2.5,marginTop:6}}>
+                {lang==="es"||lang==="pt"?"SIN EQUIPO · BODYWEIGHT":lang==="it"?"SOLO PESO CORPOREO":lang==="de"?"NUR KÖRPERGEWICHT":lang==="fr"?"POIDS DU CORPS":"BODYWEIGHT · NO EQUIPMENT"}
+              </div>
             </div>
-            <div style={{marginBottom:18}}>
-              <div style={{fontFamily:mono,fontSize:8,color:"rgba(255,255,255,0.35)",letterSpacing:2,marginBottom:10}}>
-                {lang==="es"||lang==="pt"?"¿CUÁNTO TIEMPO TIENES?":lang==="it"?"QUANTO TEMPO HAI?":lang==="de"?"WIEVIEL ZEIT HAST DU?":lang==="fr"?"COMBIEN DE TEMPS AS-TU?":"HOW MUCH TIME DO YOU HAVE?"}
+            {/* MUSCLE GROUP — primary choice, biggest visual */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:20}}>
+              {EXPRESS_GROUPS.map(g=>{
+                const sel=expressGroup===g.id;
+                return(
+                <button key={g.id} onClick={()=>{
+                  setExpressGroup(sel?null:g.id);
+                  // Haptic feedback
+                  try{if(navigator.vibrate)navigator.vibrate(8);}catch(_){}
+                }}
+                  style={{padding:"18px 12px",borderRadius:16,border:"none",cursor:"pointer",
+                    textAlign:"center",
+                    background:sel?"rgba(63,207,142,0.18)":"rgba(255,255,255,0.04)",
+                    boxShadow:sel?"0 0 0 1.5px #3fcf8e88, inset 0 1px 0 rgba(255,255,255,0.05)":"inset 0 1px 0 rgba(255,255,255,0.04)",
+                    transition:"all .2s",position:"relative"}}>
+                  <div style={{fontSize:32,marginBottom:8,opacity:sel?1:0.7,transition:"opacity .2s"}}>{g.icon}</div>
+                  <div style={{fontFamily:mono,fontSize:9,
+                    color:sel?"#3fcf8e":"rgba(255,255,255,0.6)",
+                    letterSpacing:1.5,fontWeight:700,
+                    textTransform:"uppercase"}}>
+                    {g.label[lang]||g.label.es}
+                  </div>
+                </button>
+              );})}
+            </div>
+            {/* Time + Intensity as iOS segmented controls */}
+            <div style={{marginBottom:10}}>
+              <div style={{fontFamily:mono,fontSize:7,color:"rgba(255,255,255,0.32)",letterSpacing:2,marginBottom:8,paddingLeft:4}}>
+                {lang==="es"||lang==="pt"?"DURACIÓN":lang==="it"?"DURATA":lang==="de"?"DAUER":lang==="fr"?"DURÉE":"DURATION"}
               </div>
-              <div style={{display:"flex",gap:8}}>
-                {[10,15,20].map(mins=>(
-                  <button key={mins} onClick={()=>setExpressTime(mins)}
-                    style={{flex:1,padding:"12px 0",borderRadius:12,border:"none",cursor:"pointer",
-                      background:expressTime===mins?"rgba(63,207,142,0.2)":"rgba(255,255,255,0.06)",
-                      color:expressTime===mins?"#3fcf8e":"rgba(255,255,255,0.5)",
-                      fontFamily:"'Bebas Neue',cursive",fontSize:22,letterSpacing:1,
-                      boxShadow:expressTime===mins?"0 0 0 1.5px #3fcf8e44":"none",
-                      transition:"all .2s"}}>
-                    {mins}<span style={{fontSize:11,opacity:.7}}>min</span>
+              <div style={{display:"flex",gap:4,padding:4,
+                background:"rgba(255,255,255,0.04)",borderRadius:12,marginBottom:14}}>
+                {[10,15,20].map(mins=>{
+                  const sel=expressTime===mins;
+                  return(
+                  <button key={mins} onClick={()=>{
+                    setExpressTime(mins);
+                    try{if(navigator.vibrate)navigator.vibrate(5);}catch(_){}
+                  }}
+                    style={{flex:1,padding:"10px 0",borderRadius:8,border:"none",cursor:"pointer",
+                      background:sel?"rgba(255,255,255,0.10)":"transparent",
+                      color:sel?"#fff":"rgba(255,255,255,0.45)",
+                      fontFamily:mono,fontSize:11,letterSpacing:1.5,fontWeight:700,
+                      boxShadow:sel?"inset 0 1px 0 rgba(255,255,255,0.08)":"none",
+                      transition:"all .15s"}}>
+                    {mins}<span style={{opacity:.6,marginLeft:2}}>min</span>
                   </button>
-                ))}
+                );})}
               </div>
-            </div>
-            <div style={{marginBottom:22}}>
-              <div style={{fontFamily:mono,fontSize:8,color:"rgba(255,255,255,0.35)",letterSpacing:2,marginBottom:10}}>
-                {lang==="es"||lang==="pt"?"ZONA MUSCULAR":lang==="it"?"ZONA MUSCOLARE":lang==="de"?"MUSKELGRUPPE":lang==="fr"?"GROUPE MUSCULAIRE":"MUSCLE GROUP"}
+              <div style={{fontFamily:mono,fontSize:7,color:"rgba(255,255,255,0.32)",letterSpacing:2,marginBottom:8,paddingLeft:4}}>
+                {lang==="es"||lang==="pt"?"INTENSIDAD":lang==="it"?"INTENSITÀ":lang==="de"?"INTENSITÄT":lang==="fr"?"INTENSITÉ":"INTENSITY"}
               </div>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-                {EXPRESS_GROUPS.map(g=>(
-                  <button key={g.id} onClick={()=>setExpressGroup(expressGroup===g.id?null:g.id)}
-                    style={{padding:"12px 10px",borderRadius:12,border:"none",cursor:"pointer",
-                      textAlign:"left",
-                      background:expressGroup===g.id?"rgba(63,207,142,0.15)":"rgba(255,255,255,0.05)",
-                      boxShadow:expressGroup===g.id?"0 0 0 1.5px #3fcf8e55":"none",
-                      transition:"all .2s"}}>
-                    <div style={{fontSize:18,marginBottom:3}}>{g.icon}</div>
-                    <div style={{fontFamily:mono,fontSize:8,
-                      color:expressGroup===g.id?"#3fcf8e":"rgba(255,255,255,0.55)",
-                      letterSpacing:1,lineHeight:1.3}}>{g.label[lang]||g.label.es}</div>
+              <div style={{display:"flex",gap:4,padding:4,
+                background:"rgba(255,255,255,0.04)",borderRadius:12,marginBottom:24}}>
+                {[
+                  {id:"soft",icon:"🌱",color:"#4caf8e"},
+                  {id:"medium",icon:"⚡",color:"#3fcf8e"},
+                  {id:"intense",icon:"🔥",color:"#f0612a"},
+                ].map(it=>{
+                  const sel=expressIntensity===it.id;
+                  return(
+                  <button key={it.id} onClick={()=>{
+                    setExpressIntensity(it.id);
+                    try{if(navigator.vibrate)navigator.vibrate(5);}catch(_){}
+                  }}
+                    style={{flex:1,padding:"10px 0",borderRadius:8,border:"none",cursor:"pointer",
+                      background:sel?"rgba(255,255,255,0.10)":"transparent",
+                      transition:"all .15s",
+                      boxShadow:sel?"inset 0 1px 0 rgba(255,255,255,0.08)":"none",
+                      display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                    <span style={{fontSize:14,opacity:sel?1:0.5}}>{it.icon}</span>
+                    <span style={{fontFamily:mono,fontSize:9,letterSpacing:1.5,fontWeight:700,
+                      color:sel?it.color:"rgba(255,255,255,0.45)"}}>
+                      {EXPRESS_INTENSITY[it.id].label[lang]||EXPRESS_INTENSITY[it.id].label.es}
+                    </span>
                   </button>
-                ))}
+                );})}
               </div>
             </div>
+            {/* Primary action */}
             <button
               disabled={!expressGroup}
               onClick={()=>{
                 if(!expressGroup) return;
-                const circuit=pickExpressCircuit(expressGroup,expressTime);
+                try{if(navigator.vibrate)navigator.vibrate([10,30,10]);}catch(_){}
+                const circuit=pickExpressCircuit(expressGroup,expressTime,expressIntensity);
                 if(!circuit) return;
                 const g=EXPRESS_GROUPS.find(x=>x.id===expressGroup);
                 const expressDay={
@@ -6921,18 +7087,22 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                   ex:circuit,
                   isExpress:true,
                   expressZones:g.zones,
+                  intensity:expressIntensity,
                 };
                 setExpressDay(expressDay);
                 setShowExpress(false);
                 setInWorkout(true);
               }}
-              style={{width:"100%",padding:"16px",borderRadius:14,border:"none",
+              style={{width:"100%",padding:"18px",borderRadius:16,border:"none",
                 cursor:expressGroup?"pointer":"not-allowed",
-                background:expressGroup?"#3fcf8e":"rgba(255,255,255,0.08)",
+                background:expressGroup?"linear-gradient(180deg,#4ddb9c,#3fcf8e)":"rgba(255,255,255,0.05)",
                 color:expressGroup?"#080a0e":"rgba(255,255,255,0.25)",
-                fontFamily:mono,fontSize:11,fontWeight:700,letterSpacing:2,
+                fontFamily:mono,fontSize:12,fontWeight:800,letterSpacing:3,
+                boxShadow:expressGroup?"0 8px 24px rgba(63,207,142,0.25), inset 0 1px 0 rgba(255,255,255,0.2)":"none",
                 transition:"all .2s"}}>
-              {lang==="es"||lang==="pt"?"EMPEZAR ⚡":lang==="it"?"INIZIA ⚡":lang==="de"?"STARTEN ⚡":lang==="fr"?"COMMENCER ⚡":"START ⚡"}
+              {expressGroup
+                ?(lang==="es"||lang==="pt"?"EMPEZAR ⚡":lang==="it"?"INIZIA ⚡":lang==="de"?"STARTEN ⚡":lang==="fr"?"COMMENCER ⚡":"START ⚡")
+                :(lang==="es"||lang==="pt"?"ELIGE UNA ZONA":lang==="it"?"SCEGLI UNA ZONA":lang==="de"?"WÄHLE EINE ZONE":lang==="fr"?"CHOISIS UNE ZONE":"PICK A ZONE")}
             </button>
           </div>
         </div>
@@ -7001,9 +7171,192 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
       )}
   </>);
 }
+// ════════════════════════════════════════════════════════════════════
+// MiniAnatomy — Cuerpo humano SVG estilizado para visualizar trabajo muscular
+// Usado en pantallas Express (READY/REST/DONE) para conectar el ejercicio
+// con el sistema XP/anatomía de FORJA.
+// Props:
+//   activeZones: array de zone IDs ('pecho','quad','tricep_izq', etc)
+//                que se iluminan con un color
+//   workedZones: array de zone IDs que pulsan (ya trabajados, en REST)
+//   xpDeltas: {zone: deltaXP} para mostrar +XP flotantes en DONE
+//   intensity: 'soft'|'medium'|'intense' — afecta colores e intensidad
+//   size: ancho del SVG (alto se calcula 2x)
+//   view: 'front'|'back'|'both' (default 'both')
+// ════════════════════════════════════════════════════════════════════
+function MiniAnatomy({activeZones=[], workedZones=[], xpDeltas={}, intensity='medium', size=180, view='both'}){
+  const intensityColor=intensity==='intense'?'#f0612a':intensity==='soft'?'#4caf8e':'#3fcf8e';
+  const w=view==='both'?size*1.6:size;
+  const h=size*1.8;
+  // SVG paths simplificados pero anatómicamente reconocibles del cuerpo
+  // Coordenadas relativas a viewBox 100x180 (front) y se duplica para back
+  // Front view paths
+  const FRONT={
+    head:    "M50 8 Q57 8 58 16 Q58 23 57 26 Q56 31 50 32 Q44 31 43 26 Q42 23 42 16 Q43 8 50 8",
+    pecho:   "M36 38 Q50 36 64 38 L66 50 Q50 53 34 50 Z",
+    abdomen: "M40 53 Q50 55 60 53 L59 70 Q50 72 41 70 Z",
+    oblicuos:"M34 50 L40 53 L41 70 L33 67 Z M66 50 L60 53 L59 70 L67 67 Z",
+    hombro_izq:"M30 36 Q26 38 25 44 Q26 47 30 46 Q34 44 36 39 Z",
+    hombro_der:"M70 36 Q74 38 75 44 Q74 47 70 46 Q66 44 64 39 Z",
+    bicep_izq:"M26 47 Q22 52 22 60 Q23 67 27 67 Q31 65 30 58 Q29 50 28 47 Z",
+    bicep_der:"M74 47 Q78 52 78 60 Q77 67 73 67 Q69 65 70 58 Q71 50 72 47 Z",
+    antebrazo_izq:"M22 67 Q20 75 21 84 Q23 89 27 88 Q29 80 28 71 Z",
+    antebrazo_der:"M78 67 Q80 75 79 84 Q77 89 73 88 Q71 80 72 71 Z",
+    quad:    "M40 73 Q44 76 44 95 Q43 110 41 118 Q38 119 36 117 Q35 100 36 86 Q37 76 40 73 Z M60 73 Q56 76 56 95 Q57 110 59 118 Q62 119 64 117 Q65 100 64 86 Q63 76 60 73 Z",
+    gemelos: "M37 122 Q36 135 37 148 Q39 152 42 151 Q43 138 42 124 Z M63 122 Q64 135 63 148 Q61 152 58 151 Q57 138 58 124 Z",
+    tibia:   "M41 122 L42 152 L41 162 L39 161 Q39 140 40 122 Z M59 122 L58 152 L59 162 L61 161 Q61 140 60 122 Z",
+  };
+  // Back view paths (mirror of front, with back-specific muscles)
+  const BACK={
+    head:    "M50 8 Q57 8 58 16 Q58 23 57 26 Q56 31 50 32 Q44 31 43 26 Q42 23 42 16 Q43 8 50 8",
+    trapecio:"M36 33 Q50 30 64 33 L62 44 Q50 41 38 44 Z",
+    dorsal:  "M34 44 Q50 47 66 44 L67 58 Q50 60 33 58 Z",
+    espalda_baja:"M37 60 Q50 62 63 60 L62 70 Q50 72 38 70 Z",
+    romboides:"M42 38 L58 38 L57 46 L43 46 Z",
+    hombro_izq:"M30 36 Q26 38 25 44 Q26 47 30 46 Q34 44 36 39 Z",
+    hombro_der:"M70 36 Q74 38 75 44 Q74 47 70 46 Q66 44 64 39 Z",
+    tricep_izq:"M26 47 Q22 52 22 60 Q23 67 27 67 Q31 65 30 58 Q29 50 28 47 Z",
+    tricep_der:"M74 47 Q78 52 78 60 Q77 67 73 67 Q69 65 70 58 Q71 50 72 47 Z",
+    antebrazo_izq:"M22 67 Q20 75 21 84 Q23 89 27 88 Q29 80 28 71 Z",
+    antebrazo_der:"M78 67 Q80 75 79 84 Q77 89 73 88 Q71 80 72 71 Z",
+    gluteos: "M40 70 Q50 72 60 70 L62 86 Q50 89 38 86 Z",
+    isquiotibiales:"M40 88 Q44 90 44 105 Q43 118 41 118 Q38 119 36 117 Q35 100 36 90 Z M60 88 Q56 90 56 105 Q57 118 59 118 Q62 119 64 117 Q65 100 64 90 Z",
+    gemelos: "M37 122 Q36 135 37 148 Q39 152 42 151 Q43 138 42 124 Z M63 122 Q64 135 63 148 Q61 152 58 151 Q57 138 58 124 Z",
+  };
+  // Helper: get fill color for a zone
+  function getFill(zone){
+    const isActive=activeZones.includes(zone);
+    const isWorked=workedZones.includes(zone);
+    if(isActive)return intensityColor;
+    if(isWorked)return intensityColor;
+    return 'rgba(255,255,255,0.06)';
+  }
+  function getOpacity(zone){
+    const isActive=activeZones.includes(zone);
+    const isWorked=workedZones.includes(zone);
+    if(isActive)return 0.85;
+    if(isWorked)return 0.55;
+    return 0.4;
+  }
+  function getAnimation(zone){
+    if(activeZones.includes(zone))return 'forjaMuscleGlow 1.5s ease-in-out infinite';
+    if(workedZones.includes(zone))return 'forjaMusclePulse 2s ease-in-out infinite';
+    return 'none';
+  }
+  // Helper: render a zone path
+  const Z=(zone,d)=>(
+    <path d={d} fill={getFill(zone)}
+      stroke={(activeZones.includes(zone)||workedZones.includes(zone))?intensityColor:'rgba(255,255,255,0.15)'}
+      strokeWidth={(activeZones.includes(zone)||workedZones.includes(zone))?0.5:0.3}
+      opacity={getOpacity(zone)}
+      style={{
+        transition:'fill 0.4s, opacity 0.4s, stroke 0.4s',
+        animation:getAnimation(zone),
+        filter:(activeZones.includes(zone)||workedZones.includes(zone))?`drop-shadow(0 0 4px ${intensityColor}80)`:'none'
+      }}/>
+  );
+  return(
+    <div style={{display:'inline-flex',gap:8,position:'relative'}}>
+      {(view==='front'||view==='both')&&(
+        <svg width={size} height={h} viewBox="0 0 100 180" style={{display:'block'}}>
+          {/* Head (always neutral) */}
+          <path d={FRONT.head} fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.15)" strokeWidth="0.3"/>
+          {/* Body zones */}
+          {Z('pecho',FRONT.pecho)}
+          {Z('abdomen',FRONT.abdomen)}
+          {Z('oblicuos',FRONT.oblicuos)}
+          {Z('hombro_izq',FRONT.hombro_izq)}
+          {Z('hombro_der',FRONT.hombro_der)}
+          {Z('bicep_izq',FRONT.bicep_izq)}
+          {Z('bicep_der',FRONT.bicep_der)}
+          {Z('antebrazo_izq',FRONT.antebrazo_izq)}
+          {Z('antebrazo_der',FRONT.antebrazo_der)}
+          {Z('quad',FRONT.quad)}
+          {Z('gemelos',FRONT.gemelos)}
+          {Z('tibia',FRONT.tibia)}
+          {/* Subtle base outline so the body silhouette reads even when no zones active */}
+          <path d="M50 8 Q57 8 58 16 Q58 23 57 26 Q56 31 50 32 L36 38 Q26 38 25 44 Q22 52 22 60 Q20 75 21 84 Q23 89 27 88 L34 80 L36 86 L36 117 L37 148 L41 162 L41 122 L40 73 L41 70 L40 53 L36 38 Z"
+            fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="0.5"/>
+          <path d="M50 8 Q43 8 42 16 Q42 23 43 26 Q44 31 50 32 L64 38 Q74 38 75 44 Q78 52 78 60 Q80 75 79 84 Q77 89 73 88 L66 80 L64 86 L64 117 L63 148 L59 162 L59 122 L60 73 L59 70 L60 53 L64 38 Z"
+            fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="0.5"/>
+        </svg>
+      )}
+      {(view==='back'||view==='both')&&(
+        <svg width={size} height={h} viewBox="0 0 100 180" style={{display:'block'}}>
+          <path d={BACK.head} fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.15)" strokeWidth="0.3"/>
+          {Z('trapecio',BACK.trapecio)}
+          {Z('dorsal',BACK.dorsal)}
+          {Z('romboides',BACK.romboides)}
+          {Z('espalda_baja',BACK.espalda_baja)}
+          {Z('hombro_izq',BACK.hombro_izq)}
+          {Z('hombro_der',BACK.hombro_der)}
+          {Z('tricep_izq',BACK.tricep_izq)}
+          {Z('tricep_der',BACK.tricep_der)}
+          {Z('antebrazo_izq',BACK.antebrazo_izq)}
+          {Z('antebrazo_der',BACK.antebrazo_der)}
+          {Z('gluteos',BACK.gluteos)}
+          {Z('isquiotibiales',BACK.isquiotibiales)}
+          {Z('gemelos',BACK.gemelos)}
+          {/* Body silhouette outline */}
+          <path d="M50 8 Q57 8 58 16 L64 33 L66 44 L67 58 L62 70 L60 88 L64 117 L63 148 L59 162 L59 122 L40 122 L41 162 L37 148 L36 117 L40 88 L38 70 L33 58 L34 44 L36 33 L42 16 Q43 8 50 8 Z"
+            fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="0.5"/>
+        </svg>
+      )}
+      {/* XP delta floating numbers */}
+      {Object.entries(xpDeltas).map(([zone,delta])=>(
+        <div key={zone} style={{
+          position:'absolute',top:'50%',left:'50%',
+          fontFamily:"'SF Mono','Fira Code',monospace",fontSize:11,fontWeight:700,
+          color:intensityColor,letterSpacing:1,
+          animation:'forjaXPFloat 2s ease-out forwards',
+          pointerEvents:'none',
+          textShadow:'0 0 8px '+intensityColor
+        }}>
+          +{delta}
+        </div>
+      ))}
+      {/* Animations */}
+      <style>{`
+        @keyframes forjaMuscleGlow {
+          0%, 100% { opacity: 0.7; }
+          50% { opacity: 1; }
+        }
+        @keyframes forjaMusclePulse {
+          0%, 100% { opacity: 0.45; }
+          50% { opacity: 0.75; }
+        }
+        @keyframes forjaXPFloat {
+          0% { transform: translate(-50%, -50%); opacity: 0; }
+          20% { opacity: 1; }
+          100% { transform: translate(-50%, -200%); opacity: 0; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
 function ExpressTimer({day, lang, profile, onDone, onBack}){
   const mono="'SF Mono','Fira Code','Courier New',monospace";
   const sans="-apple-system,'SF Pro Display','Helvetica Neue',sans-serif";
+  // Map an exercise name to its muscle zones using EXERCISE_MUSCLE_MAP + FORJA_TO_ZONE
+  // Returns array of zone IDs ('pecho','quad', etc) for highlighting in MiniAnatomy
+  const exerciseToZones=React.useCallback((exName)=>{
+    if(!exName)return[];
+    const nmLow=exName.toLowerCase().trim();
+    const md=EXERCISE_MUSCLE_MAP[nmLow]||EXERCISE_MUSCLE_MAP[ES_TO_META[nmLow]];
+    if(!md)return [];
+    const all=[...(md.p||[]),...(md.s||[])];
+    const zones=new Set();
+    all.forEach(m=>{
+      const z=FORJA_TO_ZONE[m.toLowerCase()];
+      if(z)zones.add(z);
+    });
+    return [...zones];
+  },[]);
+  // Track which zones have been worked across the session (for REST/DONE views)
+  const [workedZonesAcc,setWorkedZonesAcc]=React.useState([]);
+  // Track XP earned per zone during this session (for DONE view)
+  const [sessionXP,setSessionXP]=React.useState({});
   const sequence=React.useMemo(()=>{
     const seq=[];
     (day.ex||[]).forEach((ex,ei)=>{
@@ -7057,6 +7410,35 @@ function ExpressTimer({day, lang, profile, onDone, onBack}){
     const item = sequence[idx];
     if(!item){ finish(); return; }
     setSeqIdx(idx);
+    // For first set OR after rest period, show "READY" countdown 3-2-1-GO
+    if(phase==='preview'||phase==='rest'){
+      setPhase('ready');
+      let countdown3=3;
+      setCountdown(countdown3);
+      beep(660,0.1,0.25);
+      try{if(navigator.vibrate)navigator.vibrate(15);}catch(_){}
+      const readyInterval=setInterval(()=>{
+        countdown3-=1;
+        setCountdown(countdown3);
+        if(countdown3>0){
+          beep(660,0.1,0.25);
+          try{if(navigator.vibrate)navigator.vibrate(15);}catch(_){}
+        }
+        if(countdown3<=0){
+          clearInterval(readyInterval);
+          // GO! transition to work phase
+          beep(1100,0.3,0.4);
+          try{if(navigator.vibrate)navigator.vibrate([20,40,80]);}catch(_){}
+          setPhase('work');
+          beepWork();
+          startCountdown(item.work, ()=>{
+            if(item.isLast){ finish(); }
+            else{ startRest(idx); }
+          });
+        }
+      }, 1000);
+      return;
+    }
     setPhase('work');
     beepWork();
     startCountdown(item.work, ()=>{
@@ -7068,14 +7450,52 @@ function ExpressTimer({day, lang, profile, onDone, onBack}){
     const item = sequence[idx];
     setPhase('rest');
     beepRest();
+    try{if(navigator.vibrate)navigator.vibrate([10,20,10]);}catch(_){}
     setCompletedSets(s=>s+1);
+    // Track this set's zones in the session accumulator
+    const zonesThisSet=exerciseToZones(item.exName);
+    if(zonesThisSet.length){
+      setWorkedZonesAcc(prev=>{
+        const merged=new Set([...prev,...zonesThisSet]);
+        return [...merged];
+      });
+      // Award XP per zone (small amount per set, more for primary)
+      const xpPerSet=day.intensity==='intense'?6:day.intensity==='soft'?3:5;
+      setSessionXP(prev=>{
+        const next={...prev};
+        zonesThisSet.forEach(z=>{
+          next[z]=(next[z]||0)+xpPerSet;
+        });
+        return next;
+      });
+    }
     startCountdown(item.rest, ()=>{ startWork(idx+1); });
   }
   function finish(){
     clearInterval(timerRef.current);
     setCompletedSets(totalSets);
+    // Award XP and accumulate zones for the LAST set (which doesn't go through startRest)
+    const lastItem=sequence[sequence.length-1];
+    if(lastItem){
+      const zonesLast=exerciseToZones(lastItem.exName);
+      if(zonesLast.length){
+        setWorkedZonesAcc(prev=>{
+          const merged=new Set([...prev,...zonesLast]);
+          return [...merged];
+        });
+        const xpPerSet=day.intensity==='intense'?6:day.intensity==='soft'?3:5;
+        setSessionXP(prev=>{
+          const next={...prev};
+          zonesLast.forEach(z=>{
+            next[z]=(next[z]||0)+xpPerSet;
+          });
+          return next;
+        });
+      }
+    }
     setPhase('done');
     beepDone();
+    try{if(navigator.vibrate)navigator.vibrate([30,50,30,50,80]);}catch(_){}
   }
   function togglePause(){
     pausedRef.current = !pausedRef.current;
@@ -7149,38 +7569,197 @@ function ExpressTimer({day, lang, profile, onDone, onBack}){
   );
   if(phase==='done') return(
     <div style={{position:'fixed',inset:0,background:'#080a0e',display:'flex',
-      flexDirection:'column',alignItems:'center',justifyContent:'center',
-      color:'#f0f2f5',fontFamily:sans,padding:'20px',
-      paddingTop:'env(safe-area-inset-top)'}}>
-      <div style={{fontSize:64,marginBottom:16}}>🏁</div>
-      <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:42,letterSpacing:3,
-        color:'#3fcf8e',marginBottom:4}}>
-        {lang==='es'||lang==='pt'?'¡COMPLETADO!':lang==='it'?'COMPLETATO!':lang==='de'?'GESCHAFFT!':lang==='fr'?'TERMINÉ!':'DONE!'}
+      flexDirection:'column',color:'#f0f2f5',fontFamily:sans,
+      paddingTop:'env(safe-area-inset-top)',
+      overflowY:'auto'}}>
+      {/* Header celebration */}
+      <div style={{textAlign:'center',padding:'20px 20px 8px'}}>
+        <div style={{fontSize:44,marginBottom:6,
+          animation:'forjaTrophyBounce 0.8s ease-out'}}>🏁</div>
+        <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:44,letterSpacing:3,
+          color:'#3fcf8e',lineHeight:1,
+          textShadow:'0 0 30px rgba(63,207,142,0.4)'}}>
+          {lang==='es'||lang==='pt'?'¡COMPLETADO!':lang==='it'?'COMPLETATO!':lang==='de'?'GESCHAFFT!':lang==='fr'?'TERMINÉ!':'DONE!'}
+        </div>
+        <div style={{fontFamily:mono,fontSize:9,color:'rgba(255,255,255,.45)',letterSpacing:2.5,marginTop:6}}>
+          ⚡ {day.l}
+        </div>
       </div>
-      <div style={{fontFamily:mono,fontSize:9,color:'rgba(255,255,255,.4)',letterSpacing:2,marginBottom:32}}>
-        ⚡ {day.l}
+      {/* Anatomy showcase — the hero moment */}
+      <div style={{display:'flex',flexDirection:'column',alignItems:'center',padding:'12px 20px 0'}}>
+        <div style={{fontFamily:mono,fontSize:8,color:'rgba(255,255,255,.4)',letterSpacing:3.5,fontWeight:700,marginBottom:14}}>
+          {lang==='es'||lang==='pt'?'· MÚSCULOS FORJADOS ·':lang==='it'?'· MUSCOLI FORGIATI ·':lang==='de'?'· GESCHMIEDETE MUSKELN ·':lang==='fr'?'· MUSCLES FORGÉS ·':'· FORGED MUSCLES ·'}
+        </div>
+        <div style={{position:'relative',padding:'8px 0 4px',
+          animation:'forjaAnatomyReveal 1.2s ease-out'}}>
+          <MiniAnatomy
+            workedZones={workedZonesAcc}
+            intensity={day.intensity||'medium'}
+            size={150}
+            view='both'
+          />
+        </div>
+        {/* XP per zone */}
+        {Object.keys(sessionXP).length>0&&(
+          <div style={{marginTop:8,marginBottom:14,padding:'12px 16px',borderRadius:14,
+            background:'rgba(255,215,0,0.04)',
+            border:'1px solid rgba(255,215,0,0.15)',
+            maxWidth:340,width:'100%'}}>
+            <div style={{fontFamily:mono,fontSize:8,color:'rgba(255,215,0,0.7)',letterSpacing:2.5,fontWeight:700,
+              textAlign:'center',marginBottom:10}}>
+              {lang==='es'||lang==='pt'?'XP GANADO POR ZONA':lang==='it'?'XP GUADAGNATO PER ZONA':lang==='de'?'XP PRO ZONE':lang==='fr'?'XP GAGNÉ PAR ZONE':'XP EARNED PER ZONE'}
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(80px,1fr))',gap:6}}>
+              {Object.entries(sessionXP).sort((a,b)=>b[1]-a[1]).map(([zone,xp])=>(
+                <div key={zone} style={{textAlign:'center',padding:'6px 4px',
+                  background:'rgba(255,215,0,0.06)',borderRadius:8}}>
+                  <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:18,color:'#FFD700',lineHeight:1}}>
+                    +{xp}
+                  </div>
+                  <div style={{fontFamily:mono,fontSize:7,color:'rgba(255,255,255,0.55)',letterSpacing:1,
+                    marginTop:3,textTransform:'uppercase'}}>
+                    {zone.replace(/_/g,' ').replace('izq','I').replace('der','D')}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
-      <div style={{display:'flex',gap:16,marginBottom:40}}>
+      {/* Stats grid */}
+      <div style={{display:'flex',gap:10,padding:'4px 20px 20px',justifyContent:'center'}}>
         {[
-          {v:totalMin+'min',l:lang==='es'||lang==='pt'?'TIEMPO':lang==='it'?'TEMPO':'TIME'},
-          {v:totalSets,l:lang==='es'||lang==='pt'?'SERIES':lang==='it'?'SERIE':'SETS'},
-          {v:(day.ex||[]).length,l:lang==='es'||lang==='pt'?'EJERCICIOS':lang==='it'?'ESERCIZI':'EXERCISES'},
-        ].map(({v,l})=>(
-          <div key={l} style={{textAlign:'center',padding:'16px 20px',borderRadius:14,
-            background:'rgba(63,207,142,0.08)',border:'1px solid rgba(63,207,142,0.2)'}}>
-            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:32,color:'#3fcf8e',lineHeight:1}}>{v}</div>
-            <div style={{fontFamily:mono,fontSize:7,color:'rgba(255,255,255,.4)',letterSpacing:2,marginTop:4}}>{l}</div>
+          {v:totalMin+'min',l:lang==='es'||lang==='pt'?'TIEMPO':lang==='it'?'TEMPO':'TIME',c:'#3fcf8e'},
+          {v:totalSets,l:lang==='es'||lang==='pt'?'SERIES':lang==='it'?'SERIE':'SETS',c:'#3fcf8e'},
+          {v:(day.ex||[]).length,l:lang==='es'||lang==='pt'?'EJERCICIOS':lang==='it'?'ESERCIZI':'EXERCISES',c:'#3fcf8e'},
+        ].map(({v,l,c})=>(
+          <div key={l} style={{flex:1,textAlign:'center',padding:'12px 8px',borderRadius:12,
+            background:'rgba(63,207,142,0.06)',border:'1px solid rgba(63,207,142,0.18)',
+            maxWidth:100}}>
+            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:26,color:c,lineHeight:1}}>{v}</div>
+            <div style={{fontFamily:mono,fontSize:7,color:'rgba(255,255,255,.5)',letterSpacing:2,marginTop:4,fontWeight:700}}>{l}</div>
           </div>
         ))}
       </div>
-      <button onClick={()=>onDone(day.expressZones||[])}
-        style={{width:'100%',maxWidth:340,padding:'16px',borderRadius:14,border:'none',
-          background:'#3fcf8e',color:'#080a0e',
-          fontFamily:mono,fontSize:12,fontWeight:700,letterSpacing:2,cursor:'pointer'}}>
-        {lang==='es'||lang==='pt'?'VOLVER AL INICIO':lang==='it'?'TORNA ALLA HOME':lang==='de'?'ZURÜCK':'BACK HOME'}
-      </button>
+      {/* Bottom CTA */}
+      <div style={{padding:'0 20px 20px',
+        paddingBottom:'calc(20px + env(safe-area-inset-bottom))'}}>
+        <button onClick={()=>onDone(workedZonesAcc.length?workedZonesAcc:(day.expressZones||[]),sessionXP)}
+          style={{width:'100%',padding:'18px',borderRadius:16,border:'none',
+            background:'linear-gradient(180deg,#4ddb9c,#3fcf8e)',color:'#080a0e',
+            fontFamily:mono,fontSize:12,fontWeight:800,letterSpacing:3,cursor:'pointer',
+            boxShadow:'0 8px 24px rgba(63,207,142,0.25), inset 0 1px 0 rgba(255,255,255,0.2)'}}>
+          {lang==='es'||lang==='pt'?'VOLVER AL INICIO':lang==='it'?'TORNA ALLA HOME':lang==='de'?'ZURÜCK':'BACK HOME'}
+        </button>
+      </div>
+      <style>{`
+        @keyframes forjaTrophyBounce {
+          0% { transform: scale(0) rotate(-30deg); opacity: 0; }
+          60% { transform: scale(1.2) rotate(5deg); opacity: 1; }
+          100% { transform: scale(1) rotate(0); opacity: 1; }
+        }
+        @keyframes forjaAnatomyReveal {
+          0% { opacity: 0; transform: translateY(20px) scale(0.95); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+      `}</style>
     </div>
   );
+  // ═══ READY phase: 3-2-1-GO countdown before exercise starts ═══
+  // FORJA-unique: shows anatomy with the exact muscles being worked highlighted
+  if(phase==='ready'){
+    const isFirstSet=seqIdx===0&&completedSets===0;
+    const upcomingEx=cur;
+    const upcomingZones=exerciseToZones(upcomingEx?.exName);
+    return(
+      <div style={{position:'fixed',inset:0,background:'#080a0e',display:'flex',
+        flexDirection:'column',color:'#f0f2f5',fontFamily:sans,
+        paddingTop:'env(safe-area-inset-top)'}}>
+        {/* Top bar — minimal with progress */}
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'14px 20px'}}>
+          <div style={{fontFamily:mono,fontSize:8,color:'rgba(255,255,255,.35)',letterSpacing:2.5}}>
+            {(completedSets+1)}/{totalSets}
+          </div>
+          <div style={{flex:1,margin:'0 16px',height:2,borderRadius:1,
+            background:'rgba(255,255,255,0.06)'}}>
+            <div style={{height:'100%',borderRadius:1,background:'#3fcf8e',
+              width:(completedSets/totalSets*100)+'%',transition:'width .3s'}}/>
+          </div>
+          <button onClick={onBack} style={{background:'rgba(255,255,255,.06)',border:'none',borderRadius:8,
+            padding:'8px 12px',cursor:'pointer',fontFamily:mono,fontSize:11,
+            color:'rgba(255,255,255,.5)',minWidth:36,minHeight:36,
+            display:'flex',alignItems:'center',justifyContent:'center'}}>
+            ✕
+          </button>
+        </div>
+        {/* Hero: anatomy view + countdown side-by-side */}
+        <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',
+          justifyContent:'center',padding:'0 20px',position:'relative'}}>
+          {/* Eyebrow */}
+          <div style={{fontFamily:mono,fontSize:9,letterSpacing:5,color:'rgba(63,207,142,0.9)',
+            textTransform:'uppercase',marginBottom:14,fontWeight:700}}>
+            {isFirstSet
+              ?(lang==='es'||lang==='pt'?'· PREPÁRATE ·':lang==='it'?'· PRONTO ·':lang==='de'?'· BEREIT ·':lang==='fr'?'· PRÊT ·':'· GET READY ·')
+              :(lang==='es'||lang==='pt'?'· SIGUIENTE ·':lang==='it'?'· PROSSIMO ·':lang==='de'?'· NÄCHSTES ·':lang==='fr'?'· SUIVANT ·':'· NEXT UP ·')}
+          </div>
+          {/* Exercise name */}
+          <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:34,letterSpacing:1.5,
+            color:'#f0f2f5',textAlign:'center',lineHeight:1.05,marginBottom:6,
+            maxWidth:'90%'}}>
+            {upcomingEx?.exName}
+          </div>
+          {/* Muscles label */}
+          {upcomingZones.length>0&&(
+            <div style={{fontFamily:mono,fontSize:8,color:'rgba(255,255,255,.4)',letterSpacing:2,
+              textTransform:'uppercase',marginBottom:18,textAlign:'center'}}>
+              {(lang==='es'||lang==='pt'?'TRABAJA':lang==='it'?'LAVORA':lang==='de'?'ARBEITET':lang==='fr'?'TRAVAILLE':'WORKS')}
+              {' · '}
+              {upcomingZones.slice(0,3).join(' · ').replace(/_/g,' ').toUpperCase()}
+            </div>
+          )}
+          {/* MAIN: anatomy with active muscles + countdown overlaid */}
+          <div style={{position:'relative',display:'flex',alignItems:'center',justifyContent:'center',
+            marginBottom:14}}>
+            <MiniAnatomy
+              activeZones={upcomingZones}
+              intensity={day.intensity||'medium'}
+              size={140}
+              view='both'
+            />
+            {/* Countdown overlay — protagonist */}
+            <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',
+              justifyContent:'center',pointerEvents:'none'}}>
+              <div key={countdown} style={{fontFamily:"'Bebas Neue',cursive",
+                fontSize:countdown>0?160:88,
+                color:countdown>0?'#3fcf8e':'#fff',
+                lineHeight:1,letterSpacing:countdown>0?-6:-2,
+                textShadow:'0 4px 40px rgba(0,0,0,0.95), 0 0 80px rgba(63,207,142,0.6)',
+                animation:'forjaReadyPop 0.9s ease-out',
+                background:'rgba(8,10,14,0.4)',
+                padding:'0 12px',borderRadius:12,
+                backdropFilter:'blur(2px)',WebkitBackdropFilter:'blur(2px)'}}>
+                {countdown>0?countdown:'GO!'}
+              </div>
+            </div>
+          </div>
+          {/* Set meta */}
+          <div style={{fontFamily:mono,fontSize:9,color:'rgba(255,255,255,.4)',letterSpacing:2.5,
+            display:'flex',alignItems:'center',gap:12}}>
+            <span>{lang==='es'||lang==='pt'?'SERIE':'SET'} {(upcomingEx?.si||0)+1} / {day.ex?.[upcomingEx?.ei||0]?.s||1}</span>
+            <span style={{width:3,height:3,borderRadius:'50%',background:'rgba(255,255,255,.2)'}}/>
+            <span style={{color:'#3fcf8e'}}>▶ {upcomingEx?.work}s</span>
+          </div>
+        </div>
+        <style>{`
+          @keyframes forjaReadyPop {
+            0% { transform: scale(0.7); opacity: 0; }
+            40% { transform: scale(1.15); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+          }
+        `}</style>
+      </div>
+    );
+  }
   const isWork = phase==='work';
   const bgColor = isWork ? '#0a1a0f' : '#1a1200';
   const accentColor = isWork ? '#3fcf8e' : '#f0b429';
@@ -7189,6 +7768,11 @@ function ExpressTimer({day, lang, profile, onDone, onBack}){
     : 1 - countdown / (cur?.rest||20);
   const R=90, CIRC=2*Math.PI*R;
   const strokeDash = CIRC * progress;
+  // For REST phase: identify what comes next (could be same ex next set, or new ex)
+  const nextItem=sequence[seqIdx+1];
+  const nextIsSameEx=nextItem && cur && nextItem.ei===cur.ei;
+  const nextEx=nextItem;
+  const nextVidSrc=nextEx?getVid(nextEx.exName):null;
   return(
     <div style={{position:'fixed',inset:0,background:bgColor,display:'flex',
       flexDirection:'column',color:'#f0f2f5',fontFamily:sans,transition:'background .5s',
@@ -7204,10 +7788,11 @@ function ExpressTimer({day, lang, profile, onDone, onBack}){
             width:(completedSets/totalSets*100)+'%',transition:'width .3s'}}/>
         </div>
         <button onClick={togglePause}
-          style={{background:'rgba(255,255,255,.08)',border:'none',borderRadius:8,
-            padding:'6px 12px',cursor:'pointer',fontFamily:mono,fontSize:9,
-            color:'rgba(255,255,255,.6)',letterSpacing:1}}>
-          {paused?(lang==='es'||lang==='pt'?'▶ SEGUIR':'▶ RESUME'):'⏸'}
+          style={{background:'rgba(255,255,255,.08)',border:'none',borderRadius:10,
+            padding:'8px 14px',cursor:'pointer',fontFamily:mono,fontSize:11,
+            color:'rgba(255,255,255,.7)',letterSpacing:1,fontWeight:700,
+            minWidth:44,minHeight:36,display:'flex',alignItems:'center',justifyContent:'center'}}>
+          {paused?(lang==='es'||lang==='pt'?'▶':'▶'):'⏸'}
         </button>
       </div>
       <div style={{textAlign:'center',marginTop:20}}>
@@ -7218,67 +7803,139 @@ function ExpressTimer({day, lang, profile, onDone, onBack}){
             :(lang==='es'||lang==='pt'?'DESCANSO':lang==='it'?'RIPOSO':lang==='de'?'PAUSE':lang==='fr'?'REPOS':'REST')}
         </div>
       </div>
-      <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',
-        justifyContent:'center',gap:8}}>
-        <div style={{position:'relative',width:220,height:220}}>
-          <svg width="220" height="220" style={{transform:'rotate(-90deg)'}}>
-            <circle cx="110" cy="110" r={R} fill="none"
-              stroke="rgba(255,255,255,0.06)" strokeWidth="8"/>
-            <circle cx="110" cy="110" r={R} fill="none"
-              stroke={accentColor} strokeWidth="8"
-              strokeDasharray={`${strokeDash} ${CIRC}`}
-              strokeLinecap="round"
-              style={{transition:'stroke-dasharray .9s linear,stroke .5s'}}/>
-          </svg>
-          <div style={{position:'absolute',inset:0,display:'flex',flexDirection:'column',
-            alignItems:'center',justifyContent:'center'}}>
-            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:72,
-              color:accentColor,lineHeight:1,letterSpacing:-2}}>
-              {countdown}
-            </div>
-            <div style={{fontFamily:mono,fontSize:8,color:'rgba(255,255,255,.3)',letterSpacing:2}}>
-              {lang==='es'||lang==='pt'?'SEG':'SEC'}
-            </div>
-          </div>
-        </div>
-        <div style={{textAlign:'center',padding:'0 24px',display:'flex',flexDirection:'column',alignItems:'center',gap:10}}>
-          {(()=>{
-            const vidSrc=getVid(cur?.exName);
-            return vidSrc?(
-              <div style={{width:140,height:140,borderRadius:14,overflow:'hidden',
-                background:'#1a1f2e',flexShrink:0,border:'1px solid rgba(255,255,255,0.08)'}}>
-                <video key={cur?.exName} src={vidSrc} autoPlay loop muted playsInline
-                  style={{width:'100%',height:'100%',objectFit:'cover',opacity:isWork?1:0.4,transition:'opacity .5s'}}/>
+      {/* ═══ WORK PHASE: current exercise BIG with timer ═══ */}
+      {isWork&&(
+        <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',
+          justifyContent:'center',gap:8}}>
+          <div style={{position:'relative',width:220,height:220}}>
+            <svg width="220" height="220" style={{transform:'rotate(-90deg)'}}>
+              <circle cx="110" cy="110" r={R} fill="none"
+                stroke="rgba(255,255,255,0.06)" strokeWidth="8"/>
+              <circle cx="110" cy="110" r={R} fill="none"
+                stroke={accentColor} strokeWidth="8"
+                strokeDasharray={`${strokeDash} ${CIRC}`}
+                strokeLinecap="round"
+                style={{transition:'stroke-dasharray .9s linear,stroke .5s'}}/>
+            </svg>
+            <div style={{position:'absolute',inset:0,display:'flex',flexDirection:'column',
+              alignItems:'center',justifyContent:'center'}}>
+              <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:72,
+                color:accentColor,lineHeight:1,letterSpacing:-2}}>
+                {countdown}
               </div>
-            ):null;
-          })()}
-          <div>
-            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,letterSpacing:1,
-              color:isWork?'#f0f2f5':'rgba(255,255,255,.35)',lineHeight:1.1,
-              transition:'color .5s'}}>
-              {cur?.exName}
+              <div style={{fontFamily:mono,fontSize:8,color:'rgba(255,255,255,.3)',letterSpacing:2}}>
+                {lang==='es'||lang==='pt'?'SEG':'SEC'}
+              </div>
             </div>
-            <div style={{fontFamily:mono,fontSize:9,color:'rgba(255,255,255,.3)',letterSpacing:2,marginTop:4}}>
-              {lang==='es'||lang==='pt'?'SERIE':'SET'} {(cur?.si||0)+1} / {day.ex?.[cur?.ei||0]?.s||1}
+          </div>
+          <div style={{textAlign:'center',padding:'0 24px',display:'flex',flexDirection:'column',alignItems:'center',gap:10}}>
+            {(()=>{
+              const vidSrc=getVid(cur?.exName);
+              return vidSrc?(
+                <div style={{width:140,height:140,borderRadius:14,overflow:'hidden',
+                  background:'#1a1f2e',flexShrink:0,border:'1px solid rgba(255,255,255,0.08)'}}>
+                  <video key={cur?.exName} src={vidSrc} autoPlay loop muted playsInline
+                    style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                </div>
+              ):null;
+            })()}
+            <div>
+              <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,letterSpacing:1,
+                color:'#f0f2f5',lineHeight:1.1}}>
+                {cur?.exName}
+              </div>
+              <div style={{fontFamily:mono,fontSize:9,color:'rgba(255,255,255,.3)',letterSpacing:2,marginTop:4}}>
+                {lang==='es'||lang==='pt'?'SERIE':'SET'} {(cur?.si||0)+1} / {day.ex?.[cur?.ei||0]?.s||1}
+              </div>
             </div>
           </div>
         </div>
-      </div>
-      {next&&(
-        <div style={{margin:'0 20px 16px',padding:'10px 14px',borderRadius:12,
-          background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.07)',
-          display:'flex',alignItems:'center',gap:10}}>
-          <div style={{fontFamily:mono,fontSize:7,color:'rgba(255,255,255,.3)',letterSpacing:2,
-            flexShrink:0}}>
-            {lang==='es'||lang==='pt'?'SIGUIENTE':lang==='it'?'PROSSIMO':lang==='de'?'NÄCHSTES':'NEXT'}
+      )}
+      {/* ═══ REST PHASE: anatomy with worked muscles + accumulated XP ═══ */}
+      {!isWork&&(
+        <div style={{flex:1,display:'flex',flexDirection:'column',padding:'0 20px',position:'relative'}}>
+          {/* Eyebrow */}
+          <div style={{textAlign:'center',marginTop:8}}>
+            <div style={{fontFamily:mono,fontSize:9,color:'rgba(255,255,255,.45)',letterSpacing:5,fontWeight:700}}>
+              {nextIsSameEx
+                ?(lang==='es'||lang==='pt'?'· PRÓXIMA SERIE ·':lang==='it'?'· PROSSIMA SERIE ·':lang==='de'?'· NÄCHSTER SATZ ·':lang==='fr'?'· PROCHAINE SÉRIE ·':'· NEXT SET ·')
+                :(lang==='es'||lang==='pt'?'· SIGUIENTE EJERCICIO ·':lang==='it'?'· PROSSIMO ESERCIZIO ·':lang==='de'?'· NÄCHSTE ÜBUNG ·':lang==='fr'?'· EXERCICE SUIVANT ·':'· NEXT EXERCISE ·')}
+            </div>
           </div>
-          <div style={{fontSize:13,fontWeight:600,color:'rgba(255,255,255,.55)'}}>
-            {next.exName}
-            {next.ei!==(cur?.ei) && (
-              <span style={{fontFamily:mono,fontSize:7,color:'rgba(255,255,255,.25)',marginLeft:8}}>
-                {lang==='es'||lang==='pt'?'nuevo ejercicio':lang==='it'?'nuovo esercizio':'new exercise'}
-              </span>
-            )}
+          {/* Next exercise name */}
+          <div style={{textAlign:'center',marginTop:14,marginBottom:14}}>
+            <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:30,letterSpacing:1.2,
+              color:'#f0f2f5',lineHeight:1.05,maxWidth:'90%',margin:'0 auto'}}>
+              {nextEx?.exName||cur?.exName}
+            </div>
+          </div>
+          {/* MAIN: Anatomy with worked muscles pulsing + tap-to-skip + XP counter */}
+          <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center'}}>
+            <button onClick={()=>{
+              try{if(navigator.vibrate)navigator.vibrate(15);}catch(_){}
+              clearInterval(timerRef.current);
+              countRef.current=0;
+              startWork(seqIdx+1);
+            }} style={{position:'relative',width:'100%',maxWidth:340,
+              border:'none',padding:0,cursor:'pointer',
+              background:'transparent',
+              display:'flex',flexDirection:'column',alignItems:'center'}}>
+              {/* Anatomy with worked zones pulsing */}
+              <div style={{position:'relative',marginBottom:16}}>
+                <MiniAnatomy
+                  workedZones={workedZonesAcc}
+                  activeZones={exerciseToZones(nextEx?.exName)}
+                  intensity={day.intensity||'medium'}
+                  size={130}
+                  view='both'
+                />
+              </div>
+              {/* Timer + XP earned card */}
+              <div style={{display:'flex',alignItems:'center',gap:24,
+                background:'rgba(255,255,255,0.04)',
+                border:'1px solid rgba(255,255,255,0.08)',
+                borderRadius:18,padding:'14px 22px',
+                boxShadow:'0 8px 24px rgba(0,0,0,0.3)'}}>
+                {/* Timer */}
+                <div style={{textAlign:'center'}}>
+                  <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:62,
+                    color:accentColor,lineHeight:1,letterSpacing:-2}}>
+                    {countdown}
+                  </div>
+                  <div style={{fontFamily:mono,fontSize:7,color:'rgba(255,255,255,.45)',letterSpacing:2.5,fontWeight:700}}>
+                    {lang==='es'||lang==='pt'?'DESCANSO':lang==='it'?'RIPOSO':lang==='de'?'PAUSE':lang==='fr'?'REPOS':'REST'}
+                  </div>
+                </div>
+                {/* Divider */}
+                <div style={{width:1,height:38,background:'rgba(255,255,255,0.1)'}}/>
+                {/* XP earned this session */}
+                <div style={{textAlign:'center'}}>
+                  <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:38,
+                    color:'#FFD700',lineHeight:1,letterSpacing:-1}}>
+                    +{Object.values(sessionXP).reduce((s,n)=>s+n,0)}
+                  </div>
+                  <div style={{fontFamily:mono,fontSize:7,color:'rgba(255,215,0,0.65)',letterSpacing:2.5,fontWeight:700}}>
+                    XP
+                  </div>
+                </div>
+              </div>
+              {/* Tap to skip indicator */}
+              <div style={{marginTop:14,padding:'8px 14px',borderRadius:14,
+                background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',
+                fontFamily:mono,fontSize:8,color:'rgba(255,255,255,.5)',letterSpacing:2.5,fontWeight:700,
+                whiteSpace:'nowrap'}}>
+                {lang==='es'||lang==='pt'?'⤵ TAP PARA SALTAR':lang==='it'?'⤵ TAP PER SALTARE':lang==='de'?'⤵ TAP ZUM ÜBERSPRINGEN':lang==='fr'?'⤵ APPUYER POUR PASSER':'⤵ TAP TO SKIP'}
+              </div>
+            </button>
+          </div>
+          {/* Bottom meta */}
+          <div style={{textAlign:'center',padding:'10px 0 6px'}}>
+            <div style={{fontFamily:mono,fontSize:8,color:'rgba(255,255,255,.35)',letterSpacing:2.5,
+              display:'inline-flex',alignItems:'center',gap:10}}>
+              <span>{lang==='es'||lang==='pt'?'PRÓXIMO':lang==='it'?'PROSSIMO':'NEXT'}: {lang==='es'||lang==='pt'?'SERIE':'SET'} {(nextEx?.si||0)+1} / {day.ex?.[nextEx?.ei||0]?.s||1}</span>
+              <span style={{width:3,height:3,borderRadius:'50%',background:'rgba(255,255,255,.2)'}}/>
+              <span style={{color:'#3fcf8e'}}>▶ {nextEx?.work||40}s</span>
+            </div>
           </div>
         </div>
       )}
@@ -9047,47 +9704,53 @@ function App(){
   useEffect(()=>{
     const sb=getSB();
     const loadAndRoute=(skipOnboard=false)=>{
-      FStore.loadProfile().then(data=>{
-        if(data&&data.profile){
-          setProfile(data.profile);
-          setLangS(l=>l||data.profile.lang||'es');
-          if(data.routine)setRoutine(data.routine);
-          setStep(99);
-        } else if(skipOnboard){
-          setLangS(l=>l||'es');
-          setStep(1);
-        }
-        setReady(true);
-        setAuthChecked(true);
-       
-        window.__forjaOnboardingDone=function(p,r,s){setProfile(p);if(r)setRoutine(r);window._fss(s||99);};
-        // Refresh PRO status from Supabase in background
-        // This updates localStorage('fv8_pro') so isPro() returns correct value
-        try{
-          if(typeof checkProStatus==='function'){
-            checkProStatus().then(function(wasPro){
-              // If PRO status changed, trigger re-render
-              // The isPro() function now reads the updated localStorage
-              if(wasPro){
-                try{window.dispatchEvent(new CustomEvent('forja:proStatusChanged',{detail:{isPro:true}}));}catch(_){}
-              }
-            }).catch(function(){});
+      // First, attempt to migrate pending data from anonymous→Google login
+      // If pending data exists, this restores it to localStorage and uploads to Supabase
+      const doLoad=function(){
+        FStore.loadProfile().then(data=>{
+          if(data&&data.profile){
+            setProfile(data.profile);
+            setLangS(l=>l||data.profile.lang||'es');
+            if(data.routine)setRoutine(data.routine);
+            setStep(99);
+          } else if(skipOnboard){
+            setLangS(l=>l||'es');
+            setStep(1);
           }
-        }catch(_){}
-        // Also refresh logs and muscle XP from Supabase so stale localStorage
-        // from a previous session doesn't override fresh cloud data
-        try{
-          FStore.loadLogs().catch(function(){});
-        }catch(_){}
-        try{
-          if(typeof FStore.loadMuscleXPAsync==='function'){
-            FStore.loadMuscleXPAsync().then(function(xp){
-              // Trigger event so components that use muscleXP refresh
-              try{window.dispatchEvent(new CustomEvent('forja:muscleXPLoaded',{detail:{xp:xp}}));}catch(_){}
-            }).catch(function(){});
-          }
-        }catch(_){}
-      }).catch(()=>{setReady(true);setAuthChecked(true);});
+          setReady(true);
+          setAuthChecked(true);
+
+          window.__forjaOnboardingDone=function(p,r,s){setProfile(p);if(r)setRoutine(r);window._fss(s||99);};
+          // Refresh PRO status from Supabase in background
+          try{
+            if(typeof checkProStatus==='function'){
+              checkProStatus().then(function(wasPro){
+                if(wasPro){
+                  try{window.dispatchEvent(new CustomEvent('forja:proStatusChanged',{detail:{isPro:true}}));}catch(_){}
+                }
+              }).catch(function(){});
+            }
+          }catch(_){}
+          try{ FStore.loadLogs().catch(function(){}); }catch(_){}
+          try{
+            if(typeof FStore.loadMuscleXPAsync==='function'){
+              FStore.loadMuscleXPAsync().then(function(xp){
+                try{window.dispatchEvent(new CustomEvent('forja:muscleXPLoaded',{detail:{xp:xp}}));}catch(_){}
+              }).catch(function(){});
+            }
+          }catch(_){}
+        }).catch(()=>{setReady(true);setAuthChecked(true);});
+      };
+
+      // Check for pending migration first
+      if(typeof window.__forjaMigratePendingData==='function'){
+        window.__forjaMigratePendingData().then(function(migrated){
+          if(migrated)console.log('FORJA: data restored, loading profile');
+          doLoad();
+        }).catch(function(){ doLoad(); });
+      } else {
+        doLoad();
+      }
     };
     const search=window.location.search;
     const hash=window.location.hash;
