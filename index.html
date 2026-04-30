@@ -2288,7 +2288,7 @@ const EXPRESS_GROUPS=[
    ]},
   {id:"hiit",
    label:{es:"HIIT",en:"HIIT",it:"HIIT",de:"HIIT",fr:"HIIT",pt:"HIIT"},
-   icon:"⚡", zones:[],
+   icon:"⚡", zones:["pecho","quad","gluteos","hombro_izq","hombro_der","abdomen","gemelos"],
    circuits:[
     [{e:"Burpees",s:3,work:30,rest:30},{e:"Saltos de tijera",s:3,work:40,rest:20},{e:"Mountain climbers",s:3,work:35,rest:20}],
     [{e:"Sentadilla explosiva",s:4,work:30,rest:25},{e:"Burpees",s:3,work:30,rest:30},{e:"Mountain climbers",s:4,work:35,rest:20}],
@@ -2307,6 +2307,16 @@ const EXPRESS_GROUPS=[
     [{e:"Elevación de piernas",s:3,work:40,rest:15},{e:"Plancha",s:3,work:45,rest:15},{e:"Russian twist",s:3,work:35,rest:15},{e:"Mountain climbers",s:2,work:30,rest:15}],
    ]},
 ]
+// Given an anatomical zone (e.g. 'pecho'), return the Express group(s) that train it
+// Used by the interactive anatomy modal: tap pecho → selects 'tren_superior'
+function expressGroupForZone(zone){
+  // Priority: most specific match first
+  if(['pecho','tricep_izq','tricep_der','hombro_izq','hombro_der','bicep_izq','bicep_der','antebrazo_izq','antebrazo_der'].includes(zone))return 'tren_superior';
+  if(['quad','gluteos','isquiotibiales','gemelos','tibia'].includes(zone))return 'tren_inferior';
+  if(['abdomen','oblicuos','espalda_baja'].includes(zone))return 'abdomen';
+  if(['dorsal','trapecio','romboides'].includes(zone))return 'tren_superior'; // back goes to upper
+  return null;
+}
 // Intensity multipliers — affect work duration, rest duration, and total sets
 // Soft: more rest, less work, fewer sets — for beginners or active recovery
 // Intermediate: balanced (baseline)
@@ -6978,102 +6988,173 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
           background:"rgba(0,0,0,0.7)",backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)",
           display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
           <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:480,
-            background:"#131720",borderRadius:"28px 28px 0 0",padding:"12px 18px 32px",
+            background:"linear-gradient(180deg,#1a1f2e 0%,#131720 30%)",
+            borderRadius:"28px 28px 0 0",padding:"12px 18px 20px",
             boxShadow:"0 -8px 40px rgba(0,0,0,0.6)",
-            paddingBottom:"calc(32px + env(safe-area-inset-bottom))"}}>
-            {/* iOS-style drag handle */}
+            paddingBottom:"calc(20px + env(safe-area-inset-bottom))"}}>
+            {/* Drag handle */}
             <div style={{width:36,height:4,background:"rgba(255,255,255,0.18)",borderRadius:2,
-              margin:"0 auto 18px"}}/>
-            {/* Compact header — single line */}
-            <div style={{textAlign:"center",marginBottom:22}}>
-              <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:30,letterSpacing:2,
+              margin:"0 auto 10px"}}/>
+            {/* Compact header */}
+            <div style={{textAlign:"center",marginBottom:8}}>
+              <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:24,letterSpacing:3,
                 color:"#f0f2f5",lineHeight:1}}>
-                ⚡ {lang==="es"||lang==="pt"?"EXPRESS":lang==="it"?"EXPRESS":lang==="de"?"EXPRESS":lang==="fr"?"EXPRESS":"EXPRESS"}
+                ⚡ EXPRESS
               </div>
-              <div style={{fontFamily:mono,fontSize:8,color:"rgba(255,255,255,0.35)",letterSpacing:2.5,marginTop:6}}>
-                {lang==="es"||lang==="pt"?"SIN EQUIPO · BODYWEIGHT":lang==="it"?"SOLO PESO CORPOREO":lang==="de"?"NUR KÖRPERGEWICHT":lang==="fr"?"POIDS DU CORPS":"BODYWEIGHT · NO EQUIPMENT"}
+              <div style={{fontFamily:mono,fontSize:7,color:"rgba(255,255,255,0.32)",letterSpacing:2.5,marginTop:4}}>
+                {lang==="es"||lang==="pt"?"TOCA UNA ZONA":lang==="it"?"TOCCA UNA ZONA":lang==="de"?"BERÜHRE EINE ZONE":lang==="fr"?"TOUCHE UNE ZONE":"TAP A ZONE"}
               </div>
             </div>
-            {/* MUSCLE GROUP — primary choice, biggest visual */}
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:20}}>
-              {EXPRESS_GROUPS.map(g=>{
-                const sel=expressGroup===g.id;
+            {/* HERO: Interactive anatomy — tap to select Express group */}
+            <div style={{display:"flex",flexDirection:"column",alignItems:"center",
+              padding:"4px 0 8px",position:"relative"}}>
+              {/* Get the selected group's zones for highlighting */}
+              {(()=>{
+                const selectedGroup=EXPRESS_GROUPS.find(g=>g.id===expressGroup);
+                const zonesToHighlight=selectedGroup?selectedGroup.zones:[];
+                const intColor=expressIntensity==='intense'?'#f0612a':expressIntensity==='soft'?'#4caf8e':'#3fcf8e';
+                // Generous hit areas overlaid on the anatomy SVG for finger-friendly tapping
+                // Each hit area corresponds to one Express group
+                const hitArea=(label,bounds,groupId)=>{
+                  const sel=expressGroup===groupId;
+                  return(
+                    <button onClick={(e)=>{
+                      e.stopPropagation();
+                      setExpressGroup(sel?null:groupId);
+                      try{if(navigator.vibrate)navigator.vibrate(8);}catch(_){}
+                    }} style={{
+                      position:'absolute',
+                      left:bounds.l,top:bounds.t,
+                      width:bounds.w,height:bounds.h,
+                      background:'transparent',
+                      border:'none',cursor:'pointer',
+                      padding:0,margin:0,
+                      // Subtle visual hint of the hit area when not selected
+                      opacity:sel?1:0.9,
+                    }} aria-label={label}/>
+                  );
+                };
                 return(
-                <button key={g.id} onClick={()=>{
-                  setExpressGroup(sel?null:g.id);
-                  // Haptic feedback
-                  try{if(navigator.vibrate)navigator.vibrate(8);}catch(_){}
-                }}
-                  style={{padding:"18px 12px",borderRadius:16,border:"none",cursor:"pointer",
-                    textAlign:"center",
-                    background:sel?"rgba(63,207,142,0.18)":"rgba(255,255,255,0.04)",
-                    boxShadow:sel?"0 0 0 1.5px #3fcf8e88, inset 0 1px 0 rgba(255,255,255,0.05)":"inset 0 1px 0 rgba(255,255,255,0.04)",
-                    transition:"all .2s",position:"relative"}}>
-                  <div style={{fontSize:32,marginBottom:8,opacity:sel?1:0.7,transition:"opacity .2s"}}>{g.icon}</div>
-                  <div style={{fontFamily:mono,fontSize:9,
-                    color:sel?"#3fcf8e":"rgba(255,255,255,0.6)",
-                    letterSpacing:1.5,fontWeight:700,
-                    textTransform:"uppercase"}}>
-                    {g.label[lang]||g.label.es}
+                  <div style={{position:'relative',display:'inline-block'}}>
+                    <MiniAnatomy
+                      groupZones={zonesToHighlight}
+                      intensity={expressIntensity}
+                      size={130}
+                      view='both'
+                    />
+                    {/* Hit areas — invisible but generous */}
+                    {/* Front body: left half of dual-view */}
+                    {/* tren_superior: head, chest, shoulders, arms, abs (top half front) */}
+                    {hitArea('Tren Superior',{l:'2%',t:'2%',w:'46%',h:'48%'},'tren_superior')}
+                    {/* abdomen front: only mid section as a separate ABS hit */}
+                    {hitArea('Abdomen',{l:'12%',t:'30%',w:'26%',h:'18%'},'abdomen')}
+                    {/* tren_inferior: legs front */}
+                    {hitArea('Tren Inferior',{l:'2%',t:'48%',w:'46%',h:'50%'},'tren_inferior')}
+                    {/* Back body — right half */}
+                    {hitArea('Tren Superior (espalda)',{l:'52%',t:'2%',w:'46%',h:'48%'},'tren_superior')}
+                    {hitArea('Tren Inferior (espalda)',{l:'52%',t:'48%',w:'46%',h:'50%'},'tren_inferior')}
                   </div>
+                );
+              })()}
+              {/* Selected group label — dynamic and prominent */}
+              <div style={{marginTop:8,minHeight:48,display:"flex",flexDirection:"column",
+                alignItems:"center",justifyContent:"center"}}>
+                {expressGroup?(()=>{
+                  const g=EXPRESS_GROUPS.find(x=>x.id===expressGroup);
+                  const intColor=expressIntensity==='intense'?'#f0612a':expressIntensity==='soft'?'#4caf8e':'#3fcf8e';
+                  return(
+                    <div style={{textAlign:"center"}}>
+                      <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:28,letterSpacing:2,
+                        color:intColor,lineHeight:1,
+                        textShadow:'0 0 20px '+intColor+'66'}}>
+                        {(g.label[lang]||g.label.es).toUpperCase()}
+                      </div>
+                      <div style={{fontFamily:mono,fontSize:7,color:"rgba(255,255,255,0.4)",
+                        letterSpacing:2,marginTop:6,fontWeight:700}}>
+                        {g.zones.slice(0,4).map(z=>z.replace(/_/g,' ').replace('izq','I').replace('der','D')).join(' · ').toUpperCase()}
+                      </div>
+                    </div>
+                  );
+                })():(
+                  <div style={{fontFamily:mono,fontSize:9,color:"rgba(255,255,255,0.35)",
+                    letterSpacing:2,textAlign:"center",lineHeight:1.5}}>
+                    {lang==="es"||lang==="pt"?"↑ TOCA UNA ZONA DEL CUERPO":lang==="it"?"↑ TOCCA UNA ZONA DEL CORPO":lang==="de"?"↑ BERÜHRE EINE KÖRPERZONE":lang==="fr"?"↑ TOUCHE UNE ZONE DU CORPS":"↑ TAP A BODY ZONE"}
+                  </div>
+                )}
+              </div>
+            </div>
+            {/* Quick HIIT chip — full body alternative */}
+            <div style={{display:"flex",justifyContent:"center",marginBottom:14}}>
+              <button onClick={()=>{
+                setExpressGroup(expressGroup==='hiit'?null:'hiit');
+                try{if(navigator.vibrate)navigator.vibrate(8);}catch(_){}
+              }} style={{padding:"8px 18px",borderRadius:20,border:"none",cursor:"pointer",
+                background:expressGroup==='hiit'?"rgba(240,97,42,0.18)":"rgba(255,255,255,0.04)",
+                boxShadow:expressGroup==='hiit'?"0 0 0 1px #f0612aaa, 0 0 16px rgba(240,97,42,0.3)":"0 0 0 1px rgba(255,255,255,0.08)",
+                fontFamily:mono,fontSize:9,color:expressGroup==='hiit'?'#f0612a':'rgba(255,255,255,0.55)',
+                letterSpacing:2,fontWeight:700,
+                display:"flex",alignItems:"center",gap:6,
+                transition:"all .2s"}}>
+                <span style={{fontSize:13}}>⚡</span>
+                <span>HIIT · {lang==="es"||lang==="pt"?"CUERPO COMPLETO":lang==="it"?"CORPO INTERO":lang==="de"?"GANZER KÖRPER":lang==="fr"?"CORPS ENTIER":"FULL BODY"}</span>
+              </button>
+            </div>
+            {/* Time selector — improved contrast */}
+            <div style={{fontFamily:mono,fontSize:7,color:"rgba(255,255,255,0.4)",letterSpacing:2,marginBottom:8,paddingLeft:4,fontWeight:700}}>
+              {lang==="es"||lang==="pt"?"DURACIÓN":lang==="it"?"DURATA":lang==="de"?"DAUER":lang==="fr"?"DURÉE":"DURATION"}
+            </div>
+            <div style={{display:"flex",gap:6,padding:4,
+              background:"rgba(0,0,0,0.25)",borderRadius:14,marginBottom:14,
+              border:"1px solid rgba(255,255,255,0.04)"}}>
+              {[10,15,20].map(mins=>{
+                const sel=expressTime===mins;
+                return(
+                <button key={mins} onClick={()=>{
+                  setExpressTime(mins);
+                  try{if(navigator.vibrate)navigator.vibrate(5);}catch(_){}
+                }}
+                  style={{flex:1,padding:"11px 0",borderRadius:10,border:"none",cursor:"pointer",
+                    background:sel?"rgba(255,255,255,0.14)":"transparent",
+                    color:sel?"#fff":"rgba(255,255,255,0.4)",
+                    fontFamily:mono,fontSize:11,letterSpacing:1.5,fontWeight:700,
+                    boxShadow:sel?"inset 0 1px 0 rgba(255,255,255,0.08), 0 2px 8px rgba(0,0,0,0.3)":"none",
+                    transition:"all .15s"}}>
+                  {mins}<span style={{opacity:.6,marginLeft:2}}>min</span>
                 </button>
               );})}
             </div>
-            {/* Time + Intensity as iOS segmented controls */}
-            <div style={{marginBottom:10}}>
-              <div style={{fontFamily:mono,fontSize:7,color:"rgba(255,255,255,0.32)",letterSpacing:2,marginBottom:8,paddingLeft:4}}>
-                {lang==="es"||lang==="pt"?"DURACIÓN":lang==="it"?"DURATA":lang==="de"?"DAUER":lang==="fr"?"DURÉE":"DURATION"}
-              </div>
-              <div style={{display:"flex",gap:4,padding:4,
-                background:"rgba(255,255,255,0.04)",borderRadius:12,marginBottom:14}}>
-                {[10,15,20].map(mins=>{
-                  const sel=expressTime===mins;
-                  return(
-                  <button key={mins} onClick={()=>{
-                    setExpressTime(mins);
-                    try{if(navigator.vibrate)navigator.vibrate(5);}catch(_){}
-                  }}
-                    style={{flex:1,padding:"10px 0",borderRadius:8,border:"none",cursor:"pointer",
-                      background:sel?"rgba(255,255,255,0.10)":"transparent",
-                      color:sel?"#fff":"rgba(255,255,255,0.45)",
-                      fontFamily:mono,fontSize:11,letterSpacing:1.5,fontWeight:700,
-                      boxShadow:sel?"inset 0 1px 0 rgba(255,255,255,0.08)":"none",
-                      transition:"all .15s"}}>
-                    {mins}<span style={{opacity:.6,marginLeft:2}}>min</span>
-                  </button>
-                );})}
-              </div>
-              <div style={{fontFamily:mono,fontSize:7,color:"rgba(255,255,255,0.32)",letterSpacing:2,marginBottom:8,paddingLeft:4}}>
-                {lang==="es"||lang==="pt"?"INTENSIDAD":lang==="it"?"INTENSITÀ":lang==="de"?"INTENSITÄT":lang==="fr"?"INTENSITÉ":"INTENSITY"}
-              </div>
-              <div style={{display:"flex",gap:4,padding:4,
-                background:"rgba(255,255,255,0.04)",borderRadius:12,marginBottom:24}}>
-                {[
-                  {id:"soft",icon:"🌱",color:"#4caf8e"},
-                  {id:"medium",icon:"⚡",color:"#3fcf8e"},
-                  {id:"intense",icon:"🔥",color:"#f0612a"},
-                ].map(it=>{
-                  const sel=expressIntensity===it.id;
-                  return(
-                  <button key={it.id} onClick={()=>{
-                    setExpressIntensity(it.id);
-                    try{if(navigator.vibrate)navigator.vibrate(5);}catch(_){}
-                  }}
-                    style={{flex:1,padding:"10px 0",borderRadius:8,border:"none",cursor:"pointer",
-                      background:sel?"rgba(255,255,255,0.10)":"transparent",
-                      transition:"all .15s",
-                      boxShadow:sel?"inset 0 1px 0 rgba(255,255,255,0.08)":"none",
-                      display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                    <span style={{fontSize:14,opacity:sel?1:0.5}}>{it.icon}</span>
-                    <span style={{fontFamily:mono,fontSize:9,letterSpacing:1.5,fontWeight:700,
-                      color:sel?it.color:"rgba(255,255,255,0.45)"}}>
-                      {EXPRESS_INTENSITY[it.id].label[lang]||EXPRESS_INTENSITY[it.id].label.es}
-                    </span>
-                  </button>
-                );})}
-              </div>
+            {/* Intensity selector — STRONG visual feedback */}
+            <div style={{fontFamily:mono,fontSize:7,color:"rgba(255,255,255,0.4)",letterSpacing:2,marginBottom:8,paddingLeft:4,fontWeight:700}}>
+              {lang==="es"||lang==="pt"?"INTENSIDAD":lang==="it"?"INTENSITÀ":lang==="de"?"INTENSITÄT":lang==="fr"?"INTENSITÉ":"INTENSITY"}
             </div>
-            {/* Primary action */}
+            <div style={{display:"flex",gap:6,padding:4,
+              background:"rgba(0,0,0,0.25)",borderRadius:14,marginBottom:18,
+              border:"1px solid rgba(255,255,255,0.04)"}}>
+              {[
+                {id:"soft",icon:"🌱",color:"#4caf8e",bg:"rgba(76,175,142,0.22)"},
+                {id:"medium",icon:"⚡",color:"#3fcf8e",bg:"rgba(63,207,142,0.22)"},
+                {id:"intense",icon:"🔥",color:"#f0612a",bg:"rgba(240,97,42,0.22)"},
+              ].map(it=>{
+                const sel=expressIntensity===it.id;
+                return(
+                <button key={it.id} onClick={()=>{
+                  setExpressIntensity(it.id);
+                  try{if(navigator.vibrate)navigator.vibrate(5);}catch(_){}
+                }}
+                  style={{flex:1,padding:"11px 0",borderRadius:10,border:"none",cursor:"pointer",
+                    background:sel?it.bg:"transparent",
+                    transition:"all .15s",
+                    boxShadow:sel?"inset 0 1px 0 rgba(255,255,255,0.1), 0 2px 12px "+it.color+"44, 0 0 0 1px "+it.color+"55":"none",
+                    display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                  <span style={{fontSize:13,opacity:sel?1:0.45}}>{it.icon}</span>
+                  <span style={{fontFamily:mono,fontSize:9,letterSpacing:1.5,fontWeight:700,
+                    color:sel?it.color:"rgba(255,255,255,0.4)"}}>
+                    {EXPRESS_INTENSITY[it.id].label[lang]||EXPRESS_INTENSITY[it.id].label.es}
+                  </span>
+                </button>
+              );})}
+            </div>
+            {/* Primary action — adaptive copy */}
             <button
               disabled={!expressGroup}
               onClick={()=>{
@@ -7093,16 +7174,20 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                 setShowExpress(false);
                 setInWorkout(true);
               }}
-              style={{width:"100%",padding:"18px",borderRadius:16,border:"none",
+              style={{width:"100%",padding:"17px",borderRadius:16,border:"none",
                 cursor:expressGroup?"pointer":"not-allowed",
-                background:expressGroup?"linear-gradient(180deg,#4ddb9c,#3fcf8e)":"rgba(255,255,255,0.05)",
-                color:expressGroup?"#080a0e":"rgba(255,255,255,0.25)",
+                background:expressGroup?(expressIntensity==='intense'?"linear-gradient(180deg,#ff7c45,#f0612a)":expressIntensity==='soft'?"linear-gradient(180deg,#5dd9a3,#4caf8e)":"linear-gradient(180deg,#4ddb9c,#3fcf8e)"):"rgba(255,255,255,0.04)",
+                color:expressGroup?"#080a0e":"rgba(255,255,255,0.3)",
                 fontFamily:mono,fontSize:12,fontWeight:800,letterSpacing:3,
-                boxShadow:expressGroup?"0 8px 24px rgba(63,207,142,0.25), inset 0 1px 0 rgba(255,255,255,0.2)":"none",
+                boxShadow:expressGroup?(expressIntensity==='intense'?"0 8px 24px rgba(240,97,42,0.35), inset 0 1px 0 rgba(255,255,255,0.25)":expressIntensity==='soft'?"0 8px 24px rgba(76,175,142,0.3), inset 0 1px 0 rgba(255,255,255,0.25)":"0 8px 24px rgba(63,207,142,0.3), inset 0 1px 0 rgba(255,255,255,0.25)"):"none",
                 transition:"all .2s"}}>
               {expressGroup
-                ?(lang==="es"||lang==="pt"?"EMPEZAR ⚡":lang==="it"?"INIZIA ⚡":lang==="de"?"STARTEN ⚡":lang==="fr"?"COMMENCER ⚡":"START ⚡")
-                :(lang==="es"||lang==="pt"?"ELIGE UNA ZONA":lang==="it"?"SCEGLI UNA ZONA":lang==="de"?"WÄHLE EINE ZONE":lang==="fr"?"CHOISIS UNE ZONE":"PICK A ZONE")}
+                ?(()=>{
+                  const g=EXPRESS_GROUPS.find(x=>x.id===expressGroup);
+                  const verb=lang==="es"||lang==="pt"?"FORJAR":lang==="it"?"FORGIARE":lang==="de"?"SCHMIEDEN":lang==="fr"?"FORGER":"FORGE";
+                  return verb+" "+(g.label[lang]||g.label.es).toUpperCase()+" ⚡";
+                })()
+                :(lang==="es"||lang==="pt"?"ELIGE UNA ZONA ↑":lang==="it"?"SCEGLI UNA ZONA ↑":lang==="de"?"WÄHLE EINE ZONE ↑":lang==="fr"?"CHOISIS UNE ZONE ↑":"PICK A ZONE ↑")}
             </button>
           </div>
         </div>
@@ -7184,7 +7269,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
 //   size: ancho del SVG (alto se calcula 2x)
 //   view: 'front'|'back'|'both' (default 'both')
 // ════════════════════════════════════════════════════════════════════
-function MiniAnatomy({activeZones=[], workedZones=[], xpDeltas={}, intensity='medium', size=180, view='both'}){
+function MiniAnatomy({activeZones=[], workedZones=[], xpDeltas={}, intensity='medium', size=180, view='both', onZoneClick=null, hoveredZone=null, groupZones=null}){
   const intensityColor=intensity==='intense'?'#f0612a':intensity==='soft'?'#4caf8e':'#3fcf8e';
   const w=view==='both'?size*1.6:size;
   const h=size*1.8;
@@ -7227,32 +7312,41 @@ function MiniAnatomy({activeZones=[], workedZones=[], xpDeltas={}, intensity='me
   function getFill(zone){
     const isActive=activeZones.includes(zone);
     const isWorked=workedZones.includes(zone);
+    const isInGroup=groupZones&&groupZones.includes(zone);
+    const isHovered=hoveredZone===zone;
     if(isActive)return intensityColor;
+    if(isInGroup)return intensityColor;
     if(isWorked)return intensityColor;
+    if(isHovered)return 'rgba(255,255,255,0.18)';
     return 'rgba(255,255,255,0.06)';
   }
   function getOpacity(zone){
     const isActive=activeZones.includes(zone);
     const isWorked=workedZones.includes(zone);
+    const isInGroup=groupZones&&groupZones.includes(zone);
     if(isActive)return 0.85;
+    if(isInGroup)return 0.85;
     if(isWorked)return 0.55;
     return 0.4;
   }
   function getAnimation(zone){
     if(activeZones.includes(zone))return 'forjaMuscleGlow 1.5s ease-in-out infinite';
+    if(groupZones&&groupZones.includes(zone))return 'forjaMuscleGlow 1.5s ease-in-out infinite';
     if(workedZones.includes(zone))return 'forjaMusclePulse 2s ease-in-out infinite';
     return 'none';
   }
-  // Helper: render a zone path
+  // Helper: render a zone path (with optional click handler)
   const Z=(zone,d)=>(
     <path d={d} fill={getFill(zone)}
-      stroke={(activeZones.includes(zone)||workedZones.includes(zone))?intensityColor:'rgba(255,255,255,0.15)'}
-      strokeWidth={(activeZones.includes(zone)||workedZones.includes(zone))?0.5:0.3}
+      stroke={(activeZones.includes(zone)||workedZones.includes(zone)||(groupZones&&groupZones.includes(zone)))?intensityColor:'rgba(255,255,255,0.15)'}
+      strokeWidth={(activeZones.includes(zone)||workedZones.includes(zone)||(groupZones&&groupZones.includes(zone)))?0.5:0.3}
       opacity={getOpacity(zone)}
+      onClick={onZoneClick?(e)=>{e.stopPropagation();onZoneClick(zone);}:null}
       style={{
         transition:'fill 0.4s, opacity 0.4s, stroke 0.4s',
         animation:getAnimation(zone),
-        filter:(activeZones.includes(zone)||workedZones.includes(zone))?`drop-shadow(0 0 4px ${intensityColor}80)`:'none'
+        filter:(activeZones.includes(zone)||workedZones.includes(zone)||(groupZones&&groupZones.includes(zone)))?`drop-shadow(0 0 4px ${intensityColor}80)`:'none',
+        cursor:onZoneClick?'pointer':'default'
       }}/>
   );
   return(
