@@ -7036,23 +7036,19 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                 };
                 return(
                   <div style={{position:'relative',display:'inline-block'}}>
-                    <MiniAnatomy
+                    <MannequinMini
                       groupZones={zonesToHighlight}
                       intensity={expressIntensity}
-                      size={130}
-                      view='both'
+                      size={220}
+                      autoRotate={!expressGroup}
+                      onZoneClick={(zone)=>{
+                        const grp=expressGroupForZone(zone);
+                        if(grp){
+                          setExpressGroup(grp===expressGroup?null:grp);
+                          try{if(navigator.vibrate)navigator.vibrate(8);}catch(_){}
+                        }
+                      }}
                     />
-                    {/* Hit areas — invisible but generous */}
-                    {/* Front body: left half of dual-view */}
-                    {/* tren_superior: head, chest, shoulders, arms, abs (top half front) */}
-                    {hitArea('Tren Superior',{l:'2%',t:'2%',w:'46%',h:'48%'},'tren_superior')}
-                    {/* abdomen front: only mid section as a separate ABS hit */}
-                    {hitArea('Abdomen',{l:'12%',t:'30%',w:'26%',h:'18%'},'abdomen')}
-                    {/* tren_inferior: legs front */}
-                    {hitArea('Tren Inferior',{l:'2%',t:'48%',w:'46%',h:'50%'},'tren_inferior')}
-                    {/* Back body — right half */}
-                    {hitArea('Tren Superior (espalda)',{l:'52%',t:'2%',w:'46%',h:'48%'},'tren_superior')}
-                    {hitArea('Tren Inferior (espalda)',{l:'52%',t:'48%',w:'46%',h:'50%'},'tren_inferior')}
                   </div>
                 );
               })()}
@@ -7268,6 +7264,227 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
 //   intensity: 'soft'|'medium'|'intense' — afecta colores e intensidad
 //   size: ancho del SVG (alto se calcula 2x)
 //   view: 'front'|'back'|'both' (default 'both')
+// ════════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════
+// MannequinMini — El maniquí 3D real de FORJA en miniatura
+// Usa forja_body.glb cargado una sola vez (cached) y resalta zonas musculares
+// según props. Mismo modelo que el tab CUERPO principal — consistencia visual total.
+// Props:
+//   activeZones: array de zone IDs ('pecho','quad', etc) que se iluminan en rojo
+//   workedZones: array de zone IDs que pulsan más sutil
+//   intensity: 'soft'|'medium'|'intense' — color de zonas activas
+//   size: tamaño del canvas en px (default 240)
+//   onZoneClick: function(zone) optional — callback al tocar una zona
+//   groupZones: array de zone IDs que se iluminan (mismo trato que activeZones)
+//   autoRotate: boolean — gira lentamente (default false)
+// ════════════════════════════════════════════════════════════════════
+// Cache global del GLB para no recargarlo en cada instancia
+const _forjaGLBCache={data:null,promise:null};
+function loadForjaGLB(){
+  if(_forjaGLBCache.data)return Promise.resolve(_forjaGLBCache.data);
+  if(_forjaGLBCache.promise)return _forjaGLBCache.promise;
+  _forjaGLBCache.promise=fetch("https://danielngr.github.io/FORJA/forja_body.glb")
+    .then(r=>{if(!r.ok)throw new Error("GLB 404");return r.arrayBuffer();})
+    .then(buf=>{
+      const u8=new Uint8Array(buf),dv=new DataView(buf);
+      if(dv.getUint32(0,true)!==0x46546C67)throw new Error("Invalid GLB");
+      const jLen=dv.getUint32(12,true);
+      const gltf=JSON.parse(new TextDecoder().decode(u8.slice(20,20+jLen)));
+      const bin=u8.slice(20+jLen+8);
+      _forjaGLBCache.data={gltf,bin};
+      return _forjaGLBCache.data;
+    });
+  return _forjaGLBCache.promise;
+}
+function MannequinMini({activeZones=[],workedZones=[],groupZones=null,intensity='medium',size=240,onZoneClick=null,autoRotate=false}){
+  const cvsRef=React.useRef(null);
+  const wrapRef=React.useRef(null);
+  const meshMapRef=React.useRef({});
+  const matMapRef=React.useRef({});
+  const modelRef=React.useRef(null);
+  const rendRef=React.useRef(null);
+  const sceneRef=React.useRef(null);
+  const camRef=React.useRef(null);
+  const rafRef=React.useRef(null);
+  const dragRef=React.useRef({down:false,x:0,y:0,rotY:0,rotYStart:0});
+  const [loaded,setLoaded]=React.useState(false);
+  // Compute color for the current intensity
+  const intensityColor=intensity==='intense'?[0.94,0.38,0.16]:intensity==='soft'?[0.30,0.69,0.56]:[0.25,0.81,0.56];
+  // Combine all "highlighted" zones (active + group + worked)
+  const highlightedZones=[...activeZones,...(groupZones||[]),...workedZones];
+  // Update materials when zones change
+  React.useEffect(()=>{
+    if(!loaded)return;
+    const matMap=matMapRef.current;
+    Object.entries(matMap).forEach(([meshName,mat])=>{
+      const zk=MESH_ZONE_3D[meshName]||"base";
+      const isHighlighted=highlightedZones.includes(zk);
+      if(isHighlighted){
+        mat.color.setRGB(intensityColor[0],intensityColor[1],intensityColor[2]);
+        mat.emissive.setRGB(intensityColor[0]*0.4,intensityColor[1]*0.4,intensityColor[2]*0.4);
+      } else {
+        // Neutral skin tone
+        mat.color.setRGB(0.42,0.45,0.52);
+        mat.emissive.setRGB(0,0,0);
+      }
+    });
+  },[activeZones,workedZones,groupZones,intensity,loaded]);
+  // Three.js setup (runs once per mount)
+  React.useEffect(()=>{
+    if(typeof THREE==='undefined'||!cvsRef.current)return;
+    let ren,scene,cam;
+    try{
+      ren=new THREE.WebGLRenderer({canvas:cvsRef.current,antialias:true,alpha:true,powerPreference:'low-power'});
+    }catch(e){console.error('WebGL fail:',e);return;}
+    ren.setPixelRatio(Math.min(devicePixelRatio,1.5));
+    ren.outputEncoding=THREE.sRGBEncoding;
+    ren.toneMapping=THREE.ACESFilmicToneMapping;
+    ren.toneMappingExposure=1.4;
+    ren.setClearColor(0x000000,0);
+    rendRef.current=ren;
+    scene=new THREE.Scene();
+    sceneRef.current=scene;
+    cam=new THREE.PerspectiveCamera(40,1,0.01,1000);
+    cam.position.set(0,0,32);
+    camRef.current=cam;
+    // Lighting — dramatic key + soft fill
+    scene.add(new THREE.AmbientLight(0xffffff,0.55));
+    const key=new THREE.DirectionalLight(0xffffff,1.1);
+    key.position.set(5,10,8);scene.add(key);
+    const fill=new THREE.DirectionalLight(0x8aa8ff,0.35);
+    fill.position.set(-6,2,4);scene.add(fill);
+    const rim=new THREE.DirectionalLight(0xffffff,0.5);
+    rim.position.set(0,-3,-8);scene.add(rim);
+    // Resize
+    const fitCanvas=()=>{
+      const w=size,h=size;
+      ren.setSize(w,h,false);
+      cam.aspect=w/h;cam.updateProjectionMatrix();
+    };
+    fitCanvas();
+    // Load mannequin (cached)
+    let rotY=0,rotYTarget=0;
+    let cancelled=false;
+    loadForjaGLB().then(({gltf,bin})=>{
+      if(cancelled)return;
+      const group=new THREE.Group();
+      gltf.nodes.forEach(node=>{
+        if(node.mesh===undefined)return;
+        gltf.meshes[node.mesh].primitives.forEach(prim=>{
+          const geo=new THREE.BufferGeometry();
+          const getArr=(ai,T,n)=>{const a=gltf.accessors[ai],bv=gltf.bufferViews[a.bufferView],off=(bv.byteOffset||0)+(a.byteOffset||0);return new T(bin.buffer,bin.byteOffset+off,a.count*n);};
+          if(prim.attributes.POSITION!==undefined)geo.setAttribute("position",new THREE.BufferAttribute(getArr(prim.attributes.POSITION,Float32Array,3).slice(),3));
+          if(prim.attributes.NORMAL!==undefined)geo.setAttribute("normal",new THREE.BufferAttribute(getArr(prim.attributes.NORMAL,Float32Array,3).slice(),3));
+          if(prim.indices!==undefined){const a=gltf.accessors[prim.indices];geo.setIndex(new THREE.BufferAttribute(getArr(prim.indices,a.componentType===5123?Uint16Array:Uint32Array,1).slice(),1));}
+          if(!geo.attributes.normal)geo.computeVertexNormals();
+          const mat=new THREE.MeshStandardMaterial({
+            color:new THREE.Color(0.42,0.45,0.52),
+            roughness:0.72,metalness:0.05,
+            emissive:new THREE.Color(0,0,0),
+          });
+          matMapRef.current[node.name]=mat;
+          const mesh=new THREE.Mesh(geo,mat);
+          mesh.name=node.name;
+          mesh.userData.zone=MESH_ZONE_3D[node.name]||"base";
+          if(node.translation)mesh.position.set(...node.translation);
+          if(node.rotation)mesh.quaternion.set(...node.rotation);
+          if(node.scale)mesh.scale.set(...node.scale);
+          meshMapRef.current[node.name]=mesh;
+          group.add(mesh);
+        });
+      });
+      // Center and scale
+      const box=new THREE.Box3().setFromObject(group);
+      const center=box.getCenter(new THREE.Vector3()),sz=box.getSize(new THREE.Vector3());
+      group.position.sub(center);
+      group.position.y-=4.5;
+      group.scale.setScalar(15/Math.max(sz.x,sz.y,sz.z));
+      scene.add(group);
+      modelRef.current=group;
+      setLoaded(true);
+    }).catch(e=>console.warn('Mannequin load error:',e));
+    // Click handler — raycast to find clicked muscle zone
+    const raycaster=new THREE.Raycaster();
+    const handleClick=(ev)=>{
+      if(!onZoneClick||!modelRef.current)return;
+      const rect=cvsRef.current.getBoundingClientRect();
+      const t=(ev.touches&&ev.touches[0])||(ev.changedTouches&&ev.changedTouches[0])||ev;
+      const x=((t.clientX-rect.left)/rect.width)*2-1;
+      const y=-((t.clientY-rect.top)/rect.height)*2+1;
+      raycaster.setFromCamera({x,y},cam);
+      const meshes=Object.values(meshMapRef.current);
+      const hits=raycaster.intersectObjects(meshes,false);
+      if(hits.length>0){
+        const zone=hits[0].object.userData.zone;
+        if(zone&&zone!=='base')onZoneClick(zone);
+      }
+    };
+    cvsRef.current.addEventListener('click',handleClick);
+    // Drag to rotate
+    const onDown=(ev)=>{
+      const t=(ev.touches&&ev.touches[0])||ev;
+      dragRef.current.down=true;
+      dragRef.current.x=t.clientX;
+      dragRef.current.rotYStart=rotY;
+    };
+    const onMove=(ev)=>{
+      if(!dragRef.current.down)return;
+      const t=(ev.touches&&ev.touches[0])||ev;
+      const dx=t.clientX-dragRef.current.x;
+      rotY=dragRef.current.rotYStart+dx*0.012;
+      rotYTarget=rotY;
+    };
+    const onUp=()=>{dragRef.current.down=false;};
+    cvsRef.current.addEventListener('mousedown',onDown);
+    cvsRef.current.addEventListener('touchstart',onDown,{passive:true});
+    window.addEventListener('mousemove',onMove);
+    window.addEventListener('touchmove',onMove,{passive:true});
+    window.addEventListener('mouseup',onUp);
+    window.addEventListener('touchend',onUp);
+    // Animate loop
+    const t0=performance.now();
+    const animate=(t)=>{
+      rafRef.current=requestAnimationFrame(animate);
+      if(autoRotate&&!dragRef.current.down)rotYTarget=(t-t0)*0.0003;
+      rotY+=(rotYTarget-rotY)*0.12;
+      if(modelRef.current)modelRef.current.rotation.y=rotY;
+      ren.render(scene,cam);
+    };
+    rafRef.current=requestAnimationFrame(animate);
+    return ()=>{
+      cancelled=true;
+      cancelAnimationFrame(rafRef.current);
+      try{cvsRef.current&&cvsRef.current.removeEventListener('click',handleClick);}catch(_){}
+      try{cvsRef.current&&cvsRef.current.removeEventListener('mousedown',onDown);}catch(_){}
+      try{cvsRef.current&&cvsRef.current.removeEventListener('touchstart',onDown);}catch(_){}
+      window.removeEventListener('mousemove',onMove);
+      window.removeEventListener('touchmove',onMove);
+      window.removeEventListener('mouseup',onUp);
+      window.removeEventListener('touchend',onUp);
+      // Dispose materials
+      Object.values(matMapRef.current).forEach(m=>{try{m.dispose();}catch(_){}});
+      Object.values(meshMapRef.current).forEach(m=>{try{m.geometry.dispose();}catch(_){}});
+      try{ren.dispose();}catch(_){}
+    };
+  },[size,autoRotate]);
+  return(
+    <div ref={wrapRef} style={{position:'relative',width:size,height:size,
+      cursor:onZoneClick?'pointer':'grab',touchAction:'none'}}>
+      <canvas ref={cvsRef} style={{display:'block',width:'100%',height:'100%'}}/>
+      {!loaded&&(
+        <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',
+          justifyContent:'center',pointerEvents:'none'}}>
+          <div style={{fontFamily:"'SF Mono',monospace",fontSize:9,color:'rgba(255,255,255,.3)',
+            letterSpacing:2}}>...</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════
+// MiniAnatomy — Versión SVG ligera del cuerpo (legacy/fallback)
+// Usado para casos donde Three.js sería overkill
 // ════════════════════════════════════════════════════════════════════
 function MiniAnatomy({activeZones=[], workedZones=[], xpDeltas={}, intensity='medium', size=180, view='both', onZoneClick=null, hoveredZone=null, groupZones=null}){
   const intensityColor=intensity==='intense'?'#f0612a':intensity==='soft'?'#4caf8e':'#3fcf8e';
@@ -7712,11 +7929,11 @@ function ExpressTimer({day, lang, profile, onDone, onBack}){
         </div>
         <div style={{position:'relative',padding:'8px 0 4px',
           animation:'forjaAnatomyReveal 1.2s ease-out'}}>
-          <MiniAnatomy
+          <MannequinMini
             workedZones={workedZonesAcc}
             intensity={day.intensity||'medium'}
-            size={150}
-            view='both'
+            size={240}
+            autoRotate={true}
           />
         </div>
         {/* XP per zone */}
@@ -7840,11 +8057,10 @@ function ExpressTimer({day, lang, profile, onDone, onBack}){
           {/* MAIN: anatomy with active muscles + countdown overlaid */}
           <div style={{position:'relative',display:'flex',alignItems:'center',justifyContent:'center',
             marginBottom:14}}>
-            <MiniAnatomy
+            <MannequinMini
               activeZones={upcomingZones}
               intensity={day.intensity||'medium'}
-              size={140}
-              view='both'
+              size={220}
             />
             {/* Countdown overlay — protagonist */}
             <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',
@@ -8002,12 +8218,11 @@ function ExpressTimer({day, lang, profile, onDone, onBack}){
               display:'flex',flexDirection:'column',alignItems:'center'}}>
               {/* Anatomy with worked zones pulsing */}
               <div style={{position:'relative',marginBottom:16}}>
-                <MiniAnatomy
+                <MannequinMini
                   workedZones={workedZonesAcc}
                   activeZones={exerciseToZones(nextEx?.exName)}
                   intensity={day.intensity||'medium'}
-                  size={130}
-                  view='both'
+                  size={200}
                 />
               </div>
               {/* Timer + XP earned card */}
