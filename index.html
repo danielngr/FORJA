@@ -7899,6 +7899,12 @@ function ProfileSheet({show,onClose,profile,lang,mono,sp,setStep}){
               try{
                 var result=await window.redeemProCode(code);
                 if(result.ok){
+                  // Set cache localStorage para que isPro() devuelva true inmediatamente
+                  try{localStorage.setItem('fv8_pro','1');}catch(_){}
+                  // Re-verificar contra DB para asegurar consistencia
+                  if(typeof checkProStatus==='function'){
+                    try{await checkProStatus();}catch(_){}
+                  }
                   alert(l==="en"?"✅ "+result.msg+"\n\nReloading...":"✅ "+result.msg+"\n\nRecargando...");
                   window.location.reload();
                 } else {
