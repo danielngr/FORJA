@@ -3263,7 +3263,7 @@ async function checkProStatus(){
       // Don't nuke cache if we can't connect — keep last known state
       return false;
     }
-    var res=await sb.from('pro_users').select('id,expires_at,status').eq('user_id',user.id).maybeSingle();
+    var res=await sb.from('pro_users').select('user_id,expires_at,status').eq('user_id',user.id).maybeSingle();
     if(!res||!res.data){
       // No row = not PRO — update cache
       try{localStorage.setItem('fv8_pro','0');}catch(_){}
@@ -7901,11 +7901,7 @@ function ProfileSheet({show,onClose,profile,lang,mono,sp,setStep}){
                 if(result.ok){
                   // Set cache localStorage para que isPro() devuelva true inmediatamente
                   try{localStorage.setItem('fv8_pro','1');}catch(_){}
-                  // Re-verificar contra DB para asegurar consistencia
-                  if(typeof checkProStatus==='function'){
-                    try{await checkProStatus();}catch(_){}
-                  }
-                  alert(l==="en"?"✅ "+result.msg+"\n\nReloading...":"✅ "+result.msg+"\n\nRecargando...");
+                  // Reload directo (el cache ya está seteado, isPro() retornará true)
                   window.location.reload();
                 } else {
                   alert("❌ "+result.msg);
