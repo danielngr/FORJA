@@ -1775,6 +1775,7 @@ class Heart3D {
 
     // 5) HEART (Taubin heart equation)
     this.targets.heart = this.buildHeartTarget();
+    this.targets.dumbbell = this.buildDumbbellTarget();
 
     // 6) DISPERSED (cloud)
     this.targets.dispersed = new Float32Array(N*3);
@@ -1794,94 +1795,132 @@ class Heart3D {
   buildBodyTarget(){
     const N = this.particleCount;
     const arr = new Float32Array(N*3);
-    // Maniquí FORJA estilo: hombros anchos, cintura V-taper, músculos definidos
-    // Coordenadas: Y arriba=positivo, X lados, Z profundidad
+    // Maniquí humano con proporciones realistas, hecho con capsules y elipsoides.
+    // Coords: Y arriba=positivo, X lados, Z profundidad.
+    // Total altura ~3.0 unidades (de y=-1.5 a y=1.5)
+
+    // CAPSULE = cilindro con tapas semiesféricas en los extremos
+    // Es la primitiva que mejor se ve para cuerpos humanos
+    function pointInCapsule(p1y, p2y, r){
+      // Random point inside a vertical capsule from y=p1y to y=p2y, radius r
+      const len = p2y - p1y;
+      // Total volume = cylinder + 2 hemispheres
+      // For simplicity: 80% in cylinder, 20% in caps
+      let y, dx, dz;
+      const rand = Math.random();
+      if(rand < 0.85){
+        // Inside cylinder
+        const t = Math.random()*Math.PI*2;
+        const rr = Math.sqrt(Math.random())*r;
+        y = p1y + Math.random()*len;
+        dx = rr*Math.cos(t);
+        dz = rr*Math.sin(t);
+      } else {
+        // Inside one of the hemispheres (top or bottom)
+        const top = Math.random() < 0.5;
+        const t = Math.random()*Math.PI*2;
+        const ph = Math.acos(Math.random()); // 0..pi/2
+        const rr = Math.cbrt(Math.random())*r;
+        dx = rr*Math.sin(ph)*Math.cos(t);
+        dz = rr*Math.sin(ph)*Math.sin(t);
+        const dy = rr*Math.cos(ph);
+        y = top ? (p2y + dy) : (p1y - dy);
+      }
+      return [dx, y, dz];
+    }
+
     const parts = [
-      // === CABEZA ===
-      // head (oval)
-      {type:'sphere', cx:0, cy:1.55, cz:0, rx:0.20, ry:0.24, rz:0.20, weight:0.06},
-      // jaw hint (bottom of head)
-      {type:'sphere', cx:0, cy:1.30, cz:0.04, rx:0.15, ry:0.10, rz:0.15, weight:0.02},
-      // neck (thick)
-      {type:'cylinder_y', cx:0, cy:1.10, cz:0, h:0.20, r:0.13, weight:0.04},
+      // === HEAD (sphere ovalada) ===
+      {type:'ellipsoid', cx:0, cy:1.30, cz:0, rx:0.18, ry:0.22, rz:0.18, weight:0.05},
+      // jaw bottom hint
+      {type:'ellipsoid', cx:0, cy:1.10, cz:0.03, rx:0.13, ry:0.08, rz:0.13, weight:0.015},
 
-      // === HOMBROS Y TRAPECIOS ===
-      // shoulders span (wide deltoid line)
-      {type:'cylinder_x', cx:0, cy:0.92, cz:0, h:0.95, r:0.18, weight:0.10},
-      // left deltoid (round)
-      {type:'sphere', cx:-0.50, cy:0.85, cz:0, rx:0.18, ry:0.18, rz:0.20, weight:0.04},
-      // right deltoid
-      {type:'sphere', cx:0.50, cy:0.85, cz:0, rx:0.18, ry:0.18, rz:0.20, weight:0.04},
+      // === NECK ===
+      {type:'capsule', cx:0, cy0:0.92, cy1:1.02, r:0.10, weight:0.025},
 
-      // === PECTORAL / TORSO SUPERIOR (V-shape, wide top, narrow waist) ===
-      // chest top (pec line)
-      {type:'box', cx:0, cy:0.65, cz:0.08, w:0.85, h:0.30, d:0.20, weight:0.10},
-      // mid torso (abs)
-      {type:'box', cx:0, cy:0.30, cz:0.05, w:0.55, h:0.40, d:0.22, weight:0.09},
-      // lower torso (waist taper)
-      {type:'box', cx:0, cy:-0.05, cz:0, w:0.45, h:0.20, d:0.20, weight:0.05},
+      // === SHOULDERS (deltoides redondeados, span ancho) ===
+      {type:'ellipsoid', cx:-0.42, cy:0.82, cz:0, rx:0.16, ry:0.15, rz:0.18, weight:0.04},
+      {type:'ellipsoid', cx:0.42, cy:0.82, cz:0, rx:0.16, ry:0.15, rz:0.18, weight:0.04},
 
-      // === BRAZOS ===
-      // left bicep
-      {type:'cylinder_y', cx:-0.62, cy:0.55, cz:0, h:0.45, r:0.13, weight:0.06},
-      // left forearm
-      {type:'cylinder_y', cx:-0.62, cy:0.05, cz:0.05, h:0.45, r:0.10, weight:0.05},
-      // right bicep
-      {type:'cylinder_y', cx:0.62, cy:0.55, cz:0, h:0.45, r:0.13, weight:0.06},
-      // right forearm
-      {type:'cylinder_y', cx:0.62, cy:0.05, cz:0.05, h:0.45, r:0.10, weight:0.05},
+      // === CHEST (pecho ancho V-shape) ===
+      // Pecho izquierdo
+      {type:'ellipsoid', cx:-0.18, cy:0.55, cz:0.13, rx:0.22, ry:0.18, rz:0.13, weight:0.05},
+      // Pecho derecho
+      {type:'ellipsoid', cx:0.18, cy:0.55, cz:0.13, rx:0.22, ry:0.18, rz:0.13, weight:0.05},
+      // Esternón / linea central pecho
+      {type:'ellipsoid', cx:0, cy:0.55, cz:0.05, rx:0.05, ry:0.20, rz:0.10, weight:0.02},
 
-      // === HIPS / GLUTES ===
-      // hips
-      {type:'box', cx:0, cy:-0.25, cz:0, w:0.55, h:0.20, d:0.28, weight:0.06},
+      // === TORSO MEDIO (lats + abs) ===
+      // Lat izquierdo (espalda alta lateral)
+      {type:'ellipsoid', cx:-0.32, cy:0.30, cz:-0.02, rx:0.13, ry:0.25, rz:0.16, weight:0.04},
+      // Lat derecho
+      {type:'ellipsoid', cx:0.32, cy:0.30, cz:-0.02, rx:0.13, ry:0.25, rz:0.16, weight:0.04},
+      // Abs centro
+      {type:'ellipsoid', cx:0, cy:0.20, cz:0.10, rx:0.16, ry:0.30, rz:0.13, weight:0.06},
 
-      // === PIERNAS ===
-      // left quad (large)
-      {type:'cylinder_y', cx:-0.18, cy:-0.65, cz:0, h:0.65, r:0.16, weight:0.09},
-      // left calf
-      {type:'cylinder_y', cx:-0.18, cy:-1.30, cz:0, h:0.55, r:0.12, weight:0.06},
-      // right quad
-      {type:'cylinder_y', cx:0.18, cy:-0.65, cz:0, h:0.65, r:0.16, weight:0.09},
-      // right calf
-      {type:'cylinder_y', cx:0.18, cy:-1.30, cz:0, h:0.55, r:0.12, weight:0.06},
+      // === CINTURA (V-taper hacia abajo) ===
+      {type:'ellipsoid', cx:0, cy:-0.08, cz:0, rx:0.20, ry:0.12, rz:0.16, weight:0.03},
 
-      // === DETAILS — extra particles to define muscles ===
-      // pec separation hint
-      {type:'box', cx:0, cy:0.65, cz:0.18, w:0.05, h:0.25, d:0.05, weight:0.01},
-      // ab line
-      {type:'box', cx:0, cy:0.30, cz:0.18, w:0.04, h:0.35, d:0.04, weight:0.01},
+      // === BRAZOS (capsulas) ===
+      // Hombro→codo izquierdo (bicep)
+      {type:'capsule', cx:-0.55, cy0:0.30, cy1:0.78, r:0.115, weight:0.06},
+      // Codo→muñeca izquierdo (antebrazo)
+      {type:'capsule', cx:-0.55, cy0:-0.18, cy1:0.28, r:0.095, weight:0.05},
+      // Mano izquierda
+      {type:'ellipsoid', cx:-0.55, cy:-0.28, cz:0, rx:0.07, ry:0.10, rz:0.06, weight:0.012},
+      // Bicep derecho
+      {type:'capsule', cx:0.55, cy0:0.30, cy1:0.78, r:0.115, weight:0.06},
+      // Antebrazo derecho
+      {type:'capsule', cx:0.55, cy0:-0.18, cy1:0.28, r:0.095, weight:0.05},
+      // Mano derecha
+      {type:'ellipsoid', cx:0.55, cy:-0.28, cz:0, rx:0.07, ry:0.10, rz:0.06, weight:0.012},
+
+      // === CADERAS ===
+      {type:'ellipsoid', cx:-0.13, cy:-0.30, cz:0, rx:0.15, ry:0.13, rz:0.18, weight:0.03},
+      {type:'ellipsoid', cx:0.13, cy:-0.30, cz:0, rx:0.15, ry:0.13, rz:0.18, weight:0.03},
+
+      // === MUSLOS (capsulas grandes) ===
+      // Cuádriceps izquierdo
+      {type:'capsule', cx:-0.16, cy0:-1.00, cy1:-0.40, r:0.16, weight:0.085},
+      // Cuádriceps derecho
+      {type:'capsule', cx:0.16, cy0:-1.00, cy1:-0.40, r:0.16, weight:0.085},
+
+      // === RODILLAS (esféricas) ===
+      {type:'ellipsoid', cx:-0.16, cy:-1.05, cz:0, rx:0.10, ry:0.07, rz:0.10, weight:0.012},
+      {type:'ellipsoid', cx:0.16, cy:-1.05, cz:0, rx:0.10, ry:0.07, rz:0.10, weight:0.012},
+
+      // === GEMELOS / PANTORRILLAS ===
+      // Pantorrilla izquierda
+      {type:'capsule', cx:-0.16, cy0:-1.55, cy1:-1.10, r:0.115, weight:0.06},
+      // Pantorrilla derecha
+      {type:'capsule', cx:0.16, cy0:-1.55, cy1:-1.10, r:0.115, weight:0.06},
+
+      // === PIES ===
+      {type:'ellipsoid', cx:-0.16, cy:-1.62, cz:0.05, rx:0.08, ry:0.06, rz:0.13, weight:0.014},
+      {type:'ellipsoid', cx:0.16, cy:-1.62, cz:0.05, rx:0.08, ry:0.06, rz:0.13, weight:0.014},
     ];
+
     const totalW = parts.reduce((s,p)=>s+p.weight,0);
     let idx = 0;
     parts.forEach(p=>{
       const count = Math.round((p.weight/totalW) * N);
       for(let i=0;i<count && idx<N;i++,idx++){
         let x,y,z;
-        if(p.type==='sphere'){
+        if(p.type==='ellipsoid'){
+          // Random point inside ellipsoid (using cube root for uniform volume)
           const t = Math.random()*Math.PI*2;
           const ph = Math.acos(2*Math.random()-1);
-          const rx = p.rx || p.r || 0.15;
-          const ry = p.ry || p.r || 0.15;
-          const rz = p.rz || p.r || 0.15;
-          x = p.cx + rx*Math.sin(ph)*Math.cos(t);
-          y = p.cy + ry*Math.sin(ph)*Math.sin(t);
-          z = p.cz + rz*Math.cos(ph);
-        } else if(p.type==='box'){
-          x = p.cx + (Math.random()-0.5)*p.w;
-          y = p.cy + (Math.random()-0.5)*p.h;
-          z = p.cz + (Math.random()-0.5)*p.d;
-        } else if(p.type==='cylinder_y'){
-          const t = Math.random()*Math.PI*2;
-          const r = Math.random()*p.r;
-          x = p.cx + r*Math.cos(t);
-          y = p.cy + (Math.random()-0.5)*p.h;
-          z = p.cz + r*Math.sin(t);
-        } else if(p.type==='cylinder_x'){
-          const t = Math.random()*Math.PI*2;
-          const r = Math.random()*p.r;
-          x = p.cx + (Math.random()-0.5)*p.h;
-          y = p.cy + r*Math.cos(t);
-          z = p.cz + r*Math.sin(t);
+          const rr = Math.cbrt(Math.random()); // 0..1 cube root for uniform
+          // Scale to surface (slightly inside)
+          const sf = 0.95 + Math.random()*0.05;
+          x = p.cx + p.rx*sf*rr*Math.sin(ph)*Math.cos(t);
+          y = p.cy + p.ry*sf*rr*Math.sin(ph)*Math.sin(t);
+          z = p.cz + p.rz*sf*rr*Math.cos(ph);
+        } else if(p.type==='capsule'){
+          const result = pointInCapsule(p.cy0, p.cy1, p.r);
+          x = p.cx + result[0];
+          y = result[1];
+          z = (p.cz || 0) + result[2];
         }
         arr[idx*3] = x;
         arr[idx*3+1] = y;
@@ -1899,32 +1938,36 @@ class Heart3D {
 
   buildHeartTarget(){
     const N = this.particleCount;
+    // Usa la función global cacheada (mismas partículas que el corazón principal)
+    if(typeof window.__forjaHeartSamplePoints === 'function'){
+      try{
+        return window.__forjaHeartSamplePoints(N);
+      }catch(e){
+        console.warn('Heart sampler failed, using fallback', e);
+      }
+    }
+    // Fallback rejection sampling
     const arr = new Float32Array(N*3);
-    // Sample Taubin heart surface
     function taubinField(x,y,z){
       const X=x, Y=z, Z=y;
       const X2=X*X, Y2=Y*Y, Z2=Z*Z;
       const a = X2 + (9*Y2)/4 + Z2 - 1;
       return a*a*a - X2*Z*Z*Z - (9*Y2*Z*Z*Z)/80;
     }
-    let count = 0;
-    let tries = 0;
+    let count = 0, tries = 0;
     while(count < N && tries < N*20){
       tries++;
       const x = (Math.random()*2-1) * 1.4;
       const y = (Math.random()*2-1) * 1.2;
       const z = (Math.random()*2-1) * 1.4;
       const f = taubinField(x,y,z);
-      // We want surface (f≈0); accept thin shell
       if(Math.abs(f) < 0.05){
-        // Project slightly to surface
         arr[count*3] = x;
         arr[count*3+1] = y;
         arr[count*3+2] = z;
         count++;
       }
     }
-    // Fill rest with random shell
     while(count < N){
       const r = 0.7;
       const t = Math.random()*Math.PI*2;
@@ -1933,6 +1976,68 @@ class Heart3D {
       arr[count*3+1] = r*Math.sin(p)*Math.sin(t)*1.3;
       arr[count*3+2] = r*Math.cos(p);
       count++;
+    }
+    return arr;
+  }
+
+  buildDumbbellTarget(){
+    // Mancuerna: barra central + dos pesas (discos hex) en los extremos
+    const N = this.particleCount;
+    const arr = new Float32Array(N*3);
+    const parts = [
+      // Barra central (cilindro horizontal a lo largo de X)
+      {type:'cylinder_x', cx:0, cy:0, cz:0, h:1.4, r:0.07, weight:0.20},
+      // Cabezal izquierdo (cilindro grueso)
+      {type:'cylinder_x', cx:-0.85, cy:0, cz:0, h:0.45, r:0.30, weight:0.18},
+      // Cabezal derecho
+      {type:'cylinder_x', cx:0.85, cy:0, cz:0, h:0.45, r:0.30, weight:0.18},
+      // Tapa exterior izquierda (disco grande hexagonal)
+      {type:'disk', cx:-1.10, cy:0, cz:0, r:0.42, thickness:0.08, weight:0.12},
+      // Tapa exterior derecha
+      {type:'disk', cx:1.10, cy:0, cz:0, r:0.42, thickness:0.08, weight:0.12},
+      // Aros internos para textura
+      {type:'ring', cx:-0.85, cy:0, cz:0, r:0.30, thickness:0.05, weight:0.05},
+      {type:'ring', cx:0.85, cy:0, cz:0, r:0.30, thickness:0.05, weight:0.05},
+      // Detalle del agarre central (textura grip)
+      {type:'cylinder_x', cx:0, cy:0, cz:0, h:0.6, r:0.085, weight:0.10},
+    ];
+    const totalW = parts.reduce((s,p)=>s+p.weight,0);
+    let idx = 0;
+    parts.forEach(p=>{
+      const count = Math.round((p.weight/totalW) * N);
+      for(let i=0;i<count && idx<N;i++,idx++){
+        let x,y,z;
+        if(p.type==='cylinder_x'){
+          // Cilindro a lo largo del eje X
+          const t = Math.random()*Math.PI*2;
+          const r = Math.random()*p.r;
+          x = p.cx + (Math.random()-0.5)*p.h;
+          y = p.cy + r*Math.cos(t);
+          z = p.cz + r*Math.sin(t);
+        } else if(p.type==='disk'){
+          // Disco perpendicular al eje X
+          const t = Math.random()*Math.PI*2;
+          const r = Math.sqrt(Math.random())*p.r; // densidad uniforme en área
+          x = p.cx + (Math.random()-0.5)*p.thickness;
+          y = p.cy + r*Math.cos(t);
+          z = p.cz + r*Math.sin(t);
+        } else if(p.type==='ring'){
+          // Anillo (aro)
+          const t = Math.random()*Math.PI*2;
+          x = p.cx + (Math.random()-0.5)*p.thickness;
+          y = p.cy + p.r*Math.cos(t);
+          z = p.cz + p.r*Math.sin(t);
+        }
+        arr[idx*3] = x;
+        arr[idx*3+1] = y;
+        arr[idx*3+2] = z;
+      }
+    });
+    while(idx < N){
+      arr[idx*3] = (Math.random()-0.5)*0.1;
+      arr[idx*3+1] = (Math.random()-0.5)*0.1;
+      arr[idx*3+2] = (Math.random()-0.5)*0.1;
+      idx++;
     }
     return arr;
   }
@@ -2014,19 +2119,22 @@ class Heart3D {
   }
 
   setStage(screenIdx){
-    // El corazón es el HÉROE: se ve en welcome (pantalla 0) y nombre (pantalla 1).
-    // Cuerpo low-poly aparece solo cuando se piden datos físicos (2-4).
-    // En pantallas 5-8 el corazón vuelve y crece progresivamente.
+    // Mapeo de figuras por pantalla:
+    // 0-1: corazón (héroe)
+    // 2-4: cuerpo low-poly
+    // 5: corazón pequeño (HR)
+    // 6: mancuerna (objetivo)
+    // 7-8: corazón
     const map = {
-      0:'heart',     // welcome — corazón mediano
-      1:'heart',     // name — corazón pequeño arriba
-      2:'body',      // sex+age — cuerpo aparece
+      0:'heart',     // welcome
+      1:'heart',     // name
+      2:'body',      // sex+age
       3:'body',      // height+weight
       4:'body',      // waist
-      5:'heart',     // hr — corazón vuelve, pequeño
-      6:'heart',     // goal
+      5:'heart',     // hr
+      6:'dumbbell',  // goal — mancuerna
       7:'heart',     // days
-      8:'heart',     // reveal — corazón gigante
+      8:'heart',     // reveal
     };
     const targetName = map[screenIdx] || 'heart';
     if(targetName === this.targetStage) return;
@@ -2040,7 +2148,7 @@ class Heart3D {
       const hr = (_obState && _obState.data && _obState.data.hr) ? _obState.data.hr : 62;
       this.material.uniforms.uPulse.value = hr / 60;
     } else {
-      this.material.uniforms.uPulse.value = 0.0; // cuerpo no late
+      this.material.uniforms.uPulse.value = 0.0;
     }
   }
 
@@ -2111,8 +2219,12 @@ class Heart3D {
 
     // Stage-specific positioning & scale
     if(this.targetStage === 'body'){
-      this.points.position.y = 0;
-      this.points.scale.set(this.bodyWidth*this.waistFactor*0.7, this.bodyHeight*0.7, 0.7);
+      this.points.position.y = 0.05;
+      this.points.scale.set(this.bodyWidth*this.waistFactor*0.65, this.bodyHeight*0.65, 0.65);
+    } else if(this.targetStage === 'dumbbell'){
+      // Mancuerna horizontal en el centro
+      this.points.position.y = 0.3;
+      this.points.scale.set(0.6, 0.6, 0.6);
     } else if(this.targetStage === 'heart'){
       // El corazón crece progresivamente a través del onboarding
       const screen = (typeof _obState!=='undefined' && _obState.screen) ? _obState.screen : 0;
@@ -5778,6 +5890,92 @@ function translateMuscle(name, lang){
   }
   return name; // fallback: return original
 }
+// ──────────────────────────────────────────────────────────────────
+// __forjaHeartSamplePoints(N) — devuelve N puntos en la superficie del corazón Taubin
+// Usa marching cubes (ejecutado UNA SOLA VEZ y cacheado) para que tanto
+// el FrozenHeartBanner como el onboarding muestren EXACTAMENTE el mismo corazón.
+// ──────────────────────────────────────────────────────────────────
+window.__forjaHeartTriCache = null;
+function __forjaBuildHeartTriCache(){
+  if(window.__forjaHeartTriCache) return window.__forjaHeartTriCache;
+  function tField(x,y,z){
+    var X=x,Y=z,Z=y;
+    var X2=X*X,Y2=Y*Y,Z2=Z*Z;
+    var a=X2+(9*Y2)/4+Z2-1;
+    return a*a*a-X2*Z*Z*Z-(9*Y2*Z*Z*Z)/80;
+  }
+  var RES=36;
+  var BMIN=-1.35, BMAX=1.35;
+  var ss=(BMAX-BMIN)/(RES-1);
+  var fg=new Float32Array(RES*RES*RES);
+  function gidx(i,j,k){return i+j*RES+k*RES*RES;}
+  for(var kk=0;kk<RES;kk++)for(var jj=0;jj<RES;jj++)for(var ii=0;ii<RES;ii++){
+    fg[gidx(ii,jj,kk)]=tField(BMIN+ii*ss,BMIN+jj*ss,BMIN+kk*ss);
+  }
+  // Marching cubes tables (compactas)
+  var edgeTable=new Int32Array([0x0,0x109,0x203,0x30a,0x406,0x50f,0x605,0x70c,0x80c,0x905,0xa0f,0xb06,0xc0a,0xd03,0xe09,0xf00,0x190,0x99,0x393,0x29a,0x596,0x49f,0x795,0x69c,0x99c,0x895,0xb9f,0xa96,0xd9a,0xc93,0xf99,0xe90,0x230,0x339,0x33,0x13a,0x636,0x73f,0x435,0x53c,0xa3c,0xb35,0x83f,0x936,0xe3a,0xf33,0xc39,0xd30,0x3a0,0x2a9,0x1a3,0xaa,0x7a6,0x6af,0x5a5,0x4ac,0xbac,0xaa5,0x9af,0x8a6,0xfaa,0xea3,0xda9,0xca0,0x460,0x569,0x663,0x76a,0x66,0x16f,0x265,0x36c,0xc6c,0xd65,0xe6f,0xf66,0x86a,0x963,0xa69,0xb60,0x5f0,0x4f9,0x7f3,0x6fa,0x1f6,0xff,0x3f5,0x2fc,0xdfc,0xcf5,0xfff,0xef6,0x9fa,0x8f3,0xbf9,0xaf0,0x650,0x759,0x453,0x55a,0x256,0x35f,0x55,0x15c,0xe5c,0xf55,0xc5f,0xd56,0xa5a,0xb53,0x859,0x950,0x7c0,0x6c9,0x5c3,0x4ca,0x3c6,0x2cf,0x1c5,0xcc,0xfcc,0xec5,0xdcf,0xcc6,0xbca,0xac3,0x9c9,0x8c0,0x8c0,0x9c9,0xac3,0xbca,0xcc6,0xdcf,0xec5,0xfcc,0xcc,0x1c5,0x2cf,0x3c6,0x4ca,0x5c3,0x6c9,0x7c0,0x950,0x859,0xb53,0xa5a,0xd56,0xc5f,0xf55,0xe5c,0x15c,0x55,0x35f,0x256,0x55a,0x453,0x759,0x650,0xaf0,0xbf9,0x8f3,0x9fa,0xef6,0xfff,0xcf5,0xdfc,0x2fc,0x3f5,0xff,0x1f6,0x6fa,0x7f3,0x4f9,0x5f0,0xb60,0xa69,0x963,0x86a,0xf66,0xe6f,0xd65,0xc6c,0x36c,0x265,0x16f,0x66,0x76a,0x663,0x569,0x460,0xca0,0xda9,0xea3,0xfaa,0x8a6,0x9af,0xaa5,0xbac,0x4ac,0x5a5,0x6af,0x7a6,0xaa,0x1a3,0x2a9,0x3a0,0xd30,0xc39,0xf33,0xe3a,0x936,0x83f,0xb35,0xa3c,0x53c,0x435,0x73f,0x636,0x13a,0x33,0x339,0x230,0xe90,0xf99,0xc93,0xd9a,0xa96,0xb9f,0x895,0x99c,0x69c,0x795,0x49f,0x596,0x29a,0x393,0x99,0x190,0xf00,0xe09,0xd03,0xc0a,0xb06,0xa0f,0x905,0x80c,0x70c,0x605,0x50f,0x406,0x30a,0x203,0x109,0x0]);
+  var triTable=new Int32Array([-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,8,3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,1,9,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1,8,3,9,8,1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1,2,10,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,8,3,1,2,10,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,9,2,10,0,2,9,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,2,8,3,2,10,8,10,9,8,-1,-1,-1,-1,-1,-1,-1,3,11,2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,11,2,8,11,0,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1,9,0,2,3,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1,11,2,1,9,11,9,8,11,-1,-1,-1,-1,-1,-1,-1,3,10,1,11,10,3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,10,1,0,8,10,8,11,10,-1,-1,-1,-1,-1,-1,-1,3,9,0,3,11,9,11,10,9,-1,-1,-1,-1,-1,-1,-1,9,8,10,10,8,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,4,7,8,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,4,3,0,7,3,4,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,1,9,8,4,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,4,1,9,4,7,1,7,3,1,-1,-1,-1,-1,-1,-1,-1,1,2,10,8,4,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,3,4,7,3,0,4,1,2,10,-1,-1,-1,-1,-1,-1,-1,9,2,10,9,0,2,8,4,7,-1,-1,-1,-1,-1,-1,-1,2,10,9,2,9,7,2,7,3,7,9,4,-1,-1,-1,-1,8,4,7,3,11,2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,11,4,7,11,2,4,2,0,4,-1,-1,-1,-1,-1,-1,-1,9,0,1,8,4,7,2,3,11,-1,-1,-1,-1,-1,-1,-1,4,7,11,9,4,11,9,11,2,9,2,1,-1,-1,-1,-1,3,10,1,3,11,10,7,8,4,-1,-1,-1,-1,-1,-1,-1,1,11,10,1,4,11,1,0,4,7,11,4,-1,-1,-1,-1,4,7,8,9,0,11,9,11,10,11,0,3,-1,-1,-1,-1,4,7,11,4,11,9,9,11,10,-1,-1,-1,-1,-1,-1,-1,9,5,4,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,9,5,4,0,8,3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,5,4,1,5,0,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,8,5,4,8,3,5,3,1,5,-1,-1,-1,-1,-1,-1,-1,1,2,10,9,5,4,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,3,0,8,1,2,10,4,9,5,-1,-1,-1,-1,-1,-1,-1,5,2,10,5,4,2,4,0,2,-1,-1,-1,-1,-1,-1,-1,2,10,5,3,2,5,3,5,4,3,4,8,-1,-1,-1,-1,9,5,4,2,3,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,11,2,0,8,11,4,9,5,-1,-1,-1,-1,-1,-1,-1,0,5,4,0,1,5,2,3,11,-1,-1,-1,-1,-1,-1,-1,2,1,5,2,5,8,2,8,11,4,8,5,-1,-1,-1,-1,10,3,11,10,1,3,9,5,4,-1,-1,-1,-1,-1,-1,-1,4,9,5,0,8,1,8,10,1,8,11,10,-1,-1,-1,-1,5,4,0,5,0,11,5,11,10,11,0,3,-1,-1,-1,-1,5,4,8,5,8,10,10,8,11,-1,-1,-1,-1,-1,-1,-1,9,7,8,5,7,9,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,9,3,0,9,5,3,5,7,3,-1,-1,-1,-1,-1,-1,-1,0,7,8,0,1,7,1,5,7,-1,-1,-1,-1,-1,-1,-1,1,5,3,3,5,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,9,7,8,9,5,7,10,1,2,-1,-1,-1,-1,-1,-1,-1,10,1,2,9,5,0,5,3,0,5,7,3,-1,-1,-1,-1,8,0,2,8,2,5,8,5,7,10,5,2,-1,-1,-1,-1,2,10,5,2,5,3,3,5,7,-1,-1,-1,-1,-1,-1,-1,7,9,5,7,8,9,3,11,2,-1,-1,-1,-1,-1,-1,-1,9,5,7,9,7,2,9,2,0,2,7,11,-1,-1,-1,-1,2,3,11,0,1,8,1,7,8,1,5,7,-1,-1,-1,-1,11,2,1,11,1,7,7,1,5,-1,-1,-1,-1,-1,-1,-1,9,5,8,8,5,7,10,1,3,10,3,11,-1,-1,-1,-1,5,7,0,5,0,9,7,11,0,1,0,10,11,10,0,-1,11,10,0,11,0,3,10,5,0,8,0,7,5,7,0,-1,11,10,5,7,11,5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,10,6,5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,8,3,5,10,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,9,0,1,5,10,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1,8,3,1,9,8,5,10,6,-1,-1,-1,-1,-1,-1,-1,1,6,5,2,6,1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1,6,5,1,2,6,3,0,8,-1,-1,-1,-1,-1,-1,-1,9,6,5,9,0,6,0,2,6,-1,-1,-1,-1,-1,-1,-1,5,9,8,5,8,2,5,2,6,3,2,8,-1,-1,-1,-1,2,3,11,10,6,5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,11,0,8,11,2,0,10,6,5,-1,-1,-1,-1,-1,-1,-1,0,1,9,2,3,11,5,10,6,-1,-1,-1,-1,-1,-1,-1,5,10,6,1,9,2,9,11,2,9,8,11,-1,-1,-1,-1,6,3,11,6,5,3,5,1,3,-1,-1,-1,-1,-1,-1,-1,0,8,11,0,11,5,0,5,1,5,11,6,-1,-1,-1,-1,3,11,6,0,3,6,0,6,5,0,5,9,-1,-1,-1,-1,6,5,9,6,9,11,11,9,8,-1,-1,-1,-1,-1,-1,-1,5,10,6,4,7,8,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,4,3,0,4,7,3,6,5,10,-1,-1,-1,-1,-1,-1,-1,1,9,0,5,10,6,8,4,7,-1,-1,-1,-1,-1,-1,-1,10,6,5,1,9,7,1,7,3,7,9,4,-1,-1,-1,-1,6,1,2,6,5,1,4,7,8,-1,-1,-1,-1,-1,-1,-1,1,2,5,5,2,6,3,0,4,3,4,7,-1,-1,-1,-1,8,4,7,9,0,5,0,6,5,0,2,6,-1,-1,-1,-1,7,3,9,7,9,4,3,2,9,5,9,6,2,6,9,-1,3,11,2,7,8,4,10,6,5,-1,-1,-1,-1,-1,-1,-1,5,10,6,4,7,2,4,2,0,2,7,11,-1,-1,-1,-1,0,1,9,4,7,8,2,3,11,5,10,6,-1,-1,-1,-1,9,2,1,9,11,2,9,4,11,7,11,4,5,10,6,-1,8,4,7,3,11,5,3,5,1,5,11,6,-1,-1,-1,-1,5,1,11,5,11,6,1,0,11,7,11,4,0,4,11,-1,0,5,9,0,6,5,0,3,6,11,6,3,8,4,7,-1,6,5,9,6,9,11,4,7,9,7,11,9,-1,-1,-1,-1,10,4,9,6,4,10,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,4,10,6,4,9,10,0,8,3,-1,-1,-1,-1,-1,-1,-1,10,0,1,10,6,0,6,4,0,-1,-1,-1,-1,-1,-1,-1,8,3,1,8,1,6,8,6,4,6,1,10,-1,-1,-1,-1,1,4,9,1,2,4,2,6,4,-1,-1,-1,-1,-1,-1,-1,3,0,8,1,2,9,2,4,9,2,6,4,-1,-1,-1,-1,0,2,4,4,2,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,8,3,2,8,2,4,4,2,6,-1,-1,-1,-1,-1,-1,-1,10,4,9,10,6,4,11,2,3,-1,-1,-1,-1,-1,-1,-1,0,8,2,2,8,11,4,9,10,4,10,6,-1,-1,-1,-1,3,11,2,0,1,6,0,6,4,6,1,10,-1,-1,-1,-1,6,4,1,6,1,10,4,8,1,2,1,11,8,11,1,-1,9,6,4,9,3,6,9,1,3,11,6,3,-1,-1,-1,-1,8,11,1,8,1,0,11,6,1,9,1,4,6,4,1,-1,3,11,6,3,6,0,0,6,4,-1,-1,-1,-1,-1,-1,-1,6,4,8,11,6,8,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,7,10,6,7,8,10,8,9,10,-1,-1,-1,-1,-1,-1,-1,0,7,3,0,10,7,0,9,10,6,7,10,-1,-1,-1,-1,10,6,7,1,10,7,1,7,8,1,8,0,-1,-1,-1,-1,10,6,7,10,7,1,1,7,3,-1,-1,-1,-1,-1,-1,-1,1,2,6,1,6,8,1,8,9,8,6,7,-1,-1,-1,-1,2,6,9,2,9,1,6,7,9,0,9,3,7,3,9,-1,7,8,0,7,0,6,6,0,2,-1,-1,-1,-1,-1,-1,-1,7,3,2,6,7,2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,2,3,11,10,6,8,10,8,9,8,6,7,-1,-1,-1,-1,2,0,7,2,7,11,0,9,7,6,7,10,9,10,7,-1,1,8,0,1,7,8,1,10,7,6,7,10,2,3,11,-1,11,2,1,11,1,7,10,6,1,6,7,1,-1,-1,-1,-1,8,9,6,8,6,7,9,1,6,11,6,3,1,3,6,-1,0,9,1,11,6,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,7,8,0,7,0,6,3,11,0,11,6,0,-1,-1,-1,-1,7,11,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,7,6,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,3,0,8,11,7,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,1,9,11,7,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,8,1,9,8,3,1,11,7,6,-1,-1,-1,-1,-1,-1,-1,10,1,2,6,11,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1,2,10,3,0,8,6,11,7,-1,-1,-1,-1,-1,-1,-1,2,9,0,2,10,9,6,11,7,-1,-1,-1,-1,-1,-1,-1,6,11,7,2,10,3,10,8,3,10,9,8,-1,-1,-1,-1,7,2,3,6,2,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,7,0,8,7,6,0,6,2,0,-1,-1,-1,-1,-1,-1,-1,2,7,6,2,3,7,0,1,9,-1,-1,-1,-1,-1,-1,-1,1,6,2,1,8,6,1,9,8,8,7,6,-1,-1,-1,-1,10,7,6,10,1,7,1,3,7,-1,-1,-1,-1,-1,-1,-1,10,7,6,1,7,10,1,8,7,1,0,8,-1,-1,-1,-1,0,3,7,0,7,10,0,10,9,6,10,7,-1,-1,-1,-1,7,6,10,7,10,8,8,10,9,-1,-1,-1,-1,-1,-1,-1,6,8,4,11,8,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,3,6,11,3,0,6,0,4,6,-1,-1,-1,-1,-1,-1,-1,8,6,11,8,4,6,9,0,1,-1,-1,-1,-1,-1,-1,-1,9,4,6,9,6,3,9,3,1,11,3,6,-1,-1,-1,-1,6,8,4,6,11,8,2,10,1,-1,-1,-1,-1,-1,-1,-1,1,2,10,3,0,11,0,6,11,0,4,6,-1,-1,-1,-1,4,11,8,4,6,11,0,2,9,2,10,9,-1,-1,-1,-1,10,9,3,10,3,2,9,4,3,11,3,6,4,6,3,-1,8,2,3,8,4,2,4,6,2,-1,-1,-1,-1,-1,-1,-1,0,4,2,4,6,2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1,9,0,2,3,4,2,4,6,4,3,8,-1,-1,-1,-1,1,9,4,1,4,2,2,4,6,-1,-1,-1,-1,-1,-1,-1,8,1,3,8,6,1,8,4,6,6,10,1,-1,-1,-1,-1,10,1,0,10,0,6,6,0,4,-1,-1,-1,-1,-1,-1,-1,4,6,3,4,3,8,6,10,3,0,3,9,10,9,3,-1,10,9,4,6,10,4,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,4,9,5,7,6,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,8,3,4,9,5,11,7,6,-1,-1,-1,-1,-1,-1,-1,5,0,1,5,4,0,7,6,11,-1,-1,-1,-1,-1,-1,-1,11,7,6,8,3,4,3,5,4,3,1,5,-1,-1,-1,-1,9,5,4,10,1,2,7,6,11,-1,-1,-1,-1,-1,-1,-1,6,11,7,1,2,10,0,8,3,4,9,5,-1,-1,-1,-1,7,6,11,5,4,10,4,2,10,4,0,2,-1,-1,-1,-1,3,4,8,3,5,4,3,2,5,10,5,2,11,7,6,-1,7,2,3,7,6,2,5,4,9,-1,-1,-1,-1,-1,-1,-1,9,5,4,0,8,6,0,6,2,6,8,7,-1,-1,-1,-1,3,6,2,3,7,6,1,5,0,5,4,0,-1,-1,-1,-1,6,2,8,6,8,7,2,1,8,4,8,5,1,5,8,-1,9,5,4,10,1,6,1,7,6,1,3,7,-1,-1,-1,-1,1,6,10,1,7,6,1,0,7,8,7,0,9,5,4,-1,4,0,10,4,10,5,0,3,10,6,10,7,3,7,10,-1,7,6,10,7,10,8,5,4,10,4,8,10,-1,-1,-1,-1,6,9,5,6,11,9,11,8,9,-1,-1,-1,-1,-1,-1,-1,3,6,11,0,6,3,0,5,6,0,9,5,-1,-1,-1,-1,0,11,8,0,5,11,0,1,5,5,6,11,-1,-1,-1,-1,6,11,3,6,3,5,5,3,1,-1,-1,-1,-1,-1,-1,-1,1,2,10,9,5,11,9,11,8,11,5,6,-1,-1,-1,-1,0,11,3,0,6,11,0,9,6,5,6,9,1,2,10,-1,11,8,5,11,5,6,8,0,5,10,5,2,0,2,5,-1,6,11,3,6,3,5,2,10,3,10,5,3,-1,-1,-1,-1,5,8,9,5,2,8,5,6,2,3,8,2,-1,-1,-1,-1,9,5,6,9,6,0,0,6,2,-1,-1,-1,-1,-1,-1,-1,1,5,8,1,8,0,5,6,8,3,8,2,6,2,8,-1,1,5,6,2,1,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1,3,6,1,6,10,3,8,6,5,6,9,8,9,6,-1,10,1,0,10,0,6,9,5,0,5,6,0,-1,-1,-1,-1,0,3,8,5,6,10,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,10,5,6,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,11,5,10,7,5,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,11,5,10,11,7,5,8,3,0,-1,-1,-1,-1,-1,-1,-1,5,11,7,5,10,11,1,9,0,-1,-1,-1,-1,-1,-1,-1,10,7,5,10,11,7,9,8,1,8,3,1,-1,-1,-1,-1,11,1,2,11,7,1,7,5,1,-1,-1,-1,-1,-1,-1,-1,0,8,3,1,2,7,1,7,5,7,2,11,-1,-1,-1,-1,9,7,5,9,2,7,9,0,2,2,11,7,-1,-1,-1,-1,7,5,2,7,2,11,5,9,2,3,2,8,9,8,2,-1,2,5,10,2,3,5,3,7,5,-1,-1,-1,-1,-1,-1,-1,8,2,0,8,5,2,8,7,5,10,2,5,-1,-1,-1,-1,9,0,1,5,10,3,5,3,7,3,10,2,-1,-1,-1,-1,9,8,2,9,2,1,8,7,2,10,2,5,7,5,2,-1,1,3,5,3,7,5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,8,7,0,7,1,1,7,5,-1,-1,-1,-1,-1,-1,-1,9,0,3,9,3,5,5,3,7,-1,-1,-1,-1,-1,-1,-1,9,8,7,5,9,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,5,8,4,5,10,8,10,11,8,-1,-1,-1,-1,-1,-1,-1,5,0,4,5,11,0,5,10,11,11,3,0,-1,-1,-1,-1,0,1,9,8,4,10,8,10,11,10,4,5,-1,-1,-1,-1,10,11,4,10,4,5,11,3,4,9,4,1,3,1,4,-1,2,5,1,2,8,5,2,11,8,4,5,8,-1,-1,-1,-1,0,4,11,0,11,3,4,5,11,2,11,1,5,1,11,-1,0,2,5,0,5,9,2,11,5,4,5,8,11,8,5,-1,9,4,5,2,11,3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,2,5,10,3,5,2,3,4,5,3,8,4,-1,-1,-1,-1,5,10,2,5,2,4,4,2,0,-1,-1,-1,-1,-1,-1,-1,3,10,2,3,5,10,3,8,5,4,5,8,0,1,9,-1,5,10,2,5,2,4,1,9,2,9,4,2,-1,-1,-1,-1,8,4,5,8,5,3,3,5,1,-1,-1,-1,-1,-1,-1,-1,0,4,5,1,0,5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,8,4,5,8,5,3,9,0,5,0,3,5,-1,-1,-1,-1,9,4,5,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,4,11,7,4,9,11,9,10,11,-1,-1,-1,-1,-1,-1,-1,0,8,3,4,9,7,9,11,7,9,10,11,-1,-1,-1,-1,1,10,11,1,11,4,1,4,0,7,4,11,-1,-1,-1,-1,3,1,4,3,4,8,1,10,4,7,4,11,10,11,4,-1,4,11,7,9,11,4,9,2,11,9,1,2,-1,-1,-1,-1,9,7,4,9,11,7,9,1,11,2,11,1,0,8,3,-1,11,7,4,11,4,2,2,4,0,-1,-1,-1,-1,-1,-1,-1,11,7,4,11,4,2,8,3,4,3,2,4,-1,-1,-1,-1,2,9,10,2,7,9,2,3,7,7,4,9,-1,-1,-1,-1,9,10,7,9,7,4,10,2,7,8,7,0,2,0,7,-1,3,7,10,3,10,2,7,4,10,1,10,0,4,0,10,-1,1,10,2,8,7,4,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,4,9,1,4,1,7,7,1,3,-1,-1,-1,-1,-1,-1,-1,4,9,1,4,1,7,0,8,1,8,7,1,-1,-1,-1,-1,4,0,3,7,4,3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,4,8,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,9,10,8,10,11,8,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,3,0,9,3,9,11,11,9,10,-1,-1,-1,-1,-1,-1,-1,0,1,10,0,10,8,8,10,11,-1,-1,-1,-1,-1,-1,-1,3,1,10,11,3,10,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1,2,11,1,11,9,9,11,8,-1,-1,-1,-1,-1,-1,-1,3,0,9,3,9,11,1,2,9,2,11,9,-1,-1,-1,-1,0,2,11,8,0,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,3,2,11,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,2,3,8,2,8,10,10,8,9,-1,-1,-1,-1,-1,-1,-1,9,10,2,0,9,2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,2,3,8,2,8,10,0,1,8,1,10,8,-1,-1,-1,-1,1,10,2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1,3,8,9,1,8,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,9,1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,3,8,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1]);
+  var cornerOffset=[[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]];
+  var edgeCorners=[[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
+  function lerpVert(iso,p1,p2,v1,v2){if(Math.abs(iso-v1)<1e-6)return[p1[0],p1[1],p1[2]];if(Math.abs(iso-v2)<1e-6)return[p2[0],p2[1],p2[2]];if(Math.abs(v1-v2)<1e-6)return[p1[0],p1[1],p1[2]];var mu=(iso-v1)/(v2-v1);return[p1[0]+mu*(p2[0]-p1[0]),p1[1]+mu*(p2[1]-p1[1]),p1[2]+mu*(p2[2]-p1[2])];}
+  var triangles=[];
+  for(var k2=0;k2<RES-1;k2++)for(var j2=0;j2<RES-1;j2++)for(var i2=0;i2<RES-1;i2++){
+    var cv=new Array(8),cp=new Array(8);
+    for(var c=0;c<8;c++){
+      var ci=i2+cornerOffset[c][0],cj=j2+cornerOffset[c][1],ck=k2+cornerOffset[c][2];
+      cv[c]=fg[gidx(ci,cj,ck)];
+      cp[c]=[BMIN+ci*ss,BMIN+cj*ss,BMIN+ck*ss];
+    }
+    var cix=0;
+    for(var cc=0;cc<8;cc++)if(cv[cc]<0)cix|=(1<<cc);
+    var edges=edgeTable[cix];
+    if(edges===0)continue;
+    var vl=new Array(12);
+    for(var ee=0;ee<12;ee++){
+      if(edges&(1<<ee)){var ab=edgeCorners[ee];vl[ee]=lerpVert(0,cp[ab[0]],cp[ab[1]],cv[ab[0]],cv[ab[1]]);}
+    }
+    var bi=cix*16;
+    for(var tt=0;tt<16;tt+=3){
+      var e0=triTable[bi+tt];if(e0===-1)break;
+      triangles.push({v0:vl[e0],v1:vl[triTable[bi+tt+1]],v2:vl[triTable[bi+tt+2]]});
+    }
+  }
+  function triArea(t){var ax=t.v1[0]-t.v0[0],ay=t.v1[1]-t.v0[1],az=t.v1[2]-t.v0[2];var bx=t.v2[0]-t.v0[0],by=t.v2[1]-t.v0[1],bz=t.v2[2]-t.v0[2];var cx=ay*bz-az*by,cy=az*bx-ax*bz,cz=ax*by-ay*bx;return 0.5*Math.sqrt(cx*cx+cy*cy+cz*cz);}
+  var weights=new Float32Array(triangles.length);
+  var totalWeight=0;
+  for(var twi=0;twi<triangles.length;twi++){
+    var triW=triangles[twi];
+    var cxC=(triW.v0[0]+triW.v1[0]+triW.v2[0])/3;
+    var cyC=(triW.v0[1]+triW.v1[1]+triW.v2[1])/3;
+    var czC=(triW.v0[2]+triW.v1[2]+triW.v2[2])/3;
+    var distXZ=Math.sqrt(cxC*cxC+czC*czC);
+    var area=triArea(triW);
+    var valleBoost=0;
+    if(cyC>0.15&&distXZ<0.35){valleBoost=1.8;}
+    else if(cyC>0.05&&distXZ<0.5){valleBoost=0.8;}
+    weights[twi]=area*(1+valleBoost);
+    totalWeight+=weights[twi];
+  }
+  var cumArea=new Float32Array(triangles.length),cum=0;
+  for(var ti2=0;ti2<triangles.length;ti2++){cum+=weights[ti2];cumArea[ti2]=cum;}
+  window.__forjaHeartTriCache={triangles:triangles,cumArea:cumArea,totalWeight:totalWeight};
+  return window.__forjaHeartTriCache;
+}
+window.__forjaHeartSamplePoints=function(N){
+  var cache=__forjaBuildHeartTriCache();
+  var triangles=cache.triangles, cumArea=cache.cumArea, totalWeight=cache.totalWeight;
+  function pickTri(r){var lo=0,hi=triangles.length-1;while(lo<hi){var m=(lo+hi)>>1;if(cumArea[m]<r)lo=m+1;else hi=m;}return lo;}
+  function sampleTri(tri){var u=Math.random(),v=Math.random();if(u+v>1){u=1-u;v=1-v;}var w=1-u-v;return[tri.v0[0]*w+tri.v1[0]*u+tri.v2[0]*v,tri.v0[1]*w+tri.v1[1]*u+tri.v2[1]*v,tri.v0[2]*w+tri.v1[2]*u+tri.v2[2]*v];}
+  var arr=new Float32Array(N*3);
+  for(var i=0;i<N;i++){
+    var r=Math.random()*totalWeight;
+    var tri=triangles[pickTri(r)];
+    var p=sampleTri(tri);
+    arr[i*3]=p[0]; arr[i*3+1]=p[1]; arr[i*3+2]=p[2];
+  }
+  return arr;
+};
+
 function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ageDiff,weeklyDelta,deltaSign,deltaColor,deltaAbs,onShowNTNU,greeting,userName,streak,lvl,lvlName,lvlNext,lvlColor,xpPct,trainDone,trainTotal,ringDash,lastPRName,lastPRVal,profile}){
   var heartStageRef=React.useRef(null);
   var isAliveRef=React.useRef(false);
