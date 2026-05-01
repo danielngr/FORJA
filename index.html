@@ -3285,19 +3285,34 @@ async function checkProStatus(){
   }catch(_){return false;}
 }
 async function redeemProCode(code){
+  // SECURITY: Esta función ahora llama a la Edge Function `redeem_promo`
+  // en lugar de hacer SELECT/UPDATE directo en promo_codes (vulnerable).
+  // La Edge Function valida el código con service_role y activa PRO atómicamente.
   try{
     var sb=getSB(); var user=await ensureAuth();
     if(!sb||!user)return {ok:false,msg:'Sin conexión'};
     var upper=code.trim().toUpperCase();
-    var res=await sb.from('promo_codes').select('*').eq('code',upper).maybeSingle();
-    if(!res||!res.data)return {ok:false,msg:'Código inválido'};
-    var cd=res.data;
-    if(cd.used_by&&cd.used_by!==user.id)return {ok:false,msg:'Código ya usado'};
-    if(cd.expires_at&&new Date(cd.expires_at)<new Date())return {ok:false,msg:'Código expirado'};
-    await sb.from('promo_codes').update({used_by:user.id,used_at:new Date().toISOString()}).eq('code',upper);
-    var pe=await sb.from('pro_users').upsert({user_id:user.id,granted_by:'promo',granted_at:new Date().toISOString(),expires_at:null},{onConflict:'user_id'});
-    if(pe&&pe.error)return {ok:false,msg:'Error activando Pro'};
-    return {ok:true,msg:'Pro activado correctamente'};
+    if(!upper||upper.length<3)return {ok:false,msg:'Código inválido'};
+
+    var{data,error}=await sb.functions.invoke('redeem_promo',{
+      body:{code:upper}
+    });
+
+    if(error){
+      // error.context puede traer body con msg específico
+      var msg='Error al validar código';
+      try{
+        if(error.context&&typeof error.context.body==='string'){
+          var parsed=JSON.parse(error.context.body);
+          if(parsed&&parsed.msg)msg=parsed.msg;
+        }
+      }catch(_){}
+      return {ok:false,msg:msg};
+    }
+    if(!data||!data.ok){
+      return {ok:false,msg:(data&&data.msg)||'Error desconocido'};
+    }
+    return {ok:true,msg:data.msg||'Pro activado correctamente'};
   }catch(e){return {ok:false,msg:'Error: '+e.message};}
 }
 
