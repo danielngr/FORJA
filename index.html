@@ -630,6 +630,40 @@ input[type=number]{-moz-appearance:textfield;}
   #forja-onboarding .mode-btn.selected .mode-sub{color:rgba(255,255,255,0.85);}
 
   /* ═══════════════════════════════════════════════════════ */
+  /* EXPERIENCE BUTTONS (3 columns: Beginner / Intermediate / Advanced) */
+  /* ═══════════════════════════════════════════════════════ */
+  #forja-onboarding .exp-row{
+    display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;
+  }
+  #forja-onboarding .exp-btn{
+    background:linear-gradient(180deg,rgba(255,255,255,0.10),rgba(255,255,255,0.04));
+    border:1.5px solid rgba(255,255,255,0.18);
+    border-radius:12px;padding:12px 6px;
+    cursor:pointer;text-align:center;
+    transition:all .2s ease;
+    -webkit-appearance:none;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  #forja-onboarding .exp-btn .exp-name{
+    font-family:'Archivo Black',sans-serif;
+    font-size:11px;letter-spacing:0.5px;color:#fff;
+    display:block;
+  }
+  #forja-onboarding .exp-btn .exp-sub{
+    font-family:'DM Mono',monospace;font-size:6.5px;
+    color:rgba(255,255,255,0.55);letter-spacing:1px;
+    margin-top:3px;font-weight:500;
+    display:block;
+  }
+  #forja-onboarding .exp-btn.selected{
+    background:linear-gradient(180deg,rgba(255,94,94,0.30),rgba(255,94,94,0.16));
+    border-color:rgba(255,94,94,1);
+    box-shadow:0 0 22px rgba(255,94,94,0.35),inset 0 1px 0 rgba(255,255,255,0.1);
+  }
+  #forja-onboarding .exp-btn.selected .exp-sub{color:rgba(255,255,255,0.85);}
+  #forja-onboarding .exp-btn:active{transform:scale(0.96);}
+
+  /* ═══════════════════════════════════════════════════════ */
   #forja-onboarding /* SCREEN 8 — REVEAL                                        */
   /* ═══════════════════════════════════════════════════════ */
   #s8{padding:24px;justify-content:center;align-items:center;text-align:center;}
@@ -985,6 +1019,24 @@ input[type=number]{-moz-appearance:textfield;}
         </button>
       </div>
 
+      <div class="exp-section">
+        <div class="picker-col-label" style="margin-top:24px;margin-bottom:10px;text-align:center;">TU EXPERIENCIA</div>
+        <div class="exp-row">
+          <button class="exp-btn" data-level="beg" onclick="selectLevel('beg')">
+            <span class="exp-name">PRINCIPIANTE</span>
+            <span class="exp-sub">&lt; 6 MESES</span>
+          </button>
+          <button class="exp-btn" data-level="int" onclick="selectLevel('int')">
+            <span class="exp-name">INTERMEDIO</span>
+            <span class="exp-sub">6 MESES - 2 AÑOS</span>
+          </button>
+          <button class="exp-btn" data-level="adv" onclick="selectLevel('adv')">
+            <span class="exp-name">AVANZADO</span>
+            <span class="exp-sub">+ 2 AÑOS</span>
+          </button>
+        </div>
+      </div>
+
       <div class="spacer"></div>
       <div class="bottom-area">
         <button class="btn-continue" id="btn-goal" disabled onclick="next()">CONTINUAR →</button>
@@ -1085,6 +1137,7 @@ const _obState = {
     hr: 62,
     appleWatch: false,
     goal: null,
+    level: null,  // beg / int / adv
     days: [],
     mode: null,
   },
@@ -1168,10 +1221,10 @@ function resetOnboarding(){
   _obState.history = [0];
   _obState.data = {
     name:'', sex:null, age:25, height:175, weight:75, waist:82,
-    hr:62, appleWatch:false, goal:null, days:[], mode:null
+    hr:62, appleWatch:false, goal:null, level:null, days:[], mode:null
   };
   var ni = document.getElementById('input-name'); if(ni) ni.value='';
-  document.querySelectorAll('.sex-btn,.goal-btn,.day-pill,.mode-btn,.athlete-card').forEach(b=>b.classList.remove('selected'));
+  document.querySelectorAll('.sex-btn,.goal-btn,.exp-btn,.day-pill,.mode-btn,.athlete-card').forEach(b=>b.classList.remove('selected'));
   ['btn-name','btn-s2','btn-goal','btn-days','btn-athlete'].forEach(id=>{
     var b=document.getElementById(id); if(b) b.disabled=true;
   });
@@ -1226,9 +1279,24 @@ function selectGoal(g){
   _obState.data.goal = g;
   document.querySelectorAll('.goal-btn').forEach(b=>b.classList.remove('selected'));
   document.querySelector(`.goal-btn[data-goal="${g}"]`).classList.add('selected');
-  document.getElementById('btn-goal').disabled = false;
   haptic('medium');
   if(window.heart3D) heart3D.updateGoal(g);
+  checkS6();
+}
+
+function selectLevel(lv){
+  _obState.data.level = lv;
+  document.querySelectorAll('.exp-btn').forEach(b=>b.classList.remove('selected'));
+  document.querySelector(`.exp-btn[data-level="${lv}"]`).classList.add('selected');
+  haptic('medium');
+  checkS6();
+}
+
+function checkS6(){
+  // Habilitar CONTINUAR sólo si tanto goal como level fueron seleccionados
+  var ok = (_obState.data.goal !== null) && (_obState.data.level !== null);
+  var btn = document.getElementById('btn-goal');
+  if(btn) btn.disabled = !ok;
 }
 
 function selectMode(m){
@@ -1590,13 +1658,24 @@ function completeOnboarding(){
   // Integration with FORJA main app
   try{
     var d = _obState.data;
-    // Map onboarding goal to FORJA goal codes
-    var goalMap = { muscle:'muscle', strength:'strength', lose:'general', recomp:'recomp', general:'general' };
+    // Map onboarding goal to FORJA goal codes (validados con applyGoal):
+    //   muscle  → '' (default = hipertrofia 8-12 reps)
+    //   strength → 'strength' (3-5 reps + más sets, descanso 2-3 min)
+    //   lose    → 'lose' (12-15 reps, menos sets, cardio)
+    //   recomp  → 'recomp' (8-12 reps, mantener masa)
+    //   general → 'general' (10-12 reps, menos sets, salud)
+    var goalMap = { muscle:'muscle', strength:'strength', lose:'lose', recomp:'recomp', general:'general' };
+    var goalCode = goalMap[d.goal] || 'muscle';
+
+    // Nivel: el usuario lo selecciona en pantalla 6 (junto con goal).
+    // Fallback a 'int' si por alguna razón no quedó set.
+    var level = (d.level === 'beg' || d.level === 'int' || d.level === 'adv') ? d.level : 'int';
+
     var modeForFORJA = (d.mode === 'celeb') ? 'celebrity' : 'auto';
     var profile = {
       lang: (typeof LANG!=='undefined'?LANG:'es'),
-      goal: goalMap[d.goal] || 'general',
-      level: 'int',
+      goal: goalCode,
+      level: level,
       days: d.days.length || 3,
       selDays: d.days.length>0 ? d.days.slice().sort() : [1,3,5],
       mode: modeForFORJA,
@@ -1618,9 +1697,30 @@ function completeOnboarding(){
       }catch(e){ console.warn('buildCelebRoutine failed:',e); }
     }
     if(!routine){
-      // Default: from RAW
-      var routineKey = profile.days + 'int';
-      routine = (typeof RAW !== 'undefined' && RAW[routineKey]) ? RAW[routineKey] : null;
+      // Auto mode: tomar la rutina base [días][nivel] del RAW y aplicar goal.
+      // applyGoal modifica reps/series/descansos según el objetivo:
+      //   - hipertrofia (default): reps 8-12, sets normales
+      //   - fuerza: reps 3-5, +1 set, descanso largo
+      //   - definición/lose: reps 12-15, -1 set
+      //   - recomp: reps 8-12 mantener
+      //   - general: reps 10-12, -1 set
+      // Esta lógica es la misma que usa Fitbod/Hevy: mismo split, distintos reps.
+      var routineKey = profile.days + level;
+      var rawSplits = (typeof RAW !== 'undefined' && RAW[routineKey])
+        ? RAW[routineKey]
+        : (typeof RAW !== 'undefined' ? RAW[profile.days + 'int'] : null);
+      if(rawSplits && typeof buildRoutine7 === 'function'){
+        // buildRoutine7 aplica goal a cada ejercicio + arma el array de 7 días
+        try{
+          var eqArr = ["barbell","dumbbell","cable","machine","pullup_bar"]; // gym completo por default
+          routine = buildRoutine7(rawSplits, profile.selDays, goalCode, eqArr);
+        }catch(e){
+          console.warn('buildRoutine7 failed, fallback a RAW directo:', e);
+          routine = rawSplits;
+        }
+      } else {
+        routine = rawSplits;
+      }
     }
     // Save profile + routine
     if(typeof FStore!=='undefined'){
@@ -3390,6 +3490,7 @@ function applyGoal(ex,goal){
   else if(goal==="lose"){s=Math.max(ex.s-1,3);r=ex.rc;}
   else if(goal==="recomp"){r=ex.rr;}
   else if(goal==="general"){s=Math.max(ex.s-1,3);r=ex.rg;}
+  // muscle/hypertrophy: usa los valores default (r=8-12, s normal)
   return{e:ex.e,s,r};
 }
 function repTarget(rStr){
@@ -4909,7 +5010,16 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
   const[npVal,setNpVal]=useState("0");
   const[arcPopOpen,setArcPopOpen]=useState(false);
   const[restSecs,setRestSecs]=useState(0);
-  const[restDur,setRestDur]=useState(90);
+  // Rest default según el OBJETIVO del usuario (basado en NSCA + ACSM):
+  // strength = 180s (2-5 min para recuperación neuromuscular)
+  // muscle/recomp = 90s (estándar para hipertrofia)
+  // lose/general = 60s (corto, mayor estrés metabólico)
+  const[restDur,setRestDur]=useState(()=>{
+    var g = profile && profile.goal;
+    if(g === 'strength') return 180;
+    if(g === 'lose' || g === 'general') return 60;
+    return 90; // muscle, recomp, default
+  });
   const[restActive,setRestActive]=useState(false);
   const[restCtx,setRestCtx]=useState(null);
   const restRef=useRef(null);
@@ -4943,10 +5053,15 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
     const h=logs[ex.id];
     const prevKg=h&&h[0]?+h[0].w:0;
     const curKg=+s.kg||0;
-    if(curKg>prevKg&&prevKg>0)return{dur:120,msg:lang==="es"||lang==="pt"?"NUEVO PESO . 2 MIN":lang==="fr"?"NOUVEAU POIDS . 2 MIN":lang==="it"?"NUOVO PESO . 2 MIN":lang==="de"?"NEUES GEWICHT . 2 MIN":"NEW WEIGHT . 2 MIN"};
-    if(+s.rp>12)return{dur:60,msg:lang==="es"||lang==="pt"?"REPS ALTAS . 60S":lang==="fr"?"REPS ÉLEVÉES . 60S":lang==="it"?"REPS ALTE . 60S":lang==="de"?"VIELE WDHL . 60S":"HIGH REPS . 60S"};
-    if(curKg>0&&curKg<prevKg)return{dur:60,msg:lang==="es"||lang==="pt"?"MENOS PESO . 60S":lang==="fr"?"MOINS DE POIDS . 60S":lang==="it"?"MENO PESO . 60S":lang==="de"?"WENIGER GEWICHT . 60S":"LESS WEIGHT . 60S"};
-    return{dur:90,msg:""};
+    // Default según goal del usuario
+    var goalDefault = 90;
+    var g = profile && profile.goal;
+    if(g === 'strength') goalDefault = 180;
+    else if(g === 'lose' || g === 'general') goalDefault = 60;
+    if(curKg>prevKg&&prevKg>0)return{dur:Math.max(goalDefault,120),msg:lang==="es"||lang==="pt"?"NUEVO PESO . 2 MIN":lang==="fr"?"NOUVEAU POIDS . 2 MIN":lang==="it"?"NUOVO PESO . 2 MIN":lang==="de"?"NEUES GEWICHT . 2 MIN":"NEW WEIGHT . 2 MIN"};
+    if(+s.rp>12)return{dur:Math.min(goalDefault,60),msg:lang==="es"||lang==="pt"?"REPS ALTAS . 60S":lang==="fr"?"REPS ÉLEVÉES . 60S":lang==="it"?"REPS ALTE . 60S":lang==="de"?"VIELE WDHL . 60S":"HIGH REPS . 60S"};
+    if(curKg>0&&curKg<prevKg)return{dur:Math.min(goalDefault,60),msg:lang==="es"||lang==="pt"?"MENOS PESO . 60S":lang==="fr"?"MOINS DE POIDS . 60S":lang==="it"?"MENO PESO . 60S":lang==="de"?"WENIGER GEWICHT . 60S":"LESS WEIGHT . 60S"};
+    return{dur:goalDefault,msg:""};
   }
   function startRest(ei,si){
     const{dur}=calcRest(ei,si);
