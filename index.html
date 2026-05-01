@@ -2061,25 +2061,43 @@ class Heart3D {
   }
 
   buildDumbbellTarget(){
-    // Mancuerna: barra central + dos pesas (discos hex) en los extremos
+    // Mancuerna real: agarre central + cabezal grueso + pirámide de discos
+    // (grandes adentro junto al agarre, pequeños hacia afuera)
     const N = this.particleCount;
     const arr = new Float32Array(N*3);
     const parts = [
-      // Barra central (cilindro horizontal a lo largo de X)
-      {type:'cylinder_x', cx:0, cy:0, cz:0, h:1.4, r:0.07, weight:0.20},
-      // Cabezal izquierdo (cilindro grueso)
-      {type:'cylinder_x', cx:-0.85, cy:0, cz:0, h:0.45, r:0.30, weight:0.18},
-      // Cabezal derecho
-      {type:'cylinder_x', cx:0.85, cy:0, cz:0, h:0.45, r:0.30, weight:0.18},
-      // Tapa exterior izquierda (disco grande hexagonal)
-      {type:'disk', cx:-1.10, cy:0, cz:0, r:0.42, thickness:0.08, weight:0.12},
-      // Tapa exterior derecha
-      {type:'disk', cx:1.10, cy:0, cz:0, r:0.42, thickness:0.08, weight:0.12},
-      // Aros internos para textura
-      {type:'ring', cx:-0.85, cy:0, cz:0, r:0.30, thickness:0.05, weight:0.05},
-      {type:'ring', cx:0.85, cy:0, cz:0, r:0.30, thickness:0.05, weight:0.05},
-      // Detalle del agarre central (textura grip)
-      {type:'cylinder_x', cx:0, cy:0, cz:0, h:0.6, r:0.085, weight:0.10},
+      // Barra central (atraviesa toda la mancuerna)
+      {type:'cylinder_x', cx:0, cy:0, cz:0, h:2.4, r:0.05, weight:0.06},
+      // Agarre central (más grueso, donde la mano sostiene)
+      {type:'cylinder_x', cx:0, cy:0, cz:0, h:0.55, r:0.085, weight:0.08},
+
+      // === LADO IZQUIERDO ===
+      // Disco GRANDE adentro (junto al agarre)
+      {type:'disk', cx:-0.42, cy:0, cz:0, r:0.42, thickness:0.10, weight:0.14},
+      // Disco mediano
+      {type:'disk', cx:-0.58, cy:0, cz:0, r:0.34, thickness:0.08, weight:0.09},
+      // Disco pequeño
+      {type:'disk', cx:-0.71, cy:0, cz:0, r:0.26, thickness:0.07, weight:0.06},
+      // Disco más pequeño (extremo exterior)
+      {type:'disk', cx:-0.82, cy:0, cz:0, r:0.20, thickness:0.06, weight:0.04},
+
+      // === LADO DERECHO (espejo) ===
+      // Disco GRANDE adentro (junto al agarre)
+      {type:'disk', cx:0.42, cy:0, cz:0, r:0.42, thickness:0.10, weight:0.14},
+      // Disco mediano
+      {type:'disk', cx:0.58, cy:0, cz:0, r:0.34, thickness:0.08, weight:0.09},
+      // Disco pequeño
+      {type:'disk', cx:0.71, cy:0, cz:0, r:0.26, thickness:0.07, weight:0.06},
+      // Disco más pequeño (extremo exterior)
+      {type:'disk', cx:0.82, cy:0, cz:0, r:0.20, thickness:0.06, weight:0.04},
+
+      // Aros para definición de los discos grandes (los más visibles)
+      {type:'ring', cx:-0.42, cy:0, cz:0, r:0.42, thickness:0.04, weight:0.03},
+      {type:'ring', cx:0.42, cy:0, cz:0, r:0.42, thickness:0.04, weight:0.03},
+
+      // Tapas extremas (collares de retención)
+      {type:'disk', cx:-0.92, cy:0, cz:0, r:0.10, thickness:0.06, weight:0.02},
+      {type:'disk', cx:0.92, cy:0, cz:0, r:0.10, thickness:0.06, weight:0.02},
     ];
     const totalW = parts.reduce((s,p)=>s+p.weight,0);
     let idx = 0;
@@ -2102,7 +2120,7 @@ class Heart3D {
           y = p.cy + r*Math.cos(t);
           z = p.cz + r*Math.sin(t);
         } else if(p.type==='ring'){
-          // Anillo (aro)
+          // Anillo (aro) — para línea de definición del borde del disco
           const t = Math.random()*Math.PI*2;
           x = p.cx + (Math.random()-0.5)*p.thickness;
           y = p.cy + p.r*Math.cos(t);
