@@ -1721,6 +1721,20 @@ class Heart3D {
     this.buildParticles();
     this.animate();
 
+    // Listener: cuando el GLB del maniquí termine de cargar, reconstruir el target body
+    // (porque inicialmente el SDF fallback se usó porque GLB no estaba listo)
+    this._bodyReadyListener = ()=>{
+      console.log('[Onboarding] GLB del cuerpo listo, reconstruyendo body target');
+      this.targets.body = this.buildBodyTarget();
+      // Si el usuario está actualmente viendo el cuerpo, hacer morph al nuevo target
+      if(this.targetStage === 'body'){
+        this.morphFrom = new Float32Array(this.currentPos);
+        this.morphTo = this.targets.body;
+        this.morphProgress = 0;
+      }
+    };
+    window.addEventListener('forja:bodyReady', this._bodyReadyListener);
+
     window.addEventListener('resize', ()=>this.onResize());
   }
 
@@ -1795,10 +1809,22 @@ class Heart3D {
   }
 
   buildBodyTarget(){
-    // V9: cuerpo basado en SDF con smooth-min para fusión orgánica entre primitivas.
-    // Las elipsoides y cápsulas se "funden" como metaballs creando un humano continuo
-    // en lugar de un montón de blobs separados.
     const N = this.particleCount;
+
+    // PRIMERO: intentar usar el GLB real del maniquí (mismo que la pantalla principal)
+    // Si está listo, devolvemos puntos sampleados de su superficie
+    if(typeof window.__forjaSampleBodyPoints === 'function'){
+      const glbPoints = window.__forjaSampleBodyPoints(N);
+      if(glbPoints){
+        // El GLB está cargado y dio puntos — usarlos
+        return glbPoints;
+      }
+      // GLB no está cargado todavía. La función ya disparó la carga en background.
+      // Cuando termine, dispara evento 'forja:bodyReady' que ya escuchamos abajo.
+      // Mientras tanto, usar el fallback SDF
+    }
+
+    // FALLBACK: SDF con smooth-min (cuando el GLB todavía no está listo)
     const arr = new Float32Array(N*3);
 
     // ── SDF primitivas ──
@@ -2220,6 +2246,24 @@ window.addEventListener('load',()=>{
   if(typeof THREE !== 'undefined' && stage){
     window.heart3D = new Heart3D(stage);
     heart3D.setStage(0);
+    // Iniciar carga del GLB del maniquí en background — para que esté listo
+    // cuando el usuario llegue a la pantalla 2 (sexo+edad).
+    // Las funciones globales se definen en el JSX principal que se compila con
+    // Babel Standalone, por eso intentamos varias veces hasta que esté disponible.
+    let glbAttempts = 0;
+    const tryGlbLoad = ()=>{
+      if(typeof window.__forjaBuildBodyTriCache === 'function'){
+        window.__forjaBuildBodyTriCache().then(()=>{
+          try{ window.dispatchEvent(new CustomEvent('forja:bodyReady')); }catch(_){}
+        }).catch(e=>console.warn('[Onboarding] GLB body load failed:', e));
+      } else if(glbAttempts < 30){  // 30 retries × 200ms = 6 segundos máximo
+        glbAttempts++;
+        setTimeout(tryGlbLoad, 200);
+      } else {
+        console.warn('[Onboarding] __forjaBuildBodyTriCache no disponible, body usará fallback SDF');
+      }
+    };
+    setTimeout(tryGlbLoad, 100);
   }
 });
 
@@ -5972,14 +6016,14 @@ window.__forjaBuildBodyTriCache = function(){
       function applyTransform(x,y,z){
         // Scale
         x*=sx; y*=sy; z*=sz;
-        // Rotate by quaternion (rx,ry,rz,rw)
+        // Rotate by quaternion (rx,ry,rz,rw) — fórmula correcta de Three.js Vector3.applyQuaternion
         var ix =  rw*x + ry*z - rz*y;
         var iy =  rw*y + rz*x - rx*z;
         var iz =  rw*z + rx*y - ry*x;
         var iw = -rx*x - ry*y - rz*z;
-        var nx = ix*rw + iw*-rx + iy*-rz - iz*-ry;
-        var ny = iy*rw + iw*-ry + iz*-rx - ix*-rz;
-        var nz = iz*rw + iw*-rz + ix*-ry - iy*-rx;
+        var nx = ix*rw + iw*(-rx) + iy*(-rz) - iz*(-ry);
+        var ny = iy*rw + iw*(-ry) + iz*(-rx) - ix*(-rz);
+        var nz = iz*rw + iw*(-rz) + ix*(-ry) - iy*(-rx);
         // Translate
         return [nx+tx, ny+ty, nz+tz];
       }
