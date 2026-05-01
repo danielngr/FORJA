@@ -4564,7 +4564,7 @@ const VID={
   "remo australiano":                          BASE+"pull-ups.mp4",
   "remo invertido":                            BASE+"pull-ups.mp4",
   "remo en t":                                 BASE+"dumbbell-row-unilateral.mp4",
-  "remo pendlay":                              BASE+"30171201-Barbell-Pendlay-Row-Back_.mp4",
+  "remo pendlay":                              BASE+"30171201-Barbell-Pendlay-Row_Back_.mp4",
   "remo con mancuerna":                        BASE+"dumbbell-row-unilateral.mp4",
   "remo mancuerna":                            BASE+"dumbbell-row-unilateral.mp4",
   "remo unilateral mancuerna":                 BASE+"dumbbell-row-unilateral.mp4",
@@ -4608,8 +4608,8 @@ const VID={
   "sentadilla en aire":                        BASE+"bodyweight-squat.mp4",
   "sentadilla pistola":                        null,
   "sentadilla peso corporal":                  BASE+"bodyweight-squat.mp4",
-  "sentadilla con mancuerna":                  BASE+"29931201-Kettlebell-Goblet-Squat-Mobility-Thighs_.mp4",
-  "sentadilla goblet":                         BASE+"29931201-Kettlebell-Goblet-Squat-Mobility-Thighs_.mp4",
+  "sentadilla con mancuerna":                  BASE+"29931201-Kettlebell-Goblet-Squat-Mobility_Thighs_.mp4",
+  "sentadilla goblet":                         BASE+"29931201-Kettlebell-Goblet-Squat-Mobility_Thighs_.mp4",
   "sentadilla con barra":                      BASE+"barbell-squat.mp4",
   "sentadilla trasera":                        BASE+"barbell-squat.mp4",
   "sentadilla trasera con barra":              BASE+"barbell-squat.mp4",
@@ -4670,7 +4670,7 @@ const VID={
   "sprint 200m":                               null,
   "arm haulers":                               null,
   "sentadilla con salto":                      BASE+"box-jump.mp4",
-  "sentadilla hack":                           BASE+"19921201-Sled-Full-Hack-Squat-Thighs_.mp4",
+  "sentadilla hack":                           BASE+"19921201-Sled-Full-Hack-Squat_Thighs_.mp4",
   "pantorrilla sentado":                       BASE+"26761201-Barbell-Seated-Calf-Raise-(female)_Calves_.mp4",
   "gemelos sentado":                           BASE+"26761201-Barbell-Seated-Calf-Raise-(female)_Calves_.mp4",
   "elevación de piernas suelo":                BASE+"35901201-Alternate-Lying-Floor-Leg-Raise-(male)_Waist.mp4",
@@ -4691,7 +4691,7 @@ const VID={
   "peso muerto":                               BASE+"66921201-Barbell-Deadlift-(side-POV)-(male)_Hips_.mp4",
   "peso muerto rumano":                        BASE+"22131201-Barbell-Romanian-Deadlift-(female)_Hips.mp4",
   "peso muerto piernas rectas":                BASE+"22131201-Barbell-Romanian-Deadlift-(female)_Hips.mp4",
-  "peso muerto 1 pierna":                      BASE+"49711201-Bodyweight-Single-Leg-RDL-Hips_.mp4",
+  "peso muerto 1 pierna":                      BASE+"49711201-Bodyweight-Single-Leg-RDL_Hips_.mp4",
   "tricep pushdown":                           BASE+"90041201-Cable-Triceps-Pushdown-(SZ-bar)-(female)_Upper-arm.mp4",
   "tríceps polea":                             BASE+"90041201-Cable-Triceps-Pushdown-(SZ-bar)-(female)_Upper-arm.mp4",
   "jalón tríceps polea":                       BASE+"90041201-Cable-Triceps-Pushdown-(SZ-bar)-(female)_Upper-arm.mp4",
@@ -4740,10 +4740,17 @@ const VID={
 };
 const getVid=name=>{
   if(!name) return null;
-  const low=name.toLowerCase().trim();
-  const result=VID[low]||VID[ES_TO_META[low]]||null;
-  if(!result) console.log("[FORJA] No video for:",JSON.stringify(low));
-  else console.log("[FORJA] Video found:",low,"→",result.slice(-40));
+  let low=name.toLowerCase().trim();
+  // Normalizar: remover acentos y dobles espacios
+  const norm = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();
+  const lowNorm = norm(low);
+  // Probar múltiples variantes
+  let result = VID[low] || VID[lowNorm] || VID[ES_TO_META[low]] || VID[ES_TO_META[lowNorm]] || null;
+  if(!result){
+    console.log("[FORJA] No video for:",JSON.stringify(low),"(norm:",JSON.stringify(lowNorm)+")");
+  } else {
+    console.log("[FORJA] Video found:",low,"→",result.slice(-50));
+  }
   return result;
 };
 const epley=(w,r)=>r===1?+w:Math.round(+w*(1+0.0333*+r));
