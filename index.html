@@ -132,8 +132,8 @@ input[type=number]{-moz-appearance:textfield;}
 
   #forja-onboarding .app{position:fixed;inset:0;display:flex;flex-direction:column;height:100%;}
 
-  #forja-onboarding /* ═══════════════════════════════════════════════════════ */
-  /* CORAZÓN/CUERPO 3D — fixed background layer              */
+  /* ═══════════════════════════════════════════════════════ */
+  #forja-onboarding /* CORAZÓN/CUERPO 3D — fixed background layer              */
   /* ═══════════════════════════════════════════════════════ */
   #stage{
     position:fixed;inset:0;
@@ -142,16 +142,16 @@ input[type=number]{-moz-appearance:textfield;}
   }
   #forja-onboarding #stage canvas{display:block;width:100%;height:100%;}
 
-  #forja-onboarding /* Subtle vignette */
-  #vignette{
+  /* Subtle vignette */
+  #forja-onboarding #vignette{
     position:fixed;inset:0;
     background:radial-gradient(ellipse at center,transparent 0%,transparent 50%,rgba(0,0,0,0.6) 100%);
     pointer-events:none;
     z-index:2;
   }
 
-  #forja-onboarding /* ═══════════════════════════════════════════════════════ */
-  /* PROGRESS BAR (Apple-style)                              */
+  /* ═══════════════════════════════════════════════════════ */
+  #forja-onboarding /* PROGRESS BAR (Apple-style)                              */
   /* ═══════════════════════════════════════════════════════ */
   .progress{
     position:relative;z-index:10;
@@ -167,8 +167,8 @@ input[type=number]{-moz-appearance:textfield;}
     box-shadow:0 0 8px rgba(255,94,94,0.5);
   }
 
-  #forja-onboarding /* ═══════════════════════════════════════════════════════ */
-  /* SCREENS                                                  */
+  /* ═══════════════════════════════════════════════════════ */
+  #forja-onboarding /* SCREENS                                                  */
   /* ═══════════════════════════════════════════════════════ */
   .screens{
     flex:1;position:relative;z-index:10;
@@ -184,37 +184,41 @@ input[type=number]{-moz-appearance:textfield;}
   #forja-onboarding .screen.active{opacity:1;transform:translateY(0);pointer-events:auto;}
   #forja-onboarding .screen.exit{opacity:0;transform:translateY(-30px);pointer-events:none;}
 
-  #forja-onboarding /* Top header (small label) */
-  .screen-tag{
+  /* Top header (small label) */
+  #forja-onboarding .screen-tag{
     font-family:'DM Mono',monospace;
     font-size:9px;letter-spacing:3px;
     color:rgba(255,255,255,0.45);
     font-weight:500;margin-top:8px;
+    text-align:center;
   }
 
-  #forja-onboarding /* Title (big, #forja-onboarding brutalist) */
-  .screen-title{
+  /* Title (big, brutalist) */
+  #forja-onboarding .screen-title{
     font-family:'Archivo Black',sans-serif;
-    font-size:42px;line-height:0.95;letter-spacing:-0.5px;
-    color:#fff;margin-top:14px;
+    font-size:38px;line-height:0.95;letter-spacing:-0.5px;
+    color:#fff;margin-top:12px;
     text-shadow:0 2px 30px rgba(0,0,0,0.6);
+    text-align:center;
   }
   #forja-onboarding .screen-title .accent{color:#ff5e5e;}
   #forja-onboarding .screen-title em{font-style:normal;color:#ff5e5e;}
 
-  #forja-onboarding /* Subtitle */
-  .screen-sub{
+  /* Subtitle */
+  #forja-onboarding .screen-sub{
     font-family:'DM Sans',sans-serif;font-weight:400;
-    font-size:15px;color:rgba(255,255,255,0.6);
-    margin-top:14px;line-height:1.45;
+    font-size:14px;color:rgba(255,255,255,0.65);
+    margin-top:12px;line-height:1.45;
     max-width:340px;
+    margin-left:auto;margin-right:auto;
+    text-align:center;
   }
 
-  #forja-onboarding /* Spacer pushes button to bottom */
-  .spacer{flex:1;}
+  /* Spacer pushes button to bottom */
+  #forja-onboarding .spacer{flex:1;}
 
-  #forja-onboarding /* Continue button (sticky bottom) */
-  .btn-continue{
+  /* Continue button (sticky bottom) */
+  #forja-onboarding .btn-continue{
     width:100%;padding:18px 24px;
     background:linear-gradient(180deg,#ff5e5e,#e04545);
     color:#fff;border:none;border-radius:16px;
@@ -241,8 +245,8 @@ input[type=number]{-moz-appearance:textfield;}
   }
   #forja-onboarding .btn-secondary:active{color:#fff;}
 
-  #forja-onboarding /* ═══════════════════════════════════════════════════════ */
-  /* SCREEN 0 — WELCOME                                       */
+  /* ═══════════════════════════════════════════════════════ */
+  #forja-onboarding /* SCREEN 0 — WELCOME                                       */
   /* ═══════════════════════════════════════════════════════ */
   #s0{padding:24px;justify-content:center;align-items:center;text-align:center;}
   #forja-onboarding #s0 .welcome-tag{
@@ -274,8 +278,8 @@ input[type=number]{-moz-appearance:textfield;}
     to{opacity:1;transform:translateY(0);}
   }
 
-  #forja-onboarding /* ═══════════════════════════════════════════════════════ */
-  /* INPUT NAME                                               */
+  /* ═══════════════════════════════════════════════════════ */
+  #forja-onboarding /* INPUT NAME                                               */
   /* ═══════════════════════════════════════════════════════ */
   .name-input-wrap{
     margin-top:24px;
@@ -297,8 +301,8 @@ input[type=number]{-moz-appearance:textfield;}
   }
   #forja-onboarding .name-input-wrap input::placeholder{color:rgba(255,255,255,0.2);}
 
-  #forja-onboarding /* ═══════════════════════════════════════════════════════ */
-  /* SEX SELECTOR                                             */
+  /* ═══════════════════════════════════════════════════════ */
+  #forja-onboarding /* SEX SELECTOR                                             */
   /* ═══════════════════════════════════════════════════════ */
   .sex-grid{
     display:grid;grid-template-columns:1fr 1fr;gap:12px;
@@ -330,8 +334,8 @@ input[type=number]{-moz-appearance:textfield;}
   #forja-onboarding .sex-btn.selected .label{color:#fff;}
   #forja-onboarding .sex-btn:active{transform:scale(0.97);}
 
-  #forja-onboarding /* ═══════════════════════════════════════════════════════ */
-  /* PICKER WHEEL (iOS-style)                                 */
+  /* ═══════════════════════════════════════════════════════ */
+  #forja-onboarding /* PICKER WHEEL (iOS-style)                                 */
   /* ═══════════════════════════════════════════════════════ */
   .picker-row{
     display:flex;gap:14px;margin-top:18px;
@@ -348,48 +352,55 @@ input[type=number]{-moz-appearance:textfield;}
   #forja-onboarding .picker{
     position:relative;width:100%;height:180px;
     overflow:hidden;
-    background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(0,0,0,0.2));
-    border:1px solid rgba(255,255,255,0.06);
+    background:linear-gradient(180deg,rgba(255,255,255,0.04),rgba(0,0,0,0.35));
+    border:1.5px solid rgba(255,255,255,0.12);
     border-radius:14px;
+    backdrop-filter:blur(8px);
+    -webkit-backdrop-filter:blur(8px);
   }
   #forja-onboarding .picker::before, #forja-onboarding .picker::after{
     content:"";position:absolute;left:0;right:0;height:60px;
     pointer-events:none;z-index:2;
   }
-  #forja-onboarding .picker::before{top:0;background:linear-gradient(180deg,#080a0e 0%,transparent 100%);}
-  #forja-onboarding .picker::after{bottom:0;background:linear-gradient(0deg,#080a0e 0%,transparent 100%);}
+  #forja-onboarding .picker::before{top:0;background:linear-gradient(180deg,rgba(8,10,14,0.95) 0%,transparent 100%);}
+  #forja-onboarding .picker::after{bottom:0;background:linear-gradient(0deg,rgba(8,10,14,0.95) 0%,transparent 100%);}
   #forja-onboarding .picker-selection{
     position:absolute;top:50%;left:8px;right:8px;height:60px;
     transform:translateY(-50%);
-    background:rgba(255,94,94,0.06);
-    border-top:1px solid rgba(255,94,94,0.25);
-    border-bottom:1px solid rgba(255,94,94,0.25);
+    background:linear-gradient(180deg,rgba(255,94,94,0.18),rgba(255,94,94,0.10));
+    border-top:1.5px solid rgba(255,94,94,0.7);
+    border-bottom:1.5px solid rgba(255,94,94,0.7);
+    box-shadow:inset 0 0 20px rgba(255,94,94,0.15);
     pointer-events:none;z-index:1;
     border-radius:8px;
   }
   #forja-onboarding .picker-list{
-    position:absolute;top:50%;left:0;right:0;
-    transform:translateY(-30px); /* center first item */
+    position:absolute;top:0;left:0;right:0;
+    transform:translateY(60px);
     transition:transform .3s cubic-bezier(.34,1.56,.64,1);
     will-change:transform;
   }
   #forja-onboarding .picker-item{
     height:60px;display:flex;align-items:center;justify-content:center;
     font-family:'Archivo Black',sans-serif;
-    font-size:22px;color:rgba(255,255,255,0.4);
-    transition:color .2s,transform .2s;
+    font-size:20px;color:rgba(255,255,255,0.35);
+    transition:color .2s,font-size .2s,transform .2s;
   }
   #forja-onboarding .picker-item.selected{
-    color:#fff;font-size:28px;
+    color:#fff;font-size:30px;
+    text-shadow:0 0 16px rgba(255,94,94,0.6);
   }
   #forja-onboarding .picker-item .unit{
-    font-size:11px;color:rgba(255,255,255,0.5);
+    font-size:11px;color:rgba(255,255,255,0.6);
     font-family:'DM Mono',monospace;
     margin-left:6px;font-weight:400;letter-spacing:1px;
   }
+  #forja-onboarding .picker-item.selected .unit{
+    color:rgba(255,255,255,0.85);
+  }
 
-  #forja-onboarding /* ═══════════════════════════════════════════════════════ */
-  /* CINTURA SLIDER                                           */
+  /* ═══════════════════════════════════════════════════════ */
+  #forja-onboarding /* CINTURA SLIDER                                           */
   /* ═══════════════════════════════════════════════════════ */
   .waist-display{
     text-align:center;margin-top:30px;
@@ -440,8 +451,8 @@ input[type=number]{-moz-appearance:textfield;}
     color:rgba(255,255,255,0.7);line-height:1.4;
   }
 
-  #forja-onboarding /* ═══════════════════════════════════════════════════════ */
-  /* HR INPUT                                                 */
+  /* ═══════════════════════════════════════════════════════ */
+  #forja-onboarding /* HR INPUT                                                 */
   /* ═══════════════════════════════════════════════════════ */
   .hr-display{
     text-align:center;margin-top:24px;
@@ -508,8 +519,8 @@ input[type=number]{-moz-appearance:textfield;}
     color:rgba(255,255,255,0.4);font-size:18px;
   }
 
-  #forja-onboarding /* ═══════════════════════════════════════════════════════ */
-  /* GOAL SELECTOR                                            */
+  /* ═══════════════════════════════════════════════════════ */
+  #forja-onboarding /* GOAL SELECTOR                                            */
   /* ═══════════════════════════════════════════════════════ */
   .goals-grid{
     display:grid;grid-template-columns:1fr 1fr;gap:10px;
@@ -540,8 +551,8 @@ input[type=number]{-moz-appearance:textfield;}
   }
   #forja-onboarding .goal-btn:active{transform:scale(0.97);}
 
-  #forja-onboarding /* ═══════════════════════════════════════════════════════ */
-  /* DAYS PICKER (7 dots)                                     */
+  /* ═══════════════════════════════════════════════════════ */
+  #forja-onboarding /* DAYS PICKER (7 dots)                                     */
   /* ═══════════════════════════════════════════════════════ */
   .days-row{
     display:grid;grid-template-columns:repeat(7,1fr);gap:6px;
@@ -579,8 +590,8 @@ input[type=number]{-moz-appearance:textfield;}
     font-weight:500;min-height:14px;
   }
 
-  #forja-onboarding /* Mode toggle */
-  .mode-row{
+  /* Mode toggle */
+  #forja-onboarding .mode-row{
     display:grid;grid-template-columns:1fr 1fr;gap:10px;
     margin-top:18px;
   }
@@ -607,8 +618,8 @@ input[type=number]{-moz-appearance:textfield;}
     border-color:rgba(255,94,94,0.7);
   }
 
-  #forja-onboarding /* ═══════════════════════════════════════════════════════ */
-  /* SCREEN 8 — REVEAL                                        */
+  /* ═══════════════════════════════════════════════════════ */
+  #forja-onboarding /* SCREEN 8 — REVEAL                                        */
   /* ═══════════════════════════════════════════════════════ */
   #s8{padding:24px;justify-content:center;align-items:center;text-align:center;}
   #forja-onboarding #s8 .reveal-tag{
@@ -657,8 +668,56 @@ input[type=number]{-moz-appearance:textfield;}
     opacity:0;animation:fadeUp .8s 3.2s forwards;
   }
 
-  #forja-onboarding /* Header back button */
-  .back-btn{
+  /* Athlete picker grid */
+  #forja-onboarding .athlete-grid{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:8px;
+    margin-top:18px;
+    max-height:380px;overflow-y:auto;
+    padding-right:4px;
+    -webkit-overflow-scrolling:touch;
+  }
+  #forja-onboarding .athlete-grid::-webkit-scrollbar{width:3px;}
+  #forja-onboarding .athlete-grid::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px;}
+  #forja-onboarding .athlete-card{
+    background:rgba(255,255,255,0.04);
+    border:1.5px solid rgba(255,255,255,0.08);
+    border-radius:12px;
+    padding:10px 6px;
+    cursor:pointer;
+    text-align:center;
+    transition:all .2s ease;
+    -webkit-appearance:none;
+  }
+  #forja-onboarding .athlete-card .ath-em{
+    font-size:24px;display:block;margin-bottom:4px;
+    filter:grayscale(0.5);opacity:0.85;
+  }
+  #forja-onboarding .athlete-card .ath-name{
+    font-family:'Archivo Black',sans-serif;
+    font-size:10px;letter-spacing:0.5px;
+    color:rgba(255,255,255,0.85);
+    line-height:1.1;
+  }
+  #forja-onboarding .athlete-card .ath-days{
+    font-family:'DM Mono',monospace;
+    font-size:7px;letter-spacing:1px;
+    color:rgba(255,255,255,0.4);font-weight:500;
+    margin-top:3px;
+  }
+  #forja-onboarding .athlete-card.selected{
+    background:rgba(255,94,94,0.15);
+    border-color:rgba(255,94,94,0.8);
+    box-shadow:0 0 18px rgba(255,94,94,0.3);
+    transform:scale(1.04);
+  }
+  #forja-onboarding .athlete-card.selected .ath-em{
+    filter:none;opacity:1;
+  }
+  #forja-onboarding .athlete-card.selected .ath-name{color:#fff;}
+  #forja-onboarding .athlete-card:active{transform:scale(0.96);}
+
+  /* Header back button */
+  #forja-onboarding .back-btn{
     position:absolute;top:18px;left:24px;
     width:38px;height:38px;border-radius:50%;
     background:rgba(255,255,255,0.06);
@@ -673,8 +732,8 @@ input[type=number]{-moz-appearance:textfield;}
   #forja-onboarding .back-btn:active{transform:scale(0.92);}
   #forja-onboarding .back-btn.hidden{opacity:0;pointer-events:none;}
 
-  #forja-onboarding /* ═══════════════════════════════════════════════════════ */
-  /* DEBUG PANEL (top-right small for dev)                    */
+  /* ═══════════════════════════════════════════════════════ */
+  #forja-onboarding /* DEBUG PANEL (top-right small for dev)                    */
   /* ═══════════════════════════════════════════════════════ */
   #debug-panel{
     position:fixed;top:6px;right:6px;
@@ -687,8 +746,8 @@ input[type=number]{-moz-appearance:textfield;}
     backdrop-filter:blur(8px);
   }
 
-  #forja-onboarding /* Bottom area */
-  .bottom-area{
+  /* Bottom area */
+  #forja-onboarding .bottom-area{
     margin-top:auto;padding-top:20px;
   }
 
@@ -718,9 +777,7 @@ input[type=number]{-moz-appearance:textfield;}
     <!-- SCREEN 0: WELCOME -->
     <!-- ═══════════════════════════════════ -->
     <div class="screen active" id="s0">
-      <div class="welcome-tag">FORJA · APP STORE</div>
-      <div class="welcome-title">FORJA<br><em>TU CORAZÓN.</em></div>
-      <div class="welcome-sub">Conoce tu edad cardiovascular real, entrena para mejorarla, y mira tu corazón evolucionar.</div>
+      <div class="welcome-title">FORJA<br><em>TU RUTINA.</em></div>
       <button class="btn-continue welcome-btn" onclick="next()">EMPEZAR →</button>
     </div>
 
@@ -732,7 +789,7 @@ input[type=number]{-moz-appearance:textfield;}
       <h1 class="screen-title">¿CÓMO TE<br><em>LLAMAS?</em></h1>
       <div class="screen-sub">Solo tu primer nombre. Lo usaremos para personalizar tu experiencia.</div>
       <div class="name-input-wrap">
-        <input type="text" id="input-name" placeholder="Daniel" autocomplete="off" maxlength="20">
+        <input type="text" id="input-name" placeholder="Tu nombre" autocomplete="off" maxlength="20">
       </div>
       <div class="spacer"></div>
       <div class="bottom-area">
@@ -831,6 +888,7 @@ input[type=number]{-moz-appearance:textfield;}
       <div class="spacer"></div>
       <div class="bottom-area">
         <button class="btn-continue" onclick="next()">CONTINUAR →</button>
+        <button class="btn-secondary" onclick="skipWaist()">REGISTRAR DESPUÉS</button>
       </div>
     </div>
 
@@ -843,7 +901,6 @@ input[type=number]{-moz-appearance:textfield;}
       <div class="screen-sub">Tu frecuencia cardiaca en reposo. Tomada al despertar, antes de moverte.</div>
 
       <div class="hr-display">
-        <div class="hr-pulse-icon">❤️</div>
         <div class="hr-value" id="hr-num">62</div>
         <div class="hr-unit">LATIDOS POR MINUTO</div>
       </div>
@@ -856,7 +913,18 @@ input[type=number]{-moz-appearance:textfield;}
       </div>
 
       <div class="apple-watch-row" onclick="connectAppleWatch()">
-        <div class="apple-watch-icon">⌚</div>
+        <div class="apple-watch-icon">
+          <svg width="32" height="36" viewBox="0 0 32 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="6" y="0" width="20" height="3" rx="1.5" fill="#888"/>
+            <rect x="6" y="33" width="20" height="3" rx="1.5" fill="#888"/>
+            <rect x="2" y="6" width="28" height="24" rx="6" fill="#1a1a1a" stroke="#666" stroke-width="0.8"/>
+            <rect x="4" y="8" width="24" height="20" rx="4" fill="#000"/>
+            <circle cx="16" cy="18" r="5" fill="none" stroke="#ff5e5e" stroke-width="1.5"/>
+            <path d="M11 18 L13 18 L14 15 L16 21 L18 17 L19 18 L21 18" stroke="#ff5e5e" stroke-width="1" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <rect x="29" y="12" width="2" height="6" rx="1" fill="#666"/>
+            <circle cx="30" cy="22" r="1.2" fill="#666"/>
+          </svg>
+        </div>
         <div class="apple-watch-text">
           <div class="apple-watch-title">CONECTAR APPLE WATCH</div>
           <div class="apple-watch-sub">Sincroniza tu HR reposo y VO2 max automáticamente</div>
@@ -867,6 +935,7 @@ input[type=number]{-moz-appearance:textfield;}
       <div class="spacer"></div>
       <div class="bottom-area">
         <button class="btn-continue" onclick="next()">CONTINUAR →</button>
+        <button class="btn-secondary" onclick="skipHR()">REGISTRAR DESPUÉS</button>
       </div>
     </div>
 
@@ -950,7 +1019,22 @@ input[type=number]{-moz-appearance:textfield;}
 
       <div class="spacer"></div>
       <div class="bottom-area">
-        <button class="btn-continue" id="btn-days" disabled onclick="finalize()">FORJAR →</button>
+        <button class="btn-continue" id="btn-days" disabled onclick="proceedFromDays()">CONTINUAR →</button>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════ -->
+    <!-- SCREEN 7B: ATHLETE PICKER (solo si modo=celeb) -->
+    <!-- ═══════════════════════════════════ -->
+    <div class="screen" id="s7b">
+      <div class="screen-tag">07 · TU ATLETA</div>
+      <h1 class="screen-title">ELIGE TU<br><em>REFERENTE</em></h1>
+      <div class="screen-sub">Su rutina será la tuya. Puedes cambiar de atleta cuando quieras.</div>
+      <div class="athlete-grid" id="athlete-grid">
+        <!-- populated by JS -->
+      </div>
+      <div class="bottom-area">
+        <button class="btn-continue" id="btn-athlete" disabled onclick="finalize()">FORJAR →</button>
       </div>
     </div>
 
@@ -1048,7 +1132,14 @@ function goBack(){
   if(_obState.history.length > 1){
     _obState.history.pop();
     const prev = _obState.history[_obState.history.length-1];
-    showScreen(prev);
+    if(prev === 's7b'){
+      // Going back to athlete picker (intermediate screen)
+      document.querySelectorAll('#forja-onboarding .screen').forEach(s=>s.classList.remove('active','exit'));
+      const sn = document.getElementById('s7b');
+      if(sn) sn.classList.add('active');
+    } else {
+      showScreen(prev);
+    }
     haptic('light');
   }
 }
@@ -1147,6 +1238,19 @@ function connectAppleWatch(){
   alert('Apple Watch — Próximamente disponible en la versión iOS nativa.\n\nPor ahora puedes ingresar tu HR reposo manualmente.');
 }
 
+// Skip handlers — marcan dato como "no registrado" y avanzan
+function skipWaist(){
+  _obState.data.waist = null;
+  haptic('light');
+  next();
+}
+function skipHR(){
+  _obState.data.hr = null;
+  _obState.data.appleWatch = false;
+  haptic('light');
+  next();
+}
+
 // Waist slider
 document.getElementById('waist-slider').addEventListener('input',e=>{
   _obState.data.waist = parseInt(e.target.value);
@@ -1177,98 +1281,115 @@ function setupPicker(id, onChange){
   }
 
   const ITEM_H = 60;
+  // Picker is 180px tall. Selection band centered at top:50% (= 90px from top).
+  // Selection band height = 60px, centered at 90px → spans 60-120px.
+  // Item with value `v` should land in band when its center is at 90px.
+  // Item index from top is (v - min). Item center at index i is i*ITEM_H + ITEM_H/2.
+  // So we need: list_translateY + (v-min)*ITEM_H + ITEM_H/2 = 90
+  // → list_translateY = 90 - ITEM_H/2 - (v-min)*ITEM_H = 60 - (v-min)*60
+  function valueToOffset(val){
+    return 60 - (val - min) * ITEM_H;
+  }
+  function offsetToValue(off){
+    return Math.round((60 - off) / ITEM_H + min);
+  }
+
   let currentVal = def;
   let isDragging = false;
   let startY = 0;
-  let startTransform = 0;
+  let startOffset = 0;
+  let currentOffset = valueToOffset(def);
 
-  function applyTransform(val, animate){
-    const offset = -(val - min) * ITEM_H + 60; // center
+  function applyOffset(off, animate){
     list.style.transition = animate ? 'transform .3s cubic-bezier(.34,1.56,.64,1)' : 'none';
-    list.style.transform = `translateY(${offset}px)`;
-    // Update selected highlight
+    list.style.transform = `translateY(${off}px)`;
+    currentOffset = off;
+  }
+
+  function setValue(val, animate){
+    val = Math.max(min, Math.min(max, val));
+    const off = valueToOffset(val);
+    applyOffset(off, animate);
     list.querySelectorAll('.picker-item').forEach(it=>{
       it.classList.toggle('selected', parseInt(it.dataset.value)===val);
     });
-    currentVal = val;
-    if(onChange) onChange(val);
+    if(currentVal !== val){
+      currentVal = val;
+      if(onChange) onChange(val);
+    } else {
+      currentVal = val;
+    }
   }
 
-  applyTransform(def, false);
+  // Initialize at default
+  setValue(def, false);
+
+  function handleMove(clientY){
+    if(!isDragging) return;
+    const dy = clientY - startY;
+    const newOff = startOffset + dy;
+    applyOffset(newOff, false);
+    // Visual feedback during drag
+    const v = Math.max(min, Math.min(max, offsetToValue(newOff)));
+    list.querySelectorAll('.picker-item').forEach(it=>{
+      it.classList.toggle('selected', parseInt(it.dataset.value)===v);
+    });
+  }
+
+  function handleEnd(){
+    if(!isDragging) return;
+    isDragging = false;
+    const v = Math.max(min, Math.min(max, offsetToValue(currentOffset)));
+    setValue(v, true);
+    haptic('light');
+  }
 
   // Touch handling
   el.addEventListener('touchstart',e=>{
     isDragging = true;
     startY = e.touches[0].clientY;
-    const m = list.style.transform.match(/translateY\(([-\d.]+)px\)/);
-    startTransform = m ? parseFloat(m[1]) : 0;
+    startOffset = currentOffset;
     list.style.transition = 'none';
   },{passive:true});
 
   el.addEventListener('touchmove',e=>{
-    if(!isDragging) return;
-    const dy = e.touches[0].clientY - startY;
-    const newTransform = startTransform + dy;
-    list.style.transform = `translateY(${newTransform}px)`;
-    // Calc current value
-    const v = Math.round(min + (60 - newTransform) / ITEM_H);
-    const clamped = Math.max(min, Math.min(max, v));
-    list.querySelectorAll('.picker-item').forEach(it=>{
-      it.classList.toggle('selected', parseInt(it.dataset.value)===clamped);
-    });
+    handleMove(e.touches[0].clientY);
   },{passive:true});
 
-  el.addEventListener('touchend',()=>{
-    if(!isDragging) return;
-    isDragging = false;
-    const m = list.style.transform.match(/translateY\(([-\d.]+)px\)/);
-    const cur = m ? parseFloat(m[1]) : 0;
-    const v = Math.round(min + (60 - cur) / ITEM_H);
-    const clamped = Math.max(min, Math.min(max, v));
-    applyTransform(clamped, true);
-    haptic('light');
-  });
+  el.addEventListener('touchend', handleEnd);
+  el.addEventListener('touchcancel', handleEnd);
 
   // Mouse support (desktop preview)
   el.addEventListener('mousedown',e=>{
     isDragging = true;
     startY = e.clientY;
-    const m = list.style.transform.match(/translateY\(([-\d.]+)px\)/);
-    startTransform = m ? parseFloat(m[1]) : 0;
+    startOffset = currentOffset;
     list.style.transition = 'none';
     e.preventDefault();
   });
   document.addEventListener('mousemove',e=>{
-    if(!isDragging) return;
-    const dy = e.clientY - startY;
-    const newTransform = startTransform + dy;
-    list.style.transform = `translateY(${newTransform}px)`;
-    const v = Math.round(min + (60 - newTransform) / ITEM_H);
-    const clamped = Math.max(min, Math.min(max, v));
-    list.querySelectorAll('.picker-item').forEach(it=>{
-      it.classList.toggle('selected', parseInt(it.dataset.value)===clamped);
-    });
+    if(isDragging) handleMove(e.clientY);
   });
-  document.addEventListener('mouseup',()=>{
-    if(!isDragging) return;
-    isDragging = false;
-    const m = list.style.transform.match(/translateY\(([-\d.]+)px\)/);
-    const cur = m ? parseFloat(m[1]) : 0;
-    const v = Math.round(min + (60 - cur) / ITEM_H);
-    const clamped = Math.max(min, Math.min(max, v));
-    applyTransform(clamped, true);
-  });
+  document.addEventListener('mouseup', handleEnd);
+
+  // Wheel support (desktop scroll wheel)
+  el.addEventListener('wheel', e=>{
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? 1 : -1;
+    setValue(currentVal + delta, true);
+  }, {passive:false});
 
   // Click on item to set
   list.addEventListener('click',e=>{
+    if(isDragging) return;
     const it = e.target.closest('.picker-item');
     if(!it) return;
     const v = parseInt(it.dataset.value);
-    applyTransform(v, true);
+    setValue(v, true);
     haptic('light');
   });
 
-  el._setValue = v=>applyTransform(v, true);
+  el._setValue = v=>setValue(v, true);
   el._getValue = ()=>currentVal;
 }
 
@@ -1334,21 +1455,96 @@ function calculateCVAge(d){
   return {fitnessAge, vo2: Math.round(vo2)};
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// ATHLETE PICKER (pantalla intermedia 7B si mode=celeb)
+// ═══════════════════════════════════════════════════════════════════
+function proceedFromDays(){
+  if(_obState.data.mode === 'celeb'){
+    // Show athlete picker (s7b)
+    showAthletePicker();
+  } else {
+    // Auto mode → calculate and reveal
+    finalize();
+  }
+}
+
+function showAthletePicker(){
+  // Populate the grid with celebs from CELEB_LIST
+  const grid = document.getElementById('athlete-grid');
+  if(!grid) return;
+  // Build only once
+  if(grid.children.length === 0){
+    if(typeof CELEB_LIST === 'undefined'){
+      console.warn('CELEB_LIST not defined');
+      // Fallback: skip to finalize
+      finalize();
+      return;
+    }
+    CELEB_LIST.forEach(celeb=>{
+      const card = document.createElement('button');
+      card.className = 'athlete-card';
+      card.dataset.celebId = celeb.id;
+      card.innerHTML =
+        '<span class="ath-em">'+celeb.em+'</span>'+
+        '<span class="ath-name">'+celeb.label+'</span>'+
+        '<span class="ath-days">'+celeb.days+' DÍAS</span>';
+      card.onclick = ()=>selectAthlete(celeb.id);
+      grid.appendChild(card);
+    });
+  }
+  // Switch to s7b screen
+  document.querySelectorAll('#forja-onboarding .screen').forEach(s=>s.classList.remove('active','exit'));
+  setTimeout(()=>{
+    const s7b = document.getElementById('s7b');
+    if(s7b) s7b.classList.add('active');
+    _obState.history.push('s7b');
+    // Update progress (treat as same step as 7)
+    updateBackBtn();
+    // Keep heart stage going
+    if(window.heart3D) heart3D.setStage(7);
+  },50);
+  haptic('light');
+}
+
+function selectAthlete(id){
+  _obState.data.athleteId = id;
+  document.querySelectorAll('.athlete-card').forEach(c=>{
+    c.classList.toggle('selected', c.dataset.celebId === id);
+  });
+  document.getElementById('btn-athlete').disabled = false;
+  haptic('medium');
+}
+
 function finalize(){
-  const calc = calculateCVAge(_obState.data);
+  // Compute CV age (or use defaults if waist/hr were skipped)
+  const dataForCalc = Object.assign({}, _obState.data);
+  if(dataForCalc.waist === null) dataForCalc.waist = (dataForCalc.sex==='F'?78:88); // average values
+  if(dataForCalc.hr === null) dataForCalc.hr = 70;
+  const calc = calculateCVAge(dataForCalc);
   const diff = calc.fitnessAge - _obState.data.age;
   document.getElementById('reveal-age').textContent = calc.fitnessAge;
   document.getElementById('reveal-real').textContent = _obState.data.age;
   document.getElementById('reveal-diff').textContent = (diff>0?'+':'')+diff;
   let msg;
-  if(diff <= -5) msg = `Tu corazón es ${Math.abs(diff)} años más joven que tú. <strong>Eres una élite.</strong>`;
+  if(_obState.data.waist === null && _obState.data.hr === null){
+    msg = 'Estimación inicial. <strong>Registra tus medidas para calcularla con precisión.</strong>';
+  } else if(diff <= -5) msg = `Tu corazón es ${Math.abs(diff)} años más joven que tú. <strong>Eres una élite.</strong>`;
   else if(diff <= -2) msg = `Tu corazón es más joven que tú. <strong>Mantenlo así.</strong>`;
   else if(diff <= 2) msg = `Tu edad cardiovascular está alineada con tu edad real. <strong>Hay margen para mejorar.</strong>`;
   else if(diff <= 5) msg = `Tu corazón es ligeramente mayor. <strong>FORJA puede revertir esto.</strong>`;
   else msg = `Tu corazón está envejecido. <strong>Es hora de actuar.</strong>`;
   document.getElementById('reveal-msg').innerHTML = msg;
 
-  next();
+  // Transition to s8 (reveal) — could be coming from s7 (auto) or s7b (celeb)
+  document.querySelectorAll('#forja-onboarding .screen').forEach(s=>s.classList.remove('active','exit'));
+  setTimeout(()=>{
+    const s8 = document.getElementById('s8');
+    if(s8) s8.classList.add('active');
+    _obState.screen = 8;
+    updateProgress();
+    updateBackBtn();
+    if(window.heart3D) heart3D.setStage(8);
+  },50);
   haptic('heavy');
 }
 
@@ -1358,13 +1554,14 @@ function completeOnboarding(){
     var d = _obState.data;
     // Map onboarding goal to FORJA goal codes
     var goalMap = { muscle:'muscle', strength:'strength', lose:'general', recomp:'recomp', general:'general' };
+    var modeForFORJA = (d.mode === 'celeb') ? 'celebrity' : 'auto';
     var profile = {
       lang: (typeof LANG!=='undefined'?LANG:'es'),
       goal: goalMap[d.goal] || 'general',
-      level: 'int', // default intermediate
-      days: d.days.length,
+      level: 'int',
+      days: d.days.length || 3,
       selDays: d.days.length>0 ? d.days.slice().sort() : [1,3,5],
-      mode: d.mode || 'auto',
+      mode: modeForFORJA,
       name: d.name || '',
       age: d.age,
       weight: d.weight,
@@ -1373,11 +1570,21 @@ function completeOnboarding(){
       waist: d.waist,
       restingHR: d.hr,
       units: 'metric',
+      activeCelebId: d.athleteId || null,
     };
-    // Pick default routine from RAW
-    var routineKey = profile.days + 'int';
-    var routine = (typeof RAW !== 'undefined' && RAW[routineKey]) ? RAW[routineKey] : null;
-    // Save to FStore (localStorage + Supabase) or fallback to localStorage
+    // Pick routine
+    var routine = null;
+    if(d.mode === 'celeb' && d.athleteId && typeof buildCelebRoutine === 'function'){
+      try{
+        routine = buildCelebRoutine(d.athleteId);
+      }catch(e){ console.warn('buildCelebRoutine failed:',e); }
+    }
+    if(!routine){
+      // Default: from RAW
+      var routineKey = profile.days + 'int';
+      routine = (typeof RAW !== 'undefined' && RAW[routineKey]) ? RAW[routineKey] : null;
+    }
+    // Save profile + routine
     if(typeof FStore!=='undefined'){
       FStore.saveProfile(profile, routine || []);
     } else {
@@ -1386,8 +1593,8 @@ function completeOnboarding(){
     }
     // Mark onboarded
     try{ localStorage.setItem('forja_onboarded','1'); }catch(_){}
-    // Call FORJA bridge if available
-    var targetStep = (d.mode === 'celeb') ? 25 : 99;
+    // Call FORJA bridge — for celeb mode go directly to home (99), not to old picker
+    var targetStep = 99;
     if(typeof window.__forjaOnboardingDone === 'function'){
       window.__forjaOnboardingDone(profile, routine, targetStep);
     }
@@ -1459,8 +1666,8 @@ class Heart3D {
 
     this.particleCount = 8000;
     this.targets = {};
-    this.currentStage = 'point';
-    this.targetStage = 'point';
+    this.currentStage = 'offscreen';
+    this.targetStage = 'offscreen';
     this.morphProgress = 0;
     this.colorTarget = new THREE.Color(0xff5e5e);
     this.colorCurrent = new THREE.Color(0xff5e5e);
@@ -1482,10 +1689,21 @@ class Heart3D {
   buildTargets(){
     const N = this.particleCount;
 
-    // 1) POINT (single brilliant dot)
+    // 1) OFFSCREEN_LEFT_RIGHT — partículas dispersas fuera del centro (lados)
+    // Esto es el ESTADO INICIAL antes de mostrar la primera figura
+    this.targets.offscreen = new Float32Array(N*3);
+    for(let i=0;i<N;i++){
+      // 50% en lado izquierdo, 50% en lado derecho, fuera del viewport
+      const side = Math.random() < 0.5 ? -1 : 1;
+      this.targets.offscreen[i*3]   = side * (3.5 + Math.random()*1.5);  // X muy lejos
+      this.targets.offscreen[i*3+1] = (Math.random()-0.5) * 4;           // Y disperso
+      this.targets.offscreen[i*3+2] = (Math.random()-0.5) * 2;           // Z disperso
+    }
+
+    // 2) POINT — punto central denso
     this.targets.point = new Float32Array(N*3);
     for(let i=0;i<N;i++){
-      const r = Math.random()*0.05;
+      const r = Math.random()*0.08;
       const t = Math.random()*Math.PI*2;
       const p = Math.acos(2*Math.random()-1);
       this.targets.point[i*3]   = r*Math.sin(p)*Math.cos(t);
@@ -1493,24 +1711,36 @@ class Heart3D {
       this.targets.point[i*3+2] = r*Math.cos(p);
     }
 
-    // 2) EMBRYO (small ovoid)
-    this.targets.embryo = new Float32Array(N*3);
+    // 3) RUNE — Anillo / runa de partículas con un punto central brillante
+    //    Sustituye al "embrión" feo. Es como un disco de energía.
+    this.targets.rune = new Float32Array(N*3);
     for(let i=0;i<N;i++){
-      const r = 0.25 + Math.random()*0.05;
-      const t = Math.random()*Math.PI*2;
-      const p = Math.acos(2*Math.random()-1);
-      this.targets.embryo[i*3]   = r*Math.sin(p)*Math.cos(t)*0.7;
-      this.targets.embryo[i*3+1] = r*Math.sin(p)*Math.sin(t)*1.0;
-      this.targets.embryo[i*3+2] = r*Math.cos(p)*0.7;
+      const t = Math.random();
+      if(t < 0.25){
+        // Núcleo central denso
+        const r = Math.random()*0.12;
+        const a = Math.random()*Math.PI*2;
+        const p = Math.acos(2*Math.random()-1);
+        this.targets.rune[i*3]   = r*Math.sin(p)*Math.cos(a);
+        this.targets.rune[i*3+1] = r*Math.sin(p)*Math.sin(a);
+        this.targets.rune[i*3+2] = r*Math.cos(p);
+      } else {
+        // Anillo orbital — disco fino
+        const r = 0.6 + Math.random()*0.15;
+        const a = Math.random()*Math.PI*2;
+        this.targets.rune[i*3]   = r*Math.cos(a);
+        this.targets.rune[i*3+1] = r*Math.sin(a)*0.15;  // disco horizontal
+        this.targets.rune[i*3+2] = r*Math.sin(a)*0.6;
+      }
     }
 
-    // 3) BODY (low-poly humanoid)
+    // 4) BODY (FORJA-style low-poly humanoid)
     this.targets.body = this.buildBodyTarget();
 
-    // 4) HEART (Taubin heart equation)
+    // 5) HEART (Taubin heart equation)
     this.targets.heart = this.buildHeartTarget();
 
-    // 5) DISPERSED (cloud)
+    // 6) DISPERSED (cloud)
     this.targets.dispersed = new Float32Array(N*3);
     for(let i=0;i<N;i++){
       const r = 1.5 + Math.random()*0.8;
@@ -1521,41 +1751,70 @@ class Heart3D {
       this.targets.dispersed[i*3+2] = r*Math.cos(p);
     }
 
-    // 6) FORJA TEXT (letters)
-    // For simplicity skip text — use heart final
+    // Alias for backward compatibility
+    this.targets.embryo = this.targets.rune;
   }
 
   buildBodyTarget(){
     const N = this.particleCount;
     const arr = new Float32Array(N*3);
-    // Define body parts: head, torso, arms, legs (low-poly approximation)
+    // Maniquí FORJA estilo: hombros anchos, cintura V-taper, músculos definidos
+    // Coordenadas: Y arriba=positivo, X lados, Z profundidad
     const parts = [
-      // head: sphere top
-      {type:'sphere', cx:0, cy:1.4, cz:0, r:0.25, weight:0.10},
-      // neck
-      {type:'cylinder', cx:0, cy:1.05, cz:0, h:0.15, r:0.10, weight:0.03},
-      // torso
-      {type:'box', cx:0, cy:0.5, cz:0, w:0.6, h:0.9, d:0.3, weight:0.30},
-      // shoulders extension
-      {type:'cylinder', cx:0, cy:0.85, cz:0, h:0.15, r:0.45, axis:'x', weight:0.06},
-      // left arm
-      {type:'cylinder', cx:-0.55, cy:0.45, cz:0, h:0.7, r:0.10, axis:'y', weight:0.06},
-      {type:'cylinder', cx:-0.55, cy:-0.2, cz:0, h:0.55, r:0.08, axis:'y', weight:0.05},
-      // right arm
-      {type:'cylinder', cx:0.55, cy:0.45, cz:0, h:0.7, r:0.10, axis:'y', weight:0.06},
-      {type:'cylinder', cx:0.55, cy:-0.2, cz:0, h:0.55, r:0.08, axis:'y', weight:0.05},
+      // === CABEZA ===
+      // head (oval)
+      {type:'sphere', cx:0, cy:1.55, cz:0, rx:0.20, ry:0.24, rz:0.20, weight:0.06},
+      // jaw hint (bottom of head)
+      {type:'sphere', cx:0, cy:1.30, cz:0.04, rx:0.15, ry:0.10, rz:0.15, weight:0.02},
+      // neck (thick)
+      {type:'cylinder_y', cx:0, cy:1.10, cz:0, h:0.20, r:0.13, weight:0.04},
+
+      // === HOMBROS Y TRAPECIOS ===
+      // shoulders span (wide deltoid line)
+      {type:'cylinder_x', cx:0, cy:0.92, cz:0, h:0.95, r:0.18, weight:0.10},
+      // left deltoid (round)
+      {type:'sphere', cx:-0.50, cy:0.85, cz:0, rx:0.18, ry:0.18, rz:0.20, weight:0.04},
+      // right deltoid
+      {type:'sphere', cx:0.50, cy:0.85, cz:0, rx:0.18, ry:0.18, rz:0.20, weight:0.04},
+
+      // === PECTORAL / TORSO SUPERIOR (V-shape, wide top, narrow waist) ===
+      // chest top (pec line)
+      {type:'box', cx:0, cy:0.65, cz:0.08, w:0.85, h:0.30, d:0.20, weight:0.10},
+      // mid torso (abs)
+      {type:'box', cx:0, cy:0.30, cz:0.05, w:0.55, h:0.40, d:0.22, weight:0.09},
+      // lower torso (waist taper)
+      {type:'box', cx:0, cy:-0.05, cz:0, w:0.45, h:0.20, d:0.20, weight:0.05},
+
+      // === BRAZOS ===
+      // left bicep
+      {type:'cylinder_y', cx:-0.62, cy:0.55, cz:0, h:0.45, r:0.13, weight:0.06},
+      // left forearm
+      {type:'cylinder_y', cx:-0.62, cy:0.05, cz:0.05, h:0.45, r:0.10, weight:0.05},
+      // right bicep
+      {type:'cylinder_y', cx:0.62, cy:0.55, cz:0, h:0.45, r:0.13, weight:0.06},
+      // right forearm
+      {type:'cylinder_y', cx:0.62, cy:0.05, cz:0.05, h:0.45, r:0.10, weight:0.05},
+
+      // === HIPS / GLUTES ===
       // hips
-      {type:'box', cx:0, cy:-0.05, cz:0, w:0.5, h:0.2, d:0.28, weight:0.05},
-      // left leg upper
-      {type:'cylinder', cx:-0.18, cy:-0.5, cz:0, h:0.7, r:0.13, axis:'y', weight:0.08},
-      // left leg lower
-      {type:'cylinder', cx:-0.18, cy:-1.2, cz:0, h:0.65, r:0.10, axis:'y', weight:0.07},
-      // right leg upper
-      {type:'cylinder', cx:0.18, cy:-0.5, cz:0, h:0.7, r:0.13, axis:'y', weight:0.08},
-      // right leg lower
-      {type:'cylinder', cx:0.18, cy:-1.2, cz:0, h:0.65, r:0.10, axis:'y', weight:0.07},
+      {type:'box', cx:0, cy:-0.25, cz:0, w:0.55, h:0.20, d:0.28, weight:0.06},
+
+      // === PIERNAS ===
+      // left quad (large)
+      {type:'cylinder_y', cx:-0.18, cy:-0.65, cz:0, h:0.65, r:0.16, weight:0.09},
+      // left calf
+      {type:'cylinder_y', cx:-0.18, cy:-1.30, cz:0, h:0.55, r:0.12, weight:0.06},
+      // right quad
+      {type:'cylinder_y', cx:0.18, cy:-0.65, cz:0, h:0.65, r:0.16, weight:0.09},
+      // right calf
+      {type:'cylinder_y', cx:0.18, cy:-1.30, cz:0, h:0.55, r:0.12, weight:0.06},
+
+      // === DETAILS — extra particles to define muscles ===
+      // pec separation hint
+      {type:'box', cx:0, cy:0.65, cz:0.18, w:0.05, h:0.25, d:0.05, weight:0.01},
+      // ab line
+      {type:'box', cx:0, cy:0.30, cz:0.18, w:0.04, h:0.35, d:0.04, weight:0.01},
     ];
-    // Total weight
     const totalW = parts.reduce((s,p)=>s+p.weight,0);
     let idx = 0;
     parts.forEach(p=>{
@@ -1565,32 +1824,34 @@ class Heart3D {
         if(p.type==='sphere'){
           const t = Math.random()*Math.PI*2;
           const ph = Math.acos(2*Math.random()-1);
-          x = p.cx + p.r*Math.sin(ph)*Math.cos(t);
-          y = p.cy + p.r*Math.sin(ph)*Math.sin(t);
-          z = p.cz + p.r*Math.cos(ph);
+          const rx = p.rx || p.r || 0.15;
+          const ry = p.ry || p.r || 0.15;
+          const rz = p.rz || p.r || 0.15;
+          x = p.cx + rx*Math.sin(ph)*Math.cos(t);
+          y = p.cy + ry*Math.sin(ph)*Math.sin(t);
+          z = p.cz + rz*Math.cos(ph);
         } else if(p.type==='box'){
           x = p.cx + (Math.random()-0.5)*p.w;
           y = p.cy + (Math.random()-0.5)*p.h;
           z = p.cz + (Math.random()-0.5)*p.d;
-        } else if(p.type==='cylinder'){
+        } else if(p.type==='cylinder_y'){
           const t = Math.random()*Math.PI*2;
           const r = Math.random()*p.r;
-          if(p.axis==='x'){
-            x = p.cx + (Math.random()-0.5)*p.h;
-            y = p.cy + r*Math.cos(t);
-            z = p.cz + r*Math.sin(t);
-          } else {
-            x = p.cx + r*Math.cos(t);
-            y = p.cy + (Math.random()-0.5)*p.h;
-            z = p.cz + r*Math.sin(t);
-          }
+          x = p.cx + r*Math.cos(t);
+          y = p.cy + (Math.random()-0.5)*p.h;
+          z = p.cz + r*Math.sin(t);
+        } else if(p.type==='cylinder_x'){
+          const t = Math.random()*Math.PI*2;
+          const r = Math.random()*p.r;
+          x = p.cx + (Math.random()-0.5)*p.h;
+          y = p.cy + r*Math.cos(t);
+          z = p.cz + r*Math.sin(t);
         }
         arr[idx*3] = x;
         arr[idx*3+1] = y;
         arr[idx*3+2] = z;
       }
     });
-    // Fill remaining with noise around origin
     while(idx < N){
       arr[idx*3] = (Math.random()-0.5)*0.1;
       arr[idx*3+1] = (Math.random()-0.5)*0.1;
@@ -1644,7 +1905,7 @@ class Heart3D {
     const N = this.particleCount;
     // Start at point
     const positions = new Float32Array(N*3);
-    for(let i=0;i<N*3;i++) positions[i] = this.targets.point[i];
+    for(let i=0;i<N*3;i++) positions[i] = this.targets.offscreen[i];
     const sizes = new Float32Array(N);
     const phases = new Float32Array(N);
     for(let i=0;i<N;i++){
@@ -1718,16 +1979,20 @@ class Heart3D {
 
   setStage(screenIdx){
     // Map screen index to stage
+    // Pantalla 0 = welcome (sin figura visible, partículas afuera)
+    // Pantalla 1 = name (rune — anillo + núcleo, NO huevo)
+    // Pantallas 2-4 = body (cuerpo FORJA estilizado)
+    // Pantallas 5-8 = heart (corazón evolutivo)
     const map = {
-      0:'point',  // welcome
-      1:'embryo',  // name
-      2:'body',    // sex+age
-      3:'body',    // height+weight
-      4:'body',    // waist
-      5:'heart',   // hr (corazón emerge)
-      6:'heart',   // goal
-      7:'heart',   // days
-      8:'heart',   // reveal
+      0:'offscreen', // welcome — partículas FUERA (no visible)
+      1:'rune',      // name — runa/anillo (no embrión feo)
+      2:'body',      // sex+age
+      3:'body',      // height+weight
+      4:'body',      // waist
+      5:'heart',     // hr
+      6:'heart',     // goal
+      7:'heart',     // days
+      8:'heart',     // reveal
     };
     const targetName = map[screenIdx] || 'heart';
     if(targetName === this.targetStage) return;
@@ -1739,8 +2004,8 @@ class Heart3D {
     // Adjust pulse based on stage
     if(targetName === 'heart'){
       this.material.uniforms.uPulse.value = _obState.data.hr / 60;
-    } else if(targetName === 'embryo'){
-      this.material.uniforms.uPulse.value = 0.6;
+    } else if(targetName === 'rune'){
+      this.material.uniforms.uPulse.value = 0.4;
     } else {
       this.material.uniforms.uPulse.value = 0.2;
     }
@@ -1812,15 +2077,31 @@ class Heart3D {
     this.points.rotation.y = t * 0.15;
 
     // Stage-specific positioning
-    if(this.targetStage === 'point' || this.targetStage === 'embryo'){
-      this.points.position.y = 0.5; // upper area
+    if(this.targetStage === 'offscreen'){
+      // Particles flow in from sides during welcome screen
+      this.points.position.y = 0;
+      this.points.scale.set(1, 1, 1);
+    } else if(this.targetStage === 'rune' || this.targetStage === 'point' || this.targetStage === 'embryo'){
+      this.points.position.y = 0.5;
       this.points.scale.set(1, 1, 1);
     } else if(this.targetStage === 'body'){
       this.points.position.y = 0;
       this.points.scale.set(this.bodyWidth*this.waistFactor*0.7, this.bodyHeight*0.7, 0.7);
     } else if(this.targetStage === 'heart'){
+      // Corazón crece progresivamente: pantalla 5 (HR) pequeño/abstracto,
+      // pantalla 8 (reveal) ENORME
       this.points.position.y = 0.3;
-      this.points.scale.set(0.85, 0.85, 0.85);
+      const screen = (typeof _obState!=='undefined' && _obState.screen) ? _obState.screen : 5;
+      // 5 → 0.42, 6 → 0.50, 7 → 0.58, 8 → 0.95
+      let s;
+      if(screen <= 5) s = 0.42;
+      else if(screen === 6) s = 0.55;
+      else if(screen === 7) s = 0.65;
+      else s = 0.95;
+      // Smooth interpolate
+      if(this._heartScale === undefined) this._heartScale = s;
+      this._heartScale += (s - this._heartScale) * 0.08;
+      this.points.scale.set(this._heartScale, this._heartScale, this._heartScale);
     }
 
     this.renderer.render(this.scene, this.camera);
