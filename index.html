@@ -3315,6 +3315,7 @@ async function redeemProCode(code){
     return {ok:true,msg:data.msg||'Pro activado correctamente'};
   }catch(e){return {ok:false,msg:'Error: '+e.message};}
 }
+window.redeemProCode = redeemProCode;
 
 </script>
 <script type="text/babel">
@@ -7876,6 +7877,62 @@ function ProfileSheet({show,onClose,profile,lang,mono,sp,setStep}){
             },
               l==="en"?"SIGN OUT":"SALIR"
             )
+          );
+        })(),
+
+        // ── PROMO CODE ──
+        (function(){
+          var userIsPro=isPro();
+          if(userIsPro)return null; // no mostrar si ya es PRO
+          return e("div",{
+            onClick:async function(){
+              var code = window.prompt(
+                l==="en"?"Enter promo code:":"Ingresa código promocional:",
+                ""
+              );
+              if(!code)return;
+              code=code.trim().toUpperCase();
+              if(code.length<3){
+                alert(l==="en"?"Code too short":"Código demasiado corto");
+                return;
+              }
+              try{
+                var result=await window.redeemProCode(code);
+                if(result.ok){
+                  alert(l==="en"?"✅ "+result.msg+"\n\nReloading...":"✅ "+result.msg+"\n\nRecargando...");
+                  window.location.reload();
+                } else {
+                  alert("❌ "+result.msg);
+                }
+              }catch(e){
+                alert(l==="en"?"Error: "+e.message:"Error: "+e.message);
+              }
+            },
+            style:{
+              margin:"0 16px 12px",padding:"16px 20px",
+              borderRadius:18,cursor:"pointer",
+              background:"rgba(255,255,255,0.04)",
+              border:"1px solid rgba(255,255,255,0.10)",
+              borderTop:"1px solid rgba(255,255,255,0.14)",
+              display:"flex",alignItems:"center",gap:16,
+              transition:"all 0.2s",
+            }},
+            e("div",{style:{
+              width:44,height:44,borderRadius:14,flexShrink:0,
+              background:"rgba(255,255,255,0.06)",
+              border:"1px solid rgba(255,255,255,0.10)",
+              display:"flex",alignItems:"center",justifyContent:"center",
+              fontSize:20,
+            }},"🎟️"),
+            e("div",{style:{flex:1,minWidth:0}},
+              e("div",{style:{fontFamily:BN,fontSize:13,color:"rgba(255,255,255,0.85)",
+                letterSpacing:0.5,marginBottom:2}},
+                l==="en"?"PROMO CODE":"CÓDIGO PROMOCIONAL"),
+              e("div",{style:{fontFamily:MN,fontSize:9,color:"rgba(255,255,255,0.45)",
+                letterSpacing:1}},
+                l==="en"?"Have a Pro code? Tap to enter it":"¿Tienes un código Pro? Tócalo para ingresarlo")
+            ),
+            e("div",{style:{fontSize:14,color:"rgba(255,255,255,0.3)"}},"›")
           );
         })(),
 
