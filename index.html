@@ -309,28 +309,29 @@ input[type=number]{-moz-appearance:textfield;}
     margin-top:22px;
   }
   #forja-onboarding .sex-btn{
-    background:rgba(255,255,255,0.04);
-    border:1.5px solid rgba(255,255,255,0.08);
+    background:linear-gradient(180deg,rgba(255,255,255,0.10),rgba(255,255,255,0.04));
+    border:1.5px solid rgba(255,255,255,0.18);
     border-radius:14px;padding:22px 14px;
     cursor:pointer;text-align:center;
     transition:all .2s ease;
     -webkit-appearance:none;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.05);
   }
   #forja-onboarding .sex-btn .icon{
     font-size:34px;display:block;margin-bottom:8px;
-    opacity:0.7;transition:opacity .2s;
+    opacity:0.85;transition:opacity .2s;
   }
   #forja-onboarding .sex-btn .label{
     font-family:'Archivo Black',sans-serif;
     font-size:13px;letter-spacing:1.5px;
-    color:rgba(255,255,255,0.7);
+    color:rgba(255,255,255,0.9);
   }
   #forja-onboarding .sex-btn.selected{
-    background:rgba(255,94,94,0.12);
-    border-color:rgba(255,94,94,0.7);
-    box-shadow:0 0 20px rgba(255,94,94,0.2);
+    background:linear-gradient(180deg,rgba(255,94,94,0.30),rgba(255,94,94,0.16));
+    border-color:rgba(255,94,94,1);
+    box-shadow:0 0 28px rgba(255,94,94,0.4),inset 0 1px 0 rgba(255,255,255,0.1);
   }
-  #forja-onboarding .sex-btn.selected .icon{opacity:1;}
+  #forja-onboarding .sex-btn.selected .icon{opacity:1;text-shadow:0 0 12px rgba(255,94,94,0.6);}
   #forja-onboarding .sex-btn.selected .label{color:#fff;}
   #forja-onboarding .sex-btn:active{transform:scale(0.97);}
 
@@ -527,12 +528,13 @@ input[type=number]{-moz-appearance:textfield;}
     margin-top:22px;
   }
   #forja-onboarding .goal-btn{
-    background:rgba(255,255,255,0.04);
-    border:1.5px solid rgba(255,255,255,0.08);
+    background:linear-gradient(180deg,rgba(255,255,255,0.10),rgba(255,255,255,0.04));
+    border:1.5px solid rgba(255,255,255,0.18);
     border-radius:14px;padding:18px 14px;
     cursor:pointer;text-align:left;
     transition:all .2s ease;
     -webkit-appearance:none;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.05);
   }
   #forja-onboarding .goal-btn .goal-icon{font-size:24px;margin-bottom:8px;display:block;}
   #forja-onboarding .goal-btn .goal-name{
@@ -541,18 +543,19 @@ input[type=number]{-moz-appearance:textfield;}
   }
   #forja-onboarding .goal-btn .goal-sub{
     font-family:'DM Mono',monospace;font-size:8px;
-    color:rgba(255,255,255,0.45);letter-spacing:1px;
+    color:rgba(255,255,255,0.65);letter-spacing:1px;
     margin-top:4px;font-weight:500;
   }
   #forja-onboarding .goal-btn.selected{
-    background:rgba(255,94,94,0.12);
-    border-color:rgba(255,94,94,0.7);
-    box-shadow:0 0 20px rgba(255,94,94,0.2);
+    background:linear-gradient(180deg,rgba(255,94,94,0.28),rgba(255,94,94,0.16));
+    border-color:rgba(255,94,94,1);
+    box-shadow:0 0 28px rgba(255,94,94,0.35),inset 0 1px 0 rgba(255,255,255,0.1);
   }
+  #forja-onboarding .goal-btn.selected .goal-sub{color:rgba(255,255,255,0.85);}
   #forja-onboarding .goal-btn:active{transform:scale(0.97);}
 
   /* ═══════════════════════════════════════════════════════ */
-  #forja-onboarding /* DAYS PICKER (7 dots)                                     */
+  /* DAYS PICKER (7 dots)                                     */
   /* ═══════════════════════════════════════════════════════ */
   .days-row{
     display:grid;grid-template-columns:repeat(7,1fr);gap:6px;
@@ -560,27 +563,32 @@ input[type=number]{-moz-appearance:textfield;}
   }
   #forja-onboarding .day-pill{
     aspect-ratio:1;
-    background:rgba(255,255,255,0.04);
-    border:1.5px solid rgba(255,255,255,0.08);
+    background:linear-gradient(180deg,rgba(255,255,255,0.10),rgba(255,255,255,0.04));
+    border:1.5px solid rgba(255,255,255,0.18);
     border-radius:50%;
     cursor:pointer;
     display:flex;flex-direction:column;align-items:center;justify-content:center;
     transition:all .15s ease;
     -webkit-appearance:none;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.05);
   }
   #forja-onboarding .day-pill .day-letter{
     font-family:'Archivo Black',sans-serif;
-    font-size:13px;color:rgba(255,255,255,0.7);
+    font-size:14px;color:#fff;
   }
   #forja-onboarding .day-pill .day-num{
     display:none;
   }
   #forja-onboarding .day-pill.selected{
-    background:rgba(255,94,94,0.18);
-    border-color:rgba(255,94,94,0.8);
-    box-shadow:0 0 16px rgba(255,94,94,0.3);
+    background:linear-gradient(180deg,rgba(255,94,94,0.35),rgba(255,94,94,0.18));
+    border-color:rgba(255,94,94,1);
+    box-shadow:0 0 24px rgba(255,94,94,0.5),inset 0 1px 0 rgba(255,255,255,0.15);
+    transform:scale(1.05);
   }
-  #forja-onboarding .day-pill.selected .day-letter{color:#fff;}
+  #forja-onboarding .day-pill.selected .day-letter{
+    color:#fff;
+    text-shadow:0 0 12px rgba(255,94,94,0.6);
+  }
   #forja-onboarding .day-pill:active{transform:scale(0.92);}
 
   #forja-onboarding .days-summary{
@@ -596,12 +604,13 @@ input[type=number]{-moz-appearance:textfield;}
     margin-top:18px;
   }
   #forja-onboarding .mode-btn{
-    background:rgba(255,255,255,0.04);
-    border:1.5px solid rgba(255,255,255,0.08);
+    background:linear-gradient(180deg,rgba(255,255,255,0.10),rgba(255,255,255,0.04));
+    border:1.5px solid rgba(255,255,255,0.18);
     border-radius:14px;padding:14px 12px;
     cursor:pointer;text-align:center;
     transition:all .2s ease;
     -webkit-appearance:none;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.05);
   }
   #forja-onboarding .mode-btn .mode-icon{font-size:22px;display:block;margin-bottom:5px;}
   #forja-onboarding .mode-btn .mode-name{
@@ -610,13 +619,15 @@ input[type=number]{-moz-appearance:textfield;}
   }
   #forja-onboarding .mode-btn .mode-sub{
     font-family:'DM Mono',monospace;font-size:7px;
-    color:rgba(255,255,255,0.45);letter-spacing:1px;
+    color:rgba(255,255,255,0.65);letter-spacing:1px;
     margin-top:3px;font-weight:500;
   }
   #forja-onboarding .mode-btn.selected{
-    background:rgba(255,94,94,0.12);
-    border-color:rgba(255,94,94,0.7);
+    background:linear-gradient(180deg,rgba(255,94,94,0.30),rgba(255,94,94,0.16));
+    border-color:rgba(255,94,94,1);
+    box-shadow:0 0 24px rgba(255,94,94,0.35),inset 0 1px 0 rgba(255,255,255,0.1);
   }
+  #forja-onboarding .mode-btn.selected .mode-sub{color:rgba(255,255,255,0.85);}
 
   /* ═══════════════════════════════════════════════════════ */
   #forja-onboarding /* SCREEN 8 — REVEAL                                        */
@@ -679,36 +690,37 @@ input[type=number]{-moz-appearance:textfield;}
   #forja-onboarding .athlete-grid::-webkit-scrollbar{width:3px;}
   #forja-onboarding .athlete-grid::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px;}
   #forja-onboarding .athlete-card{
-    background:rgba(255,255,255,0.04);
-    border:1.5px solid rgba(255,255,255,0.08);
+    background:linear-gradient(180deg,rgba(255,255,255,0.10),rgba(255,255,255,0.04));
+    border:1.5px solid rgba(255,255,255,0.18);
     border-radius:12px;
     padding:10px 6px;
     cursor:pointer;
     text-align:center;
     transition:all .2s ease;
     -webkit-appearance:none;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.05);
   }
   #forja-onboarding .athlete-card .ath-em{
     font-size:24px;display:block;margin-bottom:4px;
-    filter:grayscale(0.5);opacity:0.85;
+    filter:grayscale(0.3);opacity:0.95;
   }
   #forja-onboarding .athlete-card .ath-name{
     font-family:'Archivo Black',sans-serif;
     font-size:10px;letter-spacing:0.5px;
-    color:rgba(255,255,255,0.85);
+    color:#fff;
     line-height:1.1;
   }
   #forja-onboarding .athlete-card .ath-days{
     font-family:'DM Mono',monospace;
     font-size:7px;letter-spacing:1px;
-    color:rgba(255,255,255,0.4);font-weight:500;
+    color:rgba(255,255,255,0.6);font-weight:500;
     margin-top:3px;
   }
   #forja-onboarding .athlete-card.selected{
-    background:rgba(255,94,94,0.15);
-    border-color:rgba(255,94,94,0.8);
-    box-shadow:0 0 18px rgba(255,94,94,0.3);
-    transform:scale(1.04);
+    background:linear-gradient(180deg,rgba(255,94,94,0.30),rgba(255,94,94,0.16));
+    border-color:rgba(255,94,94,1);
+    box-shadow:0 0 24px rgba(255,94,94,0.4),inset 0 1px 0 rgba(255,255,255,0.1);
+    transform:scale(1.05);
   }
   #forja-onboarding .athlete-card.selected .ath-em{
     filter:none;opacity:1;
@@ -900,16 +912,13 @@ input[type=number]{-moz-appearance:textfield;}
       <h1 class="screen-title">TU<br><em>RITMO</em></h1>
       <div class="screen-sub">Tu frecuencia cardiaca en reposo. Tomada al despertar, antes de moverte.</div>
 
-      <div class="hr-display">
-        <div class="hr-value" id="hr-num">62</div>
-        <div class="hr-unit">LATIDOS POR MINUTO</div>
+      <div class="waist-display">
+        <div class="waist-value"><span id="hr-num">62</span></div>
+        <div class="waist-unit">LATIDOS POR MINUTO</div>
       </div>
 
-      <div class="hr-buttons">
-        <button class="hr-btn minus" onclick="hrAdjust(-1)">−</button>
-        <button class="hr-btn" onclick="hrAdjust(-5)">−5</button>
-        <button class="hr-btn" onclick="hrAdjust(5)">+5</button>
-        <button class="hr-btn plus" onclick="hrAdjust(1)">+</button>
+      <div class="waist-slider-wrap">
+        <input type="range" class="waist-slider" id="hr-slider" min="35" max="120" value="62" step="1">
       </div>
 
       <div class="apple-watch-row" onclick="connectAppleWatch()">
@@ -1167,6 +1176,7 @@ function resetOnboarding(){
   var ws=document.getElementById('waist-slider'); if(ws) ws.value=82;
   var wn=document.getElementById('waist-num'); if(wn) wn.textContent='82';
   var hn=document.getElementById('hr-num'); if(hn) hn.textContent='62';
+  var hs=document.getElementById('hr-slider'); if(hs) hs.value=62;
   showScreen(0);
 }
 window.resetOnboarding = resetOnboarding;
@@ -1256,6 +1266,13 @@ document.getElementById('waist-slider').addEventListener('input',e=>{
   _obState.data.waist = parseInt(e.target.value);
   document.getElementById('waist-num').textContent = _obState.data.waist;
   if(window.heart3D) heart3D.updateWaist(_obState.data.waist);
+});
+
+// HR slider
+document.getElementById('hr-slider').addEventListener('input',e=>{
+  _obState.data.hr = parseInt(e.target.value);
+  document.getElementById('hr-num').textContent = _obState.data.hr;
+  if(window.heart3D) heart3D.updateHR(_obState.data.hr);
 });
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1666,8 +1683,8 @@ class Heart3D {
 
     this.particleCount = 8000;
     this.targets = {};
-    this.currentStage = 'offscreen';
-    this.targetStage = 'offscreen';
+    this.currentStage = 'heart';
+    this.targetStage = 'heart';
     this.morphProgress = 0;
     this.colorTarget = new THREE.Color(0xff5e5e);
     this.colorCurrent = new THREE.Color(0xff5e5e);
@@ -1905,7 +1922,7 @@ class Heart3D {
     const N = this.particleCount;
     // Start at point
     const positions = new Float32Array(N*3);
-    for(let i=0;i<N*3;i++) positions[i] = this.targets.offscreen[i];
+    for(let i=0;i<N*3;i++) positions[i] = this.targets.heart[i];
     const sizes = new Float32Array(N);
     const phases = new Float32Array(N);
     for(let i=0;i<N;i++){
@@ -1978,21 +1995,19 @@ class Heart3D {
   }
 
   setStage(screenIdx){
-    // Map screen index to stage
-    // Pantalla 0 = welcome (sin figura visible, partículas afuera)
-    // Pantalla 1 = name (rune — anillo + núcleo, NO huevo)
-    // Pantallas 2-4 = body (cuerpo FORJA estilizado)
-    // Pantallas 5-8 = heart (corazón evolutivo)
+    // El corazón es el HÉROE: se ve en welcome (pantalla 0) y nombre (pantalla 1).
+    // Cuerpo low-poly aparece solo cuando se piden datos físicos (2-4).
+    // En pantallas 5-8 el corazón vuelve y crece progresivamente.
     const map = {
-      0:'offscreen', // welcome — partículas FUERA (no visible)
-      1:'rune',      // name — runa/anillo (no embrión feo)
-      2:'body',      // sex+age
+      0:'heart',     // welcome — corazón mediano
+      1:'heart',     // name — corazón pequeño arriba
+      2:'body',      // sex+age — cuerpo aparece
       3:'body',      // height+weight
       4:'body',      // waist
-      5:'heart',     // hr
+      5:'heart',     // hr — corazón vuelve, pequeño
       6:'heart',     // goal
       7:'heart',     // days
-      8:'heart',     // reveal
+      8:'heart',     // reveal — corazón gigante
     };
     const targetName = map[screenIdx] || 'heart';
     if(targetName === this.targetStage) return;
@@ -2001,13 +2016,12 @@ class Heart3D {
     this.morphProgress = 0;
     this.targetStage = targetName;
 
-    // Adjust pulse based on stage
+    // Pulse intensity per stage
     if(targetName === 'heart'){
-      this.material.uniforms.uPulse.value = _obState.data.hr / 60;
-    } else if(targetName === 'rune'){
-      this.material.uniforms.uPulse.value = 0.4;
+      const hr = (_obState && _obState.data && _obState.data.hr) ? _obState.data.hr : 62;
+      this.material.uniforms.uPulse.value = hr / 60;
     } else {
-      this.material.uniforms.uPulse.value = 0.2;
+      this.material.uniforms.uPulse.value = 0.0; // cuerpo no late
     }
   }
 
@@ -2076,31 +2090,34 @@ class Heart3D {
     // Slow rotation
     this.points.rotation.y = t * 0.15;
 
-    // Stage-specific positioning
-    if(this.targetStage === 'offscreen'){
-      // Particles flow in from sides during welcome screen
-      this.points.position.y = 0;
-      this.points.scale.set(1, 1, 1);
-    } else if(this.targetStage === 'rune' || this.targetStage === 'point' || this.targetStage === 'embryo'){
-      this.points.position.y = 0.5;
-      this.points.scale.set(1, 1, 1);
-    } else if(this.targetStage === 'body'){
+    // Stage-specific positioning & scale
+    if(this.targetStage === 'body'){
       this.points.position.y = 0;
       this.points.scale.set(this.bodyWidth*this.waistFactor*0.7, this.bodyHeight*0.7, 0.7);
     } else if(this.targetStage === 'heart'){
-      // Corazón crece progresivamente: pantalla 5 (HR) pequeño/abstracto,
-      // pantalla 8 (reveal) ENORME
-      this.points.position.y = 0.3;
-      const screen = (typeof _obState!=='undefined' && _obState.screen) ? _obState.screen : 5;
-      // 5 → 0.42, 6 → 0.50, 7 → 0.58, 8 → 0.95
-      let s;
-      if(screen <= 5) s = 0.42;
-      else if(screen === 6) s = 0.55;
-      else if(screen === 7) s = 0.65;
-      else s = 0.95;
-      // Smooth interpolate
+      // El corazón crece progresivamente a través del onboarding
+      const screen = (typeof _obState!=='undefined' && _obState.screen) ? _obState.screen : 0;
+      // Escalas por pantalla:
+      // 0 (welcome): 0.55 — visible pero sin dominar
+      // 1 (nombre): 0.40 — pequeño arriba para dejar espacio al input
+      // 5 (hr): 0.42 — pequeño/abstracto (no se debe distinguir bien)
+      // 6 (goal): 0.55
+      // 7 (days): 0.65
+      // 8 (reveal): 1.05 — GIGANTE
+      let s, py;
+      if(screen === 0)      { s = 0.55; py = 0.0; }
+      else if(screen === 1) { s = 0.40; py = 0.65; } // arriba, encima del input
+      else if(screen <= 5)  { s = 0.42; py = 0.3; }
+      else if(screen === 6) { s = 0.55; py = 0.3; }
+      else if(screen === 7) { s = 0.65; py = 0.3; }
+      else                  { s = 1.05; py = 0.3; }
+      // Smooth interpolate scale
       if(this._heartScale === undefined) this._heartScale = s;
       this._heartScale += (s - this._heartScale) * 0.08;
+      // Smooth interpolate Y position
+      if(this._heartY === undefined) this._heartY = py;
+      this._heartY += (py - this._heartY) * 0.08;
+      this.points.position.y = this._heartY;
       this.points.scale.set(this._heartScale, this._heartScale, this._heartScale);
     }
 
