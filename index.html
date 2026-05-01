@@ -3300,13 +3300,31 @@ async function redeemProCode(code){
 
     if(error){
       // error.context puede traer body con msg específico
+      // Supabase JS retorna error si status >= 400, pero la Edge Function
+      // ya pone el mensaje útil en el body de la respuesta.
       var msg='Error al validar código';
       try{
-        if(error.context&&typeof error.context.body==='string'){
-          var parsed=JSON.parse(error.context.body);
-          if(parsed&&parsed.msg)msg=parsed.msg;
+        // Caso 1: error.context.body es un objeto ya parseado
+        if(error.context&&error.context.body){
+          if(typeof error.context.body==='object'&&error.context.body.msg){
+            msg=error.context.body.msg;
+          } else if(typeof error.context.body==='string'){
+            var parsed=JSON.parse(error.context.body);
+            if(parsed&&parsed.msg)msg=parsed.msg;
+          }
+        }
+        // Caso 2: error.context es un Response object — leer su body
+        else if(error.context&&typeof error.context.text==='function'){
+          var bodyText=await error.context.text();
+          var parsed2=JSON.parse(bodyText);
+          if(parsed2&&parsed2.msg)msg=parsed2.msg;
+        }
+        // Caso 3: error.message tiene info útil
+        else if(error.message){
+          msg=error.message;
         }
       }catch(_){}
+      console.warn('[FORJA] redeem_promo error:',error,'msg extraído:',msg);
       return {ok:false,msg:msg};
     }
     if(!data||!data.ok){
@@ -7199,7 +7217,7 @@ function ProfileSheet({show,onClose,profile,lang,mono,sp,setStep}){
   // Listen for auth changes and force re-render
   React.useEffect(function(){
     try{
-      var sb=(typeof getSb==='function')?getSb():null;
+      var sb=(typeof getSB==='function')?getSB():null;
       if(!sb)return;
       var sub=sb.auth.onAuthStateChange(function(event,session){
         // Any auth change — force re-render so isUserAnonymous() gets re-checked
@@ -7774,33 +7792,42 @@ function ProfileSheet({show,onClose,profile,lang,mono,sp,setStep}){
           // Read auth state directly from Supabase localStorage session
           var email=null;
           var isLoggedIn=false;
+
+          // Method 1: Use Supabase auth API directly (most reliable)
           try{
-            var projectRef=null;
-            if(typeof FORJA_SUPABASE_URL!=='undefined'){
-              var m=FORJA_SUPABASE_URL.match(/\/\/([^.]+)/);
-              if(m)projectRef=m[1];
-            }
-            var raw=null;
-            if(projectRef){
-              raw=localStorage.getItem('sb-'+projectRef+'-auth-token');
-            }
-            if(!raw){
-              for(var kk in localStorage){
-                if(kk.indexOf('sb-')===0&&kk.indexOf('-auth-token')>0){
-                  raw=localStorage.getItem(kk);
-                  if(raw)break;
+            if(typeof getSB==='function'){
+              var sb=getSB();
+              if(sb && sb.auth){
+                // Read sync from session if available (sb has internal cache)
+                var sessRaw=null;
+                try{
+                  if(typeof FORJA_SUPABASE_URL!=='undefined'){
+                    var mref=FORJA_SUPABASE_URL.match(/\/\/([^.]+)/);
+                    if(mref){
+                      sessRaw=localStorage.getItem('sb-'+mref[1]+'-auth-token');
+                    }
+                  }
+                }catch(_){}
+                if(sessRaw){
+                  try{
+                    var sParsed=JSON.parse(sessRaw);
+                    var sUser=sParsed&&(sParsed.user||(sParsed.currentSession&&sParsed.currentSession.user));
+                    if(sUser){
+                      // Check provider — must NOT be anonymous
+                      var prov=(sUser.app_metadata&&sUser.app_metadata.provider)||'';
+                      var isAnon=(prov==='anonymous')||(sUser.is_anonymous===true);
+                      if(!isAnon && sUser.email){
+                        email=sUser.email;
+                        isLoggedIn=true;
+                      }
+                    }
+                  }catch(_){}
                 }
               }
             }
-            if(raw){
-              var parsed=JSON.parse(raw);
-              var u=parsed&&(parsed.user||(parsed.currentSession&&parsed.currentSession.user));
-              if(u&&u.email&&u.app_metadata&&u.app_metadata.provider!=='anonymous'){
-                email=u.email;
-                isLoggedIn=true;
-              }
-            }
           }catch(_){}
+
+          // Method 2: Fallback — use isUserAnonymous helper if available
           if(!isLoggedIn){
             try{
               if(typeof isUserAnonymous==='function'&&!isUserAnonymous()){
