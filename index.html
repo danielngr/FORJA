@@ -798,6 +798,7 @@ input[type=number]{-moz-appearance:textfield;}
     <!-- ═══════════════════════════════════ -->
     <div class="screen" id="s1">
       <div class="screen-tag">01 · IDENTIDAD</div>
+      <div class="spacer" style="flex:0.5;"></div>
       <h1 class="screen-title">¿CÓMO TE<br><em>LLAMAS?</em></h1>
       <div class="screen-sub">Solo tu primer nombre. Lo usaremos para personalizar tu experiencia.</div>
       <div class="name-input-wrap">
@@ -977,7 +978,7 @@ input[type=number]{-moz-appearance:textfield;}
           <span class="goal-name">RECOMP</span>
           <span class="goal-sub">AMBOS</span>
         </button>
-        <button class="goal-btn" data-goal="general" onclick="selectGoal('general')" style="grid-column:span 2">
+        <button class="goal-btn" data-goal="general" onclick="selectGoal('general')" style="grid-column:span 2;text-align:center;">
           <span class="goal-icon">🎯</span>
           <span class="goal-name">GENERAL</span>
           <span class="goal-sub">SALUD Y CONSISTENCIA</span>
@@ -995,6 +996,7 @@ input[type=number]{-moz-appearance:textfield;}
     <!-- ═══════════════════════════════════ -->
     <div class="screen" id="s7">
       <div class="screen-tag">07 · CALENDARIO</div>
+      <div class="spacer" style="flex:0.4;"></div>
       <h1 class="screen-title">¿QUÉ DÍAS<br><em>ENTRENAS?</em></h1>
       <div class="screen-sub">Selecciona los días en los que tienes el tiempo para entrenar.</div>
 
@@ -1011,7 +1013,7 @@ input[type=number]{-moz-appearance:textfield;}
       <div class="days-summary" id="days-summary"></div>
 
       <div style="margin-top:24px">
-        <div class="picker-col-label" style="margin-bottom:10px">MODO DE ENTRENAMIENTO</div>
+        <div class="picker-col-label" style="margin-bottom:10px;text-align:center;">MODO DE ENTRENAMIENTO</div>
         <div class="mode-row">
           <button class="mode-btn" data-mode="auto" onclick="selectMode('auto')">
             <span class="mode-icon">⚡</span>
@@ -1795,109 +1797,125 @@ class Heart3D {
   buildBodyTarget(){
     const N = this.particleCount;
     const arr = new Float32Array(N*3);
-    // Maniquí humano con proporciones realistas, hecho con capsules y elipsoides.
-    // Coords: Y arriba=positivo, X lados, Z profundidad.
-    // Total altura ~3.0 unidades (de y=-1.5 a y=1.5)
+    // Maniquí humano con SUPERFICIE de capsules y elipsoides
+    // (no volumen: las partículas están en el cascarón, dándole forma definida).
 
-    // CAPSULE = cilindro con tapas semiesféricas en los extremos
-    // Es la primitiva que mejor se ve para cuerpos humanos
-    function pointInCapsule(p1y, p2y, r){
-      // Random point inside a vertical capsule from y=p1y to y=p2y, radius r
-      const len = p2y - p1y;
-      // Total volume = cylinder + 2 hemispheres
-      // For simplicity: 80% in cylinder, 20% in caps
+    // Ayudante: punto en SUPERFICIE de capsule vertical
+    function pointOnCapsule(p1y, p2y, r){
+      const len = Math.max(0.01, p2y - p1y);
+      const cylArea = 2*Math.PI*r*len;
+      const capArea = 4*Math.PI*r*r; // both hemispheres
+      const total = cylArea + capArea;
       let y, dx, dz;
-      const rand = Math.random();
-      if(rand < 0.85){
-        // Inside cylinder
+      const rand = Math.random()*total;
+      if(rand < cylArea){
+        // Surface of cylinder
         const t = Math.random()*Math.PI*2;
-        const rr = Math.sqrt(Math.random())*r;
         y = p1y + Math.random()*len;
-        dx = rr*Math.cos(t);
-        dz = rr*Math.sin(t);
+        dx = r*Math.cos(t);
+        dz = r*Math.sin(t);
       } else {
-        // Inside one of the hemispheres (top or bottom)
+        // Surface of one hemisphere
         const top = Math.random() < 0.5;
         const t = Math.random()*Math.PI*2;
         const ph = Math.acos(Math.random()); // 0..pi/2
-        const rr = Math.cbrt(Math.random())*r;
-        dx = rr*Math.sin(ph)*Math.cos(t);
-        dz = rr*Math.sin(ph)*Math.sin(t);
-        const dy = rr*Math.cos(ph);
+        dx = r*Math.sin(ph)*Math.cos(t);
+        dz = r*Math.sin(ph)*Math.sin(t);
+        const dy = r*Math.cos(ph);
         y = top ? (p2y + dy) : (p1y - dy);
       }
       return [dx, y, dz];
     }
+    // Ayudante: punto en SUPERFICIE de elipsoide
+    function pointOnEllipsoid(rx, ry, rz){
+      const t = Math.random()*Math.PI*2;
+      const ph = Math.acos(2*Math.random()-1);
+      return [
+        rx*Math.sin(ph)*Math.cos(t),
+        ry*Math.sin(ph)*Math.sin(t),
+        rz*Math.cos(ph)
+      ];
+    }
 
     const parts = [
-      // === HEAD (sphere ovalada) ===
-      {type:'ellipsoid', cx:0, cy:1.30, cz:0, rx:0.18, ry:0.22, rz:0.18, weight:0.05},
-      // jaw bottom hint
-      {type:'ellipsoid', cx:0, cy:1.10, cz:0.03, rx:0.13, ry:0.08, rz:0.13, weight:0.015},
+      // === HEAD ===
+      {type:'ellipsoid', cx:0, cy:1.30, cz:0, rx:0.18, ry:0.22, rz:0.18, weight:0.045},
 
       // === NECK ===
-      {type:'capsule', cx:0, cy0:0.92, cy1:1.02, r:0.10, weight:0.025},
+      {type:'capsule', cx:0, cz:0, cy0:0.94, cy1:1.05, r:0.10, weight:0.025},
 
-      // === SHOULDERS (deltoides redondeados, span ancho) ===
-      {type:'ellipsoid', cx:-0.42, cy:0.82, cz:0, rx:0.16, ry:0.15, rz:0.18, weight:0.04},
-      {type:'ellipsoid', cx:0.42, cy:0.82, cz:0, rx:0.16, ry:0.15, rz:0.18, weight:0.04},
+      // === TRAPECIOS (puente entre cuello y hombros) ===
+      {type:'ellipsoid', cx:-0.20, cy:0.90, cz:-0.02, rx:0.18, ry:0.10, rz:0.13, weight:0.025},
+      {type:'ellipsoid', cx:0.20, cy:0.90, cz:-0.02, rx:0.18, ry:0.10, rz:0.13, weight:0.025},
 
-      // === CHEST (pecho ancho V-shape) ===
-      // Pecho izquierdo
-      {type:'ellipsoid', cx:-0.18, cy:0.55, cz:0.13, rx:0.22, ry:0.18, rz:0.13, weight:0.05},
-      // Pecho derecho
-      {type:'ellipsoid', cx:0.18, cy:0.55, cz:0.13, rx:0.22, ry:0.18, rz:0.13, weight:0.05},
-      // Esternón / linea central pecho
-      {type:'ellipsoid', cx:0, cy:0.55, cz:0.05, rx:0.05, ry:0.20, rz:0.10, weight:0.02},
+      // === DELTOIDS (hombros redondos anchos) ===
+      {type:'ellipsoid', cx:-0.45, cy:0.78, cz:0, rx:0.16, ry:0.16, rz:0.18, weight:0.045},
+      {type:'ellipsoid', cx:0.45, cy:0.78, cz:0, rx:0.16, ry:0.16, rz:0.18, weight:0.045},
 
-      // === TORSO MEDIO (lats + abs) ===
-      // Lat izquierdo (espalda alta lateral)
-      {type:'ellipsoid', cx:-0.32, cy:0.30, cz:-0.02, rx:0.13, ry:0.25, rz:0.16, weight:0.04},
-      // Lat derecho
-      {type:'ellipsoid', cx:0.32, cy:0.30, cz:-0.02, rx:0.13, ry:0.25, rz:0.16, weight:0.04},
-      // Abs centro
-      {type:'ellipsoid', cx:0, cy:0.20, cz:0.10, rx:0.16, ry:0.30, rz:0.13, weight:0.06},
+      // === PECTORALES (definidos, separados) ===
+      {type:'ellipsoid', cx:-0.18, cy:0.55, cz:0.14, rx:0.20, ry:0.16, rz:0.10, weight:0.045},
+      {type:'ellipsoid', cx:0.18, cy:0.55, cz:0.14, rx:0.20, ry:0.16, rz:0.10, weight:0.045},
 
-      // === CINTURA (V-taper hacia abajo) ===
-      {type:'ellipsoid', cx:0, cy:-0.08, cz:0, rx:0.20, ry:0.12, rz:0.16, weight:0.03},
+      // === ESPALDA SUPERIOR ===
+      {type:'ellipsoid', cx:0, cy:0.55, cz:-0.12, rx:0.40, ry:0.18, rz:0.06, weight:0.04},
 
-      // === BRAZOS (capsulas) ===
-      // Hombro→codo izquierdo (bicep)
-      {type:'capsule', cx:-0.55, cy0:0.30, cy1:0.78, r:0.115, weight:0.06},
-      // Codo→muñeca izquierdo (antebrazo)
-      {type:'capsule', cx:-0.55, cy0:-0.18, cy1:0.28, r:0.095, weight:0.05},
-      // Mano izquierda
+      // === LATS (V-shape) ===
+      {type:'ellipsoid', cx:-0.32, cy:0.30, cz:-0.04, rx:0.13, ry:0.25, rz:0.15, weight:0.040},
+      {type:'ellipsoid', cx:0.32, cy:0.30, cz:-0.04, rx:0.13, ry:0.25, rz:0.15, weight:0.040},
+
+      // === ABS (6-pack en 3 niveles) ===
+      // Upper abs
+      {type:'ellipsoid', cx:-0.07, cy:0.32, cz:0.13, rx:0.07, ry:0.08, rz:0.05, weight:0.012},
+      {type:'ellipsoid', cx:0.07, cy:0.32, cz:0.13, rx:0.07, ry:0.08, rz:0.05, weight:0.012},
+      // Mid abs
+      {type:'ellipsoid', cx:-0.07, cy:0.18, cz:0.13, rx:0.07, ry:0.08, rz:0.05, weight:0.012},
+      {type:'ellipsoid', cx:0.07, cy:0.18, cz:0.13, rx:0.07, ry:0.08, rz:0.05, weight:0.012},
+      // Lower abs
+      {type:'ellipsoid', cx:-0.07, cy:0.04, cz:0.12, rx:0.07, ry:0.08, rz:0.05, weight:0.012},
+      {type:'ellipsoid', cx:0.07, cy:0.04, cz:0.12, rx:0.07, ry:0.08, rz:0.05, weight:0.012},
+
+      // === OBLIQUOS (lados de la cintura) ===
+      {type:'ellipsoid', cx:-0.20, cy:0.10, cz:0.05, rx:0.07, ry:0.20, rz:0.13, weight:0.025},
+      {type:'ellipsoid', cx:0.20, cy:0.10, cz:0.05, rx:0.07, ry:0.20, rz:0.13, weight:0.025},
+
+      // === CINTURA / V-TAPER ===
+      {type:'ellipsoid', cx:0, cy:-0.08, cz:0, rx:0.18, ry:0.10, rz:0.15, weight:0.025},
+
+      // === BRAZOS — BICEPS ===
+      {type:'capsule', cx:-0.55, cz:0, cy0:0.32, cy1:0.78, r:0.115, weight:0.055},
+      {type:'capsule', cx:0.55, cz:0, cy0:0.32, cy1:0.78, r:0.115, weight:0.055},
+
+      // === CODOS ===
+      {type:'ellipsoid', cx:-0.55, cy:0.25, cz:0, rx:0.09, ry:0.06, rz:0.09, weight:0.010},
+      {type:'ellipsoid', cx:0.55, cy:0.25, cz:0, rx:0.09, ry:0.06, rz:0.09, weight:0.010},
+
+      // === ANTEBRAZOS ===
+      {type:'capsule', cx:-0.55, cz:0, cy0:-0.18, cy1:0.22, r:0.095, weight:0.045},
+      {type:'capsule', cx:0.55, cz:0, cy0:-0.18, cy1:0.22, r:0.095, weight:0.045},
+
+      // === MANOS ===
       {type:'ellipsoid', cx:-0.55, cy:-0.28, cz:0, rx:0.07, ry:0.10, rz:0.06, weight:0.012},
-      // Bicep derecho
-      {type:'capsule', cx:0.55, cy0:0.30, cy1:0.78, r:0.115, weight:0.06},
-      // Antebrazo derecho
-      {type:'capsule', cx:0.55, cy0:-0.18, cy1:0.28, r:0.095, weight:0.05},
-      // Mano derecha
       {type:'ellipsoid', cx:0.55, cy:-0.28, cz:0, rx:0.07, ry:0.10, rz:0.06, weight:0.012},
 
-      // === CADERAS ===
-      {type:'ellipsoid', cx:-0.13, cy:-0.30, cz:0, rx:0.15, ry:0.13, rz:0.18, weight:0.03},
-      {type:'ellipsoid', cx:0.13, cy:-0.30, cz:0, rx:0.15, ry:0.13, rz:0.18, weight:0.03},
+      // === CADERAS / GLÚTEOS ===
+      {type:'ellipsoid', cx:-0.16, cy:-0.30, cz:0, rx:0.16, ry:0.13, rz:0.18, weight:0.035},
+      {type:'ellipsoid', cx:0.16, cy:-0.30, cz:0, rx:0.16, ry:0.13, rz:0.18, weight:0.035},
 
-      // === MUSLOS (capsulas grandes) ===
-      // Cuádriceps izquierdo
-      {type:'capsule', cx:-0.16, cy0:-1.00, cy1:-0.40, r:0.16, weight:0.085},
-      // Cuádriceps derecho
-      {type:'capsule', cx:0.16, cy0:-1.00, cy1:-0.40, r:0.16, weight:0.085},
+      // === CUÁDRICEPS (muslos masivos) ===
+      {type:'capsule', cx:-0.16, cz:0, cy0:-1.00, cy1:-0.42, r:0.16, weight:0.075},
+      {type:'capsule', cx:0.16, cz:0, cy0:-1.00, cy1:-0.42, r:0.16, weight:0.075},
 
-      // === RODILLAS (esféricas) ===
-      {type:'ellipsoid', cx:-0.16, cy:-1.05, cz:0, rx:0.10, ry:0.07, rz:0.10, weight:0.012},
-      {type:'ellipsoid', cx:0.16, cy:-1.05, cz:0, rx:0.10, ry:0.07, rz:0.10, weight:0.012},
+      // === RODILLAS ===
+      {type:'ellipsoid', cx:-0.16, cy:-1.05, cz:0.02, rx:0.10, ry:0.07, rz:0.10, weight:0.012},
+      {type:'ellipsoid', cx:0.16, cy:-1.05, cz:0.02, rx:0.10, ry:0.07, rz:0.10, weight:0.012},
 
-      // === GEMELOS / PANTORRILLAS ===
-      // Pantorrilla izquierda
-      {type:'capsule', cx:-0.16, cy0:-1.55, cy1:-1.10, r:0.115, weight:0.06},
-      // Pantorrilla derecha
-      {type:'capsule', cx:0.16, cy0:-1.55, cy1:-1.10, r:0.115, weight:0.06},
+      // === GEMELOS (muy definidos) ===
+      {type:'capsule', cx:-0.16, cz:0, cy0:-1.55, cy1:-1.10, r:0.115, weight:0.05},
+      {type:'capsule', cx:0.16, cz:0, cy0:-1.55, cy1:-1.10, r:0.115, weight:0.05},
 
       // === PIES ===
-      {type:'ellipsoid', cx:-0.16, cy:-1.62, cz:0.05, rx:0.08, ry:0.06, rz:0.13, weight:0.014},
-      {type:'ellipsoid', cx:0.16, cy:-1.62, cz:0.05, rx:0.08, ry:0.06, rz:0.13, weight:0.014},
+      {type:'ellipsoid', cx:-0.16, cy:-1.62, cz:0.06, rx:0.08, ry:0.05, rz:0.13, weight:0.014},
+      {type:'ellipsoid', cx:0.16, cy:-1.62, cz:0.06, rx:0.08, ry:0.05, rz:0.13, weight:0.014},
     ];
 
     const totalW = parts.reduce((s,p)=>s+p.weight,0);
@@ -1905,26 +1923,23 @@ class Heart3D {
     parts.forEach(p=>{
       const count = Math.round((p.weight/totalW) * N);
       for(let i=0;i<count && idx<N;i++,idx++){
-        let x,y,z;
+        let dx, dy, dz;
         if(p.type==='ellipsoid'){
-          // Random point inside ellipsoid (using cube root for uniform volume)
-          const t = Math.random()*Math.PI*2;
-          const ph = Math.acos(2*Math.random()-1);
-          const rr = Math.cbrt(Math.random()); // 0..1 cube root for uniform
-          // Scale to surface (slightly inside)
-          const sf = 0.95 + Math.random()*0.05;
-          x = p.cx + p.rx*sf*rr*Math.sin(ph)*Math.cos(t);
-          y = p.cy + p.ry*sf*rr*Math.sin(ph)*Math.sin(t);
-          z = p.cz + p.rz*sf*rr*Math.cos(ph);
+          const pt = pointOnEllipsoid(p.rx, p.ry, p.rz);
+          dx = pt[0]; dy = pt[1]; dz = pt[2];
+          // Pequeño offset interior para variación
+          const inn = 0.92 + Math.random()*0.08;
+          dx *= inn; dy *= inn; dz *= inn;
+          arr[idx*3] = p.cx + dx;
+          arr[idx*3+1] = p.cy + dy;
+          arr[idx*3+2] = p.cz + dz;
         } else if(p.type==='capsule'){
-          const result = pointInCapsule(p.cy0, p.cy1, p.r);
-          x = p.cx + result[0];
-          y = result[1];
-          z = (p.cz || 0) + result[2];
+          const pt = pointOnCapsule(p.cy0, p.cy1, p.r);
+          const inn = 0.94 + Math.random()*0.06;
+          arr[idx*3] = p.cx + pt[0]*inn;
+          arr[idx*3+1] = pt[1];
+          arr[idx*3+2] = (p.cz || 0) + pt[2]*inn;
         }
-        arr[idx*3] = x;
-        arr[idx*3+1] = y;
-        arr[idx*3+2] = z;
       }
     });
     while(idx < N){
