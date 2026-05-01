@@ -6728,6 +6728,8 @@ function ProfileSheet({show,onClose,profile,lang,mono,sp,setStep}){
           var keys=[];
           for(var k in localStorage){if(k.indexOf("fv8")===0)keys.push(k);}
           keys.forEach(function(k){localStorage.removeItem(k);});
+          // CRÍTICO: borrar también el flag de onboarding completado para que vuelva al onboarding nuevo
+          try{localStorage.removeItem("forja_onboarded");}catch(_){}
           window.location.reload();
         },300);
       }
