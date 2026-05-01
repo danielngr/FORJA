@@ -772,7 +772,7 @@ input[type=number]{-moz-appearance:textfield;}
   <div id="vignette"></div>
 
   <!-- Debug -->
-  <div id="debug-panel" onclick="resetOnboarding()">↺ RESET</div>
+  <div id="debug-panel" onclick="fullResetFromButton()">↺ RESET</div>
 
   <!-- Back button -->
   <button class="back-btn hidden" id="back-btn" onclick="goBack()">←</button>
@@ -1180,6 +1180,25 @@ function resetOnboarding(){
   showScreen(0);
 }
 window.resetOnboarding = resetOnboarding;
+
+// Reset completo desde botón "↺ RESET" — borra flag + muestra overlay + setea step=1 en FORJA
+function fullResetFromButton(){
+  try{ localStorage.removeItem('forja_onboarded'); }catch(_){}
+  // Reset state interno
+  resetOnboarding();
+  // Mostrar overlay (puede estar oculto si FORJA está en step=99)
+  var ov = document.getElementById('forja-onboarding');
+  if(ov){
+    ov.classList.remove('hidden');
+    ov.style.display='';
+    ov.style.opacity='1';
+  }
+  // Forzar a FORJA a step=1 para que el useEffect mantenga el overlay visible
+  if(typeof window._fss === 'function'){
+    window._fss(1);
+  }
+}
+window.fullResetFromButton = fullResetFromButton;
 
 // ═══════════════════════════════════════════════════════════════════
 // INPUT HANDLERS
