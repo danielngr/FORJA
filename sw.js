@@ -1,16 +1,14 @@
 // ════════════════════════════════════════════════════════════════════
-// FORJA Service Worker v1.0.0 — silent caching for offline support
+// FORJA Service Worker v1.0.1 — silent caching for offline support
 // ════════════════════════════════════════════════════════════════════
-// Estrategias por tipo de recurso:
-// - APP SHELL (HTML/JS/CSS): network-first, cache fallback (ves updates con wifi, funciona offline)
-// - Supabase APIs: network-only (datos siempre frescos)
-// - Videos R2: cache-first (rara vez cambian, ahorra bandwidth)
-// - GLBs / imágenes / fonts: cache-first
+// CHANGELOG v1.0.1:
+// - Cachea CDNs externos (unpkg, cdnjs, jsdelivr) para que React/Three/etc
+//   funcionen offline
+// - No cachea respuestas no-OK
+// - Mejor handling de navigate requests (fallback al HTML cacheado)
 // ════════════════════════════════════════════════════════════════════
 
-// ⚠️ IMPORTANTE: Bumpea este número CADA vez que actualices el HTML/JS
-// Esto fuerza a los users con SW viejo a recibir el nuevo código.
-const CACHE_VERSION = 'forja-v1.0.0';
+const CACHE_VERSION = 'forja-v1.0.2';
 const APP_CACHE    = `${CACHE_VERSION}-app`;
 const ASSETS_CACHE = `${CACHE_VERSION}-assets`;
 const VIDEOS_CACHE = `${CACHE_VERSION}-videos`;
@@ -25,6 +23,8 @@ const GLB_PATTERN      = /\.glb$/i;
 const IMAGE_PATTERN    = /\.(png|jpg|jpeg|webp|svg|ico)$/i;
 const FONT_PATTERN     = /\.(woff2?|ttf|otf)$/i;
 const SUPABASE_PATTERN = /supabase\.co/i;
+// CDNs que tu HTML usa (React, Babel, Three.js, lucide, fonts)
+const CDN_PATTERN      = /(unpkg\.com|cdnjs\.cloudflare\.com|jsdelivr\.net|fonts\.googleapis\.com|fonts\.gstatic\.com)/i;
 
 // ─── INSTALL ───
 self.addEventListener('install', (event) => {
@@ -68,6 +68,12 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // CDNs (React, Three.js, Babel, fonts): cache-first (no cambian)
+  if (CDN_PATTERN.test(url.hostname)) {
+    event.respondWith(cacheFirst(request, ASSETS_CACHE));
+    return;
+  }
+
   // Videos: cache-first
   if (VIDEO_PATTERN.test(url.pathname)) {
     event.respondWith(cacheFirst(request, VIDEOS_CACHE));
@@ -106,7 +112,8 @@ async function cacheFirst(request, cacheName) {
 
   try {
     const response = await fetch(request);
-    if (response.ok) {
+    // Cachear si OK o si es opaque (CDN cross-origin sin CORS)
+    if (response && (response.ok || response.type === 'opaque')) {
       cache.put(request, response.clone()).catch(() => {});
     }
     return response;
