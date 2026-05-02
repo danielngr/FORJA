@@ -1959,12 +1959,14 @@ function showAthletePicker(){
       if(isLocked) card.classList.add('locked');
       card.dataset.celebId = celeb.id;
       card.dataset.locked = isLocked ? '1' : '0';
+      // Cap visual a 6 días (límite de salud). Atletas con 7 días se adaptan.
+      var displayDays = Math.min(celeb.days, 6);
       card.innerHTML =
         (isLocked ? '<span class="ath-lock">🔒</span>' : '')+
         '<span class="ath-em">'+celeb.em+'</span>'+
         '<span class="ath-prefix">INSPIRADO EN</span>'+
         '<span class="ath-name">'+celeb.label+'</span>'+
-        '<span class="ath-days">'+celeb.days+' DÍAS</span>';
+        '<span class="ath-days">'+displayDays+' DÍAS</span>';
       card.onclick = ()=>selectAthlete(celeb.id);
       grid.appendChild(card);
     });
@@ -2119,14 +2121,15 @@ function completeOnboarding(){
         var celebObj = (typeof CELEB_LIST !== 'undefined') ?
           CELEB_LIST.find(function(c){return c.id === d.athleteId;}) : null;
         if(celebObj){
-          // Usar los días del atleta (no los del user) tomando los primeros N de selDays
-          // Si user eligió menos días que el atleta, completar
-          var celebDays = celebObj.days || 5;
+          // Cap a max 6 días por salud (recomendación NSCA/ACSM: 1 día de descanso/semana)
+          // Atletas como Goggins (7 días) se adaptan a 6 días con día de descanso activo
+          var celebDays = Math.min(celebObj.days || 5, 6);
+          // sortedDays viene del onboarding. Si user eligió menos que celebDays, completar
           var sd = (sortedDays && sortedDays.length > 0) ? sortedDays.slice() : [1,2,3,4,5,6];
-          // Si user tiene menos días que el atleta, expandir
-          while(sd.length < celebDays){
-            // agregar el siguiente día disponible
-            for(var dd=1; dd<=6 && sd.length<celebDays; dd++){
+          // Completar días faltantes (max iteraciones para evitar loops infinitos)
+          var maxIter = 7;
+          while(sd.length < celebDays && maxIter-- > 0){
+            for(var dd=1; dd<=7 && sd.length<celebDays; dd++){
               if(sd.indexOf(dd)<0) sd.push(dd);
             }
           }
@@ -7449,7 +7452,7 @@ function CelebCard({celeb,lang,mono,profile,onActivate}){
         <div style={{fontFamily:BN,fontSize:17,color:"rgba(240,242,245,0.92)",
           letterSpacing:1,lineHeight:1,marginBottom:3}}>{celeb.label}</div>
         <div style={{fontFamily:MN,fontSize:8,color:"rgba(255,255,255,0.38)"}}>
-          {celeb.days+" "+(langKey==="en"?"days":"días")+" · "+(celeb.lvl[langKey]||celeb.lvl.es)+" · "+celeb.badge}
+          {Math.min(celeb.days,6)+" "+(langKey==="en"?"days":"días")+" · "+(celeb.lvl[langKey]||celeb.lvl.es)+" · "+celeb.badge}
         </div>
       </div>
       {isActive?(
