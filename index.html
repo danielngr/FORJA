@@ -875,12 +875,18 @@ input[type=number]{-moz-appearance:textfield;}
     font-size:10px;letter-spacing:0.5px;
     color:#fff;
     line-height:1.1;
+    display:block;
+    margin-bottom:6px;
   }
   #forja-onboarding .athlete-card .ath-days{
     font-family:'DM Mono',monospace;
-    font-size:7px;letter-spacing:1px;
-    color:rgba(255,255,255,0.6);font-weight:500;
-    margin-top:3px;
+    font-size:7px;letter-spacing:1.2px;
+    color:rgba(255,255,255,0.55);font-weight:500;
+    display:inline-block;
+    padding:3px 6px;
+    border-radius:4px;
+    background:rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.08);
   }
   #forja-onboarding .athlete-card.selected{
     background:linear-gradient(180deg,rgba(255,94,94,0.30),rgba(255,94,94,0.16));
@@ -2111,7 +2117,13 @@ function completeOnboarding(){
       waist: d.waist,
       restingHR: d.hr,
       units: 'metric',
+      celebrity: d.athleteId || null,
       activeCelebId: d.athleteId || null,
+      celebAc: (function(){
+        if(!d.athleteId || typeof CELEB_LIST==='undefined') return null;
+        var c = CELEB_LIST.find(function(x){return x.id===d.athleteId;});
+        return c ? c.ac : null;
+      })(),
     };
     // Pick routine
     var routine = null;
