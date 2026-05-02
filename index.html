@@ -2825,7 +2825,7 @@ const EXERCISE_MUSCLE_MAP={
   "farmer walk":             {p:["trapecio superior"],        s:["dorsal ancho","core (transverso abdominal)","braquiorradial"]},
   // -- CORE -----------------------------------------------------------
   "plank":                   {p:["core (transverso abdominal)"],s:[]},
-  "mountain climber":        {p:["core (transverso abdominal)"],s:["cuádriceps"]},
+  "mountain climber":        {p:["core (transverso abdominal)"],s:["deltoides","flexores de cadera","cuádriceps"]},
   "hanging knee raises":     {p:["core (transverso abdominal)"],s:[]},
   "machine crunch":          {p:["core (transverso abdominal)"],s:["oblicuos"]},
   "sit up":                  {p:["core (transverso abdominal)"],s:["oblicuos"]},
@@ -5105,6 +5105,12 @@ const EX_META={
     "machine crunch":{"p":["recto abdominal"],"s":["oblicuos"],"diff":"beginner","mec":"isolation","force":"pull","steps":["Ajusta el pad sobre los hombros o pecho. Pies planos en el suelo.", "Flexiona el torso hacia adelante apretando el abdomen.", "Regresa controladamente sin perder la tensión."]},
     "mountain climber":{"p":["core"],"s":["deltoides", "flexores de cadera", "cuádriceps"],"diff":"beginner","mec":"compound","force":"static","steps":["Posición de plancha alta con brazos extendidos.", "Lleva una rodilla al pecho de forma explosiva alternando piernas.", "Mantén las caderas niveladas y el core apretado durante todo el movimiento."]},
 };
+
+// Bodyweight exercises (no se permite peso manual - usa peso del user)
+const BW_EXERCISES=new Set(["pull up","weighted pull up","chin up","push up","decline push up","dips","bench dips","diamond push ups","plank","mountain climber","hanging knee raises","box jump","bodyweight squat","dominadas","dominadas agarre supino","dominadas lastradas","fondos","fondos en banco","flexiones","flexión","sentadilla peso corporal","sentadilla con salto","burpee","plancha","crunch","abs","zancada con salto","pistol squat","step up","superman","hiperextensión","elevación de piernas","flutter kicks","russian twist","hollow body","v-up","sit up","salto al cajón","saltar la cuerda","sprint","caminar","subir escaleras","remo australiano"]);
+// Time-based exercises (cardio, etc — no se calcula volumen con peso)
+const NO_TIME_EX=["cardio suave","cardio moderado","cardio","estiramientos","estiramiento","yoga","pilates","sprint 200m","saltar la cuerda","jumping jacks","arm haulers","mountain climbers","bear crawl","farmer walk","cardio (carrera)","cardio caminata","movilidad"];
+
 function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBack,tourStep=null,setTourStep=()=>{},acwr={ratio:0,acute:0,chronic:0}}){
   const[wsTourStep,setWsTourStep]=React.useState(null);
   const[expandedEx,setExpandedEx]=React.useState(null);
@@ -5246,6 +5252,17 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
   const totalSets=sets.reduce((a,e)=>a+e.length,0);
   const doneSets=sets.reduce((a,e)=>a+e.filter(s=>s.done).length,0);
   function openNp(ei,si,field){
+    // Si es kg pero el ejercicio es BW o time-based, no abrir numpad
+    if(field==='kg'){
+      const exName=(exs[ei]?.e||'').toLowerCase().trim();
+      const isBW=BW_EXERCISES.has(exName);
+      const isTimeEx=NO_TIME_EX.includes(exName);
+      if(isBW||isTimeEx){
+        // Pequeña vibración de feedback
+        if(typeof haptic==='function')haptic('light');
+        return; // no permitir editar kg
+      }
+    }
     const v=field==='kg'?sets[ei][si].kg:sets[ei][si].rp;
     setNpVal(v||"0");setNpOpen({ei,si,field});
   }
@@ -5750,9 +5767,24 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                           <div style={{fontFamily:mono,fontSize:6,color:C2.tx3,letterSpacing:1}}>TRABAJO</div>
                         </div>
                       ):(
-                      <div onClick={()=>openNp(ei,si,'kg')} style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:1,cursor:"pointer",borderLeft:"1px solid rgba(82,90,110,.2)",padding:"4px 0",position:"relative"}}>
-                        {suggest&&<span style={{position:"absolute",top:4,right:4,fontFamily:mono,fontSize:7,color:suggestColor,opacity:.7}}>{suggest}</span>}
-                        <div style={{fontSize:20,fontWeight:800,color:s.done?"#3fcf8e":C2.tx,letterSpacing:-.5,lineHeight:1}}>{s.kg||"—"}</div>
+                      <div onClick={()=>openNp(ei,si,'kg')} style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:1,cursor:(()=>{
+                        const exNameLow=(ex.e||'').toLowerCase().trim();
+                        return (BW_EXERCISES.has(exNameLow)||NO_TIME_EX.includes(exNameLow))?"default":"pointer";
+                      })(),borderLeft:"1px solid rgba(82,90,110,.2)",padding:"4px 0",position:"relative",opacity:(()=>{
+                        const exNameLow=(ex.e||'').toLowerCase().trim();
+                        return (BW_EXERCISES.has(exNameLow)||NO_TIME_EX.includes(exNameLow))?0.5:1;
+                      })()}}>
+                        {suggest&&!BW_EXERCISES.has((ex.e||'').toLowerCase().trim())&&!NO_TIME_EX.includes((ex.e||'').toLowerCase().trim())&&<span style={{position:"absolute",top:4,right:4,fontFamily:mono,fontSize:7,color:suggestColor,opacity:.7}}>{suggest}</span>}
+                        {(()=>{
+                          const exNameLow=(ex.e||'').toLowerCase().trim();
+                          if(BW_EXERCISES.has(exNameLow)){
+                            return <div style={{fontSize:13,fontWeight:800,color:C2.tx3,letterSpacing:0,lineHeight:1.2}}>BW</div>;
+                          }
+                          if(NO_TIME_EX.includes(exNameLow)){
+                            return <div style={{fontSize:18,fontWeight:800,color:C2.tx3,letterSpacing:-.5,lineHeight:1}}>—</div>;
+                          }
+                          return <div style={{fontSize:20,fontWeight:800,color:s.done?"#3fcf8e":C2.tx,letterSpacing:-.5,lineHeight:1}}>{s.kg||"—"}</div>;
+                        })()}
                         <div style={{fontFamily:mono,fontSize:7,color:C2.tx3,letterSpacing:1.5}}>KG</div>
                       </div>
                       )}
@@ -8977,15 +9009,21 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   const dc=exs.filter(x=>done[`${sel}-${x.id}`]).length;
   const pct=exs.length?dc/exs.length:0;
   const toggle=id=>{const k=`${sel}-${id}`;if(!done[k])sd({...done,[k]:true});};
-  const BW_EXERCISES=new Set(["pull up","weighted pull up","chin up","push up","decline push up","dips","bench dips","diamond push ups","plank","mountain climber","hanging knee raises","box jump","bodyweight squat","dominadas","dominadas agarre supino","dominadas lastradas","fondos","fondos en banco","flexiones","flexión","sentadilla peso corporal","sentadilla con salto","burpee","plancha","crunch","abs","zancada con salto","pistol squat","step up","mountain climber","superman","hiperextensión","elevación de piernas","flutter kicks","russian twist","hollow body","v-up","sit up","salto al cajón","saltar la cuerda","sprint","caminar","subir escaleras","remo australiano"]);
-  const NO_TIME_EX=["cardio suave","cardio moderado","cardio","estiramientos","estiramiento","yoga","pilates","sprint 200m","saltar la cuerda","jumping jacks","arm haulers","mountain climbers","bear crawl","farmer walk","cardio (carrera)","cardio caminata","movilidad"];
   const saveLog=(id,kg,rp,exName)=>{
     const bwKg=+profile?.weight||75;
     const nameLow=(exName||'').toLowerCase().trim();
     const isBW=BW_EXERCISES.has(nameLow);
     const isTimeEx=NO_TIME_EX.includes(nameLow);
-    if(isTimeEx&&!(+kg>0)) return;
-    const effKg=(+kg>0)?+kg:(isBW?bwKg:0);
+    // BW exercises: ignorar el peso manual del user, usar bodyweight
+    // Time exercises: ignorar peso, usar 0
+    let effKg;
+    if(isTimeEx){
+      effKg = 0; // time-based, no usar peso para volumen
+    } else if(isBW){
+      effKg = bwKg; // bodyweight: siempre el peso del user, ignorar input manual
+    } else {
+      effKg = (+kg>0) ? +kg : 0;
+    }
     if((!effKg||effKg<=0)&&(!rp||+rp<=0))return;
     const nl={...logs};
     if(!nl[id])nl[id]=[];
