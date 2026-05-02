@@ -1282,11 +1282,11 @@ input[type=number]{-moz-appearance:textfield;}
         <div class="im-name im-athlete-name">GOGGINS</div>
       </div>
       <div class="im-pct-display">
-        <div class="im-pct" id="intensity-pct">50%</div>
-        <div class="im-label" id="intensity-label">INTERMEDIO</div>
+        <div class="im-pct" id="intensity-pct">30%</div>
+        <div class="im-label" id="intensity-label">PRINCIPIANTE</div>
       </div>
       <input type="range" class="im-slider" id="intensity-slider"
-             min="20" max="100" step="5" value="50"
+             min="20" max="100" step="5" value="30"
              oninput="updateIntensityDisplay(this.value)">
       <div class="im-scale">
         <span>20%</span><span>50%</span><span>100%</span>
@@ -2203,10 +2203,10 @@ function showIntensityModal(athleteId){
   var emojiEl = modal.querySelector('.im-athlete-emoji');
   if(emojiEl) emojiEl.textContent = celeb.em;
   // Leer intensity guardada (default 50% = principiante seguro)
-  var savedPct = 50;
+  var savedPct = 30;
   try{
     var saved = localStorage.getItem('forja_intensity_'+athleteId);
-    if(saved) savedPct = parseInt(saved) || 50;
+    if(saved) savedPct = parseInt(saved) || 30;
   }catch(_){}
   // Setear slider
   var slider = document.getElementById('intensity-slider');
@@ -2223,7 +2223,7 @@ function closeIntensityModal(){
 }
 
 function updateIntensityDisplay(val){
-  val = parseInt(val) || 50;
+  val = parseInt(val) || 30;
   var pctEl = document.getElementById('intensity-pct');
   var labelEl = document.getElementById('intensity-label');
   var descEl = document.getElementById('intensity-desc');
@@ -2231,22 +2231,30 @@ function updateIntensityDisplay(val){
   if(pctEl) pctEl.textContent = val + '%';
   // Color, label y descripción según rango
   var color, label, desc;
-  if(val < 50){
+  if(val < 35){
     color = '#3fcf8e'; // verde
     label = 'PRINCIPIANTE';
-    desc = 'Empieza ligero. Construye base sólida sin lesiones.';
+    desc = 'Punto de partida ideal. Construye base sólida sin lesiones.';
+  } else if(val < 50){
+    color = '#7dd87d'; // verde claro
+    label = 'NOVATO+';
+    desc = 'Para quien tiene experiencia básica de entrenamiento.';
   } else if(val < 70){
     color = '#f0a818'; // amarillo
     label = 'INTERMEDIO';
-    desc = 'Buen punto medio. La mayoría de usuarios entrenan aquí.';
-  } else if(val < 90){
+    desc = 'Volumen alto. Requiere experiencia previa de entrenamiento regular.';
+  } else if(val < 85){
     color = '#ff7e3a'; // naranja
     label = 'AVANZADO';
-    desc = '⚠️ Alta intensidad. Solo si tienes experiencia previa.';
+    desc = '⚠️ Volumen muy alto. Solo si llevas 1+ años entrenando consistente.';
+  } else if(val < 95){
+    color = '#ff5544'; // rojo
+    label = 'ATLETA AMATEUR';
+    desc = '🚨 Cifras cercanas al atleta real. Riesgo serio de lesión sin preparación física avanzada.';
   } else {
-    color = '#ff4444'; // rojo
-    label = 'EXTREMO';
-    desc = '🚨 Nivel del atleta real. Riesgo de lesión sin preparación física avanzada.';
+    color = '#cc0000'; // rojo oscuro
+    label = 'NIVEL ATLETA REAL';
+    desc = '⛔ Cifras del atleta profesional. Solo para atletas con preparación física profesional. Consulta a un entrenador antes de intentarlo.';
   }
   if(labelEl){
     labelEl.textContent = label;
@@ -2386,7 +2394,7 @@ function completeOnboarding(){
       units: 'metric',
       celebrity: d.athleteId || null,
       activeCelebId: d.athleteId || null,
-      celebIntensity: (typeof d.athleteIntensity === 'number') ? d.athleteIntensity : 0.5,
+      celebIntensity: (typeof d.athleteIntensity === 'number') ? d.athleteIntensity : 0.3,
       celebAc: (function(){
         if(!d.athleteId || typeof CELEB_LIST==='undefined') return null;
         var c = CELEB_LIST.find(function(x){return x.id===d.athleteId;});
@@ -2415,7 +2423,7 @@ function completeOnboarding(){
           }
           sd = sd.slice(0, celebDays).sort(function(a,b){return a-b;});
           // Intensidad seleccionada por el user (0.2 a 1.0). Default 0.5 si no se eligió.
-          var athleteIntensity = (typeof d.athleteIntensity === 'number') ? d.athleteIntensity : 0.5;
+          var athleteIntensity = (typeof d.athleteIntensity === 'number') ? d.athleteIntensity : 0.3;
           routine = buildCelebRoutine(celebObj, [], sd, athleteIntensity);
         }
       }catch(e){ console.warn('buildCelebRoutine failed:',e); }
@@ -4578,7 +4586,7 @@ const CELEB_EXERCISES = {
   goggins: {
     "Circuito Volumen": {
       circuit: true, rounds: 1,
-      note: "Volumen extremo. Tómate descansos cortos cuando lo necesites. Marca el total que logres hacer.",
+      note: "Volumen extremo real de Goggins. Tómate descansos cuando lo necesites. Marca el total que logres hacer.",
       exercises: [
         {e:"Zancadas peso corporal",r:"280"},
         {e:"Sentadillas peso corporal",r:"240"},
@@ -4604,7 +4612,7 @@ const CELEB_EXERCISES = {
         {e:"Crunch",r:"110"},
         {e:"Jumping jacks",r:"30"},
         {e:"Flexiones",r:"30"},
-        {e:"Plancha",r:"50"}
+        {e:"Plancha",r:"60s"}
       ]
     },
     "Fuerza Gimnasio": [
@@ -4640,7 +4648,7 @@ const CELEB_EXERCISES = {
         {e:"Crunch",r:"110"},
         {e:"Jumping jacks",r:"30"},
         {e:"Flexiones",r:"30"},
-        {e:"Plancha",r:"50"}
+        {e:"Plancha",r:"45s"}
       ]
     }
   },
@@ -5132,8 +5140,8 @@ function scaleRep(rep, pct){
 }
 
 function buildCelebRoutine(celeb, userEquipment, selDays, intensityPct){
-  // intensityPct: 0.2 a 1.0 (default 0.5 = 50% del original)
-  const pct = (typeof intensityPct === 'number') ? Math.max(0.2, Math.min(1.0, intensityPct)) : 0.5;
+  // intensityPct: 0.2 a 1.0 (default 0.3 = 30%, principiante-friendly)
+  const pct = (typeof intensityPct === 'number') ? Math.max(0.2, Math.min(1.0, intensityPct)) : 0.3;
   const r = Array(7).fill(null);
   const exercises = CELEB_EXERCISES[celeb.id] || {};
   const splitKeys = Object.keys(exercises);
@@ -6581,10 +6589,9 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                       ):profile?.mode==="celebrity"?(
                         <div onClick={()=>openNp(ei,si,'rp')} style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:1,borderLeft:"1px solid rgba(82,90,110,.2)",padding:"4px 0",cursor:"pointer",position:"relative"}}>
                           {(()=>{
-                            // Si el set ya está marcado: mostrar reps reales con color de performance
-                            // Si no: mostrar target del atleta tenue como hint
                             const target = repTarget(exs[ei].r) || "—";
                             const actualVal = s.rp;
+                            // Marcado: mostrar reps reales con color y "de X" sutil
                             if(s.done && actualVal){
                               const perf = evalRepPerformance(actualVal, ex.r);
                               const repColor = perf.color || "#3fcf8e";
@@ -6593,10 +6600,24 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                                 <div style={{fontFamily:mono,fontSize:7,color:"rgba(255,255,255,.4)",letterSpacing:1.2,marginTop:2}}>de {target}</div>
                               </>);
                             }
-                            // No marcado aún: mostrar target como hint editable
+                            // No marcado: mostrar target con visual de "editable"
+                            // Si user ya escribió algo distinto al target, mostrar lo escrito
+                            const showVal = actualVal && actualVal !== target ? actualVal : target;
+                            const isEdited = actualVal && actualVal !== target;
                             return (<>
-                              <div style={{fontSize:18,fontWeight:900,color:"rgba(240,168,24,.85)",letterSpacing:-.5,lineHeight:1}}>{actualVal||target}</div>
-                              <div style={{fontFamily:mono,fontSize:7,color:"rgba(240,168,24,.5)",letterSpacing:1.5,marginTop:2}}>OBJETIVO</div>
+                              <div style={{
+                                fontSize:18,fontWeight:900,
+                                color: isEdited ? "rgba(63,207,142,.95)" : "rgba(240,168,24,.85)",
+                                letterSpacing:-.5,lineHeight:1,
+                                background: isEdited ? "transparent" : "rgba(240,168,24,.08)",
+                                border: isEdited ? "1px solid rgba(63,207,142,.35)" : "1px dashed rgba(240,168,24,.4)",
+                                padding:"3px 10px",
+                                borderRadius:6,
+                                minWidth:30,textAlign:"center"
+                              }}>{showVal}</div>
+                              <div style={{fontFamily:mono,fontSize:7,color:isEdited?"rgba(63,207,142,.7)":"rgba(240,168,24,.55)",letterSpacing:1.5,marginTop:3}}>
+                                {isEdited?"REPS":"OBJETIVO"}
+                              </div>
                             </>);
                           })()}
                         </div>
@@ -6638,7 +6659,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                 )}
                 {profile?.mode==="celebrity"&&(
                   <div style={{display:"flex",alignItems:"center",justifyContent:"center",width:"100%",padding:"10px 0",fontFamily:mono,fontSize:8,color:"rgba(240,168,24,.4)",letterSpacing:2,gap:5}}>
-                    🏆 {lang==="es"||lang==="pt"?"SIGUE EL PROGRAMA":lang==="fr"?"SUIS LE PROGRAMME":lang==="it"?"SEGUI IL PROGRAMMA":lang==="de"?"FOLGE DEM PROGRAMM":"FOLLOW THE PROGRAM"}
+                    💡 {lang==="es"||lang==="pt"?"TOCA LAS REPS PARA EDITAR LO QUE HICISTE":lang==="fr"?"TAP REPS POUR ÉDITER":lang==="it"?"TOCCA REPS PER MODIFICARE":lang==="de"?"TIPPE REPS ZUM ÄNDERN":"TAP REPS TO EDIT WHAT YOU DID"}
                   </div>
                 )}
                 </>)}
