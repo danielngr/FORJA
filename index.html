@@ -417,6 +417,71 @@ input[type=number]{-moz-appearance:textfield;}
     font-size:11px;color:rgba(255,255,255,0.45);
     letter-spacing:3px;margin-top:6px;font-weight:500;
   }
+
+  /* ── HR specific display (BPM) ── */
+  #forja-onboarding .hr-row{
+    display:flex;align-items:baseline;justify-content:center;gap:14px;
+  }
+  #forja-onboarding .hr-unit-stack{
+    display:flex;flex-direction:column;align-items:flex-start;gap:2px;
+    margin-top:8px;
+  }
+  #forja-onboarding .hr-unit-main{
+    font-family:'Archivo Black',sans-serif;
+    font-size:22px;color:rgba(255,94,94,0.85);
+    letter-spacing:0.5px;line-height:1;
+  }
+  #forja-onboarding .hr-unit-sub{
+    font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+    font-size:9.5px;color:rgba(255,255,255,0.4);
+    letter-spacing:0.3px;font-weight:400;
+  }
+
+  /* ── HR howto tip (collapsible) ── */
+  #forja-onboarding .hr-howto{
+    margin:18px 18px 0;
+    border-radius:12px;
+    background:rgba(255,255,255,0.03);
+    border:1px solid rgba(255,255,255,0.08);
+    overflow:hidden;
+    transition:all 0.2s ease;
+  }
+  #forja-onboarding .hr-howto-toggle{
+    padding:12px 14px;
+    display:flex;align-items:center;gap:10px;
+    cursor:pointer;
+    user-select:none;
+    -webkit-tap-highlight-color:transparent;
+  }
+  #forja-onboarding .hr-howto-icon{font-size:14px;flex-shrink:0;}
+  #forja-onboarding .hr-howto-label{
+    flex:1;
+    font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+    font-size:12px;color:rgba(255,255,255,0.7);
+    font-weight:500;
+  }
+  #forja-onboarding .hr-howto-arrow{
+    font-size:11px;color:rgba(255,255,255,0.4);
+    transition:transform 0.2s ease;
+  }
+  #forja-onboarding .hr-howto.open .hr-howto-arrow{
+    transform:rotate(180deg);
+  }
+  #forja-onboarding .hr-howto-content{
+    max-height:0;overflow:hidden;
+    padding:0 14px;
+    font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+    font-size:11.5px;line-height:1.5;
+    color:rgba(255,255,255,0.7);
+    transition:max-height 0.3s ease, padding 0.2s ease;
+  }
+  #forja-onboarding .hr-howto-content strong{
+    color:rgba(255,200,120,1);font-weight:600;
+  }
+  #forja-onboarding .hr-howto.open .hr-howto-content{
+    max-height:160px;
+    padding:0 14px 12px;
+  }
   #forja-onboarding .waist-slider-wrap{
     margin-top:24px;padding:0 4px;
   }
@@ -980,12 +1045,28 @@ input[type=number]{-moz-appearance:textfield;}
       <div class="screen-sub">Tu frecuencia cardiaca en reposo. Tomada al despertar, antes de moverte.</div>
 
       <div class="waist-display">
-        <div class="waist-value"><span id="hr-num">62</span></div>
-        <div class="waist-unit">LATIDOS POR MINUTO</div>
+        <div class="hr-row">
+          <div class="waist-value"><span id="hr-num">62</span></div>
+          <div class="hr-unit-stack">
+            <div class="hr-unit-main">BPM</div>
+            <div class="hr-unit-sub">latidos por min.</div>
+          </div>
+        </div>
       </div>
 
       <div class="waist-slider-wrap">
         <input type="range" class="waist-slider" id="hr-slider" min="35" max="120" value="62" step="1">
+      </div>
+
+      <div class="hr-howto" id="hr-howto">
+        <div class="hr-howto-toggle" onclick="toggleHrHowto()">
+          <span class="hr-howto-icon">💡</span>
+          <span class="hr-howto-label">¿No sabes la tuya?</span>
+          <span class="hr-howto-arrow" id="hr-howto-arrow">▾</span>
+        </div>
+        <div class="hr-howto-content" id="hr-howto-content">
+          Al despertar, antes de levantarte, coloca dos dedos en tu cuello (debajo de la mandíbula) o en la muñeca. Cuenta los latidos durante <strong>30 segundos</strong> y multiplica por 2.
+        </div>
       </div>
 
       <div class="apple-watch-row" onclick="connectAppleWatch()">
@@ -1310,6 +1391,13 @@ function selectSex(sex){
 }
 function checkS2(){
   document.getElementById('btn-s2').disabled = !_obState.data.sex;
+}
+
+function toggleHrHowto(){
+  var el = document.getElementById('hr-howto');
+  if(!el) return;
+  el.classList.toggle('open');
+  haptic('light');
 }
 
 function selectGoal(g){
