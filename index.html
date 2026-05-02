@@ -591,11 +591,43 @@ input[type=number]{-moz-appearance:textfield;}
   }
   #forja-onboarding .day-pill:active{transform:scale(0.92);}
 
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
+  }
+
   #forja-onboarding .days-summary{
     margin-top:14px;text-align:center;
     font-family:'DM Mono',monospace;font-size:10px;
     color:rgba(255,255,255,0.5);letter-spacing:2px;
     font-weight:500;min-height:14px;
+  }
+
+  #forja-onboarding .rest-day-tip{
+    margin:14px 18px 0;
+    padding:12px 14px;
+    border-radius:12px;
+    background:linear-gradient(180deg,rgba(255,180,80,0.10),rgba(255,180,80,0.04));
+    border:1px solid rgba(255,180,80,0.25);
+    display:flex;align-items:center;gap:10px;
+    opacity:0;transform:translateY(-6px);
+    pointer-events:none;
+    transition:opacity 0.3s ease, transform 0.3s ease;
+  }
+  #forja-onboarding .rest-day-tip.visible{
+    opacity:1;transform:translateY(0);
+  }
+  #forja-onboarding .rest-day-tip .tip-icon{
+    font-size:18px;flex-shrink:0;
+  }
+  #forja-onboarding .rest-day-tip .tip-text{
+    font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+    font-size:11.5px;line-height:1.4;
+    color:rgba(255,255,255,0.85);
+  }
+  #forja-onboarding .rest-day-tip .tip-text strong{
+    color:rgba(255,200,120,1);font-weight:600;
   }
 
   /* Mode toggle */
@@ -1064,6 +1096,11 @@ input[type=number]{-moz-appearance:textfield;}
 
       <div class="days-summary" id="days-summary"></div>
 
+      <div class="rest-day-tip" id="rest-day-tip">
+        <span class="tip-icon">💡</span>
+        <span class="tip-text">Tu cuerpo necesita al menos <strong>1 día de descanso</strong> a la semana para recuperarse y crecer.</span>
+      </div>
+
       <div style="margin-top:24px">
         <div class="picker-col-label" style="margin-bottom:10px;text-align:center;">MODO DE ENTRENAMIENTO</div>
         <div class="mode-row">
@@ -1309,8 +1346,34 @@ function selectMode(m){
 
 function toggleDay(d){
   const idx = _obState.data.days.indexOf(d);
-  if(idx>=0) _obState.data.days.splice(idx,1);
-  else _obState.data.days.push(d);
+  if(idx>=0) {
+    _obState.data.days.splice(idx,1);
+    // Si quita el 6to día, oculta el mensaje de límite
+    const tip = document.getElementById('rest-day-tip');
+    if(tip) tip.classList.remove('visible');
+  } else {
+    // Max 6 días — no permitir seleccionar 7
+    if(_obState.data.days.length >= 6){
+      // Feedback visual: pequeño shake en el botón sin agregar
+      const btn = document.querySelector(`.day-pill[data-day="${d}"]`);
+      if(btn){
+        btn.style.animation = 'none';
+        setTimeout(()=>{ btn.style.animation = 'shake 0.3s'; }, 10);
+      }
+      // Mostrar mensaje educativo
+      const tip = document.getElementById('rest-day-tip');
+      if(tip){
+        tip.classList.add('visible');
+        clearTimeout(window._restTipTimer);
+        window._restTipTimer = setTimeout(()=>{
+          tip.classList.remove('visible');
+        }, 4500);
+      }
+      haptic('error');
+      return;
+    }
+    _obState.data.days.push(d);
+  }
   document.querySelector(`.day-pill[data-day="${d}"]`).classList.toggle('selected');
   haptic('light');
   // Update summary
@@ -1672,12 +1735,23 @@ function completeOnboarding(){
     var level = (d.level === 'beg' || d.level === 'int' || d.level === 'adv') ? d.level : 'int';
 
     var modeForFORJA = (d.mode === 'celeb') ? 'celebrity' : 'auto';
+    // Build profile with sensible day count cap
+    // RAW solo tiene rutinas para 3-6 días. Si el user eligió 7, capear a 6
+    // (1 día queda como descanso automático).
+    var dayCount = d.days.length || 3;
+    if(dayCount > 6) dayCount = 6;
+    if(dayCount < 3) dayCount = 3;
+    var sortedDays = d.days.slice().sort();
+    // Si seleccionó 7, quitar el último (queda 1 día de descanso)
+    if(sortedDays.length > 6) sortedDays = sortedDays.slice(0, 6);
+    if(sortedDays.length === 0) sortedDays = [1,3,5];
+
     var profile = {
       lang: (typeof LANG!=='undefined'?LANG:'es'),
       goal: goalCode,
       level: level,
-      days: d.days.length || 3,
-      selDays: d.days.length>0 ? d.days.slice().sort() : [1,3,5],
+      days: dayCount,
+      selDays: sortedDays,
       mode: modeForFORJA,
       name: d.name || '',
       age: d.age,
