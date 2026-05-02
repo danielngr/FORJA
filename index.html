@@ -100,7 +100,7 @@ input[type=number]{-moz-appearance:textfield;}
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,700&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%2304080f'/><text y='.9em' font-size='72' font-family='Arial Black,sans-serif' font-weight='900' fill='%23BFA98A' x='50%' text-anchor='middle' dominant-baseline='hanging'>F</text></svg>"/>
-<script>if('serviceWorker' in navigator && location.hostname==='danielngr.github.io'){window.addEventListener('load',()=>navigator.serviceWorker.register('/FORJA/sw.js').catch(()=>{}));}</script>
+<script>/* SW registration moved to bottom of page (single canonical registration) */</script>
 </head>
 <body>
 
@@ -1736,6 +1736,15 @@ function completeOnboarding(){
     if(typeof window.__forjaOnboardingDone === 'function'){
       window.__forjaOnboardingDone(profile, routine, targetStep);
     }
+    // ── Pre-cache videos de la rutina (silencioso, en background) ──
+    // Después de 2 segundos para no competir con el render inicial
+    try{
+      setTimeout(function(){
+        if(typeof window.__forjaPrecacheRoutineVideos === 'function'){
+          window.__forjaPrecacheRoutineVideos(routine);
+        }
+      }, 2000);
+    }catch(_){}
     // Dispose 3D scene to free memory
     if(window.heart3D && window.heart3D.renderer){
       try{ window.heart3D.renderer.dispose(); }catch(_){}
@@ -13049,13 +13058,92 @@ function BotChat({profile,routine,done,lang,mono}){
 </script>
 
 <script>
+/* ─── FORJA Service Worker registration ─── */
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{
     navigator.serviceWorker.register('/FORJA/sw.js', {scope:'/FORJA/'})
-      .then(r=>console.log('SW registered:', r.scope))
-      .catch(e=>console.log('SW error:', e));
+      .then(reg=>{
+        console.log('[SW] registered, scope:', reg.scope);
+        // Check for updates every time the page loads
+        reg.update().catch(()=>{});
+        // Listen for new SW available
+        reg.addEventListener('updatefound', ()=>{
+          const newSW = reg.installing;
+          if(!newSW) return;
+          newSW.addEventListener('statechange', ()=>{
+            if(newSW.state === 'installed' && navigator.serviceWorker.controller){
+              console.log('[SW] new version installed, will activate on next reload');
+            }
+          });
+        });
+      })
+      .catch(e=>console.log('[SW] registration error:', e));
+    // Reload page if a new SW takes control (e.g., after skipWaiting)
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', ()=>{
+      if(refreshing) return;
+      refreshing = true;
+      window.location.reload();
+    });
   });
 }
+/* Helper exposed to the app to pre-cache videos of the active routine */
+window.__forjaPrecacheVideos = function(urls){
+  if(!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) return;
+  if(!Array.isArray(urls) || urls.length === 0) return;
+  navigator.serviceWorker.controller.postMessage({type:'PRECACHE_VIDEOS', urls:urls});
+};
+window.__forjaClearVideoCache = function(){
+  if(!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) return Promise.resolve();
+  navigator.serviceWorker.controller.postMessage({type:'CLEAR_VIDEO_CACHE'});
+  return Promise.resolve();
+};
+
+/* Extrae URLs únicas de videos desde una rutina y las envía al SW para cachear */
+window.__forjaPrecacheRoutineVideos = function(routine){
+  try{
+    if(!routine || !Array.isArray(routine)) return;
+    if(typeof getVid !== 'function') return;
+    var seen = new Set();
+    var urls = [];
+    routine.forEach(function(day){
+      if(!day || !day.ex || !Array.isArray(day.ex)) return;
+      day.ex.forEach(function(ex){
+        var name = ex && ex.e;
+        if(!name) return;
+        var url = getVid(name);
+        if(url && !seen.has(url)){
+          seen.add(url);
+          urls.push(url);
+        }
+      });
+    });
+    if(urls.length === 0) return;
+    console.log('[FORJA] Pre-caching', urls.length, 'videos for offline');
+    window.__forjaPrecacheVideos(urls);
+  }catch(e){
+    console.warn('[FORJA] precache routine failed:', e);
+  }
+};
+
+/* También cache cuando la app YA está abierta y el user tiene rutina activa */
+/* Útil al cargar la app por primera vez (sin pasar por onboarding) */
+window.addEventListener('load', function(){
+  setTimeout(function(){
+    try{
+      if(!('serviceWorker' in navigator)) return;
+      // Esperar a que el SW tome control
+      if(!navigator.serviceWorker.controller) return;
+      // Leer rutina del localStorage que la app usa
+      var raw = localStorage.getItem('fv8r');
+      if(!raw) return;
+      var routine = JSON.parse(raw);
+      if(window.__forjaPrecacheRoutineVideos){
+        window.__forjaPrecacheRoutineVideos(routine);
+      }
+    }catch(_){}
+  }, 5000); // 5s después del load para no afectar UX inicial
+});
 </script>
 
 
