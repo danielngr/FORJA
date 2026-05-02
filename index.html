@@ -4542,33 +4542,33 @@ const CELEB_EXERCISES = {
   goggins: {
     "Circuito Volumen": {
       circuit: true, rounds: 1,
-      note: "Bloque 1: 140 zancadas + 140 sentadillas + 140 zancadas + 100 sentadillas. Bloque 2: 250 jumping jacks. Bloque 3: 230 sit-ups. Bloque 4: 180 flexiones (10 cada 30s). Bloque 5: 25 arm haulers + 25 flexiones × 4.",
+      note: "Volumen extremo. Tómate descansos cortos cuando lo necesites. Marca el total que logres hacer.",
       exercises: [
-        {e:"Zancadas peso corporal",r:"140+140"},
-        {e:"Sentadillas peso corporal",r:"100-140"},
+        {e:"Zancadas peso corporal",r:"280"},
+        {e:"Sentadillas peso corporal",r:"240"},
         {e:"Jumping jacks",r:"250"},
         {e:"Crunch",r:"230"},
-        {e:"Flexiones",r:"180 (10 c/30s)"},
-        {e:"Arm haulers",r:"25 × 4"}
+        {e:"Flexiones",r:"180"},
+        {e:"Arm haulers",r:"100"}
       ]
     },
     "Calistenia 10min": {
       circuit: true, rounds: "AMRAP 10min",
-      note: "Sin parar durante 10 minutos continuos. Cada bloque: 10 jumping jacks + 10 flexiones, repetir sin descanso.",
+      note: "10 minutos sin parar. Alterna 10 jumping jacks + 10 flexiones todas las veces que puedas.",
       exercises: [
-        {e:"Jumping jacks",r:"10"},
-        {e:"Flexiones",r:"10"}
+        {e:"Jumping jacks",r:"100"},
+        {e:"Flexiones",r:"100"}
       ]
     },
     "Core+Piernas": {
       circuit: true, rounds: 1,
-      note: "Bloque 1: 115 zancadas alternas. Bloque 2: 110 sit-ups. Bloque 3: 10 jumping jacks + 10 flexiones × 3. Bloque 4: 2×25 push-up to plank.",
+      note: "Volumen alto. Marca el total que logres completar.",
       exercises: [
         {e:"Zancadas peso corporal",r:"115"},
         {e:"Crunch",r:"110"},
-        {e:"Jumping jacks",r:"10"},
-        {e:"Flexiones",r:"10"},
-        {e:"Plancha",r:"25"}
+        {e:"Jumping jacks",r:"30"},
+        {e:"Flexiones",r:"30"},
+        {e:"Plancha",r:"50"}
       ]
     },
     "Fuerza Gimnasio": [
@@ -4578,33 +4578,33 @@ const CELEB_EXERCISES = {
     ],
     "Circuito Volumen B": {
       circuit: true, rounds: 1,
-      note: "Repite el circuito de volumen alto. Bloques: zancadas + sentadillas (volumen), jumping jacks, sit-ups, flexiones cada 30s, arm haulers + flexiones.",
+      note: "Repite el día de volumen extremo. Marca el total que logres hacer.",
       exercises: [
-        {e:"Zancadas peso corporal",r:"140+140"},
-        {e:"Sentadillas peso corporal",r:"100-140"},
+        {e:"Zancadas peso corporal",r:"280"},
+        {e:"Sentadillas peso corporal",r:"240"},
         {e:"Jumping jacks",r:"250"},
         {e:"Crunch",r:"230"},
-        {e:"Flexiones",r:"180 (10 c/30s)"},
-        {e:"Arm haulers",r:"25 × 4"}
+        {e:"Flexiones",r:"180"},
+        {e:"Arm haulers",r:"100"}
       ]
     },
     "Calistenia B": {
       circuit: true, rounds: "AMRAP 10min",
-      note: "10 jumping jacks + 10 flexiones, sin parar 10 minutos continuos.",
+      note: "10 minutos continuos. Alterna 10 jumping jacks + 10 flexiones sin descanso.",
       exercises: [
-        {e:"Jumping jacks",r:"10"},
-        {e:"Flexiones",r:"10"}
+        {e:"Jumping jacks",r:"100"},
+        {e:"Flexiones",r:"100"}
       ]
     },
     "Core+Piernas B": {
       circuit: true, rounds: 1,
-      note: "Circuito core y piernas. Misma estructura, ligeramente reducida vs versión A.",
+      note: "Versión reducida del circuito de core y piernas.",
       exercises: [
         {e:"Zancadas peso corporal",r:"115"},
         {e:"Crunch",r:"110"},
-        {e:"Jumping jacks",r:"10"},
-        {e:"Flexiones",r:"10"},
-        {e:"Plancha",r:"25"}
+        {e:"Jumping jacks",r:"30"},
+        {e:"Flexiones",r:"30"},
+        {e:"Plancha",r:"50"}
       ]
     }
   },
@@ -6208,24 +6208,40 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
           </div>
         )}
         {day?.circuit&&(
-          <div style={{margin:"12px 16px 0",padding:"12px 14px",background:"rgba(240,168,24,0.08)",
-            border:"1px solid rgba(240,168,24,0.25)",borderRadius:12}}>
-            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
-              <div style={{fontSize:14}}>🔄</div>
-              <div style={{fontFamily:mono,fontSize:9,color:"#f0a818",letterSpacing:2,fontWeight:700}}>
-                {lang==="es"||lang==="pt"?"CIRCUITO":lang==="fr"?"CIRCUIT":lang==="it"?"CIRCUITO":lang==="de"?"CIRCUIT":"CIRCUIT"} · {day.rounds} {lang==="es"?"RONDAS":"ROUNDS"}
+          <div style={{margin:"12px 16px 0",borderRadius:14,overflow:"hidden",
+            background:"linear-gradient(180deg,rgba(28,30,36,0.7),rgba(20,22,28,0.5))",
+            border:"1px solid rgba(255,255,255,0.06)"}}>
+            <div style={{padding:"12px 14px 10px",borderBottom:"1px solid rgba(255,255,255,0.05)"}}>
+              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
+                <div style={{width:28,height:28,borderRadius:8,
+                  background:"rgba(240,168,24,0.12)",
+                  border:"1px solid rgba(240,168,24,0.25)",
+                  display:"flex",alignItems:"center",justifyContent:"center",fontSize:13}}>🔄</div>
+                <div>
+                  <div style={{fontFamily:mono,fontSize:8,color:"rgba(240,168,24,0.6)",letterSpacing:2.5,fontWeight:600}}>
+                    {lang==="es"?"FORMATO":"FORMAT"}
+                  </div>
+                  <div style={{fontFamily:"'Archivo Black','Impact',sans-serif",fontSize:13,color:"#fff",letterSpacing:0.5,marginTop:1}}>
+                    {lang==="es"?"CIRCUITO":"CIRCUIT"} · {day.rounds==="AMRAP 10min"?(lang==="es"?"AMRAP 10 MIN":"AMRAP 10 MIN"):day.rounds+" "+(lang==="es"?(day.rounds===1?"ronda":"rondas"):"rounds")}
+                  </div>
+                </div>
+              </div>
+              <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11.5,color:"rgba(255,255,255,0.7)",lineHeight:1.45,marginTop:2}}>
+                {lang==="es"
+                  ?"Haz cada ejercicio seguido sin descansar. Cuando termines todos = 1 ronda."
+                  :"Do each exercise back-to-back with no rest. When you finish all = 1 round."}
               </div>
             </div>
             {day.circuitNote&&(
-              <div style={{fontFamily:mono,fontSize:9,color:"rgba(240,168,24,0.7)",lineHeight:1.6,letterSpacing:0.3}}>
-                {day.circuitNote}
+              <div style={{padding:"10px 14px",background:"rgba(0,0,0,0.18)"}}>
+                <div style={{fontFamily:mono,fontSize:7,color:"rgba(255,255,255,0.35)",letterSpacing:2,marginBottom:4}}>
+                  {lang==="es"?"PROTOCOLO":"PROTOCOL"}
+                </div>
+                <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,color:"rgba(255,255,255,0.65)",lineHeight:1.5}}>
+                  {day.circuitNote}
+                </div>
               </div>
             )}
-            <div style={{fontFamily:mono,fontSize:8,color:"rgba(240,168,24,0.5)",marginTop:6,letterSpacing:1}}>
-              {lang==="es"
-                ?"Completa todos los ejercicios seguidos = 1 ronda. Marca cada ejercicio al completarlo."
-                :"Complete all exercises in sequence = 1 round. Check each exercise as you complete it."}
-            </div>
           </div>
         )}
         {exs.map((ex,ei)=>{
