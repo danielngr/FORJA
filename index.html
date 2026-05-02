@@ -863,6 +863,13 @@ input[type=number]{-moz-appearance:textfield;}
     font-size:24px;display:block;margin-bottom:4px;
     filter:grayscale(0.3);opacity:0.95;
   }
+  #forja-onboarding .athlete-card .ath-prefix{
+    font-family:'DM Mono',monospace;
+    font-size:6.5px;letter-spacing:1.2px;
+    color:rgba(255,255,255,0.35);
+    display:block;margin-bottom:1px;
+    text-transform:uppercase;
+  }
   #forja-onboarding .athlete-card .ath-name{
     font-family:'Archivo Black',sans-serif;
     font-size:10px;letter-spacing:0.5px;
@@ -891,6 +898,18 @@ input[type=number]{-moz-appearance:textfield;}
   #forja-onboarding .athlete-card.locked{
     opacity:0.55;
     background:rgba(255,255,255,0.02);
+  }
+
+  /* Athlete disclaimer (legal compliance) */
+  #forja-onboarding .athlete-disclaimer{
+    margin:14px 18px 0;
+    padding:8px 12px;
+    font-family:'DM Sans',sans-serif;
+    font-size:9.5px;line-height:1.45;
+    color:rgba(255,255,255,0.45);
+    text-align:center;
+    border-top:1px solid rgba(255,255,255,0.06);
+    text-shadow:0 1px 6px rgba(0,0,0,0.7);
   }
   #forja-onboarding .athlete-card.locked .ath-em{
     filter:grayscale(0.6);
@@ -1398,11 +1417,14 @@ input[type=number]{-moz-appearance:textfield;}
     <!-- SCREEN 7B: ATHLETE PICKER (solo si modo=celeb) -->
     <!-- ═══════════════════════════════════ -->
     <div class="screen" id="s7b">
-      <div class="screen-tag">07 · TU ATLETA</div>
-      <h1 class="screen-title">ELIGE TU<br><em>REFERENTE</em></h1>
-      <div class="screen-sub">Su rutina será la tuya. Puedes cambiar de atleta cuando quieras.</div>
+      <div class="screen-tag">07 · INSPIRACIÓN</div>
+      <h1 class="screen-title">ELIGE TU<br><em>INSPIRACIÓN</em></h1>
+      <div class="screen-sub">Rutinas inspiradas en atletas, basadas en información pública. Puedes cambiar cuando quieras.</div>
       <div class="athlete-grid" id="athlete-grid">
         <!-- populated by JS -->
+      </div>
+      <div class="athlete-disclaimer">
+        Las rutinas son interpretaciones basadas en entrevistas, libros y declaraciones públicas. No están avaladas ni patrocinadas por las personas mencionadas.
       </div>
       <div class="bottom-area">
         <button class="btn-continue" id="btn-athlete" disabled onclick="finalize()">FORJAR →</button>
@@ -1940,6 +1962,7 @@ function showAthletePicker(){
       card.innerHTML =
         (isLocked ? '<span class="ath-lock">🔒</span>' : '')+
         '<span class="ath-em">'+celeb.em+'</span>'+
+        '<span class="ath-prefix">INSPIRADO EN</span>'+
         '<span class="ath-name">'+celeb.label+'</span>'+
         '<span class="ath-days">'+celeb.days+' DÍAS</span>';
       card.onclick = ()=>selectAthlete(celeb.id);
@@ -5273,6 +5296,9 @@ const VID={
   "burpee":                                    BASE+"burpee.mp4",
   "saltos de tijera":                          BASE+"jumping-jacks.mp4",
   "saltar la cuerda":                          BASE+"36781201-High-Jump-Rope-(male)_Cardio_.mp4",
+  "cardio suave":                              BASE+"36781201-High-Jump-Rope-(male)_Cardio_.mp4",
+  "cardio moderado":                           BASE+"36781201-High-Jump-Rope-(male)_Cardio_.mp4",
+  "estiramientos":                             BASE+"bodyweight-squat.mp4",
   "sprint 200m":                               null,
   "arm haulers":                               null,
   "sentadilla con salto":                      BASE+"box-jump.mp4",
@@ -7399,6 +7425,10 @@ function CelebCard({celeb,lang,mono,profile,onActivate}){
         )}
       </div>
       <div style={{flex:1,minWidth:0}}>
+        <div style={{fontFamily:MN,fontSize:7,letterSpacing:1.5,
+          color:"rgba(255,255,255,0.32)",marginBottom:2,textTransform:"uppercase"}}>
+          {langKey==="en"?"Inspired by":"Inspirado en"}
+        </div>
         <div style={{fontFamily:BN,fontSize:17,color:"rgba(240,242,245,0.92)",
           letterSpacing:1,lineHeight:1,marginBottom:3}}>{celeb.label}</div>
         <div style={{fontFamily:MN,fontSize:8,color:"rgba(255,255,255,0.38)"}}>
@@ -7577,6 +7607,15 @@ function AthleteSheet({show,onClose,lang,mono,profile,sp,sr}){
               {langKey==="en"?"START FREE TRIAL →":"INICIAR PRUEBA GRATIS →"}
             </button>
           </div>}
+
+          {/* Legal disclaimer (Apple/Copyright safety) */}
+          <div style={{marginTop:20,paddingTop:14,borderTop:"1px solid rgba(255,255,255,0.06)",
+            fontFamily:"'DM Sans',sans-serif",fontSize:9.5,lineHeight:1.45,
+            color:"rgba(255,255,255,0.35)",textAlign:"center",padding:"12px 6px 0"}}>
+            {langKey==="en"
+              ?"Routines are interpretations based on public interviews, books, and statements. They are not endorsed or sponsored by the individuals mentioned. All names belong to their respective owners and are used for editorial reference only."
+              :"Las rutinas son interpretaciones basadas en entrevistas, libros y declaraciones públicas. No están avaladas ni patrocinadas por las personas mencionadas. Todos los nombres pertenecen a sus respectivos propietarios y se usan únicamente con fines de referencia editorial."}
+          </div>
         </div>
       </div>
     </div>
