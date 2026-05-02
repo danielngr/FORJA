@@ -4288,6 +4288,42 @@ function repTarget(rStr){
   if(s.includes("s")||s.includes("m")) return s; // time-based e.g. "30s"
   return s;
 }
+
+// ──────────────────────────────────────────────────────────────────
+// Evalúa performance vs target. Devuelve {pct, status, color}
+// status: 'completed' | 'partial' | 'low' | 'very_low' | 'unknown'
+// ──────────────────────────────────────────────────────────────────
+function evalRepPerformance(actualReps, targetStr){
+  if(!actualReps || !targetStr) return {pct:null, status:'unknown', color:null};
+  const actual = parseInt(actualReps) || 0;
+  if(actual <= 0) return {pct:null, status:'unknown', color:null};
+  const s = String(targetStr);
+  // No evaluar tiempos, distancias o AMRAP
+  if(/AMRAP|fallo|max/i.test(s)) return {pct:null, status:'unknown', color:null};
+  if(/^\d+m\b/i.test(s)) return {pct:null, status:'unknown', color:null};
+  if(/^\d+(s|min)\b/i.test(s)) return {pct:null, status:'unknown', color:null};
+  // Extraer target (rango: usar el lo; suma: total; simple: número)
+  let target = 0;
+  const range = s.match(/^(\d+)-(\d+)/);
+  if(range){
+    target = parseInt(range[1]); // límite bajo del rango = "completado mínimo"
+  } else if(s.indexOf('+') >= 0){
+    // suma: "140+140" = 280
+    const nums = s.match(/\d+/g);
+    if(nums) target = nums.reduce((a,n)=>a+parseInt(n),0);
+  } else {
+    const m = s.match(/^(\d+)/);
+    if(m) target = parseInt(m[1]);
+  }
+  if(target <= 0) return {pct:null, status:'unknown', color:null};
+  const pct = actual / target;
+  let status, color;
+  if(pct >= 1.0){ status='completed'; color='#3fcf8e'; }      // verde
+  else if(pct >= 0.7){ status='partial'; color='#f0a818'; }   // amarillo
+  else if(pct >= 0.4){ status='low'; color='#ff7e3a'; }       // naranja
+  else { status='very_low'; color='#ff4444'; }                // rojo
+  return {pct, status, color};
+}
 function repRangeDisplay(rStr){
   if(!rStr) return {target:"8",range:null};
   const s=String(rStr);
@@ -5946,6 +5982,27 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
       try{navigator.vibrate&&navigator.vibrate(40);}catch{}
       onSaveLog(exs[ei].id,ns[ei][si].kg,ns[ei][si].rp||exs[ei].r||'8',exs[ei].e);
       onToggle(exs[ei].id);
+      // Tracking de performance celeb: guardar target vs actual para análisis posterior
+      try{
+        if(profile?.mode==="celebrity" && profile?.celebrity && exs[ei].r){
+          const perf = evalRepPerformance(ns[ei][si].rp, exs[ei].r);
+          if(perf.pct != null){
+            const key = 'forja_celeb_perf_' + profile.celebrity;
+            const arr = JSON.parse(localStorage.getItem(key) || '[]');
+            arr.push({
+              date: new Date().toISOString().slice(0,10),
+              ex: exs[ei].e,
+              target: exs[ei].r,
+              actual: ns[ei][si].rp,
+              pct: perf.pct,
+              status: perf.status
+            });
+            // Mantener solo últimas 50 entradas
+            const recent = arr.slice(-50);
+            localStorage.setItem(key, JSON.stringify(recent));
+          }
+        }
+      }catch(_){}
       startRest(ei,si);
     }
     const allDone=ns.every(e=>e.every(s=>s.done));
@@ -6527,9 +6584,15 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                           <div style={{fontFamily:mono,fontSize:7,color:"rgba(240,168,24,.5)",letterSpacing:1.5}}>{(L[lang]||L.en).reps} 🔒</div>
                         </div>
                       ):(
-                        <div onClick={()=>openNp(ei,si,'rp')} style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:1,cursor:"pointer",borderLeft:"1px solid rgba(82,90,110,.2)",padding:"4px 0"}}>
-                          <div style={{fontSize:20,fontWeight:800,color:s.done?"#3fcf8e":C2.tx,letterSpacing:-.5,lineHeight:1}}>{s.rp||"—"}</div>
-                          <div style={{fontFamily:mono,fontSize:7,color:C2.tx3,letterSpacing:1.5}}>{(L[lang]||L.en).reps}</div>
+                        <div onClick={()=>openNp(ei,si,'rp')} style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:1,cursor:"pointer",borderLeft:"1px solid rgba(82,90,110,.2)",padding:"4px 0",position:"relative"}}>
+                          {(()=>{
+                            const perf = s.done ? evalRepPerformance(s.rp, ex.r) : {color:null};
+                            const repColor = perf.color ? perf.color : (s.done?"#3fcf8e":C2.tx);
+                            return (<>
+                              <div style={{fontSize:20,fontWeight:800,color:repColor,letterSpacing:-.5,lineHeight:1}}>{s.rp||"—"}</div>
+                              <div style={{fontFamily:mono,fontSize:7,color:C2.tx3,letterSpacing:1.5}}>{(L[lang]||L.en).reps}</div>
+                            </>);
+                          })()}
                         </div>
                       )}
                       <div data-tour={ei===0&&si===0?"ws-check":undefined} onClick={()=>toggleDone(ei,si)} style={{display:"flex",alignItems:"center",justifyContent:"center",borderLeft:"1px solid rgba(82,90,110,.2)",cursor:"pointer"}}>
