@@ -2115,7 +2115,24 @@ function completeOnboarding(){
     var routine = null;
     if(d.mode === 'celeb' && d.athleteId && typeof buildCelebRoutine === 'function'){
       try{
-        routine = buildCelebRoutine(d.athleteId);
+        // Buscar el objeto celeb completo
+        var celebObj = (typeof CELEB_LIST !== 'undefined') ?
+          CELEB_LIST.find(function(c){return c.id === d.athleteId;}) : null;
+        if(celebObj){
+          // Usar los días del atleta (no los del user) tomando los primeros N de selDays
+          // Si user eligió menos días que el atleta, completar
+          var celebDays = celebObj.days || 5;
+          var sd = (sortedDays && sortedDays.length > 0) ? sortedDays.slice() : [1,2,3,4,5,6];
+          // Si user tiene menos días que el atleta, expandir
+          while(sd.length < celebDays){
+            // agregar el siguiente día disponible
+            for(var dd=1; dd<=6 && sd.length<celebDays; dd++){
+              if(sd.indexOf(dd)<0) sd.push(dd);
+            }
+          }
+          sd = sd.slice(0, celebDays).sort(function(a,b){return a-b;});
+          routine = buildCelebRoutine(celebObj, [], sd);
+        }
       }catch(e){ console.warn('buildCelebRoutine failed:',e); }
     }
     if(!routine){
@@ -7376,7 +7393,7 @@ function CelebCard({celeb,lang,mono,profile,onActivate}){
   const MN=mono||"'SF Mono','Courier New',monospace";
   const BN="'Archivo Black','Impact',sans-serif";
   const langKey=lang==="en"?"en":"es";
-  const isFree=celeb.id==="rock";
+  const isFree=FREE_CELEB_IDS.indexOf(celeb.id)>=0;
   // Reactive PRO state — re-renders when PRO status changes via event
   const [proTick,setProTick]=React.useState(0);
   React.useEffect(function(){
@@ -7483,7 +7500,7 @@ function AthleteSheet({show,onClose,lang,mono,profile,sp,sr}){
     window.__forjaCloseAthleteSheet=close;
     return function(){window.__forjaCloseAthleteSheet=null;};
   },[]);
-  const isFree=(id)=>id==="rock";
+  const isFree=(id)=>FREE_CELEB_IDS.indexOf(id)>=0;
   const userIsPro=isPro();
   const isActive=(id)=>profile&&profile.mode==="celebrity"&&profile.celebrity===id;
   const langKey=lang==="en"?"en":"es";
