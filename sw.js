@@ -1,275 +1,175 @@
-// FORJA Service Worker v4 — Cache strategy optimizada para App Store approval
-// Incluye: offline support, background sync, push notifications, periodic sync
+// ════════════════════════════════════════════════════════════════════
+// FORJA Service Worker v1.0.0 — silent caching for offline support
+// ════════════════════════════════════════════════════════════════════
+// Estrategias por tipo de recurso:
+// - APP SHELL (HTML/JS/CSS): network-first, cache fallback (ves updates con wifi, funciona offline)
+// - Supabase APIs: network-only (datos siempre frescos)
+// - Videos R2: cache-first (rara vez cambian, ahorra bandwidth)
+// - GLBs / imágenes / fonts: cache-first
+// ════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'forja-v4-2026-04';
-const CACHE_STATIC = 'forja-static-' + CACHE_VERSION;
-const CACHE_RUNTIME = 'forja-runtime-' + CACHE_VERSION;
-const CACHE_IMAGES = 'forja-images-' + CACHE_VERSION;
+// ⚠️ IMPORTANTE: Bumpea este número CADA vez que actualices el HTML/JS
+// Esto fuerza a los users con SW viejo a recibir el nuevo código.
+const CACHE_VERSION = 'forja-v1.0.0';
+const APP_CACHE    = `${CACHE_VERSION}-app`;
+const ASSETS_CACHE = `${CACHE_VERSION}-assets`;
+const VIDEOS_CACHE = `${CACHE_VERSION}-videos`;
 
-// Core assets que cachear en install (app shell)
-const CORE_ASSETS = [
-  '/FORJA/',
-  '/FORJA/index.html',
-  '/FORJA/manifest.json',
-  '/FORJA/icons/icon-192.png',
-  '/FORJA/icons/icon-512.png',
-  '/FORJA/icons/apple-touch-icon.png'
+const APP_SHELL = [
+  './',
+  './forja_paywall_fix.html',
 ];
 
-// CDNs que se cachean runtime (no en install porque son grandes)
-const CDN_ORIGINS = [
-  'https://cdnjs.cloudflare.com',
-  'https://cdn.jsdelivr.net',
-  'https://fonts.googleapis.com',
-  'https://fonts.gstatic.com'
-];
+const VIDEO_PATTERN    = /\.mp4$/i;
+const GLB_PATTERN      = /\.glb$/i;
+const IMAGE_PATTERN    = /\.(png|jpg|jpeg|webp|svg|ico)$/i;
+const FONT_PATTERN     = /\.(woff2?|ttf|otf)$/i;
+const SUPABASE_PATTERN = /supabase\.co/i;
 
-// Recursos de Supabase - siempre network-first (datos fresh)
-const SUPABASE_ORIGIN = 'https://ittzbjauudlsbirzhvkz.supabase.co';
-
-// ══ INSTALL ══════════════════════════════════════════════════════════════════
+// ─── INSTALL ───
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing v' + CACHE_VERSION);
+  console.log('[SW] Installing', CACHE_VERSION);
   event.waitUntil(
-    caches.open(CACHE_STATIC)
-      .then(cache => cache.addAll(CORE_ASSETS))
+    caches.open(APP_CACHE)
+      .then((cache) => cache.addAll(APP_SHELL))
       .then(() => self.skipWaiting())
-      .catch(err => console.error('[SW] Install failed:', err))
+      .catch((err) => console.warn('[SW] Install failed:', err))
   );
 });
 
-// ══ ACTIVATE ═════════════════════════════════════════════════════════════════
+// ─── ACTIVATE: limpiar caches viejos ───
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating v' + CACHE_VERSION);
+  console.log('[SW] Activating', CACHE_VERSION);
   event.waitUntil(
-    Promise.all([
-      // Limpiar caches viejas
-      caches.keys().then(keys => Promise.all(
+    caches.keys()
+      .then((keys) => Promise.all(
         keys
-          .filter(k => !k.includes(CACHE_VERSION))
-          .map(k => {
-            console.log('[SW] Deleting old cache:', k);
-            return caches.delete(k);
+          .filter((key) => !key.startsWith(CACHE_VERSION))
+          .map((key) => {
+            console.log('[SW] Deleting old cache:', key);
+            return caches.delete(key);
           })
-      )),
-      // Tomar control inmediato de todos los clientes
-      self.clients.claim()
-    ])
+      ))
+      .then(() => self.clients.claim())
   );
 });
 
-// ══ FETCH ════════════════════════════════════════════════════════════════════
+// ─── FETCH: routing strategy ───
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Solo interceptar GET
   if (request.method !== 'GET') return;
+  if (!url.protocol.startsWith('http')) return;
 
-  // No interceptar Supabase (siempre network para datos frescos)
-  if (url.origin === SUPABASE_ORIGIN) return;
-
-  // No interceptar Anthropic API (no cachear respuestas AI)
-  if (url.origin === 'https://api.anthropic.com') return;
-
-  // No interceptar WebSockets
-  if (request.headers.get('upgrade') === 'websocket') return;
-
-  // Estrategia por tipo de recurso
-  if (isHTMLRequest(request)) {
-    event.respondWith(networkFirstStrategy(request, CACHE_RUNTIME));
-  } else if (isImageRequest(request)) {
-    event.respondWith(cacheFirstStrategy(request, CACHE_IMAGES));
-  } else if (isCDNRequest(url)) {
-    event.respondWith(cacheFirstStrategy(request, CACHE_RUNTIME));
-  } else if (isStaticAsset(request)) {
-    event.respondWith(cacheFirstStrategy(request, CACHE_STATIC));
-  } else {
-    event.respondWith(networkFirstStrategy(request, CACHE_RUNTIME));
+  // Supabase: network-only
+  if (SUPABASE_PATTERN.test(url.hostname)) {
+    event.respondWith(networkOnly(request));
+    return;
   }
+
+  // Videos: cache-first
+  if (VIDEO_PATTERN.test(url.pathname)) {
+    event.respondWith(cacheFirst(request, VIDEOS_CACHE));
+    return;
+  }
+
+  // GLBs / imágenes / fonts: cache-first
+  if (GLB_PATTERN.test(url.pathname) ||
+      IMAGE_PATTERN.test(url.pathname) ||
+      FONT_PATTERN.test(url.pathname)) {
+    event.respondWith(cacheFirst(request, ASSETS_CACHE));
+    return;
+  }
+
+  // HTML/JS/CSS y todo lo demás: network-first
+  event.respondWith(networkFirst(request, APP_CACHE));
 });
 
-// ══ STRATEGIES ═══════════════════════════════════════════════════════════════
+// ─── HELPERS ───
 
-// Network-first: intenta red, cae a cache si falla
-async function networkFirstStrategy(request, cacheName) {
+async function networkOnly(request) {
   try {
-    const response = await fetch(request);
-    if (response && response.status === 200) {
-      const cache = await caches.open(cacheName);
-      cache.put(request, response.clone());
-    }
-    return response;
-  } catch (err) {
-    const cached = await caches.match(request);
-    if (cached) return cached;
-    // Fallback: el index.html cached (app shell)
-    if (isHTMLRequest(request)) {
-      const shell = await caches.match('/FORJA/');
-      if (shell) return shell;
-    }
-    // Última línea: respuesta offline genérica
-    return new Response('Offline - FORJA', {
+    return await fetch(request);
+  } catch (e) {
+    return new Response(JSON.stringify({ error: 'offline' }), {
       status: 503,
-      statusText: 'Offline',
-      headers: { 'Content-Type': 'text/plain' }
+      headers: { 'Content-Type': 'application/json' }
     });
   }
 }
 
-// Cache-first: intenta cache, cae a red, guarda en cache
-async function cacheFirstStrategy(request, cacheName) {
-  const cached = await caches.match(request);
-  if (cached) {
-    // Revalidar en background sin bloquear
-    fetch(request).then(response => {
-      if (response && response.status === 200) {
-        caches.open(cacheName).then(cache => cache.put(request, response));
-      }
-    }).catch(() => {});
-    return cached;
-  }
+async function cacheFirst(request, cacheName) {
+  const cache = await caches.open(cacheName);
+  const cached = await cache.match(request);
+  if (cached) return cached;
+
   try {
     const response = await fetch(request);
-    if (response && response.status === 200) {
-      const cache = await caches.open(cacheName);
-      cache.put(request, response.clone());
+    if (response.ok) {
+      cache.put(request, response.clone()).catch(() => {});
     }
     return response;
-  } catch (err) {
-    return new Response('Offline asset', { status: 503 });
+  } catch (e) {
+    return new Response('Offline', { status: 503 });
   }
 }
 
-// ══ HELPERS ══════════════════════════════════════════════════════════════════
-
-function isHTMLRequest(request) {
-  const url = new URL(request.url);
-  return request.mode === 'navigate' ||
-    request.destination === 'document' ||
-    url.pathname.endsWith('.html') ||
-    url.pathname === '/FORJA/' ||
-    url.pathname === '/FORJA';
-}
-
-function isImageRequest(request) {
-  return request.destination === 'image' ||
-    /\.(png|jpg|jpeg|gif|webp|svg|ico)$/i.test(new URL(request.url).pathname);
-}
-
-function isCDNRequest(url) {
-  return CDN_ORIGINS.some(origin => url.origin === origin);
-}
-
-function isStaticAsset(request) {
-  return /\.(js|css|woff|woff2|ttf|otf|glb|json)$/i.test(new URL(request.url).pathname);
-}
-
-// ══ BACKGROUND SYNC ══════════════════════════════════════════════════════════
-// Para guardar logs de entrenos cuando no hay conexión
-self.addEventListener('sync', (event) => {
-  if (event.tag === 'forja-sync-logs') {
-    event.waitUntil(syncPendingLogs());
-  }
-});
-
-async function syncPendingLogs() {
+async function networkFirst(request, cacheName) {
+  const cache = await caches.open(cacheName);
   try {
-    const clients = await self.clients.matchAll();
-    clients.forEach(client => {
-      client.postMessage({ type: 'SYNC_LOGS_NOW' });
-    });
-  } catch (err) {
-    console.error('[SW] Sync failed:', err);
-  }
-}
-
-// ══ PERIODIC BACKGROUND SYNC ═════════════════════════════════════════════════
-// Para refrescar datos periódicamente (Chrome only, no iOS, pero suma puntos PWABuilder)
-self.addEventListener('periodicsync', (event) => {
-  if (event.tag === 'forja-daily-refresh') {
-    event.waitUntil(refreshDailyData());
-  }
-});
-
-async function refreshDailyData() {
-  try {
-    const cache = await caches.open(CACHE_STATIC);
-    const response = await fetch('/FORJA/');
-    if (response && response.status === 200) {
-      cache.put('/FORJA/', response);
+    const response = await fetch(request);
+    if (response.ok) {
+      cache.put(request, response.clone()).catch(() => {});
     }
-  } catch (err) {
-    console.error('[SW] Periodic sync failed:', err);
+    return response;
+  } catch (e) {
+    const cached = await cache.match(request);
+    if (cached) return cached;
+    if (request.mode === 'navigate') {
+      const fallback = await cache.match('./forja_paywall_fix.html') ||
+                       await cache.match('./');
+      if (fallback) return fallback;
+    }
+    return new Response('Offline', { status: 503 });
   }
 }
 
-// ══ PUSH NOTIFICATIONS ═══════════════════════════════════════════════════════
-// Listo para cuando configures APNs
-self.addEventListener('push', (event) => {
-  let data = { title: 'FORJA', body: 'Es hora de entrenar' };
-  
-  try {
-    if (event.data) data = event.data.json();
-  } catch (err) {
-    data.body = event.data ? event.data.text() : data.body;
-  }
-
-  const options = {
-    body: data.body,
-    icon: '/FORJA/icons/icon-192.png',
-    badge: '/FORJA/icons/icon-badge-72.png',
-    vibrate: [200, 100, 200],
-    tag: data.tag || 'forja-notification',
-    requireInteraction: data.requireInteraction || false,
-    data: data.data || {},
-    actions: data.actions || [
-      { action: 'open', title: 'Abrir' },
-      { action: 'close', title: 'Cerrar' }
-    ]
-  };
-
-  event.waitUntil(
-    self.registration.showNotification(data.title, options)
-  );
-});
-
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-  
-  if (event.action === 'close') return;
-  
-  const urlToOpen = event.notification.data?.url || '/FORJA/';
-  
-  event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true })
-      .then(clients => {
-        // Si ya hay una ventana abierta, enfocarla
-        for (const client of clients) {
-          if (client.url.includes('/FORJA/') && 'focus' in client) {
-            client.navigate(urlToOpen);
-            return client.focus();
-          }
-        }
-        // Si no, abrir nueva
-        if (self.clients.openWindow) {
-          return self.clients.openWindow(urlToOpen);
-        }
-      })
-  );
-});
-
-// ══ MESSAGE HANDLER ══════════════════════════════════════════════════════════
-// Para comunicación desde la app
+// ─── MENSAJES desde el cliente (para Día 2 - pre-cache rutina) ───
 self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
+  if (event.data?.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
-  if (event.data && event.data.type === 'CLEAR_CACHE') {
-    event.waitUntil(
-      caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))))
-    );
+
+  // Acepta ambos nombres por compatibilidad
+  if (event.data?.type === 'PRECACHE_VIDEOS' || event.data?.type === 'CACHE_VIDEOS') {
+    const urls = event.data.urls || [];
+    event.waitUntil(precacheVideos(urls));
+  }
+
+  if (event.data?.type === 'CLEAR_VIDEO_CACHE' || event.data?.type === 'CLEAR_VIDEOS_CACHE') {
+    event.waitUntil(caches.delete(VIDEOS_CACHE));
   }
 });
 
-console.log('[SW] FORJA Service Worker ' + CACHE_VERSION + ' loaded');
+async function precacheVideos(urls) {
+  const cache = await caches.open(VIDEOS_CACHE);
+  const BATCH_SIZE = 3;
+  for (let i = 0; i < urls.length; i += BATCH_SIZE) {
+    const batch = urls.slice(i, i + BATCH_SIZE);
+    await Promise.all(
+      batch.map(async (url) => {
+        try {
+          const cached = await cache.match(url);
+          if (cached) return;
+          const response = await fetch(url);
+          if (response.ok) {
+            await cache.put(url, response);
+          }
+        } catch (e) {
+          // silent fail
+        }
+      })
+    );
+  }
+}
