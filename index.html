@@ -848,6 +848,7 @@ input[type=number]{-moz-appearance:textfield;}
   #forja-onboarding .athlete-grid::-webkit-scrollbar{width:3px;}
   #forja-onboarding .athlete-grid::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px;}
   #forja-onboarding .athlete-card{
+    position:relative;
     background:linear-gradient(180deg,rgba(255,255,255,0.10),rgba(255,255,255,0.04));
     border:1.5px solid rgba(255,255,255,0.18);
     border-radius:12px;
@@ -885,6 +886,132 @@ input[type=number]{-moz-appearance:textfield;}
   }
   #forja-onboarding .athlete-card.selected .ath-name{color:#fff;}
   #forja-onboarding .athlete-card:active{transform:scale(0.96);}
+
+  /* Locked athlete cards */
+  #forja-onboarding .athlete-card.locked{
+    opacity:0.55;
+    background:rgba(255,255,255,0.02);
+  }
+  #forja-onboarding .athlete-card.locked .ath-em{
+    filter:grayscale(0.6);
+  }
+  #forja-onboarding .athlete-card .ath-lock{
+    position:absolute;top:8px;right:8px;
+    font-size:10px;
+    background:rgba(240,168,24,0.18);
+    border:1px solid rgba(240,168,24,0.4);
+    border-radius:50%;
+    width:20px;height:20px;
+    display:flex;align-items:center;justify-content:center;
+    line-height:1;
+  }
+
+  /* ══════════════════════════════════════════════════════ */
+  /* Athlete Paywall Modal */
+  /* ══════════════════════════════════════════════════════ */
+  #forja-onboarding .athlete-paywall{
+    position:fixed;inset:0;
+    z-index:200;
+    display:flex;align-items:center;justify-content:center;
+    padding:20px;
+    opacity:0;pointer-events:none;
+    transition:opacity 0.25s ease;
+  }
+  #forja-onboarding .athlete-paywall.visible{
+    opacity:1;pointer-events:auto;
+  }
+  #forja-onboarding .aw-backdrop{
+    position:absolute;inset:0;
+    background:rgba(0,0,0,0.7);
+    backdrop-filter:blur(8px);
+    -webkit-backdrop-filter:blur(8px);
+  }
+  #forja-onboarding .aw-card{
+    position:relative;
+    width:100%;max-width:340px;
+    background:linear-gradient(180deg,#1a1d24 0%,#0f1116 100%);
+    border:1px solid rgba(255,255,255,0.10);
+    border-radius:24px;
+    padding:28px 22px 20px;
+    box-shadow:0 20px 80px rgba(0,0,0,0.6);
+    text-align:center;
+    transform:translateY(20px) scale(0.97);
+    transition:transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  #forja-onboarding .athlete-paywall.visible .aw-card{
+    transform:translateY(0) scale(1);
+  }
+  #forja-onboarding .aw-icon-wrap{
+    margin:0 auto 16px;
+    width:60px;height:60px;border-radius:50%;
+    background:radial-gradient(circle, rgba(240,168,24,0.25), rgba(240,168,24,0.05));
+    border:1px solid rgba(240,168,24,0.35);
+    display:flex;align-items:center;justify-content:center;
+  }
+  #forja-onboarding .aw-icon{
+    font-size:26px;
+    filter:drop-shadow(0 0 12px rgba(240,168,24,0.5));
+  }
+  #forja-onboarding .aw-title{
+    font-family:'Archivo Black',sans-serif;
+    font-size:22px;letter-spacing:1px;
+    color:#fff;margin-bottom:8px;
+  }
+  #forja-onboarding .aw-subtitle{
+    font-family:'DM Sans',sans-serif;
+    font-size:14px;line-height:1.5;
+    color:rgba(255,255,255,0.75);
+    margin-bottom:20px;
+  }
+  #forja-onboarding .aw-subtitle .aw-athlete-name{
+    color:rgba(240,168,24,1);font-weight:600;
+  }
+  #forja-onboarding .aw-subtitle strong{
+    color:#fff;font-weight:700;
+  }
+  #forja-onboarding .aw-benefits{
+    list-style:none;margin:0 0 22px;padding:0;
+    text-align:left;
+  }
+  #forja-onboarding .aw-benefits li{
+    font-family:'DM Sans',sans-serif;
+    font-size:13px;line-height:1.4;
+    color:rgba(255,255,255,0.85);
+    padding:6px 0;
+    display:flex;align-items:flex-start;gap:10px;
+  }
+  #forja-onboarding .aw-check{
+    color:rgba(240,168,24,1);
+    font-weight:700;flex-shrink:0;
+  }
+  #forja-onboarding .aw-btn-primary{
+    width:100%;
+    padding:14px 16px;
+    background:linear-gradient(180deg,#f0a818 0%,#d49210 100%);
+    border:none;
+    border-radius:14px;
+    color:#1a1100;
+    font-family:'Archivo Black',sans-serif;
+    font-size:13px;letter-spacing:0.5px;
+    cursor:pointer;
+    margin-bottom:8px;
+    box-shadow:0 4px 14px rgba(240,168,24,0.3);
+    transition:transform 0.15s ease;
+  }
+  #forja-onboarding .aw-btn-primary:active{transform:scale(0.97);}
+  #forja-onboarding .aw-btn-secondary{
+    width:100%;
+    padding:12px;
+    background:transparent;
+    border:none;
+    color:rgba(255,255,255,0.55);
+    font-family:'DM Sans',sans-serif;
+    font-size:13px;
+    cursor:pointer;
+  }
+  #forja-onboarding .aw-btn-secondary:active{
+    color:rgba(255,255,255,0.8);
+  }
 
   /* Header back button */
   #forja-onboarding .back-btn{
@@ -945,6 +1072,31 @@ input[type=number]{-moz-appearance:textfield;}
       <path d="M10 13L5 8L10 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
   </button>
+
+  <!-- Athlete PRO Paywall Modal -->
+  <div class="athlete-paywall" id="athlete-paywall-modal">
+    <div class="aw-backdrop" onclick="closeAthletePaywall()"></div>
+    <div class="aw-card">
+      <div class="aw-icon-wrap">
+        <div class="aw-icon">⚡</div>
+      </div>
+      <div class="aw-title">RUTINAS PRO</div>
+      <div class="aw-subtitle">
+        <span class="aw-athlete-name">este atleta</span> está disponible<br>con <strong>FORJA Pro</strong>
+      </div>
+      <ul class="aw-benefits">
+        <li><span class="aw-check">✓</span> Acceso a todos los atletas</li>
+        <li><span class="aw-check">✓</span> Rutinas científicamente probadas</li>
+        <li><span class="aw-check">✓</span> Análisis de progreso avanzado</li>
+      </ul>
+      <button class="aw-btn-primary" onclick="continueWithFreePlan()">
+        EMPEZAR CON GOGGINS · GRATIS
+      </button>
+      <button class="aw-btn-secondary" onclick="closeAthletePaywall()">
+        Elegir otro atleta
+      </button>
+    </div>
+  </div>
 
   <!-- Progress bar -->
   <div class="progress" id="progress">
@@ -1775,11 +1927,18 @@ function showAthletePicker(){
       finalize();
       return;
     }
+    var freeIds = (window.FREE_CELEB_IDS || ["goggins","serena"]);
+    var userIsPro = (typeof window.isPro === 'function') ? window.isPro() : false;
     CELEB_LIST.forEach(celeb=>{
       const card = document.createElement('button');
       card.className = 'athlete-card';
+      const isFreeAthlete = freeIds.indexOf(celeb.id) >= 0;
+      const isLocked = !isFreeAthlete && !userIsPro;
+      if(isLocked) card.classList.add('locked');
       card.dataset.celebId = celeb.id;
+      card.dataset.locked = isLocked ? '1' : '0';
       card.innerHTML =
+        (isLocked ? '<span class="ath-lock">🔒</span>' : '')+
         '<span class="ath-em">'+celeb.em+'</span>'+
         '<span class="ath-name">'+celeb.label+'</span>'+
         '<span class="ath-days">'+celeb.days+' DÍAS</span>';
@@ -1802,12 +1961,52 @@ function showAthletePicker(){
 }
 
 function selectAthlete(id){
+  // Verificar si está bloqueado por PRO
+  var card = document.querySelector('.athlete-card[data-celeb-id="'+id+'"]');
+  if(card && card.dataset.locked === '1'){
+    // Bloquear: mostrar paywall en vez de seleccionar
+    showAthletePaywall(id);
+    haptic('error');
+    return;
+  }
   _obState.data.athleteId = id;
   document.querySelectorAll('.athlete-card').forEach(c=>{
     c.classList.toggle('selected', c.dataset.celebId === id);
   });
   document.getElementById('btn-athlete').disabled = false;
   haptic('medium');
+}
+
+function showAthletePaywall(athleteId){
+  // Buscar el atleta para mostrar su nombre
+  var celeb = (typeof CELEB_LIST !== 'undefined') ?
+    CELEB_LIST.find(function(c){return c.id===athleteId;}) : null;
+  var name = celeb ? celeb.label : 'este atleta';
+  var modal = document.getElementById('athlete-paywall-modal');
+  if(modal){
+    var nameEl = modal.querySelector('.aw-athlete-name');
+    if(nameEl) nameEl.textContent = name;
+    modal.classList.add('visible');
+  }
+}
+
+function closeAthletePaywall(){
+  var modal = document.getElementById('athlete-paywall-modal');
+  if(modal) modal.classList.remove('visible');
+}
+
+function pickFreeAthlete(){
+  // Cerrar el modal y recordar al user que puede elegir uno free
+  closeAthletePaywall();
+  haptic('light');
+}
+
+function continueWithFreePlan(){
+  // Auto-seleccionar Goggins como sugerencia (atleta más popular)
+  closeAthletePaywall();
+  setTimeout(function(){
+    selectAthlete('goggins');
+  }, 200);
 }
 
 function finalize(){
@@ -4922,6 +5121,7 @@ function isPro(){
     return false;
   }
 }
+window.isPro = isPro;
 const wk=(off=0)=>{const d=new Date();d.setDate(d.getDate()+off*7);const y=d.getFullYear(),s=new Date(y,0,1);return`${y}W${Math.ceil(((d-s)/864e5+s.getDay()+1)/7)}`;};
 const tdy=()=>new Date().toISOString().slice(0,10);
 const store={
@@ -7141,7 +7341,8 @@ const CELEB_LIST=[
    split:{es:"Full Body / Piernas / Upper / Core",en:"Full Body / Legs / Upper / Core"},
    source:"Harley Pasternak trainer · verified fitness interviews"},
 ];
-const FREE_CELEB_IDS=["rock"]; // solo The Rock gratis
+const FREE_CELEB_IDS=["goggins", "serena"]; // 2 atletas gratis (1H + 1M)
+window.FREE_CELEB_IDS = FREE_CELEB_IDS;
 
 // ── AthleteSheet — sheet que sube con la lista de atletas ─────
 
