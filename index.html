@@ -6533,7 +6533,7 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                           return (
                             <div style={{flex:1}}>
                               <div style={{fontSize:18,fontWeight:900,color:repColor,letterSpacing:-.5,lineHeight:1}}>
-                                {actualVal} <span style={{fontSize:10,color:"rgba(255,255,255,.4)",fontWeight:500}}>de {target}</span>
+                                {actualVal} <span style={{fontSize:11,color:"rgba(255,255,255,.4)",fontWeight:500}}>/ {target}</span>
                               </div>
                               <div style={{fontFamily:mono,fontSize:7,color:"rgba(255,255,255,.5)",letterSpacing:1.5,marginTop:3}}>
                                 COMPLETADO
@@ -6544,16 +6544,28 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                         // No marcado: mostrar target editable
                         const showVal = actualVal && actualVal !== target ? actualVal : target;
                         const isEdited = actualVal && actualVal !== target;
+                        // Si editó, calcular color de performance
+                        let editedColor = "rgba(63,207,142,.95)"; // default verde
+                        let editedLabelColor = "rgba(63,207,142,.7)";
+                        if(isEdited){
+                          const perf = evalRepPerformance(actualVal, ex.r);
+                          if(perf.color){
+                            editedColor = perf.color;
+                            editedLabelColor = perf.color;
+                          }
+                        }
                         return (
                           <div style={{flex:1}}>
                             <div style={{fontSize:16,fontWeight:900,
-                              color:isEdited?"rgba(63,207,142,.95)":"rgba(240,168,24,.95)",
+                              color:isEdited?editedColor:"rgba(240,168,24,.95)",
                               letterSpacing:.3,lineHeight:1.1}}>
-                              {showVal}
+                              {isEdited ? (
+                                <>{showVal} <span style={{fontSize:11,color:"rgba(255,255,255,.4)",fontWeight:500}}>/ {target}</span></>
+                              ) : showVal}
                             </div>
                             <div style={{fontFamily:mono,fontSize:7,
-                              color:isEdited?"rgba(63,207,142,.7)":"rgba(240,168,24,.55)",
-                              letterSpacing:1.5,marginTop:3}}>
+                              color:isEdited?editedLabelColor:"rgba(240,168,24,.55)",
+                              letterSpacing:1.5,marginTop:3,opacity:isEdited?0.7:1}}>
                               {isEdited?"REPS HECHAS · TOCA PARA AJUSTAR":"OBJETIVO · TOCA PARA EDITAR"}
                             </div>
                           </div>
@@ -6633,31 +6645,46 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                           {(()=>{
                             const target = repTarget(exs[ei].r) || "—";
                             const actualVal = s.rp;
-                            // Marcado: mostrar reps reales con color y "de X" sutil
+                            // Marcado: mostrar X / target con color de performance
                             if(s.done && actualVal){
                               const perf = evalRepPerformance(actualVal, ex.r);
                               const repColor = perf.color || "#3fcf8e";
                               return (<>
-                                <div style={{fontSize:18,fontWeight:900,color:repColor,letterSpacing:-.5,lineHeight:1}}>{actualVal}</div>
-                                <div style={{fontFamily:mono,fontSize:7,color:"rgba(255,255,255,.4)",letterSpacing:1.2,marginTop:2}}>de {target}</div>
+                                <div style={{fontSize:16,fontWeight:900,color:repColor,letterSpacing:-.5,lineHeight:1}}>
+                                  {actualVal}<span style={{fontSize:10,color:"rgba(255,255,255,.4)",fontWeight:500}}> / {target}</span>
+                                </div>
+                                <div style={{fontFamily:mono,fontSize:7,color:"rgba(255,255,255,.5)",letterSpacing:1.2,marginTop:2}}>HECHAS</div>
                               </>);
                             }
-                            // No marcado: mostrar target con visual de "editable"
-                            // Si user ya escribió algo distinto al target, mostrar lo escrito
-                            const showVal = actualVal && actualVal !== target ? actualVal : target;
+                            // No marcado: target editable. Si editó pero no marcó done, mostrar X / target en color performance
                             const isEdited = actualVal && actualVal !== target;
+                            // Si editó, calcular color de performance preview
+                            let editedColor = "rgba(63,207,142,.95)";
+                            let editedLabelColor = "rgba(63,207,142,.7)";
+                            if(isEdited){
+                              const perf = evalRepPerformance(actualVal, ex.r);
+                              if(perf.color){
+                                editedColor = perf.color;
+                                editedLabelColor = perf.color;
+                              }
+                            }
                             return (<>
                               <div style={{
-                                fontSize:18,fontWeight:900,
-                                color: isEdited ? "rgba(63,207,142,.95)" : "rgba(240,168,24,.85)",
-                                letterSpacing:-.5,lineHeight:1,
+                                fontSize:isEdited?14:18,fontWeight:900,
+                                color: isEdited ? editedColor : "rgba(240,168,24,.85)",
+                                letterSpacing:-.3,lineHeight:1,
                                 background: isEdited ? "transparent" : "rgba(240,168,24,.08)",
-                                border: isEdited ? "1px solid rgba(63,207,142,.35)" : "1px dashed rgba(240,168,24,.4)",
-                                padding:"3px 10px",
+                                border: isEdited ? "1px solid "+editedColor.replace(/[\d.]+\)$/,"0.35)") : "1px dashed rgba(240,168,24,.4)",
+                                padding:"3px 8px",
                                 borderRadius:6,
-                                minWidth:30,textAlign:"center"
-                              }}>{showVal}</div>
-                              <div style={{fontFamily:mono,fontSize:7,color:isEdited?"rgba(63,207,142,.7)":"rgba(240,168,24,.55)",letterSpacing:1.5,marginTop:3}}>
+                                minWidth:30,textAlign:"center",
+                                whiteSpace:"nowrap"
+                              }}>
+                                {isEdited ? (
+                                  <>{actualVal}<span style={{fontSize:9,color:"rgba(255,255,255,.4)",fontWeight:500}}> / {target}</span></>
+                                ) : target}
+                              </div>
+                              <div style={{fontFamily:mono,fontSize:7,color:isEdited?editedLabelColor:"rgba(240,168,24,.55)",letterSpacing:1.5,marginTop:3,opacity:isEdited?0.7:1}}>
                                 {isEdited?"REPS":"OBJETIVO"}
                               </div>
                             </>);
