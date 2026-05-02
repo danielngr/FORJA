@@ -1038,6 +1038,155 @@ input[type=number]{-moz-appearance:textfield;}
     color:rgba(255,255,255,0.8);
   }
 
+  /* ══════════════════════════════════════════════════════ */
+  /* INTENSITY MODAL — selección del % de la rutina del atleta */
+  /* ══════════════════════════════════════════════════════ */
+  #forja-onboarding .intensity-modal{
+    --intensity-color:#f0a818;
+    position:fixed;inset:0;
+    z-index:200;
+    display:flex;align-items:center;justify-content:center;
+    padding:20px;
+    opacity:0;pointer-events:none;
+    transition:opacity 0.25s ease;
+  }
+  #forja-onboarding .intensity-modal.visible{
+    opacity:1;pointer-events:auto;
+  }
+  #forja-onboarding .im-backdrop{
+    position:absolute;inset:0;
+    background:rgba(0,0,0,0.78);
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+  }
+  #forja-onboarding .im-card{
+    position:relative;
+    width:100%;max-width:360px;
+    background:linear-gradient(180deg,#1a1d24 0%,#0e1015 100%);
+    border:1px solid rgba(255,255,255,0.10);
+    border-radius:24px;
+    padding:24px 22px 18px;
+    box-shadow:0 20px 80px rgba(0,0,0,0.6);
+    text-align:center;
+    transform:translateY(20px) scale(0.97);
+    transition:transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  #forja-onboarding .intensity-modal.visible .im-card{
+    transform:translateY(0) scale(1);
+  }
+  #forja-onboarding .im-header{
+    margin-bottom:18px;
+  }
+  #forja-onboarding .im-emoji{
+    font-size:34px;margin-bottom:6px;
+    filter:drop-shadow(0 0 16px rgba(240,168,24,0.4));
+  }
+  #forja-onboarding .im-prefix{
+    font-family:'DM Mono',monospace;
+    font-size:8px;letter-spacing:2.5px;
+    color:rgba(255,255,255,0.45);
+    margin-bottom:4px;
+  }
+  #forja-onboarding .im-name{
+    font-family:'Archivo Black',sans-serif;
+    font-size:22px;letter-spacing:1px;
+    color:#fff;
+  }
+  #forja-onboarding .im-pct-display{
+    margin:18px 0 12px;
+  }
+  #forja-onboarding .im-pct{
+    font-family:'Archivo Black',sans-serif;
+    font-size:64px;line-height:1;
+    color:var(--intensity-color);
+    letter-spacing:-2px;
+    transition:color 0.2s ease;
+    text-shadow:0 0 30px rgba(240,168,24,0.25);
+  }
+  #forja-onboarding .im-label{
+    font-family:'DM Mono',monospace;
+    font-size:11px;letter-spacing:3px;
+    color:var(--intensity-color);
+    margin-top:6px;font-weight:700;
+    transition:color 0.2s ease;
+  }
+  #forja-onboarding .im-slider{
+    -webkit-appearance:none;appearance:none;
+    width:100%;height:6px;
+    background:rgba(255,255,255,0.08);
+    border-radius:3px;
+    outline:none;
+    margin:14px 0 6px;
+    cursor:pointer;
+  }
+  #forja-onboarding .im-slider::-webkit-slider-thumb{
+    -webkit-appearance:none;appearance:none;
+    width:24px;height:24px;border-radius:50%;
+    background:var(--intensity-color);
+    cursor:pointer;
+    border:3px solid #0e1015;
+    box-shadow:0 0 14px rgba(240,168,24,0.5);
+    transition:background 0.2s ease;
+  }
+  #forja-onboarding .im-slider::-moz-range-thumb{
+    width:18px;height:18px;border-radius:50%;
+    background:var(--intensity-color);
+    cursor:pointer;
+    border:3px solid #0e1015;
+    box-shadow:0 0 14px rgba(240,168,24,0.5);
+  }
+  #forja-onboarding .im-scale{
+    display:flex;justify-content:space-between;
+    font-family:'DM Mono',monospace;
+    font-size:8px;letter-spacing:1px;
+    color:rgba(255,255,255,0.35);
+    padding:0 4px;margin-bottom:14px;
+  }
+  #forja-onboarding .im-desc{
+    font-family:'DM Sans',sans-serif;
+    font-size:12.5px;line-height:1.45;
+    color:rgba(255,255,255,0.85);
+    margin-bottom:12px;
+    min-height:34px;
+    padding:0 4px;
+  }
+  #forja-onboarding .im-tip{
+    font-family:'DM Sans',sans-serif;
+    font-size:10.5px;line-height:1.4;
+    color:rgba(255,255,255,0.55);
+    background:rgba(255,255,255,0.04);
+    border:1px solid rgba(255,255,255,0.06);
+    border-radius:10px;
+    padding:10px 12px;
+    margin-bottom:18px;
+    text-align:left;
+  }
+  #forja-onboarding .im-btn-primary{
+    width:100%;
+    padding:14px 16px;
+    background:linear-gradient(180deg,#f0a818 0%,#d49210 100%);
+    border:none;
+    border-radius:14px;
+    color:#1a1100;
+    font-family:'Archivo Black',sans-serif;
+    font-size:14px;letter-spacing:0.5px;
+    cursor:pointer;
+    margin-bottom:6px;
+    box-shadow:0 4px 14px rgba(240,168,24,0.3);
+    transition:transform 0.15s ease;
+  }
+  #forja-onboarding .im-btn-primary:active{transform:scale(0.97);}
+  #forja-onboarding .im-btn-secondary{
+    width:100%;
+    padding:10px;
+    background:transparent;
+    border:none;
+    color:rgba(255,255,255,0.5);
+    font-family:'DM Sans',sans-serif;
+    font-size:12px;
+    cursor:pointer;
+  }
+
   /* Header back button */
   #forja-onboarding .back-btn{
     position:absolute;top:16px;left:18px;
@@ -1119,6 +1268,38 @@ input[type=number]{-moz-appearance:textfield;}
       </button>
       <button class="aw-btn-secondary" onclick="closeAthletePaywall()">
         Elegir otro atleta
+      </button>
+    </div>
+  </div>
+
+  <!-- Intensity Selection Modal -->
+  <div class="intensity-modal" id="intensity-modal">
+    <div class="im-backdrop" onclick="closeIntensityModal()"></div>
+    <div class="im-card">
+      <div class="im-header">
+        <div class="im-emoji im-athlete-emoji">🔥</div>
+        <div class="im-prefix">ENTRENA AL ESTILO DE</div>
+        <div class="im-name im-athlete-name">GOGGINS</div>
+      </div>
+      <div class="im-pct-display">
+        <div class="im-pct" id="intensity-pct">50%</div>
+        <div class="im-label" id="intensity-label">INTERMEDIO</div>
+      </div>
+      <input type="range" class="im-slider" id="intensity-slider"
+             min="20" max="100" step="5" value="50"
+             oninput="updateIntensityDisplay(this.value)">
+      <div class="im-scale">
+        <span>20%</span><span>50%</span><span>100%</span>
+      </div>
+      <div class="im-desc" id="intensity-desc">Buen punto medio. La mayoría de usuarios entrenan aquí.</div>
+      <div class="im-tip">
+        💡 Empieza moderado. Cuando completes el 100% durante varias semanas, sube la intensidad.
+      </div>
+      <button class="im-btn-primary" onclick="confirmIntensity()">
+        EMPEZAR
+      </button>
+      <button class="im-btn-secondary" onclick="closeIntensityModal()">
+        Cancelar
       </button>
     </div>
   </div>
@@ -2000,12 +2181,98 @@ function selectAthlete(id){
     haptic('error');
     return;
   }
-  _obState.data.athleteId = id;
+  // Marcar visualmente
   document.querySelectorAll('.athlete-card').forEach(c=>{
     c.classList.toggle('selected', c.dataset.celebId === id);
   });
+  haptic('medium');
+  // Abrir modal de intensidad
+  showIntensityModal(id);
+}
+
+function showIntensityModal(athleteId){
+  var celeb = (typeof CELEB_LIST !== 'undefined') ?
+    CELEB_LIST.find(function(c){return c.id===athleteId;}) : null;
+  if(!celeb) return;
+  // Llenar info del modal
+  var modal = document.getElementById('intensity-modal');
+  if(!modal) return;
+  modal.dataset.athleteId = athleteId;
+  var nameEl = modal.querySelector('.im-athlete-name');
+  if(nameEl) nameEl.textContent = celeb.label;
+  var emojiEl = modal.querySelector('.im-athlete-emoji');
+  if(emojiEl) emojiEl.textContent = celeb.em;
+  // Leer intensity guardada (default 50% = principiante seguro)
+  var savedPct = 50;
+  try{
+    var saved = localStorage.getItem('forja_intensity_'+athleteId);
+    if(saved) savedPct = parseInt(saved) || 50;
+  }catch(_){}
+  // Setear slider
+  var slider = document.getElementById('intensity-slider');
+  if(slider){
+    slider.value = savedPct;
+    updateIntensityDisplay(savedPct);
+  }
+  modal.classList.add('visible');
+}
+
+function closeIntensityModal(){
+  var modal = document.getElementById('intensity-modal');
+  if(modal) modal.classList.remove('visible');
+}
+
+function updateIntensityDisplay(val){
+  val = parseInt(val) || 50;
+  var pctEl = document.getElementById('intensity-pct');
+  var labelEl = document.getElementById('intensity-label');
+  var descEl = document.getElementById('intensity-desc');
+  var modal = document.getElementById('intensity-modal');
+  if(pctEl) pctEl.textContent = val + '%';
+  // Color, label y descripción según rango
+  var color, label, desc;
+  if(val < 50){
+    color = '#3fcf8e'; // verde
+    label = 'PRINCIPIANTE';
+    desc = 'Empieza ligero. Construye base sólida sin lesiones.';
+  } else if(val < 70){
+    color = '#f0a818'; // amarillo
+    label = 'INTERMEDIO';
+    desc = 'Buen punto medio. La mayoría de usuarios entrenan aquí.';
+  } else if(val < 90){
+    color = '#ff7e3a'; // naranja
+    label = 'AVANZADO';
+    desc = '⚠️ Alta intensidad. Solo si tienes experiencia previa.';
+  } else {
+    color = '#ff4444'; // rojo
+    label = 'EXTREMO';
+    desc = '🚨 Nivel del atleta real. Riesgo de lesión sin preparación física avanzada.';
+  }
+  if(labelEl){
+    labelEl.textContent = label;
+    labelEl.style.color = color;
+  }
+  if(descEl) descEl.textContent = desc;
+  if(pctEl) pctEl.style.color = color;
+  if(modal) modal.style.setProperty('--intensity-color', color);
+}
+
+function confirmIntensity(){
+  var modal = document.getElementById('intensity-modal');
+  if(!modal) return;
+  var athleteId = modal.dataset.athleteId;
+  var slider = document.getElementById('intensity-slider');
+  var pct = slider ? parseInt(slider.value) : 50;
+  // Guardar el % elegido
+  try{
+    localStorage.setItem('forja_intensity_'+athleteId, String(pct));
+  }catch(_){}
+  // Confirmar selección
+  _obState.data.athleteId = athleteId;
+  _obState.data.athleteIntensity = pct / 100; // 0.5 para 50%
   document.getElementById('btn-athlete').disabled = false;
   haptic('medium');
+  closeIntensityModal();
 }
 
 function showAthletePaywall(athleteId){
@@ -2119,6 +2386,7 @@ function completeOnboarding(){
       units: 'metric',
       celebrity: d.athleteId || null,
       activeCelebId: d.athleteId || null,
+      celebIntensity: (typeof d.athleteIntensity === 'number') ? d.athleteIntensity : 0.5,
       celebAc: (function(){
         if(!d.athleteId || typeof CELEB_LIST==='undefined') return null;
         var c = CELEB_LIST.find(function(x){return x.id===d.athleteId;});
@@ -2146,7 +2414,9 @@ function completeOnboarding(){
             }
           }
           sd = sd.slice(0, celebDays).sort(function(a,b){return a-b;});
-          routine = buildCelebRoutine(celebObj, [], sd);
+          // Intensidad seleccionada por el user (0.2 a 1.0). Default 0.5 si no se eligió.
+          var athleteIntensity = (typeof d.athleteIntensity === 'number') ? d.athleteIntensity : 0.5;
+          routine = buildCelebRoutine(celebObj, [], sd, athleteIntensity);
         }
       }catch(e){ console.warn('buildCelebRoutine failed:',e); }
     }
@@ -4780,7 +5050,54 @@ const CELEB_EXERCISES = {
     ]
   }
 }
-function buildCelebRoutine(celeb, userEquipment, selDays){
+// ──────────────────────────────────────────────────────────────────
+// Helper: escala una rep string ("140", "140+140", "60s", "8-12") según %
+// Devuelve el rep string escalado para mostrar en la app
+// ──────────────────────────────────────────────────────────────────
+function scaleRep(rep, pct){
+  if(rep == null) return rep;
+  pct = Math.max(0.1, Math.min(1.0, +pct || 1.0));
+  if(pct >= 0.99) return rep; // 100% — no escalar
+  var s = String(rep).trim();
+  // Formato: "AMRAP" o "fallo" — no se escala
+  if(/AMRAP|fallo|max/i.test(s)) return s;
+  // Formato tiempo: "60s", "30min", "200m"
+  // Para tiempo, escalamos sólo si es seg/min explícito (no metros)
+  var timeMatch = s.match(/^(\d+)(s|min)\b/i);
+  if(timeMatch){
+    var n = parseInt(timeMatch[1]);
+    var unit = timeMatch[2];
+    var scaled = Math.max(5, Math.round(n * pct));
+    return s.replace(/^\d+/, scaled);
+  }
+  // Formato meters: "200m" — no escalar (son distancias)
+  if(/^\d+m\b/i.test(s)) return s;
+  // Formato range: "8-12", "100-140"
+  var rangeMatch = s.match(/^(\d+)-(\d+)/);
+  if(rangeMatch){
+    var lo = parseInt(rangeMatch[1]);
+    var hi = parseInt(rangeMatch[2]);
+    return Math.max(1, Math.round(lo*pct)) + '-' + Math.max(1, Math.round(hi*pct));
+  }
+  // Formato suma: "140+140", "25 + 25"
+  if(s.indexOf('+') >= 0){
+    return s.replace(/\d+/g, function(n){
+      return Math.max(1, Math.round(parseInt(n)*pct));
+    });
+  }
+  // Formato simple: "140", "250"
+  var simpleMatch = s.match(/^(\d+)/);
+  if(simpleMatch){
+    var num = parseInt(simpleMatch[1]);
+    var scaledNum = Math.max(1, Math.round(num*pct));
+    return s.replace(/^\d+/, scaledNum);
+  }
+  return s; // fallback
+}
+
+function buildCelebRoutine(celeb, userEquipment, selDays, intensityPct){
+  // intensityPct: 0.2 a 1.0 (default 0.5 = 50% del original)
+  const pct = (typeof intensityPct === 'number') ? Math.max(0.2, Math.min(1.0, intensityPct)) : 0.5;
   const r = Array(7).fill(null);
   const exercises = CELEB_EXERCISES[celeb.id] || {};
   const splitKeys = Object.keys(exercises);
@@ -4790,22 +5107,32 @@ function buildCelebRoutine(celeb, userEquipment, selDays){
     const raw = exercises[splitName];
     if(raw && !Array.isArray(raw) && raw.circuit){
       const adapted = raw.exercises.map((ex, j)=>({
-        e: ex.e, s: 1, r: ex.r,
+        e: ex.e,
+        s: 1,
+        r: scaleRep(ex.r, pct),         // reps escaladas (lo que el user verá)
+        rOriginal: ex.r,                 // mantenemos el original para referencia
+        intensityPct: pct,               // guardamos el % por ejercicio
         id: `c${dayIdx}${j}`, circuit: true
       }));
       r[dayIdx] = {
         l: splitName, ex: adapted,
-        circuit: true, rounds: raw.rounds, circuitNote: raw.note
+        circuit: true, rounds: raw.rounds, circuitNote: raw.note,
+        intensityPct: pct
       };
     } else {
       const rawExs = Array.isArray(raw) ? raw : [];
-      const adapted = rawExs.map((ex, j)=>({
-        e: typeof ex === "string" ? ex : ex.e,
-        s: typeof ex === "string" ? 4 : (ex.s||1),
-        r: typeof ex === "string" ? "8-12" : ex.r,
-        id: `c${dayIdx}${j}`
-      }));
-      r[dayIdx] = {l: splitName, ex: adapted};
+      const adapted = rawExs.map((ex, j)=>{
+        const isStr = typeof ex === "string";
+        return {
+          e: isStr ? ex : ex.e,
+          s: isStr ? 4 : (ex.s||1),
+          r: isStr ? "8-12" : scaleRep(ex.r, pct),
+          rOriginal: isStr ? "8-12" : ex.r,
+          intensityPct: pct,
+          id: `c${dayIdx}${j}`
+        };
+      });
+      r[dayIdx] = {l: splitName, ex: adapted, intensityPct: pct};
     }
   });
   return r;
