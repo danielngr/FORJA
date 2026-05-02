@@ -6509,16 +6509,58 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
               </div>
               <div style={{padding:"10px 20px 0"}}>
                 {ex.circuit ? (
-                  <div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 0",
+                  <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 0",
                     borderBottom:"1px solid rgba(82,90,110,.2)"}}>
-                    <div style={{flex:1}}>
-                      <div style={{fontFamily:mono,fontSize:11,color:"rgba(240,168,24,0.8)",letterSpacing:1}}>
-                        {ex.r}
-                      </div>
-                      <div style={{fontFamily:mono,fontSize:8,color:"rgba(240,168,24,0.4)",letterSpacing:1,marginTop:2}}>
-                        {(L[lang]||L.en).goal}
-                      </div>
+                    {/* Campo editable de reps */}
+                    <div onClick={()=>openNp(ei,0,'rp')} style={{
+                      flex:1,
+                      cursor:"pointer",
+                      padding:"8px 12px",
+                      borderRadius:8,
+                      background:sets[ei][0]?.done?"rgba(63,207,142,.05)":"rgba(240,168,24,.05)",
+                      border:sets[ei][0]?.done
+                        ?"1px solid rgba(63,207,142,.25)"
+                        :"1px dashed rgba(240,168,24,.4)",
+                      display:"flex",alignItems:"center",gap:10
+                    }}>
+                      {(()=>{
+                        const target = ex.r || "—";
+                        const actualVal = sets[ei][0]?.rp;
+                        // Marcado: mostrar reps reales con color de performance
+                        if(sets[ei][0]?.done && actualVal){
+                          const perf = evalRepPerformance(actualVal, ex.r);
+                          const repColor = perf.color || "#3fcf8e";
+                          return (
+                            <div style={{flex:1}}>
+                              <div style={{fontSize:18,fontWeight:900,color:repColor,letterSpacing:-.5,lineHeight:1}}>
+                                {actualVal} <span style={{fontSize:10,color:"rgba(255,255,255,.4)",fontWeight:500}}>de {target}</span>
+                              </div>
+                              <div style={{fontFamily:mono,fontSize:7,color:"rgba(255,255,255,.5)",letterSpacing:1.5,marginTop:3}}>
+                                COMPLETADO
+                              </div>
+                            </div>
+                          );
+                        }
+                        // No marcado: mostrar target editable
+                        const showVal = actualVal && actualVal !== target ? actualVal : target;
+                        const isEdited = actualVal && actualVal !== target;
+                        return (
+                          <div style={{flex:1}}>
+                            <div style={{fontSize:16,fontWeight:900,
+                              color:isEdited?"rgba(63,207,142,.95)":"rgba(240,168,24,.95)",
+                              letterSpacing:.3,lineHeight:1.1}}>
+                              {showVal}
+                            </div>
+                            <div style={{fontFamily:mono,fontSize:7,
+                              color:isEdited?"rgba(63,207,142,.7)":"rgba(240,168,24,.55)",
+                              letterSpacing:1.5,marginTop:3}}>
+                              {isEdited?"REPS HECHAS · TOCA PARA AJUSTAR":"OBJETIVO · TOCA PARA EDITAR"}
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
+                    {/* Botón de check */}
                     <div onClick={()=>toggleDone(ei,0)}
                       style={{width:44,height:44,borderRadius:"50%",cursor:"pointer",display:"flex",
                         alignItems:"center",justifyContent:"center",flexShrink:0,
