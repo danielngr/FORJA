@@ -6889,20 +6889,35 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
   const[sets,setSets]=useState(()=>initSets(exs));
 
   // Re-sync sets cuando cambian las modificaciones (exs cambia de longitud o ejercicios)
-  // Mantenemos los sets ya marcados como done si el ejercicio sigue presente
+  // Si un ejercicio en la misma posición cambió de nombre, recargamos sus datos
   useEffect(()=>{
     setSets(prev=>{
-      const fresh = initSets(exs);
-      // Mapear datos previos por nombre de ejercicio si todavía existe
-      return fresh.map((newExSets,ei)=>{
-        const newName = exs[ei]?.e;
-        if(!newName) return newExSets;
-        // Buscar en sets previos un ejercicio con mismo nombre
-        // (no podemos garantizar mismo índice porque pudieron quitar/cambiar)
-        // Para simplicidad: si el length de prev coincide con exs.length, asumimos misma posición
-        // Sino, los sets quedan limpios (esto pasa cuando se quita un ejercicio)
-        if(prev.length===exs.length && prev[ei]) return prev[ei];
-        return newExSets;
+      return exs.map((newEx,ei)=>{
+        const prevExSets = prev[ei];
+        // Buscar nombre del ejercicio anterior en esta posición
+        // Nota: si exs cambió, prev podría tener otro ejercicio en el mismo índice
+        // No tenemos forma directa de saber el nombre anterior, pero podemos asumir que:
+        // - Si los sets están vacíos (ningún done), es seguro reinicializar
+        // - Si hay sets done y el length es igual, mantener (probablemente solo cambió un nombre)
+        // Para ser conservadores: reinicializamos siempre, pero preservamos done state
+        const h = logs[newEx.id];
+        const numSets = newEx.s || 1;
+        const fresh = Array.from({length:numSets},(_,si)=>{
+          const kg = h&&h[si]?String(h[si].w):h&&h[0]?String(h[0].w):"";
+          const rp = h&&h[si]?String(h[si].r):h&&h[0]?String(h[0].r):repTarget(newEx.r||"8");
+          // Preservar done state y valores editados si existen y exs no cambió de length
+          if(prev.length===exs.length && prevExSets && prevExSets[si]){
+            const prevSet = prevExSets[si];
+            // Si el set estaba done, preservar todo
+            if(prevSet.done) return prevSet;
+            // Si no estaba done pero el user editó kg/rp, preservar (compara con valor inicial)
+            // Por simplicidad, si está vacío reset, sino preservar los valores manuales
+            if(prevSet.kg && prevSet.kg !== kg) return prevSet;
+            if(prevSet.rp && prevSet.rp !== rp) return prevSet;
+          }
+          return {kg, rp, done: false};
+        });
+        return fresh;
       });
     });
   },[exs.length, exs.map(e=>e.e).join("|")]);
@@ -7580,10 +7595,14 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                         <span style={{fontSize:11,color:C2.tx3,opacity:.5}}>→</span>
                       </button>
                       {/* Saltar hoy */}
-                      <button onClick={()=>{
-                        modifyRoutine(day.l,ex.e,"skip_today");
+                      <button onClick={(ev)=>{
+                        ev.stopPropagation();
+                        ev.preventDefault();
+                        const targetEx = ex.e;
                         setModifyOpen(null);
-                        setModsTick(t=>t+1);
+                        modifyRoutine(day.l, targetEx, "skip_today");
+                        setTimeout(()=>setModsTick(t=>t+1), 0);
+                        try{ navigator.vibrate && navigator.vibrate(40); }catch(_){}
                       }}
                         style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",borderRadius:8,border:"none",background:"transparent",cursor:"pointer",color:C2.tx,textAlign:"left",fontFamily:"inherit"}}>
                         <span style={{fontSize:14,width:18}}>⏭️</span>
@@ -7597,13 +7616,17 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                         </div>
                       </button>
                       {/* Quitar permanentemente */}
-                      <button onClick={()=>{
+                      <button onClick={(ev)=>{
+                        ev.stopPropagation();
+                        ev.preventDefault();
+                        const targetEx = ex.e;
                         if(confirm(lang==="es"||lang==="pt"
-                          ?"¿Quitar \""+ex.e+"\" de esta rutina permanentemente?\n\nPodrás restaurarlo desde Ajustes."
-                          :"Remove \""+ex.e+"\" from this routine permanently?\n\nYou can restore it from Settings.")){
-                          modifyRoutine(day.l,ex.e,"remove_perm");
+                          ?"¿Quitar \""+targetEx+"\" de esta rutina permanentemente?\n\nPodrás restaurarlo desde Ajustes."
+                          :"Remove \""+targetEx+"\" from this routine permanently?\n\nYou can restore it from Settings.")){
                           setModifyOpen(null);
-                          setModsTick(t=>t+1);
+                          modifyRoutine(day.l, targetEx, "remove_perm");
+                          setTimeout(()=>setModsTick(t=>t+1), 0);
+                          try{ navigator.vibrate && navigator.vibrate(40); }catch(_){}
                         }
                       }}
                         style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",borderRadius:8,border:"none",background:"transparent",cursor:"pointer",color:"#e85060",textAlign:"left",fontFamily:"inherit"}}>
@@ -7656,10 +7679,18 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                       ):(
                         <div style={{display:"flex",flexDirection:"column",gap:5,maxHeight:280,overflowY:"auto"}}>
                           {alts.map((alt,ai)=>(
-                            <button key={ai} onClick={()=>{
-                              modifyRoutine(day.l,ex.e,swapOpen.perm?"swap_perm":"swap_today",{newExerciseName:alt.name});
+                            <button key={ai} onClick={(ev)=>{
+                              ev.stopPropagation();
+                              ev.preventDefault();
+                              const targetEx = ex.e;
+                              const isPerm = swapOpen.perm;
+                              // Cerrar UI primero para feedback inmediato
                               setSwapOpen(null);
-                              setModsTick(t=>t+1);
+                              // Aplicar modificación
+                              modifyRoutine(day.l, targetEx, isPerm?"swap_perm":"swap_today", {newExerciseName: alt.name});
+                              // Forzar re-render — usar setTimeout para garantizar que setState termine
+                              setTimeout(()=>setModsTick(t=>t+1), 0);
+                              try{ navigator.vibrate && navigator.vibrate(40); }catch(_){}
                             }}
                               style={{display:"flex",alignItems:"center",gap:10,padding:"9px 11px",borderRadius:8,border:"1px solid rgba(255,255,255,0.06)",background:"rgba(255,255,255,0.025)",cursor:"pointer",color:C2.tx,textAlign:"left",fontFamily:"inherit",transition:"all 0.15s"}}
                               onMouseEnter={e=>{e.currentTarget.style.background="rgba(63,207,142,0.08)";e.currentTarget.style.borderColor="rgba(63,207,142,0.25)";}}
@@ -11669,6 +11700,138 @@ function AchievementsCard({lang,mono}){
   );
 }
 
+// ─────────────────────────────────────────────────────────────────
+// AchievementsCardInline — Versión premium para sección PRs
+// Diseño hexágonos + mejor jerarquía + sin margins extras
+// ─────────────────────────────────────────────────────────────────
+function AchievementsCardInline({lang,mono}){
+  var e=React.createElement;
+  var es=lang==="es"||lang==="pt";
+  var [showAll,setShowAll]=React.useState(false);
+
+  var stats=React.useMemo(getAchievementStats,[]);
+  var unlocked=FORJA_ACHIEVEMENTS.filter(function(a){return a.check(stats);});
+  var locked=FORJA_ACHIEVEMENTS.filter(function(a){return !a.check(stats);});
+  var pct = Math.round(unlocked.length/FORJA_ACHIEVEMENTS.length*100);
+
+  // Si no hay unlocks, no mostrar (pero no empty state aquí, ya hay otros empty states en PRs)
+  if(unlocked.length===0) return null;
+
+  // Mostrar máximo 8 (2 filas de 4) en colapsado
+  var visibleUnlocked = showAll ? unlocked : unlocked.slice(0, 8);
+  var hasMore = unlocked.length > 8 || locked.length > 0;
+
+  return e("div",{style:{
+    marginTop:14,
+    padding:"16px 14px 14px",
+    borderRadius:16,
+    background:"linear-gradient(180deg, rgba(255,255,255,0.025) 0%, rgba(255,255,255,0.01) 100%)",
+    border:"1px solid rgba(255,255,255,0.06)",
+    position:"relative",
+    overflow:"hidden"
+  }},
+    // Header
+    e("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}},
+      e("div",{style:{display:"flex",alignItems:"center",gap:8}},
+        e("span",{style:{fontSize:14,filter:"drop-shadow(0 0 6px rgba(240,168,24,0.4))"}},"🏅"),
+        e("div",{style:{fontSize:8,fontFamily:mono,color:"rgba(255,255,255,0.5)",letterSpacing:2.5,textTransform:"uppercase",fontWeight:700}},
+          es?"LOGROS":lang==="fr"?"SUCCÈS":lang==="it"?"SUCCESSI":lang==="de"?"ERFOLGE":"ACHIEVEMENTS"
+        )
+      ),
+      // Counter elegante
+      e("div",{style:{
+        display:"flex",alignItems:"baseline",gap:3,
+        fontFamily:"'Archivo Black','Impact',sans-serif"
+      }},
+        e("span",{style:{fontSize:18,color:"#f0a818",letterSpacing:-0.8,lineHeight:1,textShadow:"0 0 10px rgba(240,168,24,0.4)"}},unlocked.length),
+        e("span",{style:{fontSize:11,color:"rgba(255,255,255,0.35)",letterSpacing:-0.3}}, "/" + FORJA_ACHIEVEMENTS.length)
+      )
+    ),
+    // Progress bar elegante
+    e("div",{style:{
+      height:5,borderRadius:2.5,
+      background:"rgba(255,255,255,0.04)",
+      overflow:"hidden",marginBottom:16
+    }},
+      e("div",{style:{
+        height:"100%",width:pct+"%",
+        background:"linear-gradient(90deg,#5faa88 0%,#f0a818 50%,#ff7e3a 100%)",
+        borderRadius:2.5,
+        boxShadow:"0 0 8px rgba(240,168,24,0.4)",
+        transition:"width 1.4s cubic-bezier(0.22,1,0.36,1)"
+      }})
+    ),
+    // Grid hexagonal-ish (cuadrados con border accent)
+    e("div",{style:{
+      display:"grid",
+      gridTemplateColumns:"repeat(4, 1fr)",
+      gap:8
+    }},
+      visibleUnlocked.map(function(a){
+        return e("div",{key:a.id,title: (es?a.label_es:a.label_en)+" — "+(es?a.desc_es:a.desc_en),
+          style:{
+            position:"relative",
+            aspectRatio:"1/1",
+            background:"radial-gradient(circle at 30% 30%, "+a.color+"30 0%, "+a.color+"08 60%, transparent 100%)",
+            border:"1px solid "+a.color+"45",
+            borderTop:"1px solid "+a.color+"60",
+            borderRadius:14,
+            display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+            padding:6,
+            boxShadow:"0 2px 10px "+a.color+"22, inset 0 1px 0 "+a.color+"30"
+        }},
+          e("div",{style:{
+            fontSize:24,
+            filter:"drop-shadow(0 0 6px "+a.color+"66)",
+            lineHeight:1
+          }},a.icon),
+          e("div",{style:{
+            fontFamily:mono,fontSize:5.5,letterSpacing:0.6,
+            color:a.color,fontWeight:700,textAlign:"center",
+            lineHeight:1.1,marginTop:5,
+            maxWidth:"100%",
+            overflow:"hidden",textOverflow:"ellipsis"
+          }},es?a.label_es:a.label_en)
+        );
+      }),
+      // Locked badges si showAll
+      showAll ? locked.map(function(a){
+        return e("div",{key:a.id, title: (es?a.desc_es:a.desc_en),
+          style:{
+            position:"relative",
+            aspectRatio:"1/1",
+            background:"rgba(255,255,255,0.015)",
+            border:"1px dashed rgba(255,255,255,0.08)",
+            borderRadius:14,
+            display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+            padding:6,
+            opacity:0.4
+        }},
+          e("div",{style:{fontSize:22,filter:"grayscale(1)",lineHeight:1}},"🔒"),
+          e("div",{style:{
+            fontFamily:mono,fontSize:5.5,letterSpacing:0.6,
+            color:"rgba(255,255,255,0.4)",fontWeight:700,textAlign:"center",
+            lineHeight:1.1,marginTop:5
+          }},es?a.label_es:a.label_en)
+        );
+      }) : null
+    ),
+    // Toggle button
+    hasMore ? e("div",{style:{display:"flex",justifyContent:"center",marginTop:12}},
+      e("button",{onClick:function(){setShowAll(!showAll);},style:{
+        padding:"6px 14px",borderRadius:999,
+        background:"rgba(255,255,255,0.03)",
+        border:"1px solid rgba(255,255,255,0.07)",
+        color:"rgba(255,255,255,0.5)",
+        fontFamily:mono,fontSize:7.5,letterSpacing:1.8,fontWeight:700,
+        cursor:"pointer"
+      }},
+        showAll?(es?"VER MENOS":"SHOW LESS"):(es?"VER TODOS":"SHOW ALL")
+      )
+    ) : null
+  );
+}
+
 function AthleteProgressCard({profile,lang,mono}){
   var e=React.createElement;
   var es=lang==="es"||lang==="pt";
@@ -12085,9 +12248,6 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
     profile&&profile.mode==="celebrity"&&profile.celebrity?e(AthleteProgressCard,{
       profile:profile,lang:lang,mono:mono
     }):null,
-
-    // Achievements/Logros — visible siempre que tenga al menos 1 unlock
-    e(AchievementsCard,{lang:lang,mono:mono}),
 
     // Cuadro de días — liquid glass bubble
     e("div",{"data-tour":"cal-day",style:{
@@ -15793,6 +15953,9 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
         })()
       )
     ),
+
+    // ─── LOGROS ─── (movido aquí desde home)
+    e(AchievementsCardInline,{lang:lang,mono:mono}),
 
     // ─── ACTIVIDAD 10 SEMANAS — más bonita ───
     e("div",{style:{
