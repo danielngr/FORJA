@@ -80,6 +80,13 @@ input[type=number]{-moz-appearance:textfield;}
 @keyframes streakHueShift{0%,100%{filter:hue-rotate(0deg)}50%{filter:hue-rotate(15deg)}}
 @keyframes heartGlow{0%,100%{opacity:0.4;transform:translate(-50%,-50%) scale(1)}10%{opacity:1;transform:translate(-50%,-50%) scale(1.08)}25%{opacity:0.5;transform:translate(-50%,-50%) scale(1)}40%{opacity:0.85;transform:translate(-50%,-50%) scale(1.04)}55%{opacity:0.4;transform:translate(-50%,-50%) scale(1)}}
 @keyframes sparkFly{0%{transform:translate(0,0) scale(0);opacity:0}20%{opacity:1;transform:translate(calc(var(--sx)*0.3),calc(var(--sy)*0.3)) scale(1.4)}100%{transform:translate(var(--sx),var(--sy)) scale(0);opacity:0}}
+@keyframes tierUpFlash{0%{opacity:0}10%{opacity:1}80%{opacity:1}100%{opacity:0}}
+@keyframes tierUpScale{0%{transform:scale(0) rotate(-10deg);opacity:0}60%{transform:scale(1.15) rotate(2deg);opacity:1}100%{transform:scale(1) rotate(0deg);opacity:1}}
+@keyframes badgeUnlock{0%{transform:scale(0) rotate(-180deg);opacity:0}50%{transform:scale(1.3) rotate(10deg);opacity:1}100%{transform:scale(1) rotate(0);opacity:1}}
+@keyframes badgeShine{0%,100%{filter:brightness(1)}50%{filter:brightness(1.4) drop-shadow(0 0 12px currentColor)}}
+@keyframes countdownNum{0%{transform:scale(0.4);opacity:0}50%{transform:scale(1.15);opacity:1}100%{transform:scale(1);opacity:1}}
+@keyframes countdownGo{0%{transform:scale(0.5);opacity:0}40%{transform:scale(1.3);opacity:1}100%{transform:scale(1);opacity:1}}
+@keyframes countdownRing{0%{stroke-dashoffset:0}100%{stroke-dashoffset:817}}
 ::placeholder{color:#606678;}
 #forja-sync{position:fixed;bottom:14px;right:14px;width:7px;height:7px;border-radius:50%;background:#525a6e;z-index:9999;pointer-events:none;transition:background .4s;}
 #forja-sync.ok{background:#5faa88;animation:syncPulse 3s ease-in-out infinite;}
@@ -6183,6 +6190,153 @@ const NO_TIME_EX=["cardio suave","cardio moderado","cardio","estiramientos","est
 // WorkoutCompleteScreen — Pantalla cinemática de finalización
 // con count-up XP, chispas, notas post-workout y share Strava-style
 // ─────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────
+// PreWorkoutCountdown — 3-2-1-GO antes de empezar workout
+// Cinemático, con info del workout que viene + opción saltar
+// ─────────────────────────────────────────────────────────────────
+function PreWorkoutCountdown({day,lang,onDone,onCancel}){
+  const [count, setCount] = React.useState(3);
+  const [showGo, setShowGo] = React.useState(false);
+  const es = lang==="es"||lang==="pt";
+
+  React.useEffect(()=>{
+    let timer;
+    let raf;
+    let startTime = performance.now();
+    let phase = 3; // 3,2,1,go,done
+
+    const tick = (now)=>{
+      const elapsed = (now - startTime) / 1000;
+
+      if(elapsed < 1){
+        if(phase!==3){setCount(3);phase=3;try{navigator.vibrate&&navigator.vibrate(20);}catch(_){}}
+      } else if(elapsed < 2){
+        if(phase!==2){setCount(2);phase=2;try{navigator.vibrate&&navigator.vibrate(20);}catch(_){}}
+      } else if(elapsed < 3){
+        if(phase!==1){setCount(1);phase=1;try{navigator.vibrate&&navigator.vibrate(20);}catch(_){}}
+      } else if(elapsed < 3.6){
+        if(phase!=="go"){setShowGo(true);setCount(0);phase="go";try{navigator.vibrate&&navigator.vibrate([60,30,60]);}catch(_){}}
+      } else {
+        onDone();
+        return;
+      }
+      raf = requestAnimationFrame(tick);
+    };
+
+    raf = requestAnimationFrame(tick);
+
+    return ()=>{ if(raf) cancelAnimationFrame(raf); if(timer) clearTimeout(timer); };
+  },[]);
+
+  const exsCount = (day?.ex||[]).length;
+  const dayLabel = day?.l || "";
+
+  // Estimar volumen total
+  let totalSetsEst = 0;
+  (day?.ex||[]).forEach(ex=>{ totalSetsEst += (ex.s||3); });
+
+  return (
+    <div style={{
+      position:"fixed",inset:0,zIndex:9999,
+      background:"radial-gradient(ellipse at center,#0a1428 0%,#04080f 70%)",
+      display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+      overflow:"hidden",fontFamily:"sans-serif"
+    }}>
+      {/* Skip button top right */}
+      <button onClick={onCancel} style={{
+        position:"absolute",top:18,right:18,
+        background:"rgba(255,255,255,0.04)",
+        border:"1px solid rgba(255,255,255,0.08)",
+        borderRadius:8,padding:"7px 12px",
+        fontFamily:"'SF Mono','Courier New',monospace",fontSize:9,
+        letterSpacing:1.5,color:"rgba(255,255,255,0.5)",
+        cursor:"pointer",zIndex:10
+      }}>
+        {es?"CANCELAR":lang==="fr"?"ANNULER":lang==="it"?"ANNULLA":lang==="de"?"ABBRECHEN":"CANCEL"}
+      </button>
+
+      {/* Tag arriba — qué viene */}
+      <div style={{
+        marginBottom:40,textAlign:"center",
+        animation:"fu .4s .1s both"
+      }}>
+        <div style={{fontFamily:"'SF Mono','Courier New',monospace",fontSize:9,letterSpacing:3.5,
+          color:"rgba(72,120,255,0.7)",fontWeight:700,marginBottom:6}}>
+          {es?"PREPARANDO":lang==="fr"?"PRÉPARATION":lang==="it"?"PREPARAZIONE":lang==="de"?"VORBEREITUNG":"PREPARING"}
+        </div>
+        <div style={{fontFamily:"'Archivo Black','Impact',sans-serif",fontSize:32,
+          color:"rgba(240,242,245,0.95)",letterSpacing:1.5,lineHeight:1}}>
+          {dayLabel}
+        </div>
+        <div style={{fontFamily:"'SF Mono','Courier New',monospace",fontSize:10,
+          color:"rgba(255,255,255,0.45)",letterSpacing:2,marginTop:8}}>
+          {exsCount} {es?"ejercicios":lang==="fr"?"exercices":lang==="it"?"esercizi":lang==="de"?"Übungen":"exercises"} · {totalSetsEst} {es?"sets":"sets"}
+        </div>
+      </div>
+
+      {/* Numero gigante / GO */}
+      <div style={{
+        position:"relative",
+        width:280,height:280,
+        display:"flex",alignItems:"center",justifyContent:"center"
+      }}>
+        {/* Ring animado */}
+        <svg width="280" height="280" viewBox="0 0 280 280" style={{position:"absolute",inset:0,transform:"rotate(-90deg)"}}>
+          <circle cx="140" cy="140" r="130" fill="none" stroke="rgba(72,120,255,0.10)" strokeWidth="3"/>
+          {!showGo && <circle key={count} cx="140" cy="140" r="130" fill="none"
+            stroke="#4878ff" strokeWidth="3" strokeLinecap="round"
+            strokeDasharray={2*Math.PI*130}
+            style={{
+              strokeDashoffset:2*Math.PI*130,
+              animation:"countdownRing 1s linear forwards",
+              filter:"drop-shadow(0 0 12px rgba(72,120,255,0.6))"
+            }}/>}
+        </svg>
+
+        {!showGo ? (
+          <div key={count} style={{
+            fontFamily:"'Archivo Black','Impact',sans-serif",
+            fontSize:180,letterSpacing:-8,lineHeight:1,
+            color:"rgba(240,242,245,0.97)",
+            textShadow:"0 0 60px rgba(72,120,255,0.4)",
+            animation:"countdownNum .9s cubic-bezier(0.34,1.56,0.64,1)"
+          }}>
+            {count}
+          </div>
+        ) : (
+          <div style={{
+            fontFamily:"'Archivo Black','Impact',sans-serif",
+            fontSize:120,letterSpacing:8,lineHeight:1,
+            color:"#3fcf8e",
+            textShadow:"0 0 80px rgba(63,207,142,0.7)",
+            animation:"countdownGo .6s cubic-bezier(0.34,1.56,0.64,1)"
+          }}>
+            ¡{es?"VAMOS":lang==="fr"?"GO":lang==="it"?"VIA":lang==="de"?"LOS":"GO"}!
+          </div>
+        )}
+      </div>
+
+      {/* Quote inspiracional */}
+      <div style={{
+        marginTop:50,padding:"0 30px",
+        textAlign:"center",maxWidth:340,
+        animation:"fu .5s .3s both"
+      }}>
+        <div style={{
+          fontFamily:"'DM Sans',sans-serif",fontSize:13,fontStyle:"italic",
+          color:"rgba(255,255,255,0.5)",lineHeight:1.5,letterSpacing:0.3
+        }}>
+          {es?"\"La barra no miente. La inconstancia tampoco.\""
+            :lang==="fr"?"\"La barre ne ment pas. L'inconstance non plus.\""
+            :lang==="it"?"\"Il bilanciere non mente. L'incoerenza nemmeno.\""
+            :lang==="de"?"\"Die Hantel lügt nicht. Inkonsistenz auch nicht.\""
+            :"\"The barbell doesn't lie. Neither does inconsistency.\""}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function WorkoutCompleteScreen({totalReps,totalVol,volDisplay,totalXP,fmtSess,celebMsg,onBack,lang,L,day,exs,sets}){
   const es=lang==="es"||lang==="pt";
   // Count-up animations
@@ -6190,6 +6344,24 @@ function WorkoutCompleteScreen({totalReps,totalVol,volDisplay,totalXP,fmtSess,ce
   const [animReps, setAnimReps] = React.useState(0);
   const [animVol, setAnimVol] = React.useState(0);
   const [showSparks, setShowSparks] = React.useState(false);
+  // Detectar PR de sesión (volumen total más alto registrado)
+  const [sessionPR, setSessionPR] = React.useState(null);
+  React.useEffect(()=>{
+    if(totalVol<=0) return;
+    try{
+      const key = "forja_session_pr_"+(day&&day.l ? day.l.replace(/\s+/g,"_") : "default");
+      const prevPR = parseFloat(localStorage.getItem(key)||"0");
+      if(totalVol > prevPR && prevPR > 0){
+        // Es nuevo PR de sesión
+        const improvement = Math.round(((totalVol - prevPR) / prevPR) * 100);
+        setSessionPR({prev: prevPR, improvement: improvement});
+        try{ navigator.vibrate && navigator.vibrate([80,40,80,40,150]); }catch(_){}
+      }
+      if(totalVol > prevPR){
+        localStorage.setItem(key, String(totalVol));
+      }
+    }catch(_){}
+  },[totalVol, day]);
   // Sparks data (positions)
   const [sparks] = React.useState(()=>{
     const arr=[];
@@ -6307,6 +6479,31 @@ function WorkoutCompleteScreen({totalReps,totalVol,volDisplay,totalXP,fmtSess,ce
       <div style={{fontFamily:"'SF Mono','Courier New',monospace",fontSize:8.5,color:"rgba(72,120,255,0.65)",letterSpacing:3,marginTop:10,animation:"fu .5s .4s both",textAlign:"center",padding:"0 20px"}}>
         {es?"EL TRABAJO DE HOY FORJA EL ATLETA DE MAÑANA":lang==="fr"?"LE TRAVAIL D'AUJOURD'HUI FORGE L'ATHLÈTE DE DEMAIN":lang==="it"?"IL LAVORO DI OGGI FORGIA L'ATLETA DI DOMANI":lang==="de"?"DIE ARBEIT VON HEUTE SCHMIEDET DEN ATHLETEN VON MORGEN":"TODAY'S WORK BUILDS TOMORROW'S ATHLETE"}
       </div>
+
+      {/* Session PR celebration — solo si hay PR */}
+      {sessionPR && (
+        <div style={{
+          marginTop:20,padding:"12px 16px",
+          borderRadius:14,
+          background:"linear-gradient(135deg,rgba(240,168,24,0.20) 0%,rgba(255,122,58,0.10) 100%)",
+          border:"1px solid rgba(240,168,24,0.45)",
+          borderTop:"1px solid rgba(255,200,80,0.6)",
+          boxShadow:"0 6px 24px rgba(240,168,24,0.25)",
+          display:"flex",alignItems:"center",gap:12,
+          animation:"fu .5s .6s both, badgeShine 2.5s ease-in-out infinite",
+          maxWidth:380,width:"100%"
+        }}>
+          <div style={{fontSize:30,filter:"drop-shadow(0 0 12px rgba(255,200,80,0.6))"}}>🏆</div>
+          <div style={{flex:1}}>
+            <div style={{fontFamily:"'SF Mono','Courier New',monospace",fontSize:8,letterSpacing:2.5,color:"rgba(255,200,80,0.85)",fontWeight:700,marginBottom:2}}>
+              {es?"¡PR DE SESIÓN!":lang==="fr"?"PR DE SESSION!":lang==="it"?"PR DI SESSIONE!":lang==="de"?"SESSIONS-PR!":"SESSION PR!"}
+            </div>
+            <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:11.5,color:"rgba(255,255,255,0.85)",lineHeight:1.35}}>
+              {es?"Mejor sesión en este día. +"+sessionPR.improvement+"% sobre tu récord previo.":lang==="fr"?"Meilleure session. +"+sessionPR.improvement+"% sur ton record.":lang==="it"?"Migliore sessione. +"+sessionPR.improvement+"% sul record.":lang==="de"?"Beste Session. +"+sessionPR.improvement+"% über Rekord.":"Best session ever. +"+sessionPR.improvement+"% over your record."}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* XP HERO — Animation count-up */}
       <div style={{
@@ -6456,7 +6653,206 @@ function WorkoutCompleteScreen({totalReps,totalVol,volDisplay,totalXP,fmtSess,ce
   );
 }
 
+// ─────────────────────────────────────────────────────────────────
+// SISTEMA DE MODIFICACIÓN DE RUTINAS
+// Permite saltar, cambiar o quitar ejercicios — temporal o permanente
+// ─────────────────────────────────────────────────────────────────
+
+// Clasificación amplia para sugerir alternativas equivalentes
+const MUSCLE_GROUPS_ROUTINE = {
+  pecho: ["pectoral mayor", "pectoral"],
+  espalda: ["dorsal ancho", "romboides", "trapecio", "trapecio superior", "trapecio medio", "redondo mayor"],
+  hombro: ["deltoides anterior", "deltoides lateral", "deltoides posterior", "deltoides"],
+  biceps: ["bíceps braquial", "braquial", "braquiorradial"],
+  triceps: ["tríceps braquial"],
+  cuadriceps: ["cuádriceps", "vasto medial", "vasto lateral", "recto femoral"],
+  isquios: ["isquiotibiales", "bíceps femoral"],
+  gluteos: ["glúteo mayor", "glúteo medio"],
+  pantorrilla: ["gemelo", "sóleo"],
+  abdomen: ["recto abdominal", "oblicuos", "transverso"],
+  antebrazo: ["antebrazo", "flexores", "extensores"],
+  cardio: []
+};
+
+function getMuscleGroup(exerciseName){
+  if(!exerciseName) return null;
+  const nmLow = exerciseName.toLowerCase().trim();
+  // Try direct lookup
+  let md = (typeof EXERCISE_MUSCLE_MAP !== 'undefined') ? EXERCISE_MUSCLE_MAP[nmLow] : null;
+  // Try Spanish translation
+  if(!md && typeof ES_TO_META !== 'undefined' && ES_TO_META[nmLow]){
+    md = EXERCISE_MUSCLE_MAP[ES_TO_META[nmLow]];
+  }
+  if(!md || !md.p || !md.p.length) {
+    // Fallback heurístico por nombre
+    if(/sentadilla|prensa|extensión cuádri|sissy/i.test(nmLow)) return "cuadriceps";
+    if(/peso muerto|curl femoral|isquio|hip thrust|good morning/i.test(nmLow)) return "isquios";
+    if(/pantorrilla|gemelo|calf/i.test(nmLow)) return "pantorrilla";
+    if(/glúteo|kickback|patada/i.test(nmLow)) return "gluteos";
+    if(/press banca|press inclinado|aperturas|chest|fly|push up|flexion|fondo|dips/i.test(nmLow)) return "pecho";
+    if(/dominada|jalón|pulldown|remo|pull up/i.test(nmLow)) return "espalda";
+    if(/press militar|press hombro|laterales|elevación frontal|pájaros|face pull|remo al cuello/i.test(nmLow)) return "hombro";
+    if(/curl bíceps|curl mancuerna|curl barra|curl martillo|curl predicador|curl concentración/i.test(nmLow)) return "biceps";
+    if(/tríceps|skull|press cerrado|kickback tríceps|extensión tríceps/i.test(nmLow)) return "triceps";
+    if(/plancha|crunch|abdomen|ab roll|sit up|elevación de piernas|leg raise|mountain climber|hanging knee/i.test(nmLow)) return "abdomen";
+    if(/correr|sprint|cardio|cuerda|jumping jack|burpee|escalera/i.test(nmLow)) return "cardio";
+    return null;
+  }
+  const primary = md.p[0];
+  for(const grp in MUSCLE_GROUPS_ROUTINE){
+    if(MUSCLE_GROUPS_ROUTINE[grp].includes(primary)) return grp;
+  }
+  return null;
+}
+
+// Catálogo extraído de RAW: todos los ejercicios únicos con su grupo
+let _exerciseCatalog = null;
+function getExerciseCatalog(){
+  if(_exerciseCatalog) return _exerciseCatalog;
+  const seen = {};
+  const result = {};
+  // Inicializar grupos
+  for(const grp in MUSCLE_GROUPS_ROUTINE) result[grp] = [];
+  // Extraer todos de RAW
+  if(typeof RAW !== 'undefined'){
+    Object.values(RAW).forEach(splits => {
+      if(!Array.isArray(splits)) return;
+      splits.forEach(split => {
+        if(!split || !Array.isArray(split.ex)) return;
+        split.ex.forEach(ex => {
+          if(!ex || !ex.e) return;
+          const name = ex.e;
+          if(seen[name]) return;
+          seen[name] = true;
+          const grp = getMuscleGroup(name);
+          if(grp && result[grp]) result[grp].push({
+            name: name,
+            sets: ex.s || 3,
+            reps: ex.r || "10-12"
+          });
+        });
+      });
+    });
+  }
+  _exerciseCatalog = result;
+  return result;
+}
+
+function getAlternatives(exerciseName){
+  const grp = getMuscleGroup(exerciseName);
+  if(!grp) return [];
+  const cat = getExerciseCatalog();
+  return (cat[grp] || []).filter(ex => ex.name !== exerciseName);
+}
+
+// Storage helpers para modificaciones de rutina
+function getRoutineMods(){
+  try{
+    const raw = localStorage.getItem("forja_routine_mods");
+    if(!raw) return {};
+    const data = JSON.parse(raw);
+    // Limpiar mods temporales viejos (de días pasados)
+    const today = new Date().toISOString().slice(0,10);
+    Object.keys(data).forEach(dayKey => {
+      const m = data[dayKey];
+      if(!m) return;
+      // Limpiar hidden_today si no es de hoy
+      if(m.hidden_today && m.hidden_today_date !== today){
+        delete m.hidden_today;
+        delete m.hidden_today_date;
+      }
+      // Limpiar swaps_today si no son de hoy
+      if(m.swaps_today && m.swaps_today_date !== today){
+        delete m.swaps_today;
+        delete m.swaps_today_date;
+      }
+    });
+    return data;
+  }catch(_){ return {}; }
+}
+
+function saveRoutineMods(mods){
+  try{ localStorage.setItem("forja_routine_mods", JSON.stringify(mods)); }catch(_){}
+}
+
+function applyRoutineMods(day){
+  if(!day || !day.ex) return day;
+  const mods = getRoutineMods();
+  const dayKey = day.l;
+  const m = mods[dayKey];
+  if(!m) return day;
+  const today = new Date().toISOString().slice(0,10);
+
+  let exs = day.ex.slice();
+
+  // 1. Aplicar swaps permanentes
+  if(m.swaps_perm){
+    exs = exs.map(ex => {
+      const newName = m.swaps_perm[ex.e];
+      if(!newName) return ex;
+      return {...ex, e: newName, id: (newName.toLowerCase().replace(/\s+/g,"_") || ex.id)};
+    });
+  }
+  // 2. Aplicar swaps de hoy
+  if(m.swaps_today && m.swaps_today_date === today){
+    exs = exs.map(ex => {
+      const newName = m.swaps_today[ex.e];
+      if(!newName) return ex;
+      return {...ex, e: newName, id: (newName.toLowerCase().replace(/\s+/g,"_") || ex.id)};
+    });
+  }
+  // 3. Filtrar hidden permanentes
+  if(m.hidden_perm && m.hidden_perm.length){
+    exs = exs.filter(ex => !m.hidden_perm.includes(ex.e));
+  }
+  // 4. Filtrar hidden de hoy
+  if(m.hidden_today && m.hidden_today_date === today){
+    exs = exs.filter(ex => !m.hidden_today.includes(ex.e));
+  }
+
+  return {...day, ex: exs};
+}
+
+function modifyRoutine(dayLabel, exerciseName, action, opts){
+  // action: "skip_today" | "remove_perm" | "swap_today" | "swap_perm" | "restore"
+  // opts: { newExerciseName? }
+  const mods = getRoutineMods();
+  if(!mods[dayLabel]) mods[dayLabel] = {};
+  const m = mods[dayLabel];
+  const today = new Date().toISOString().slice(0,10);
+
+  if(action === "skip_today"){
+    if(!m.hidden_today) m.hidden_today = [];
+    if(!m.hidden_today.includes(exerciseName)) m.hidden_today.push(exerciseName);
+    m.hidden_today_date = today;
+  } else if(action === "remove_perm"){
+    if(!m.hidden_perm) m.hidden_perm = [];
+    if(!m.hidden_perm.includes(exerciseName)) m.hidden_perm.push(exerciseName);
+  } else if(action === "swap_today"){
+    if(!m.swaps_today) m.swaps_today = {};
+    m.swaps_today[exerciseName] = opts.newExerciseName;
+    m.swaps_today_date = today;
+  } else if(action === "swap_perm"){
+    if(!m.swaps_perm) m.swaps_perm = {};
+    m.swaps_perm[exerciseName] = opts.newExerciseName;
+  } else if(action === "restore"){
+    // Quitar todas las modificaciones de este ejercicio
+    if(m.hidden_today) m.hidden_today = m.hidden_today.filter(n => n !== exerciseName);
+    if(m.hidden_perm) m.hidden_perm = m.hidden_perm.filter(n => n !== exerciseName);
+    if(m.swaps_today) delete m.swaps_today[exerciseName];
+    if(m.swaps_perm) delete m.swaps_perm[exerciseName];
+  }
+
+  saveRoutineMods(mods);
+}
+
 function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBack,tourStep=null,setTourStep=()=>{},acwr={ratio:0,acute:0,chronic:0}}){
+  // Forzar re-render cuando cambian las modificaciones
+  const [modsTick, setModsTick] = useState(0);
+  // Aplicar modificaciones de rutina (saltar/cambiar/quitar)
+  const dayApplied = React.useMemo(() => applyRoutineMods(day), [day, modsTick]);
+  // Override day para todo el componente
+  day = dayApplied;
   const[wsTourStep,setWsTourStep]=React.useState(null);
   const[expandedEx,setExpandedEx]=React.useState(null);
   const[strengthData,setStrengthData]=React.useState({});
@@ -6479,7 +6875,9 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
   const C2={bg:"#04080f",bgD:"#04080f",card:"#080d1a",border:"#1a2540",borderL:"#162035",
     tx:"#F0F2F5",tx2:"#b8c2d4",tx3:"#8892a8",
     green:"#3fcf8e",blue:"#4f8ef7",yellow:"#f0b429",red:"#e05555",purple:"#8b6cf7",white:"#FFFFFF"};
-  const[sets,setSets]=useState(()=>exs.map(ex=>{
+
+  // Initial sets — solo se evalúa al montar. Re-sync con useEffect cuando exs cambia.
+  const initSets = (exsList)=>exsList.map(ex=>{
     const h=logs[ex.id];
     const numSets=ex.s||1;
     return Array.from({length:numSets},(_,si)=>{
@@ -6487,10 +6885,32 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
       const rp=h&&h[si]?String(h[si].r):h&&h[0]?String(h[0].r):repTarget(ex.r||"8");
       return {kg,rp,done:false};
     });
-  }));
+  });
+  const[sets,setSets]=useState(()=>initSets(exs));
+
+  // Re-sync sets cuando cambian las modificaciones (exs cambia de longitud o ejercicios)
+  // Mantenemos los sets ya marcados como done si el ejercicio sigue presente
+  useEffect(()=>{
+    setSets(prev=>{
+      const fresh = initSets(exs);
+      // Mapear datos previos por nombre de ejercicio si todavía existe
+      return fresh.map((newExSets,ei)=>{
+        const newName = exs[ei]?.e;
+        if(!newName) return newExSets;
+        // Buscar en sets previos un ejercicio con mismo nombre
+        // (no podemos garantizar mismo índice porque pudieron quitar/cambiar)
+        // Para simplicidad: si el length de prev coincide con exs.length, asumimos misma posición
+        // Sino, los sets quedan limpios (esto pasa cuando se quita un ejercicio)
+        if(prev.length===exs.length && prev[ei]) return prev[ei];
+        return newExSets;
+      });
+    });
+  },[exs.length, exs.map(e=>e.e).join("|")]);
   const[notes,setNotes]=useState({});
   const[noteOpen,setNoteOpen]=useState(null); // ei
   const[techOpen,setTechOpen]=useState(null); // ei para panel de técnica
+  const[modifyOpen,setModifyOpen]=useState(null); // ei para menú modificar
+  const[swapOpen,setSwapOpen]=useState(null); // {ei, perm:bool} para panel swap
   const[noteText,setNoteText]=useState("");
   const[npOpen,setNpOpen]=useState(null); // {ei,si,field}
   const[npVal,setNpVal]=useState("0");
@@ -6920,6 +7340,60 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
             )}
           </div>
         )}
+        {/* Banner: rutina modificada — solo visible si hay mods activas */}
+        {(()=>{
+          const allMods = getRoutineMods();
+          const m = allMods[day?.l];
+          if(!m) return null;
+          const today = new Date().toISOString().slice(0,10);
+          const hasModsToday = (m.hidden_today && m.hidden_today_date===today && m.hidden_today.length>0)
+            || (m.swaps_today && m.swaps_today_date===today && Object.keys(m.swaps_today||{}).length>0);
+          const hasModsPerm = (m.hidden_perm && m.hidden_perm.length>0)
+            || (m.swaps_perm && Object.keys(m.swaps_perm||{}).length>0);
+          if(!hasModsToday && !hasModsPerm) return null;
+          const totalToday = (m.hidden_today?.length||0) + Object.keys(m.swaps_today||{}).length;
+          const totalPerm = (m.hidden_perm?.length||0) + Object.keys(m.swaps_perm||{}).length;
+          return (
+            <div style={{margin:"12px 18px 0",padding:"10px 12px 11px",borderRadius:11,background:"linear-gradient(135deg,rgba(63,207,142,0.06) 0%,rgba(255,255,255,0.02) 100%)",border:"1px solid rgba(63,207,142,0.18)"}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontFamily:mono,fontSize:7.5,letterSpacing:2,color:"rgba(63,207,142,0.85)",fontWeight:700,marginBottom:2}}>
+                    ✓ {lang==="es"||lang==="pt"?"RUTINA MODIFICADA":lang==="fr"?"ROUTINE MODIFIÉE":lang==="it"?"ROUTINE MODIFICATA":lang==="de"?"ROUTINE GEÄNDERT":"ROUTINE MODIFIED"}
+                  </div>
+                  <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:10.5,color:"rgba(255,255,255,0.55)",lineHeight:1.3}}>
+                    {totalToday>0 && (lang==="es"||lang==="pt"?(totalToday+" cambio"+(totalToday>1?"s":"")+" para hoy"):lang==="fr"?(totalToday+" pour aujourd'hui"):(totalToday+" today"))}
+                    {totalToday>0 && totalPerm>0 && " · "}
+                    {totalPerm>0 && (lang==="es"||lang==="pt"?(totalPerm+" permanente"+(totalPerm>1?"s":"")):lang==="fr"?(totalPerm+" permanent(s)"):(totalPerm+" permanent"))}
+                  </div>
+                </div>
+                <button onClick={()=>{
+                  const msg = lang==="es"||lang==="pt"
+                    ?"¿Restaurar la rutina original?\n\nSe quitarán todas las modificaciones de este día."
+                    :"Restore the original routine?\n\nAll modifications for this day will be removed.";
+                  if(confirm(msg)){
+                    const mods=getRoutineMods();
+                    delete mods[day.l];
+                    saveRoutineMods(mods);
+                    setModsTick(t=>t+1);
+                  }
+                }} style={{padding:"6px 11px",borderRadius:8,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",color:"rgba(255,255,255,0.65)",fontFamily:mono,fontSize:8,letterSpacing:1.5,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}>
+                  {lang==="es"||lang==="pt"?"RESTAURAR":lang==="fr"?"RESTAURER":lang==="it"?"RIPRISTINA":lang==="de"?"WIEDERHERSTELLEN":"RESTORE"}
+                </button>
+              </div>
+            </div>
+          );
+        })()}
+        {exs.length===0 && (
+          <div style={{margin:"30px 18px",padding:"40px 20px",borderRadius:16,background:"rgba(255,255,255,0.025)",border:"1px dashed rgba(255,255,255,0.1)",textAlign:"center"}}>
+            <div style={{fontSize:36,marginBottom:14,opacity:0.6}}>🏋️</div>
+            <div style={{fontFamily:"'Archivo Black',sans-serif",fontSize:14,color:"rgba(255,255,255,0.85)",letterSpacing:0.5,marginBottom:6}}>
+              {lang==="es"||lang==="pt"?"RUTINA VACÍA":lang==="fr"?"ROUTINE VIDE":lang==="it"?"ROUTINE VUOTA":lang==="de"?"LEERE ROUTINE":"EMPTY ROUTINE"}
+            </div>
+            <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:12,color:"rgba(255,255,255,0.5)",lineHeight:1.5,maxWidth:280,margin:"0 auto"}}>
+              {lang==="es"||lang==="pt"?"Has quitado todos los ejercicios. Toca \"RESTAURAR\" arriba para volver a la rutina original.":lang==="fr"?"Tu as retiré tous les exercices. Appuie sur \"RESTAURER\" en haut.":lang==="it"?"Hai rimosso tutti gli esercizi. Premi \"RIPRISTINA\" sopra.":lang==="de"?"Alle Übungen entfernt. Tippe oben auf \"WIEDERHERSTELLEN\".":"You removed all exercises. Tap \"RESTORE\" above to bring back the original routine."}
+            </div>
+          </div>
+        )}
         {exs.map((ex,ei)=>{
           const vidUrl=getVid(ex.e);
           const vol=calcVol(ei);
@@ -7077,8 +7551,133 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
                         <path d="M2 10.5V12h1.5l5.5-5.5-1.5-1.5L2 10.5zM11.7 3.3a1 1 0 000-1.4l-.6-.6a1 1 0 00-1.4 0L8.5 2.5 10 4l1.7-1.7z" fill="currentColor"/>
                       </svg>
                     </button>
+                    {/* Botón "⋯" para modificar ejercicio */}
+                    <button onClick={()=>setModifyOpen(modifyOpen===ei?null:ei)}
+                      style={{background:modifyOpen===ei?"rgba(255,255,255,0.08)":"none",border:"none",cursor:"pointer",padding:"4px 7px",borderRadius:7,color:C2.tx3,opacity:.7,flexShrink:0,fontSize:18,lineHeight:0.5,fontWeight:900}}>
+                      ⋯
+                    </button>
                   </div>
                 </div>
+                {/* Menú modificar */}
+                {modifyOpen===ei&&(
+                  <div style={{background:"rgba(13,15,24,0.85)",backdropFilter:"blur(20px)",borderRadius:12,padding:"10px 8px",marginTop:10,border:"1px solid rgba(255,255,255,0.06)",animation:"fu .2s ease"}}>
+                    <div style={{fontFamily:mono,fontSize:7.5,letterSpacing:2,color:"rgba(255,255,255,0.4)",fontWeight:700,padding:"2px 8px 8px",textTransform:"uppercase"}}>
+                      {lang==="es"||lang==="pt"?"MODIFICAR EJERCICIO":lang==="fr"?"MODIFIER EXERCICE":lang==="it"?"MODIFICA ESERCIZIO":lang==="de"?"ÜBUNG ÄNDERN":"MODIFY EXERCISE"}
+                    </div>
+                    <div style={{display:"flex",flexDirection:"column",gap:1}}>
+                      {/* Cambiar por otro */}
+                      <button onClick={()=>{setSwapOpen({ei,perm:false});setModifyOpen(null);}}
+                        style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",borderRadius:8,border:"none",background:"transparent",cursor:"pointer",color:C2.tx,textAlign:"left",fontFamily:"inherit"}}>
+                        <span style={{fontSize:14,width:18}}>🔄</span>
+                        <div style={{flex:1}}>
+                          <div style={{fontSize:12,fontWeight:600,letterSpacing:.2}}>
+                            {lang==="es"||lang==="pt"?"Cambiar por otro":lang==="fr"?"Remplacer":lang==="it"?"Sostituisci":lang==="de"?"Ersetzen":"Replace with another"}
+                          </div>
+                          <div style={{fontSize:9,color:C2.tx3,marginTop:1,fontFamily:mono,letterSpacing:.5}}>
+                            {lang==="es"||lang==="pt"?"Mismo músculo, otro ejercicio":lang==="fr"?"Même muscle, autre exercice":lang==="it"?"Stesso muscolo, altro esercizio":lang==="de"?"Gleicher Muskel, andere Übung":"Same muscle, different exercise"}
+                          </div>
+                        </div>
+                        <span style={{fontSize:11,color:C2.tx3,opacity:.5}}>→</span>
+                      </button>
+                      {/* Saltar hoy */}
+                      <button onClick={()=>{
+                        modifyRoutine(day.l,ex.e,"skip_today");
+                        setModifyOpen(null);
+                        setModsTick(t=>t+1);
+                      }}
+                        style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",borderRadius:8,border:"none",background:"transparent",cursor:"pointer",color:C2.tx,textAlign:"left",fontFamily:"inherit"}}>
+                        <span style={{fontSize:14,width:18}}>⏭️</span>
+                        <div style={{flex:1}}>
+                          <div style={{fontSize:12,fontWeight:600,letterSpacing:.2}}>
+                            {lang==="es"||lang==="pt"?"Saltar solo hoy":lang==="fr"?"Sauter aujourd'hui":lang==="it"?"Salta oggi":lang==="de"?"Heute überspringen":"Skip today only"}
+                          </div>
+                          <div style={{fontSize:9,color:C2.tx3,marginTop:1,fontFamily:mono,letterSpacing:.5}}>
+                            {lang==="es"||lang==="pt"?"Vuelve mañana":lang==="fr"?"Revient demain":lang==="it"?"Torna domani":lang==="de"?"Morgen wieder da":"Back tomorrow"}
+                          </div>
+                        </div>
+                      </button>
+                      {/* Quitar permanentemente */}
+                      <button onClick={()=>{
+                        if(confirm(lang==="es"||lang==="pt"
+                          ?"¿Quitar \""+ex.e+"\" de esta rutina permanentemente?\n\nPodrás restaurarlo desde Ajustes."
+                          :"Remove \""+ex.e+"\" from this routine permanently?\n\nYou can restore it from Settings.")){
+                          modifyRoutine(day.l,ex.e,"remove_perm");
+                          setModifyOpen(null);
+                          setModsTick(t=>t+1);
+                        }
+                      }}
+                        style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",borderRadius:8,border:"none",background:"transparent",cursor:"pointer",color:"#e85060",textAlign:"left",fontFamily:"inherit"}}>
+                        <span style={{fontSize:14,width:18}}>❌</span>
+                        <div style={{flex:1}}>
+                          <div style={{fontSize:12,fontWeight:600,letterSpacing:.2}}>
+                            {lang==="es"||lang==="pt"?"Quitar de la rutina":lang==="fr"?"Retirer de la routine":lang==="it"?"Rimuovi dalla routine":lang==="de"?"Aus Routine entfernen":"Remove from routine"}
+                          </div>
+                          <div style={{fontSize:9,color:"rgba(232,80,96,0.6)",marginTop:1,fontFamily:mono,letterSpacing:.5}}>
+                            {lang==="es"||lang==="pt"?"Permanente · reversible":lang==="fr"?"Permanent · réversible":lang==="it"?"Permanente · reversibile":lang==="de"?"Dauerhaft · reversibel":"Permanent · reversible"}
+                          </div>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {/* Panel swap (cambiar ejercicio) */}
+                {swapOpen&&swapOpen.ei===ei&&(()=>{
+                  const alts = getAlternatives(ex.e);
+                  return (
+                    <div style={{background:"rgba(13,15,24,0.92)",backdropFilter:"blur(20px)",borderRadius:12,padding:"12px",marginTop:10,border:"1px solid rgba(63,207,142,0.18)",borderTop:"1px solid rgba(63,207,142,0.35)",animation:"fu .25s ease"}}>
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+                        <div style={{fontFamily:mono,fontSize:7.5,letterSpacing:2,color:"rgba(63,207,142,0.85)",fontWeight:700,textTransform:"uppercase"}}>
+                          🔄 {lang==="es"||lang==="pt"?"Elige un reemplazo":lang==="fr"?"Choisis un remplaçant":lang==="it"?"Scegli un sostituto":lang==="de"?"Ersatz wählen":"Pick a replacement"}
+                        </div>
+                        <button onClick={()=>setSwapOpen(null)} style={{background:"none",border:"none",color:C2.tx3,fontSize:18,cursor:"pointer",padding:0,lineHeight:1}}>×</button>
+                      </div>
+                      {/* Toggle hoy/siempre */}
+                      <div style={{display:"flex",gap:4,padding:3,background:"rgba(255,255,255,0.04)",borderRadius:9,marginBottom:10}}>
+                        <button onClick={()=>setSwapOpen({...swapOpen,perm:false})}
+                          style={{flex:1,padding:"7px 0",borderRadius:6,border:"none",cursor:"pointer",
+                            background:!swapOpen.perm?"rgba(63,207,142,0.18)":"transparent",
+                            color:!swapOpen.perm?"#3fcf8e":C2.tx3,
+                            fontFamily:mono,fontSize:8.5,fontWeight:700,letterSpacing:1.5}}>
+                          {lang==="es"||lang==="pt"?"SOLO HOY":lang==="fr"?"AUJOURD'HUI":lang==="it"?"SOLO OGGI":lang==="de"?"NUR HEUTE":"TODAY ONLY"}
+                        </button>
+                        <button onClick={()=>setSwapOpen({...swapOpen,perm:true})}
+                          style={{flex:1,padding:"7px 0",borderRadius:6,border:"none",cursor:"pointer",
+                            background:swapOpen.perm?"rgba(240,168,24,0.18)":"transparent",
+                            color:swapOpen.perm?"#f0a818":C2.tx3,
+                            fontFamily:mono,fontSize:8.5,fontWeight:700,letterSpacing:1.5}}>
+                          {lang==="es"||lang==="pt"?"PARA SIEMPRE":lang==="fr"?"À JAMAIS":lang==="it"?"PER SEMPRE":lang==="de"?"FÜR IMMER":"FOREVER"}
+                        </button>
+                      </div>
+                      {/* Lista alternativas */}
+                      {alts.length===0?(
+                        <div style={{padding:"20px 14px",textAlign:"center",fontFamily:"'DM Sans',sans-serif",fontSize:11,color:C2.tx3,lineHeight:1.5}}>
+                          {lang==="es"||lang==="pt"?"No encontramos alternativas para este ejercicio":lang==="fr"?"Aucune alternative trouvée":lang==="it"?"Nessuna alternativa trovata":lang==="de"?"Keine Alternativen gefunden":"No alternatives found"}
+                        </div>
+                      ):(
+                        <div style={{display:"flex",flexDirection:"column",gap:5,maxHeight:280,overflowY:"auto"}}>
+                          {alts.map((alt,ai)=>(
+                            <button key={ai} onClick={()=>{
+                              modifyRoutine(day.l,ex.e,swapOpen.perm?"swap_perm":"swap_today",{newExerciseName:alt.name});
+                              setSwapOpen(null);
+                              setModsTick(t=>t+1);
+                            }}
+                              style={{display:"flex",alignItems:"center",gap:10,padding:"9px 11px",borderRadius:8,border:"1px solid rgba(255,255,255,0.06)",background:"rgba(255,255,255,0.025)",cursor:"pointer",color:C2.tx,textAlign:"left",fontFamily:"inherit",transition:"all 0.15s"}}
+                              onMouseEnter={e=>{e.currentTarget.style.background="rgba(63,207,142,0.08)";e.currentTarget.style.borderColor="rgba(63,207,142,0.25)";}}
+                              onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,0.025)";e.currentTarget.style.borderColor="rgba(255,255,255,0.06)";}}>
+                              <div style={{flex:1,minWidth:0}}>
+                                <div style={{fontSize:12,fontWeight:600,letterSpacing:0.2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{alt.name}</div>
+                                <div style={{fontSize:8.5,color:C2.tx3,marginTop:1,fontFamily:mono,letterSpacing:0.5}}>
+                                  {alt.sets} × {alt.reps}
+                                </div>
+                              </div>
+                              <span style={{fontSize:10,color:swapOpen.perm?"#f0a818":"#3fcf8e",opacity:.7}}>→</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
                 {techOpen===ei&&EX_META[exMetaKey(ex.e)]&&(
                   <div style={{background:C2.bgD,borderRadius:10,padding:12,marginTop:10,animation:"fu .2s ease"}}>
                     <div style={{display:"flex",flexDirection:"column",gap:8}}>
@@ -8244,13 +8843,17 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
     };
   },[]);
 
-  // ECG monitor effect — estilo Apple Watch con scan trail
+  // ECG monitor effect — estilo monitor médico real
+  // El sweep es lento (4 segundos en cruzar la pantalla)
+  // Múltiples beats son visibles a la vez
   React.useEffect(function(){
     var canvas=ecgCanvasRef.current;
     if(!canvas) return;
     var ctx=canvas.getContext("2d");
     if(!ctx) return;
     var W,H,dpr;
+    var hist=[];
+
     function resize(){
       var r=canvas.getBoundingClientRect();
       dpr=Math.min(window.devicePixelRatio||1,2);
@@ -8259,141 +8862,166 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
       canvas.style.width=W+"px";canvas.style.height=H+"px";
       ctx.setTransform(1,0,0,1,0,0);
       ctx.scale(dpr,dpr);
+      ctx.clearRect(0,0,W,H);
+      hist.length=0;
     }
-    resize();
-    var ro;try{ro=new ResizeObserver(resize);ro.observe(canvas);}catch(_){}
 
-    // QRS waveform realista: time normalizado [0,1] dentro de un beat
-    // Cada punto es {t, y} donde y es desplazamiento (-1 a 1)
-    function ecgValue(t){
-      // Reset baseline
-      if(t < 0.10) return 0;
-      // P wave: pequeña curva positiva (suavizada)
-      if(t < 0.22){
-        var p = (t - 0.10) / 0.12;
-        return Math.sin(p * Math.PI) * 0.12;
+    // QRS waveform completo en una unidad de tiempo
+    // bt = tiempo dentro del beat (0-1)
+    function ecgValue(bt){
+      // P wave (suave)
+      if(bt < 0.10){
+        var p = bt / 0.10;
+        return Math.sin(p * Math.PI) * 0.10;
       }
-      // PR segment baseline
-      if(t < 0.30) return 0;
+      // PR baseline
+      if(bt < 0.18) return 0;
       // Q dip
-      if(t < 0.34){
-        var p2 = (t - 0.30) / 0.04;
-        return -p2 * 0.18;
+      if(bt < 0.22){
+        var p2 = (bt - 0.18) / 0.04;
+        return -p2 * 0.20;
       }
-      // R spike (subida rápida)
-      if(t < 0.38){
-        var p3 = (t - 0.34) / 0.04;
-        return -0.18 + p3 * 1.18; // de -0.18 sube a 1.0
+      // R spike (subida)
+      if(bt < 0.26){
+        var p3 = (bt - 0.22) / 0.04;
+        return -0.20 + p3 * 1.20;
       }
-      // R peak descenso
-      if(t < 0.42){
-        var p4 = (t - 0.38) / 0.04;
-        return 1.0 - p4 * 1.55; // de 1.0 baja a -0.55
+      // R descent
+      if(bt < 0.30){
+        var p4 = (bt - 0.26) / 0.04;
+        return 1.0 - p4 * 1.55;
       }
-      // S valley → recover
-      if(t < 0.48){
-        var p5 = (t - 0.42) / 0.06;
-        return -0.55 + p5 * 0.55; // de -0.55 sube a 0
+      // S recovery
+      if(bt < 0.36){
+        var p5 = (bt - 0.30) / 0.06;
+        return -0.55 + p5 * 0.55;
       }
-      // ST segment baseline
-      if(t < 0.58) return 0;
-      // T wave: curva positiva amplia
-      if(t < 0.78){
-        var p6 = (t - 0.58) / 0.20;
-        return Math.sin(p6 * Math.PI) * 0.28;
+      // ST baseline
+      if(bt < 0.50) return 0;
+      // T wave
+      if(bt < 0.72){
+        var p6 = (bt - 0.50) / 0.22;
+        return Math.sin(p6 * Math.PI) * 0.30;
       }
+      // Long flat baseline hasta el siguiente beat
       return 0;
     }
 
-    var phase=0;
+    // Tiempo absoluto en segundos
+    var elapsed = 0;
     var raf;
-    var lastTime=performance.now();
+    var lastTime = performance.now();
+
+    // El sweep tarda este tiempo en cruzar todo el ancho
+    var SWEEP_DURATION = 4.0; // segundos para cruzar toda la pantalla
+
+    resize();
+    var ro;try{ro=new ResizeObserver(resize);ro.observe(canvas);}catch(_){}
 
     function frame(now){
-      var dt=Math.min((now-lastTime)/1000, 0.1);
-      lastTime=now;
-      var hr = (profile && profile.hr) ? profile.hr : 65;
-      var cyclesPerSec = hr / 60;
-      phase += dt * cyclesPerSec;
-      if(phase > 1) phase -= 1;
+      var dt = Math.min((now - lastTime) / 1000, 0.05);
+      lastTime = now;
+      elapsed += dt;
 
-      ctx.clearRect(0, 0, W, H);
+      var hr = (profile && profile.hr) ? profile.hr : 65;
+      var beatDuration = 60 / hr; // duración de un beat en segundos
+
+      // Posición X actual del sweep (0 a W)
+      var sweepProgress = (elapsed % SWEEP_DURATION) / SWEEP_DURATION;
+      var sweepX = sweepProgress * W;
+
+      // Beat actual: cuál es el "tiempo dentro del beat" en este instante?
+      var beatT = (elapsed % beatDuration) / beatDuration;
 
       var cy = H * 0.5;
-      var amplitude = H * 0.32;
-      var nPts = 220;
+      var amplitude = H * 0.30;
+      var y = cy - ecgValue(beatT) * amplitude;
 
-      // Build trail of points: most recent point at the right
-      // Each point's "age" (how far back in time) determines opacity
-      // The scan position = `phase` (0 at left, 1 at right)
-      // We render going LEFT from phase, fading out
-
-      // Step 1: gather all points along the visible width
-      var points = [];
-      for(var i=0; i<nPts; i++){
-        var x = (i / (nPts - 1)) * W;
-        // What time within the cycle does this x represent?
-        // Most recent at right. As we move left, we go back in time.
-        var tAtX = (phase - (1 - i/(nPts-1)) * 0.85 + 1) % 1;
-        var y = cy - ecgValue(tAtX) * amplitude;
-        points.push({x: x, y: y, t: tAtX, age: 1 - i/(nPts-1)});
-      }
-
-      // Step 2: Draw the line as multiple segments with fading alpha
-      // Build path
-      ctx.lineWidth = 1.5;
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-
-      // Draw segments grouped to allow gradient fade
-      // We use multiple stroke passes for cleaner result
-      for(var seg=0; seg < points.length - 1; seg++){
-        var p1 = points[seg];
-        var p2 = points[seg+1];
-        // Opacity based on position (oldest = transparent, newest = full)
-        var alpha = Math.pow(1 - p1.age, 2.2); // ease-in for fade
-        if(alpha < 0.02) continue;
-        // Color shifts with QRS phase: red on R-spike, orange on T-wave
-        var amp = (cy - p1.y) / amplitude; // negative for downward, positive up
-        var color;
-        if(amp > 0.5){
-          // R spike — bright red/orange
-          color = "rgba(255,140,80," + (alpha * 0.95) + ")";
-        } else if(amp < -0.2){
-          // S valley — deep red
-          color = "rgba(220,60,60," + (alpha * 0.85) + ")";
-        } else if(p1.t > 0.58 && p1.t < 0.78){
-          // T wave — softer orange
-          color = "rgba(240,140,90," + (alpha * 0.75) + ")";
-        } else {
-          // Baseline — subtle red
-          color = "rgba(200,100,100," + (alpha * 0.55) + ")";
+      // Detectar si el sweep dio la vuelta (wrap-around)
+      var wrapped = false;
+      if(hist.length > 0){
+        var last = hist[hist.length - 1];
+        if(sweepX < last.x - W * 0.3){
+          // El sweep volvió al inicio — limpiar todo el historial viejo
+          hist.length = 0;
+          wrapped = true;
         }
-        ctx.strokeStyle = color;
-        ctx.beginPath();
-        ctx.moveTo(p1.x, p1.y);
-        ctx.lineTo(p2.x, p2.y);
-        ctx.stroke();
       }
 
-      // Step 3: Bright leading dot at the right
-      var lastP = points[points.length - 1];
-      var ampNow = Math.abs((cy - lastP.y) / amplitude);
+      // Agregar punto actual
+      hist.push({x: sweepX, y: y, age: 0});
 
-      // Outer glow
-      ctx.shadowBlur = 14 + ampNow * 12;
-      ctx.shadowColor = ampNow > 0.5 ? "#ff5e5e" : "#ff9060";
-      ctx.fillStyle = ampNow > 0.5 ? "#ffaf60" : "#ff8050";
-      ctx.beginPath();
-      ctx.arc(lastP.x, lastP.y, 2.2 + ampNow * 1.5, 0, Math.PI * 2);
-      ctx.fill();
+      // Limpiar puntos demasiado viejos
+      hist = hist.filter(function(p){
+        p.age += dt;
+        return p.age < SWEEP_DURATION; // los puntos viven hasta que el sweep da la vuelta
+      });
 
-      // Inner bright core
-      ctx.shadowBlur = 0;
-      ctx.fillStyle = "#fff";
-      ctx.beginPath();
-      ctx.arc(lastP.x, lastP.y, 0.8 + ampNow * 0.6, 0, Math.PI * 2);
-      ctx.fill();
+      // Limpiar canvas
+      ctx.clearRect(0, 0, W, H);
+
+      // Dibujar trazado con fade muy sutil (casi sin fade)
+      // En un monitor real el trazo se queda hasta que el sweep regresa
+      if(hist.length > 1){
+        for(var i = 1; i < hist.length; i++){
+          var p1 = hist[i-1];
+          var p2 = hist[i];
+
+          // Si hay salto de wrap (no debería pasar ahora pero por si acaso)
+          if(Math.abs(p2.x - p1.x) > W * 0.3) continue;
+
+          // Fade muy sutil: el trazo se mantiene fuerte hasta casi el final
+          var ageRatio = p1.age / SWEEP_DURATION;
+          var alpha = Math.max(0.15, 1 - ageRatio * 0.6); // mínimo 0.15 para que se vea
+          if(alpha < 0.05) continue;
+
+          // Color
+          var ampNorm = Math.abs((cy - p1.y) / amplitude);
+          var color;
+          if(ampNorm > 0.5){
+            color = "rgba(255,140,80," + (alpha * 0.95) + ")";
+          } else if(ampNorm > 0.15){
+            color = "rgba(240,120,90," + (alpha * 0.85) + ")";
+          } else {
+            color = "rgba(200,100,100," + (alpha * 0.55) + ")";
+          }
+
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 1.6;
+          ctx.lineCap = "round";
+          ctx.lineJoin = "round";
+          ctx.beginPath();
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.stroke();
+        }
+
+        // Punto líder con glow
+        var lastP = hist[hist.length - 1];
+        var ampNow = Math.abs((cy - lastP.y) / amplitude);
+
+        ctx.shadowBlur = 12 + ampNow * 14;
+        ctx.shadowColor = ampNow > 0.5 ? "#ff5e5e" : "#ff9060";
+        ctx.fillStyle = ampNow > 0.5 ? "#ffaf60" : "#ff8050";
+        ctx.beginPath();
+        ctx.arc(lastP.x, lastP.y, 2.5 + ampNow * 1.8, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = "#fff";
+        ctx.beginPath();
+        ctx.arc(lastP.x, lastP.y, 1.0 + ampNow * 0.8, 0, Math.PI * 2);
+        ctx.fill();
+
+        // "Borrador" justo a la derecha del sweep — simula que la línea se borra
+        // antes de que el sweep vuelva a pasar
+        var eraserWidth = 30;
+        var gradient = ctx.createLinearGradient(sweepX + 4, 0, sweepX + 4 + eraserWidth, 0);
+        gradient.addColorStop(0, "rgba(7,8,9,0.4)");
+        gradient.addColorStop(1, "rgba(7,8,9,0)");
+        ctx.fillStyle = gradient;
+        ctx.fillRect(sweepX + 4, 0, eraserWidth, H);
+      }
 
       raf=requestAnimationFrame(frame);
     }
@@ -8820,6 +9448,7 @@ function CelebCard({celeb,lang,mono,profile,onActivate}){
   const isFree=FREE_CELEB_IDS.indexOf(celeb.id)>=0;
   // Reactive PRO state — re-renders when PRO status changes via event
   const [proTick,setProTick]=React.useState(0);
+  const [expanded,setExpanded]=React.useState(false);
   React.useEffect(function(){
     const handler=function(){setProTick(function(t){return t+1;});};
     try{window.addEventListener('forja:proStatusChanged',handler);}catch(_){}
@@ -8832,72 +9461,211 @@ function CelebCard({celeb,lang,mono,profile,onActivate}){
   const g=parseInt(celeb.ac.slice(3,5),16);
   const b=parseInt(celeb.ac.slice(5,7),16);
   const rgb=r+","+g+","+b;
+
+  // Build celeb stats for preview
+  const exerciseCount=celeb.routine?Object.values(celeb.routine).reduce(function(a,d){return a+(Array.isArray(d)?d.length:0);},0):0;
+  const splits=celeb.routine?Object.keys(celeb.routine).filter(function(k){return Array.isArray(celeb.routine[k])&&celeb.routine[k].length>0;}):[];
+
+  function handleClick(ev){
+    // Si no está expandido y no está activo, primero expande para preview
+    if(!expanded && !isActive){
+      ev.stopPropagation();
+      setExpanded(true);
+      return;
+    }
+    // Si ya expandido o ya activo, activa
+    if(unlocked){onActivate(celeb);}
+    else{
+      if(window.__forjaCloseAthleteSheet)window.__forjaCloseAthleteSheet();
+      setTimeout(function(){
+        if(window.__forjaSetPaywall)window.__forjaSetPaywall(true);
+      },280);
+    }
+  }
+
   return(
-    <div onClick={()=>{
-      if(unlocked){onActivate(celeb);}
-      else{
-        // Close AthleteSheet first, then open paywall
-        if(window.__forjaCloseAthleteSheet)window.__forjaCloseAthleteSheet();
-        setTimeout(function(){
-          if(window.__forjaSetPaywall)window.__forjaSetPaywall(true);
-        },280);
-      }
-    }}
-      style={{
+    <div style={{
+      borderRadius:14,marginBottom:7,
+      background:isActive?("rgba("+rgb+",0.12)"):expanded?("rgba("+rgb+",0.06)"):"rgba(255,255,255,0.03)",
+      border:"1px solid "+(isActive?("rgba("+rgb+",0.5)"):expanded?("rgba("+rgb+",0.3)"):"rgba(255,255,255,0.08)"),
+      transition:"all 0.3s cubic-bezier(0.22,1,0.36,1)",
+      overflow:"hidden"
+    }}>
+      <div onClick={handleClick} style={{
         display:"flex",alignItems:"center",gap:12,
-        padding:"11px 14px",borderRadius:14,marginBottom:7,
-        background:isActive?("rgba("+rgb+",0.12)"):"rgba(255,255,255,0.03)",
-        border:"1px solid "+(isActive?("rgba("+rgb+",0.5)"):"rgba(255,255,255,0.08)"),
-        cursor:"pointer",transition:"all 0.2s",
+        padding:"11px 14px",cursor:"pointer"
       }}>
-      <div style={{width:44,height:44,borderRadius:12,flexShrink:0,overflow:"hidden",
-        background:"rgba("+rgb+",0.12)",border:"1px solid rgba("+rgb+",0.25)",
-        position:"relative"}}>
-        {IMGS_C[celeb.id]?(
-          <img src={IMGS_C[celeb.id]} alt={celeb.label}
-            loading="lazy" decoding="async"
-            style={{width:"100%",height:"100%",objectFit:"cover",
-              opacity:isActive?1:0.88,transition:"opacity 0.2s"}}/>
+        <div style={{width:44,height:44,borderRadius:12,flexShrink:0,overflow:"hidden",
+          background:"rgba("+rgb+",0.12)",border:"1px solid rgba("+rgb+",0.25)",
+          position:"relative"}}>
+          {IMGS_C[celeb.id]?(
+            <img src={IMGS_C[celeb.id]} alt={celeb.label}
+              loading="lazy" decoding="async"
+              style={{width:"100%",height:"100%",objectFit:"cover",
+                opacity:isActive?1:0.88,transition:"opacity 0.2s"}}/>
+          ):(
+            <div style={{width:"100%",height:"100%",display:"flex",
+              alignItems:"center",justifyContent:"center",fontSize:20}}>
+              {celeb.em}
+            </div>
+          )}
+        </div>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontFamily:MN,fontSize:7,letterSpacing:1.5,
+            color:"rgba(255,255,255,0.32)",marginBottom:2,textTransform:"uppercase"}}>
+            {langKey==="en"?"Inspired by":"Inspirado en"}
+          </div>
+          <div style={{fontFamily:BN,fontSize:17,color:"rgba(240,242,245,0.92)",
+            letterSpacing:1,lineHeight:1,marginBottom:3}}>{celeb.label}</div>
+          <div style={{fontFamily:MN,fontSize:8,color:"rgba(255,255,255,0.38)"}}>
+            {Math.min(celeb.days,6)+" "+(langKey==="en"?"days":"días")+" · "+(celeb.lvl[langKey]||celeb.lvl.es)+" · "+celeb.badge}
+          </div>
+        </div>
+        {isActive?(
+          <div style={{fontFamily:MN,fontSize:7,color:"rgba("+rgb+",0.9)",
+            border:"1px solid rgba("+rgb+",0.4)",padding:"4px 8px",borderRadius:8,flexShrink:0}}>
+            {langKey==="en"?"ACTIVE":"ACTIVO"}
+          </div>
+        ):isFree?(
+          <div style={{fontFamily:MN,fontSize:7,color:"rgba(63,207,142,0.9)",
+            border:"1px solid rgba(63,207,142,0.35)",padding:"4px 8px",borderRadius:8,flexShrink:0}}>
+            FREE
+          </div>
+        ):userIsPro?(
+          <div style={{fontFamily:MN,fontSize:7,color:"rgba(192,168,112,0.8)",
+            border:"1px solid rgba(192,168,112,0.3)",padding:"4px 8px",borderRadius:8,flexShrink:0}}>
+            PRO ✓
+          </div>
         ):(
-          <div style={{width:"100%",height:"100%",display:"flex",
-            alignItems:"center",justifyContent:"center",fontSize:20}}>
-            {celeb.em}
+          <div style={{display:"flex",alignItems:"center",gap:4,flexShrink:0,
+            padding:"4px 9px",borderRadius:8,
+            background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)"}}>
+            <span style={{fontSize:10}}>🔒</span>
+            <span style={{fontFamily:MN,fontSize:7,letterSpacing:1,color:"rgba(255,255,255,0.4)"}}>PRO</span>
           </div>
         )}
       </div>
-      <div style={{flex:1,minWidth:0}}>
-        <div style={{fontFamily:MN,fontSize:7,letterSpacing:1.5,
-          color:"rgba(255,255,255,0.32)",marginBottom:2,textTransform:"uppercase"}}>
-          {langKey==="en"?"Inspired by":"Inspirado en"}
-        </div>
-        <div style={{fontFamily:BN,fontSize:17,color:"rgba(240,242,245,0.92)",
-          letterSpacing:1,lineHeight:1,marginBottom:3}}>{celeb.label}</div>
-        <div style={{fontFamily:MN,fontSize:8,color:"rgba(255,255,255,0.38)"}}>
-          {Math.min(celeb.days,6)+" "+(langKey==="en"?"days":"días")+" · "+(celeb.lvl[langKey]||celeb.lvl.es)+" · "+celeb.badge}
-        </div>
-      </div>
-      {isActive?(
-        <div style={{fontFamily:MN,fontSize:7,color:"rgba("+rgb+",0.9)",
-          border:"1px solid rgba("+rgb+",0.4)",padding:"4px 8px",borderRadius:8,flexShrink:0}}>
-          {langKey==="en"?"ACTIVE":"ACTIVO"}
-        </div>
-      ):isFree?(
-        <div style={{fontFamily:MN,fontSize:7,color:"rgba(63,207,142,0.9)",
-          border:"1px solid rgba(63,207,142,0.35)",padding:"4px 8px",borderRadius:8,flexShrink:0}}>
-          FREE
-        </div>
-      ):userIsPro?(
-        // User is PRO but hasn't selected this athlete — show available badge
-        <div style={{fontFamily:MN,fontSize:7,color:"rgba(192,168,112,0.8)",
-          border:"1px solid rgba(192,168,112,0.3)",padding:"4px 8px",borderRadius:8,flexShrink:0}}>
-          PRO ✓
-        </div>
-      ):(
-        <div style={{display:"flex",alignItems:"center",gap:4,flexShrink:0,
-          padding:"4px 9px",borderRadius:8,
-          background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)"}}>
-          <span style={{fontSize:10}}>🔒</span>
-          <span style={{fontFamily:MN,fontSize:7,letterSpacing:1,color:"rgba(255,255,255,0.4)"}}>PRO</span>
+
+      {/* Preview expandido — stats + descripción + CTA */}
+      {expanded && !isActive && (
+        <div style={{
+          padding:"0 14px 14px",
+          animation:"fu .3s ease-out"
+        }}>
+          <div style={{
+            height:1,
+            background:"linear-gradient(90deg,transparent 0%,rgba("+rgb+",0.25) 50%,transparent 100%)",
+            marginBottom:12
+          }}/>
+          {/* Stats grid */}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:12}}>
+            <div style={{
+              padding:"8px 10px",borderRadius:10,
+              background:"rgba("+rgb+",0.08)",
+              border:"1px solid rgba("+rgb+",0.18)"
+            }}>
+              <div style={{fontFamily:MN,fontSize:6.5,letterSpacing:1.5,color:"rgba("+rgb+",0.7)",fontWeight:700,marginBottom:2}}>
+                {langKey==="en"?"DAYS":"DÍAS"}
+              </div>
+              <div style={{fontFamily:BN,fontSize:15,color:"rgba(255,255,255,0.95)",letterSpacing:-0.3,lineHeight:1}}>
+                {Math.min(celeb.days,6)}
+              </div>
+            </div>
+            <div style={{
+              padding:"8px 10px",borderRadius:10,
+              background:"rgba("+rgb+",0.08)",
+              border:"1px solid rgba("+rgb+",0.18)"
+            }}>
+              <div style={{fontFamily:MN,fontSize:6.5,letterSpacing:1.5,color:"rgba("+rgb+",0.7)",fontWeight:700,marginBottom:2}}>
+                {langKey==="en"?"EXERCISES":"EJERCICIOS"}
+              </div>
+              <div style={{fontFamily:BN,fontSize:15,color:"rgba(255,255,255,0.95)",letterSpacing:-0.3,lineHeight:1}}>
+                {exerciseCount}
+              </div>
+            </div>
+            <div style={{
+              padding:"8px 10px",borderRadius:10,
+              background:"rgba("+rgb+",0.08)",
+              border:"1px solid rgba("+rgb+",0.18)"
+            }}>
+              <div style={{fontFamily:MN,fontSize:6.5,letterSpacing:1.5,color:"rgba("+rgb+",0.7)",fontWeight:700,marginBottom:2}}>
+                {langKey==="en"?"FOCUS":"ENFOQUE"}
+              </div>
+              <div style={{fontFamily:MN,fontSize:9,color:"rgba(255,255,255,0.85)",fontWeight:700,letterSpacing:0.3,lineHeight:1.1}}>
+                {celeb.focus?(celeb.focus[langKey]||celeb.focus.es||""):celeb.badge}
+              </div>
+            </div>
+          </div>
+          {/* Splits */}
+          {splits.length>0 && (
+            <div style={{marginBottom:12}}>
+              <div style={{fontFamily:MN,fontSize:6.5,letterSpacing:2,color:"rgba(255,255,255,0.4)",fontWeight:700,marginBottom:6}}>
+                {langKey==="en"?"WEEKLY SPLIT":"SPLIT SEMANAL"}
+              </div>
+              <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+                {splits.slice(0,7).map(function(s,i){
+                  return (
+                    <div key={i} style={{
+                      padding:"3px 8px",borderRadius:6,
+                      background:"rgba("+rgb+",0.06)",
+                      border:"1px solid rgba("+rgb+",0.15)",
+                      fontFamily:MN,fontSize:7,letterSpacing:1,
+                      color:"rgba("+rgb+",0.85)",fontWeight:700
+                    }}>{s.toUpperCase()}</div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          {/* Description / quote */}
+          {celeb.quote && (
+            <div style={{
+              padding:"10px 12px",borderRadius:10,
+              background:"rgba(0,0,0,0.25)",
+              border:"1px solid rgba(255,255,255,0.05)",
+              marginBottom:12
+            }}>
+              <div style={{
+                fontFamily:"'DM Sans',sans-serif",fontSize:11,fontStyle:"italic",
+                color:"rgba(255,255,255,0.65)",lineHeight:1.4
+              }}>
+                "{celeb.quote[langKey]||celeb.quote.es}"
+              </div>
+            </div>
+          )}
+          {/* CTA buttons */}
+          <div style={{display:"flex",gap:8}}>
+            <button onClick={function(ev){ev.stopPropagation();setExpanded(false);}} style={{
+              padding:"10px 14px",borderRadius:10,
+              background:"rgba(255,255,255,0.04)",
+              border:"1px solid rgba(255,255,255,0.08)",
+              color:"rgba(255,255,255,0.5)",
+              fontFamily:MN,fontSize:9,letterSpacing:1.5,fontWeight:700,
+              cursor:"pointer"
+            }}>
+              {langKey==="en"?"CLOSE":"CERRAR"}
+            </button>
+            <button onClick={function(ev){ev.stopPropagation();
+              if(unlocked){onActivate(celeb);}
+              else{
+                if(window.__forjaCloseAthleteSheet)window.__forjaCloseAthleteSheet();
+                setTimeout(function(){
+                  if(window.__forjaSetPaywall)window.__forjaSetPaywall(true);
+                },280);
+              }
+            }} style={{
+              flex:1,padding:"10px 14px",borderRadius:10,
+              background:unlocked?("linear-gradient(180deg,rgba("+rgb+",0.95) 0%,rgba("+rgb+",0.7) 100%)"):"rgba(192,168,112,0.18)",
+              border:"none",
+              borderTop:"1px solid rgba(255,255,255,0.2)",
+              color:unlocked?"#000":"#c0a870",
+              fontFamily:BN,fontSize:11,letterSpacing:1.2,
+              cursor:"pointer",
+              boxShadow:unlocked?("0 3px 12px rgba("+rgb+",0.3)"):"none"
+            }}>
+              {unlocked?(langKey==="en"?"ACTIVATE →":"ACTIVAR →"):(langKey==="en"?"🔒 UNLOCK PRO":"🔒 DESBLOQUEAR PRO")}
+            </button>
+          </div>
         </div>
       )}
     </div>
@@ -10010,6 +10778,111 @@ function ProfileSheet({show,onClose,profile,lang,mono,sp,setStep}){
           );
         })(),
 
+        // ── MODIFICACIONES DE RUTINA — listado y restaurar ──
+        (function(){
+          var allMods=getRoutineMods();
+          var dayKeys=Object.keys(allMods).filter(function(dk){
+            var m=allMods[dk];
+            if(!m) return false;
+            return (m.hidden_perm&&m.hidden_perm.length>0)||(m.swaps_perm&&Object.keys(m.swaps_perm).length>0);
+          });
+          if(dayKeys.length===0) return null;
+
+          // Función refresh manual (forzar re-render con setAuthTick)
+          var refresh=function(){setAuthTick(function(t){return t+1;});};
+
+          return e("div",{style:{margin:"0 16px 16px"}},
+            e("div",{style:{
+              fontFamily:MN,fontSize:8,letterSpacing:3,
+              color:"rgba(255,255,255,0.32)",marginBottom:10
+            }},l==="en"?"ROUTINE MODIFICATIONS":"MODIFICACIONES DE RUTINA"),
+            e("div",{style:{
+              borderRadius:14,
+              background:"rgba(255,255,255,0.025)",
+              border:"1px solid rgba(255,255,255,0.06)",
+              overflow:"hidden"
+            }},
+              dayKeys.map(function(dk,di){
+                var m=allMods[dk];
+                var hiddenList=(m.hidden_perm||[]);
+                var swapsList=Object.keys(m.swaps_perm||{}).map(function(orig){return {orig:orig,swap:m.swaps_perm[orig]};});
+                var totalCount=hiddenList.length+swapsList.length;
+                return e("div",{key:dk,style:{
+                  padding:"12px 14px",
+                  borderBottom:di<dayKeys.length-1?"1px solid rgba(255,255,255,0.04)":"none"
+                }},
+                  e("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:hiddenList.length>0||swapsList.length>0?10:0}},
+                    e("div",null,
+                      e("div",{style:{fontFamily:BN,fontSize:13,color:"rgba(255,255,255,0.92)",letterSpacing:0.8,lineHeight:1}},dk),
+                      e("div",{style:{fontFamily:MN,fontSize:8,letterSpacing:1.5,color:"rgba(255,255,255,0.4)",marginTop:3}},
+                        totalCount+" "+(l==="en"?"change"+(totalCount>1?"s":""):"cambio"+(totalCount>1?"s":""))
+                      )
+                    ),
+                    e("button",{onClick:function(){
+                      var msg=l==="en"
+                        ?"Restore the original \""+dk+"\" routine?"
+                        :"¿Restaurar la rutina original de \""+dk+"\"?";
+                      if(confirm(msg)){
+                        var mods=getRoutineMods();
+                        if(mods[dk]){
+                          delete mods[dk].hidden_perm;
+                          delete mods[dk].swaps_perm;
+                          if(!mods[dk].hidden_today&&!mods[dk].swaps_today) delete mods[dk];
+                        }
+                        saveRoutineMods(mods);
+                        refresh();
+                      }
+                    },style:{
+                      padding:"6px 11px",borderRadius:8,
+                      background:"rgba(63,207,142,0.1)",
+                      border:"1px solid rgba(63,207,142,0.25)",
+                      color:"rgba(63,207,142,0.85)",
+                      fontFamily:MN,fontSize:8,letterSpacing:1.5,fontWeight:700,
+                      cursor:"pointer",whiteSpace:"nowrap"
+                    }},l==="en"?"RESTORE":"RESTAURAR")
+                  ),
+                  hiddenList.length>0?e("div",{style:{marginBottom:swapsList.length>0?8:0}},
+                    e("div",{style:{fontFamily:MN,fontSize:7,letterSpacing:1.8,color:"rgba(255,80,80,0.55)",marginBottom:4,fontWeight:700}},
+                      l==="en"?"REMOVED":"QUITADOS"
+                    ),
+                    e("div",{style:{display:"flex",flexWrap:"wrap",gap:5}},
+                      hiddenList.map(function(name,ni){
+                        return e("div",{key:ni,style:{
+                          padding:"3px 8px",borderRadius:6,
+                          background:"rgba(255,80,80,0.06)",
+                          border:"1px solid rgba(255,80,80,0.15)",
+                          fontFamily:"'DM Sans',sans-serif",fontSize:10,
+                          color:"rgba(255,255,255,0.65)"
+                        }},name);
+                      })
+                    )
+                  ):null,
+                  swapsList.length>0?e("div",null,
+                    e("div",{style:{fontFamily:MN,fontSize:7,letterSpacing:1.8,color:"rgba(63,207,142,0.65)",marginBottom:4,fontWeight:700}},
+                      l==="en"?"SWAPPED":"CAMBIADOS"
+                    ),
+                    e("div",{style:{display:"flex",flexDirection:"column",gap:4}},
+                      swapsList.map(function(s,si){
+                        return e("div",{key:si,style:{
+                          padding:"6px 10px",borderRadius:6,
+                          background:"rgba(63,207,142,0.05)",
+                          border:"1px solid rgba(63,207,142,0.12)",
+                          fontFamily:"'DM Sans',sans-serif",fontSize:10.5,
+                          color:"rgba(255,255,255,0.7)",lineHeight:1.4
+                        }},
+                          e("span",{style:{textDecoration:"line-through",opacity:0.5,marginRight:6}},s.orig),
+                          e("span",{style:{color:"#3fcf8e",margin:"0 4px"}},"→"),
+                          e("span",null,s.swap)
+                        );
+                      })
+                    )
+                  ):null
+                );
+              })
+            )
+          );
+        })(),
+
         // ── VERSION + RESET ──
         e("div",{style:{margin:"0 16px",display:"flex",gap:8}},
           e("div",{style:{
@@ -10527,11 +11400,284 @@ function IntensityCoachCard({profile,sp,lang,mono}){
 // AthleteProgressCard — visualiza el % actual del user vs siguiente meta
 // con barra animada y tier name del atleta
 // ─────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────
+// ACHIEVEMENTS — Sistema de logros desbloqueables
+// ─────────────────────────────────────────────────────────────────
+var FORJA_ACHIEVEMENTS=[
+  {id:"first_set",icon:"🎯",label_es:"PRIMER SET",label_en:"FIRST SET",desc_es:"Marcaste tu primer set",desc_en:"Logged your first set",color:"#3fcf8e",check:function(s){return s.totalSets>=1;}},
+  {id:"first_pr",icon:"🏆",label_es:"PRIMER PR",label_en:"FIRST PR",desc_es:"Tu primer récord personal",desc_en:"Your first personal record",color:"#f0a818",check:function(s){return s.prCount>=1;}},
+  {id:"streak_3",icon:"🔥",label_es:"3 EN RACHA",label_en:"3 STREAK",desc_es:"3 días entrenando seguidos",desc_en:"3 days in a row",color:"#ff7a3a",check:function(s){return s.maxStreak>=3;}},
+  {id:"streak_7",icon:"⚡",label_es:"SEMANA COMPLETA",label_en:"FULL WEEK",desc_es:"7 días entrenando seguidos",desc_en:"7 days in a row",color:"#ff5544",check:function(s){return s.maxStreak>=7;}},
+  {id:"streak_30",icon:"👑",label_es:"30 DE FUEGO",label_en:"30 ON FIRE",desc_es:"Un mes sin parar",desc_en:"A month non-stop",color:"#cc0000",check:function(s){return s.maxStreak>=30;}},
+  {id:"vol_1k",icon:"💪",label_es:"1 TONELADA",label_en:"1 TON",desc_es:"1000kg de tonelaje semanal",desc_en:"1000kg weekly volume",color:"#5faa88",check:function(s){return s.maxWeekVol>=1000;}},
+  {id:"vol_5k",icon:"🦾",label_es:"5 TONELADAS",label_en:"5 TONS",desc_es:"5000kg de tonelaje semanal",desc_en:"5000kg weekly volume",color:"#3fcf8e",check:function(s){return s.maxWeekVol>=5000;}},
+  {id:"sessions_10",icon:"💯",label_es:"10 SESIONES",label_en:"10 SESSIONS",desc_es:"Completaste 10 entrenamientos",desc_en:"10 workouts completed",color:"#7878ff",check:function(s){return s.sessionCount>=10;}},
+  {id:"sessions_50",icon:"🎖️",label_es:"50 SESIONES",label_en:"50 SESSIONS",desc_es:"50 entrenamientos completados",desc_en:"50 workouts completed",color:"#a08cff",check:function(s){return s.sessionCount>=50;}},
+  {id:"sessions_100",icon:"🏅",label_es:"CENTURIÓN",label_en:"CENTURION",desc_es:"100 entrenamientos completados",desc_en:"100 workouts completed",color:"#ffd700",check:function(s){return s.sessionCount>=100;}},
+  {id:"early_bird",icon:"🌅",label_es:"MADRUGADOR",label_en:"EARLY BIRD",desc_es:"Entrenaste antes de las 7am",desc_en:"Trained before 7am",color:"#ffa500",check:function(s){return s.trainedEarly;}},
+  {id:"night_owl",icon:"🌙",label_es:"BÚHO NOCTURNO",label_en:"NIGHT OWL",desc_es:"Entrenaste después de las 10pm",desc_en:"Trained after 10pm",color:"#9090ff",check:function(s){return s.trainedLate;}},
+  {id:"prs_5",icon:"🥇",label_es:"5 RÉCORDS",label_en:"5 RECORDS",desc_es:"5 récords personales",desc_en:"5 personal records",color:"#f0a818",check:function(s){return s.prCount>=5;}},
+  {id:"prs_15",icon:"💎",label_es:"15 RÉCORDS",label_en:"15 RECORDS",desc_es:"15 récords personales",desc_en:"15 personal records",color:"#00d4ff",check:function(s){return s.prCount>=15;}},
+  {id:"days_30",icon:"🗓️",label_es:"30 DÍAS EN FORJA",label_en:"30 DAYS WITH FORJA",desc_es:"Llevas 30 días en la app",desc_en:"30 days in the app",color:"#ff7e3a",check:function(s){return s.daysSinceSignup>=30;}}
+];
+
+function getAchievementStats(){
+  var stats={
+    totalSets:0,prCount:0,maxStreak:0,maxWeekVol:0,sessionCount:0,
+    trainedEarly:false,trainedLate:false,daysSinceSignup:0
+  };
+  try{
+    var lgs=JSON.parse(localStorage.getItem("fv8l")||"{}");
+    var allLogs=[];
+    Object.values(lgs).forEach(function(arr){if(Array.isArray(arr))allLogs=allLogs.concat(arr);});
+    stats.totalSets=allLogs.length;
+    // PRs
+    var prsByEx={};
+    allLogs.forEach(function(l){
+      if(!l||!l.id)return;
+      var rm=(l.k||0)*(1+(l.r||0)/30);
+      if(!prsByEx[l.id]||prsByEx[l.id]<rm)prsByEx[l.id]=rm;
+    });
+    stats.prCount=Object.keys(prsByEx).length;
+    // Sessions count (by unique date)
+    var dates={};
+    allLogs.forEach(function(l){if(l&&l.d)dates[l.d]=true;});
+    stats.sessionCount=Object.keys(dates).length;
+    // Max streak
+    var sortedDates=Object.keys(dates).sort();
+    var curStr=0,maxStr=0;
+    for(var i=0;i<sortedDates.length;i++){
+      if(i===0){curStr=1;}
+      else{
+        var prev=new Date(sortedDates[i-1]);
+        var cur=new Date(sortedDates[i]);
+        var diff=Math.round((cur-prev)/86400000);
+        if(diff===1)curStr++;
+        else curStr=1;
+      }
+      if(curStr>maxStr)maxStr=curStr;
+    }
+    stats.maxStreak=maxStr;
+    // Max week vol
+    var byWeek={};
+    allLogs.forEach(function(l){
+      if(!l||!l.d)return;
+      var d=new Date(l.d);
+      var year=d.getFullYear();
+      var week=Math.floor((d-new Date(year,0,1))/(7*86400000));
+      var k=year+"_"+week;
+      var vol=(l.k||0)*(l.r||0);
+      byWeek[k]=(byWeek[k]||0)+vol;
+    });
+    Object.values(byWeek).forEach(function(v){if(v>stats.maxWeekVol)stats.maxWeekVol=v;});
+    // Time-based
+    allLogs.forEach(function(l){
+      if(!l||!l.t)return;
+      var hr=parseInt(l.t.split(":")[0]||"12");
+      if(hr<7)stats.trainedEarly=true;
+      if(hr>=22)stats.trainedLate=true;
+    });
+    // Days since signup
+    var signup=localStorage.getItem("forja_signup_date");
+    if(signup){
+      var ds=new Date(signup);
+      var dn=new Date();
+      stats.daysSinceSignup=Math.floor((dn-ds)/86400000);
+    }
+  }catch(_){}
+  return stats;
+}
+
+function AchievementsCard({lang,mono}){
+  var e=React.createElement;
+  var es=lang==="es"||lang==="pt";
+  var [showAll,setShowAll]=React.useState(false);
+  var [recentUnlock,setRecentUnlock]=React.useState(null);
+
+  var stats=React.useMemo(getAchievementStats,[]);
+  var unlocked=FORJA_ACHIEVEMENTS.filter(function(a){return a.check(stats);});
+  var locked=FORJA_ACHIEVEMENTS.filter(function(a){return !a.check(stats);});
+
+  // Detectar nuevo unlock
+  React.useEffect(function(){
+    try{
+      var prev=JSON.parse(localStorage.getItem("forja_unlocked_achievements")||"[]");
+      var current=unlocked.map(function(a){return a.id;});
+      var newOnes=current.filter(function(id){return prev.indexOf(id)===-1;});
+      if(newOnes.length>0 && prev.length>0){
+        var newest=FORJA_ACHIEVEMENTS.find(function(a){return a.id===newOnes[0];});
+        if(newest){
+          setRecentUnlock(newest);
+          try{ navigator.vibrate && navigator.vibrate([60,30,60,30,100]); }catch(_){}
+          setTimeout(function(){setRecentUnlock(null);},5000);
+        }
+      }
+      localStorage.setItem("forja_unlocked_achievements",JSON.stringify(current));
+    }catch(_){}
+  },[unlocked.length]);
+
+  // Solo mostrar si tiene al menos 1 unlock
+  if(unlocked.length===0) return null;
+
+  var visibleUnlocked=showAll?unlocked:unlocked.slice(0,6);
+
+  return e("div",{style:{
+    margin:"12px 18px 0",
+    padding:"14px 14px 12px",
+    borderRadius:14,
+    background:"linear-gradient(135deg,rgba(240,168,24,0.06) 0%,rgba(255,255,255,0.02) 100%)",
+    border:"1px solid rgba(240,168,24,0.18)",
+    borderTop:"1px solid rgba(240,168,24,0.35)",
+    position:"relative",
+    overflow:"hidden"
+  }},
+    // Recent unlock notification
+    recentUnlock?e("div",{style:{
+      position:"absolute",inset:0,zIndex:5,
+      background:"radial-gradient(ellipse 80% 100% at 50% 50%, "+recentUnlock.color+"33 0%, transparent 70%)",
+      display:"flex",alignItems:"center",justifyContent:"center",
+      animation:"tierUpFlash 5s ease-out forwards",
+      pointerEvents:"none"
+    }},
+      e("div",{style:{
+        textAlign:"center",
+        animation:"badgeUnlock 1s cubic-bezier(0.34,1.56,0.64,1)"
+      }},
+        e("div",{style:{
+          fontSize:48,marginBottom:6,
+          filter:"drop-shadow(0 0 20px "+recentUnlock.color+")",
+          animation:"badgeShine 1.5s ease-in-out infinite"
+        }},recentUnlock.icon),
+        e("div",{style:{
+          fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:3,
+          color:"rgba(255,255,255,0.7)",fontWeight:700,marginBottom:3
+        }},es?"LOGRO DESBLOQUEADO":"ACHIEVEMENT UNLOCKED"),
+        e("div",{style:{
+          fontFamily:"'Archivo Black','Impact',sans-serif",fontSize:18,
+          color:recentUnlock.color,letterSpacing:1.2,
+          textShadow:"0 0 24px "+recentUnlock.color
+        }},es?recentUnlock.label_es:recentUnlock.label_en)
+      )
+    ):null,
+
+    // Header
+    e("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}},
+      e("div",{style:{display:"flex",alignItems:"center",gap:8}},
+        e("span",{style:{fontSize:14}},"🏅"),
+        e("div",null,
+          e("div",{style:{
+            fontFamily:"'DM Mono',monospace",fontSize:7.5,letterSpacing:2.5,
+            color:"rgba(240,168,24,0.7)",fontWeight:700,marginBottom:1
+          }},es?"LOGROS":"ACHIEVEMENTS"),
+          e("div",{style:{
+            fontFamily:"'Archivo Black','Impact',sans-serif",fontSize:13,
+            color:"#fff",letterSpacing:0.3,lineHeight:1
+          }},unlocked.length+" / "+FORJA_ACHIEVEMENTS.length)
+        )
+      ),
+      // Progress mini
+      e("div",{style:{
+        flex:1,marginLeft:14,height:4,
+        background:"rgba(255,255,255,0.06)",borderRadius:2,
+        overflow:"hidden"
+      }},
+        e("div",{style:{
+          height:"100%",width:Math.round(unlocked.length/FORJA_ACHIEVEMENTS.length*100)+"%",
+          background:"linear-gradient(90deg,#f0a818 0%,#ff7e3a 100%)",
+          borderRadius:2,
+          boxShadow:"0 0 6px rgba(240,168,24,0.4)",
+          transition:"width 1s cubic-bezier(0.22,1,0.36,1)"
+        }})
+      )
+    ),
+
+    // Grid de badges
+    e("div",{style:{
+      display:"grid",
+      gridTemplateColumns:"repeat(auto-fill, minmax(58px, 1fr))",
+      gap:8
+    }},
+      visibleUnlocked.map(function(a){
+        return e("div",{key:a.id,style:{
+          aspectRatio:"1/1.15",
+          background:"linear-gradient(135deg,"+a.color+"15 0%,"+a.color+"05 100%)",
+          border:"1px solid "+a.color+"35",
+          borderRadius:10,
+          display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+          padding:"6px 4px",
+          position:"relative",
+          boxShadow:"0 2px 8px "+a.color+"20"
+        }},
+          e("div",{style:{
+            fontSize:22,marginBottom:3,
+            filter:"drop-shadow(0 0 6px "+a.color+"66)"
+          }},a.icon),
+          e("div",{style:{
+            fontFamily:"'DM Mono',monospace",fontSize:5.5,letterSpacing:0.8,
+            color:a.color,fontWeight:700,textAlign:"center",
+            lineHeight:1.1
+          }},es?a.label_es:a.label_en)
+        );
+      })
+    ),
+
+    // Toggle ver todos
+    locked.length>0||unlocked.length>6?e("div",{style:{display:"flex",justifyContent:"center",marginTop:12}},
+      e("button",{onClick:function(){setShowAll(!showAll);},style:{
+        padding:"6px 14px",borderRadius:999,
+        background:"rgba(255,255,255,0.04)",
+        border:"1px solid rgba(255,255,255,0.08)",
+        color:"rgba(255,255,255,0.5)",
+        fontFamily:"'DM Mono',monospace",fontSize:7.5,letterSpacing:1.5,fontWeight:700,
+        cursor:"pointer"
+      }},
+        showAll?(es?"VER MENOS":"SHOW LESS"):(es?"VER TODOS · "+FORJA_ACHIEVEMENTS.length:"SHOW ALL · "+FORJA_ACHIEVEMENTS.length)
+      )
+    ):null,
+
+    // Locked badges (if showAll)
+    showAll&&locked.length>0?e("div",{style:{marginTop:12,paddingTop:12,borderTop:"1px solid rgba(255,255,255,0.05)"}},
+      e("div",{style:{
+        fontFamily:"'DM Mono',monospace",fontSize:7,letterSpacing:2,
+        color:"rgba(255,255,255,0.3)",fontWeight:700,marginBottom:8,textAlign:"center"
+      }},es?"POR DESBLOQUEAR":"TO UNLOCK"),
+      e("div",{style:{
+        display:"grid",
+        gridTemplateColumns:"repeat(auto-fill, minmax(58px, 1fr))",
+        gap:8
+      }},
+        locked.map(function(a){
+          return e("div",{key:a.id,style:{
+            aspectRatio:"1/1.15",
+            background:"rgba(255,255,255,0.02)",
+            border:"1px dashed rgba(255,255,255,0.08)",
+            borderRadius:10,
+            display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+            padding:"6px 4px",
+            opacity:0.45,filter:"grayscale(1)"
+          }},
+            e("div",{style:{fontSize:22,marginBottom:3}},"🔒"),
+            e("div",{style:{
+              fontFamily:"'DM Mono',monospace",fontSize:5.5,letterSpacing:0.8,
+              color:"rgba(255,255,255,0.4)",fontWeight:700,textAlign:"center",
+              lineHeight:1.1
+            }},es?a.label_es:a.label_en)
+          );
+        })
+      )
+    ):null
+  );
+}
+
 function AthleteProgressCard({profile,lang,mono}){
   var e=React.createElement;
   var es=lang==="es"||lang==="pt";
   var celebId=profile&&profile.celebrity;
   var pctNum=Math.round((profile&&profile.celebIntensity||0.3)*100);
+
+  // Tier-up detection
+  var [showTierUp, setShowTierUp] = React.useState(null);
+  var prevTierRef = React.useRef(null);
 
   // Atleta info para mostrar nombre
   var celebName="ATLETA";
@@ -10562,6 +11708,20 @@ function AthleteProgressCard({profile,lang,mono}){
     } else break;
   }
 
+  // Detectar cambio de tier para animación
+  React.useEffect(function(){
+    var key="forja_last_tier_"+celebId;
+    var prevTier=null;
+    try{ prevTier=localStorage.getItem(key); }catch(_){}
+    if(prevTier && prevTier!==currentTier.label){
+      // Subió de tier!
+      setShowTierUp(currentTier);
+      try{ navigator.vibrate && navigator.vibrate([50,40,50,40,80]); }catch(_){}
+      setTimeout(function(){ setShowTierUp(null); }, 4000);
+    }
+    try{ localStorage.setItem(key, currentTier.label); }catch(_){}
+  },[currentTier.label,celebId]);
+
   var ac=(profile&&profile.celebAc)||"#f0a818";
   var acRgb=ac.replace("#","").match(/.{2}/g).map(function(h){return parseInt(h,16);}).join(",");
 
@@ -10575,6 +11735,31 @@ function AthleteProgressCard({profile,lang,mono}){
     overflow:"hidden",
     position:"relative"
   }},
+    // Tier-up overlay animation
+    showTierUp ? e("div",{style:{
+      position:"absolute",inset:0,zIndex:5,
+      background:"radial-gradient(ellipse 80% 100% at 50% 50%, "+showTierUp.color+"33 0%, transparent 70%)",
+      display:"flex",alignItems:"center",justifyContent:"center",
+      animation:"tierUpFlash 4s ease-out forwards",
+      pointerEvents:"none"
+    }},
+      e("div",{style:{
+        textAlign:"center",
+        animation:"tierUpScale 0.8s cubic-bezier(0.34,1.56,0.64,1)"
+      }},
+        e("div",{style:{fontSize:28,marginBottom:4,filter:"drop-shadow(0 0 16px "+showTierUp.color+")"}},"⬆️"),
+        e("div",{style:{
+          fontFamily:"'DM Mono',monospace",fontSize:8,letterSpacing:3,
+          color:"rgba(255,255,255,0.7)",fontWeight:700,marginBottom:3
+        }},es?"NUEVO NIVEL":"NEW LEVEL"),
+        e("div",{style:{
+          fontFamily:"'Archivo Black','Impact',sans-serif",fontSize:18,
+          color:showTierUp.color,letterSpacing:1.5,
+          textShadow:"0 0 24px "+showTierUp.color
+        }},showTierUp.label)
+      )
+    ) : null,
+
     // Header
     e("div",{style:{display:"flex",alignItems:"baseline",justifyContent:"space-between",marginBottom:10}},
       e("div",null,
@@ -10639,6 +11824,12 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
   var[showAthletes,setShowAthletes]=React.useState(false);
   var[showProfile,setShowProfile]=React.useState(false);
   var[showNTNU,setShowNTNU]=React.useState(false);
+  var[wbTick,setWbTick]=React.useState(0); // refresh welcome back
+  React.useEffect(function(){
+    var h=function(){setWbTick(function(t){return t+1;});};
+    window.addEventListener("forja:dismissWelcome",h);
+    return function(){window.removeEventListener("forja:dismissWelcome",h);};
+  },[]);
   var now=new Date();
   var dow=now.getDay();
   var tdi=dow===0?6:dow-1;
@@ -10805,6 +11996,72 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
     e(ModeSelectorBar,{profile:profile,lang:lang,mono:mono,
       onShowAthletes:function(){setShowAthletes(true);}}),
 
+    // Welcome back banner — si vuelve después de 3+ días sin entrenar
+    (function(){
+      var lastTrainDate=null;
+      try{
+        var lgs=JSON.parse(localStorage.getItem("fv8l")||"{}");
+        Object.values(lgs).forEach(function(arr){
+          if(!Array.isArray(arr)) return;
+          arr.forEach(function(l){
+            if(l&&l.d && (!lastTrainDate||l.d>lastTrainDate)) lastTrainDate=l.d;
+          });
+        });
+      }catch(_){}
+      if(!lastTrainDate) return null;
+      var todayD=new Date();
+      var lastD=new Date(lastTrainDate);
+      var daysAgo=Math.floor((todayD-lastD)/86400000);
+      if(daysAgo<3 || daysAgo>30) return null;
+      // Solo mostrar una vez por día
+      var todayStr=todayD.toISOString().slice(0,10);
+      var dismissedDate=null;
+      try{ dismissedDate=localStorage.getItem("forja_welcome_back_dismissed"); }catch(_){}
+      if(dismissedDate===todayStr) return null;
+      var es2=lang==="es"||lang==="pt";
+      return e("div",{style:{
+        margin:"12px 18px 0",
+        padding:"12px 14px",
+        borderRadius:14,
+        background:"linear-gradient(135deg,rgba(72,120,255,0.10) 0%,rgba(160,140,255,0.05) 100%)",
+        border:"1px solid rgba(72,120,255,0.25)",
+        borderTop:"1px solid rgba(130,175,255,0.4)",
+        display:"flex",alignItems:"center",gap:12,
+        position:"relative",overflow:"hidden"
+      }},
+        e("button",{onClick:function(){
+          try{ localStorage.setItem("forja_welcome_back_dismissed",todayStr); }catch(_){}
+          // forzar re-render — usar event para hacerlo simple
+          window.dispatchEvent(new Event("forja:dismissWelcome"));
+        },style:{
+          position:"absolute",top:6,right:8,
+          width:20,height:20,borderRadius:"50%",
+          background:"rgba(255,255,255,0.05)",
+          border:"none",cursor:"pointer",
+          color:"rgba(255,255,255,0.4)",
+          fontSize:11,padding:0,lineHeight:1
+        }},"×"),
+        e("div",{style:{
+          fontSize:24,
+          filter:"drop-shadow(0 0 8px rgba(72,120,255,0.4))"
+        }},"👋"),
+        e("div",{style:{flex:1,paddingRight:16}},
+          e("div",{style:{
+            fontFamily:"'Archivo Black','Impact',sans-serif",fontSize:13,
+            color:"#fff",letterSpacing:0.5,marginBottom:2
+          }},
+            es2?"¡Qué bueno verte de vuelta!":lang==="fr"?"Heureux de te revoir!":lang==="it"?"Bentornato!":lang==="de"?"Willkommen zurück!":"Welcome back!"
+          ),
+          e("div",{style:{
+            fontFamily:"'DM Sans',sans-serif",fontSize:11,
+            color:"rgba(255,255,255,0.6)",lineHeight:1.4
+          }},
+            es2?"Llevas "+daysAgo+" días sin entrenar. Hoy es buen día para retomar.":lang==="fr"?(daysAgo+" jours sans entraînement. Aujourd'hui est parfait pour reprendre."):lang==="it"?(daysAgo+" giorni senza allenamento. Oggi è perfetto per ricominciare."):lang==="de"?(daysAgo+" Tage Pause. Heute ist ein guter Tag für ein Comeback."):(daysAgo+" days without training. Today is a good day to come back.")
+          )
+        )
+      );
+    })(),
+
     // Hero inmersivo con corazon ECG + todos los datos (saludo, streak, XP, nivel, PR)
     e(FrozenHeartBanner,{
       day:(sel!==undefined?routine&&routine[sel]:todayR),done:done,sel:(sel!==undefined?sel:tdi),
@@ -10828,6 +12085,9 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
     profile&&profile.mode==="celebrity"&&profile.celebrity?e(AthleteProgressCard,{
       profile:profile,lang:lang,mono:mono
     }):null,
+
+    // Achievements/Logros — visible siempre que tenga al menos 1 unlock
+    e(AchievementsCard,{lang:lang,mono:mono}),
 
     // Cuadro de días — liquid glass bubble
     e("div",{"data-tour":"cal-day",style:{
@@ -11000,6 +12260,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   const[done,setDone]=useState({});
   const[logs,setLogs]=useState({});
   const[inWorkout,setInWorkout]=useState(false);
+  const[showCountdown,setShowCountdown]=useState(false);
   const[showProModal,setShowProModal]=useState(false);
   // Expose paywall opener globally so sub-components (AthleteSheet etc) can trigger it
   React.useEffect(function(){
@@ -11063,7 +12324,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
   const[xpAnimZone,setXpAnimZone]=useState(null); // zone currently animating level up
   const[scrollVersion,setScrollVersion]=useState(0); // increments after scroll to trigger re-render
   React.useEffect(()=>{
-    const startHandler=()=>{if(day&&day.ex&&day.ex.length)setInWorkout(true);};
+    const startHandler=()=>{if(day&&day.ex&&day.ex.length)setShowCountdown(true);};
     window.addEventListener("forja:startWorkout",startHandler);
     const selectDayHandler=(ev)=>{if(ev.detail&&ev.detail.day!==undefined){setSel(ev.detail.day);setTabR("train");setAddEx(false);setInWorkout(false);}};
     window.addEventListener("forja:selectDay",selectDayHandler);
@@ -11292,6 +12553,12 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
       onBack={()=>{setInWorkout(false);window.__tourBackFromWorkout=null;}}
       tourStep={tourStep} setTourStep={setTourStep} acwr={acwr}/>;
   }
+  if(showCountdown && day && day.ex && day.ex.length){
+    return <PreWorkoutCountdown day={day} lang={lang}
+      onDone={()=>{setShowCountdown(false);setInWorkout(true);}}
+      onCancel={()=>setShowCountdown(false)}/>;
+  }
+
   if(showProModal){
     // Default to yearly (best value) — this drives higher LTV
     var selectedPlan=window.__forjaSelectedPlan||"yearly";
@@ -11557,7 +12824,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                     border:"1px solid rgba(192,168,112,0.12)",
                     boxShadow:"0 4px 30px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)",
                   }}
-                  onClick={()=>{if(day&&day.ex&&day.ex.length)setInWorkout(true);}}
+                  onClick={()=>{if(day&&day.ex&&day.ex.length)setShowCountdown(true);}}
                 >
                   {/* Tag con día del split arriba */}
                   {day&&day.l&&(
@@ -14302,10 +15569,142 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
         )
       );
     })(),
-    e("div",{"data-tour":"prs-section",style:{marginTop:16}},
-      e("div",{style:{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:3,marginBottom:12,textTransform:"uppercase"}},
-        "🏆 "+(es?"MIS PRs":lang==="fr"?"MES RECORDS":lang==="it"?"I MIEI RECORD":lang==="de"?"MEINE BESTW.":"MY PRs")
+    // ────────────────────────────────────────────────────────
+    // SECCIÓN MIS PRs — REDISEÑO PREMIUM
+    // Hero: 3 rings concéntricos animados (Volumen / Racha / PRs)
+    // Después: cards individuales y actividad
+    // ────────────────────────────────────────────────────────
+    e("div",{"data-tour":"prs-section",style:{marginTop:18}},
+      e("div",{style:{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:3,marginBottom:14,textTransform:"uppercase",display:"flex",alignItems:"center",gap:6}},
+        e("span",null,"🏆"),
+        e("span",null,es?"MI PROGRESO":lang==="fr"?"MA PROGRESSION":lang==="it"?"I MIEI PROGRESSI":lang==="de"?"MEIN FORTSCHRITT":"MY PROGRESS")
       ),
+
+      // ─── HERO RINGS: 3 rings concéntricos estilo Apple Fitness ───
+      (function(){
+        // Calcular targets razonables
+        var weekTarget = 5000; // kg semanales (intermedio)
+        var weekPct = Math.min(1, weekVol / weekTarget);
+        var streakTarget = 7;
+        var streakPct = Math.min(1, streak / streakTarget);
+        var prsTarget = 15;
+        var prsPct = Math.min(1, prs.length / prsTarget);
+
+        var R1=88, R2=68, R3=48; // radios
+        var SW=11; // stroke width
+        var C1="#5faa88"; // verde
+        var C2c="#ff7a3a"; // naranja
+        var C3="#f0a818"; // dorado
+        var C2_size=200; // viewBox size
+        var center=100;
+
+        function ringOffset(r,pct){
+          var circ=2*Math.PI*r;
+          return circ*(1-pct);
+        }
+
+        return e("div",{style:{
+          position:"relative",
+          padding:"22px 14px 18px",
+          marginBottom:18,
+          borderRadius:20,
+          background:"radial-gradient(ellipse 80% 100% at 50% 0%, rgba(255,255,255,0.04) 0%, transparent 60%), linear-gradient(180deg,#0e1118 0%,#070809 100%)",
+          border:"1px solid rgba(255,255,255,0.06)",
+          borderTop:"1px solid rgba(255,255,255,0.10)",
+          overflow:"hidden",
+          boxShadow:"0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04)"
+        }},
+          // Decorative line top center
+          e("div",{style:{position:"absolute",top:0,left:"50%",transform:"translateX(-50%)",width:"40%",height:1,
+            background:"linear-gradient(90deg,transparent 0%,rgba(192,168,112,0.3) 50%,transparent 100%)"}}),
+
+          // Container of rings + labels
+          e("div",{style:{display:"flex",alignItems:"center",gap:18,justifyContent:"center"}},
+            // SVG with 3 rings
+            e("div",{style:{position:"relative",width:200,height:200,flexShrink:0}},
+              e("svg",{viewBox:"0 0 "+C2_size+" "+C2_size,width:"200",height:"200",style:{transform:"rotate(-90deg)"}},
+                // RING 1 — Volumen (outer)
+                e("circle",{cx:center,cy:center,r:R1,fill:"none",stroke:"rgba(95,170,136,0.10)",strokeWidth:SW,strokeLinecap:"round"}),
+                e("circle",{cx:center,cy:center,r:R1,fill:"none",stroke:C1,strokeWidth:SW,strokeLinecap:"round",
+                  strokeDasharray:2*Math.PI*R1,
+                  strokeDashoffset:ringOffset(R1,weekPct),
+                  style:{transition:"stroke-dashoffset 1.4s cubic-bezier(0.22,1,0.36,1)",filter:"drop-shadow(0 0 6px "+C1+"66)"}}),
+                // RING 2 — Racha (middle)
+                e("circle",{cx:center,cy:center,r:R2,fill:"none",stroke:"rgba(255,122,58,0.10)",strokeWidth:SW,strokeLinecap:"round"}),
+                e("circle",{cx:center,cy:center,r:R2,fill:"none",stroke:C2c,strokeWidth:SW,strokeLinecap:"round",
+                  strokeDasharray:2*Math.PI*R2,
+                  strokeDashoffset:ringOffset(R2,streakPct),
+                  style:{transition:"stroke-dashoffset 1.4s 0.15s cubic-bezier(0.22,1,0.36,1)",filter:"drop-shadow(0 0 6px "+C2c+"66)"}}),
+                // RING 3 — PRs (inner)
+                e("circle",{cx:center,cy:center,r:R3,fill:"none",stroke:"rgba(240,168,24,0.10)",strokeWidth:SW,strokeLinecap:"round"}),
+                e("circle",{cx:center,cy:center,r:R3,fill:"none",stroke:C3,strokeWidth:SW,strokeLinecap:"round",
+                  strokeDasharray:2*Math.PI*R3,
+                  strokeDashoffset:ringOffset(R3,prsPct),
+                  style:{transition:"stroke-dashoffset 1.4s 0.30s cubic-bezier(0.22,1,0.36,1)",filter:"drop-shadow(0 0 6px "+C3+"66)"}})
+              ),
+              // Center value
+              e("div",{style:{
+                position:"absolute",inset:0,display:"flex",flexDirection:"column",
+                alignItems:"center",justifyContent:"center",gap:0,pointerEvents:"none"
+              }},
+                e("div",{style:{
+                  fontFamily:"'Archivo Black','Impact',sans-serif",fontSize:34,
+                  color:"#fff",letterSpacing:-1.5,lineHeight:1,
+                  textShadow:"0 0 20px rgba(255,255,255,0.1)"
+                }},Math.round((weekPct+streakPct+prsPct)/3*100)+"%"),
+                e("div",{style:{
+                  fontSize:7,fontFamily:mono,letterSpacing:2,
+                  color:"rgba(255,255,255,0.45)",marginTop:3,fontWeight:700
+                }},es?"PROGRESO":lang==="fr"?"PROGRESS":"PROGRESS")
+              )
+            ),
+
+            // Right column — 3 ring labels with values
+            e("div",{style:{display:"flex",flexDirection:"column",gap:10,flex:1,maxWidth:140}},
+              // Volumen
+              e("div",null,
+                e("div",{style:{display:"flex",alignItems:"center",gap:6,marginBottom:2}},
+                  e("div",{style:{width:8,height:8,borderRadius:"50%",background:C1,boxShadow:"0 0 6px "+C1}}),
+                  e("div",{style:{fontSize:8,fontFamily:mono,letterSpacing:1.8,color:"rgba(255,255,255,0.5)",fontWeight:700}},es?"SEMANA":lang==="fr"?"SEMAINE":lang==="it"?"SETTIMANA":lang==="de"?"WOCHE":"WEEK")
+                ),
+                e("div",{style:{fontFamily:"'Archivo Black','Impact',sans-serif",fontSize:18,color:C1,letterSpacing:-0.5,lineHeight:1}},
+                  weekVol>=1000?(Math.round(weekVol/100)/10)+"t":Math.round(weekVol)+"kg"
+                ),
+                e("div",{style:{fontSize:7.5,fontFamily:mono,color:"rgba(255,255,255,0.35)",marginTop:1,letterSpacing:0.5}},
+                  weekSets+" "+(es?"sets":"sets")
+                )
+              ),
+              // Racha
+              e("div",null,
+                e("div",{style:{display:"flex",alignItems:"center",gap:6,marginBottom:2}},
+                  e("div",{style:{width:8,height:8,borderRadius:"50%",background:C2c,boxShadow:"0 0 6px "+C2c}}),
+                  e("div",{style:{fontSize:8,fontFamily:mono,letterSpacing:1.8,color:"rgba(255,255,255,0.5)",fontWeight:700}},es?"RACHA":lang==="fr"?"SÉRIE":lang==="it"?"SERIE":lang==="de"?"SERIE":"STREAK")
+                ),
+                e("div",{style:{fontFamily:"'Archivo Black','Impact',sans-serif",fontSize:18,color:C2c,letterSpacing:-0.5,lineHeight:1}},
+                  streak+" "+(es?"d":"d")
+                ),
+                e("div",{style:{fontSize:7.5,fontFamily:mono,color:"rgba(255,255,255,0.35)",marginTop:1,letterSpacing:0.5}},
+                  streak>=3?"🔥 "+(es?"en racha":"on streak"):(es?"empezando":"starting")
+                )
+              ),
+              // PRs
+              e("div",null,
+                e("div",{style:{display:"flex",alignItems:"center",gap:6,marginBottom:2}},
+                  e("div",{style:{width:8,height:8,borderRadius:"50%",background:C3,boxShadow:"0 0 6px "+C3}}),
+                  e("div",{style:{fontSize:8,fontFamily:mono,letterSpacing:1.8,color:"rgba(255,255,255,0.5)",fontWeight:700}},"PRs")
+                ),
+                e("div",{style:{fontFamily:"'Archivo Black','Impact',sans-serif",fontSize:18,color:C3,letterSpacing:-0.5,lineHeight:1}},
+                  prs.length+""
+                ),
+                e("div",{style:{fontSize:7.5,fontFamily:mono,color:"rgba(255,255,255,0.35)",marginTop:1,letterSpacing:0.5}},
+                  es?"récords":lang==="fr"?"records":lang==="it"?"record":lang==="de"?"BestW.":"records"
+                )
+              )
+            )
+          )
+        );
+      })(),
+
       hasHiddenHistory&&e("div",{
         style:{margin:"0 0 12px",padding:"10px 14px",borderRadius:12,background:"rgba(192,168,112,0.08)",border:"1px solid rgba(192,168,112,0.2)",cursor:"pointer",display:"flex",alignItems:"center",gap:10},
         onClick:()=>{try{const ev=new CustomEvent("forja:showPro");window.dispatchEvent(ev);}catch(_){}}
@@ -14346,7 +15745,8 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
           )
         )
       ),
-      prs.length>1&&e("div",{style:{display:"flex",gap:6,overflowX:"auto",paddingBottom:8,marginBottom:10}},
+      // PRs chips selector
+      prs.length>1&&e("div",{style:{display:"flex",gap:6,overflowX:"auto",paddingBottom:8,marginBottom:10,marginTop:4}},
         prs.slice(0,8).map((pr,i)=>
           e("button",{key:pr.id,onClick:()=>setSelPR(i),style:{
             flexShrink:0,padding:"6px 12px",borderRadius:20,
@@ -14357,6 +15757,7 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
           }},pr.name+" ",e("span",{style:{opacity:.6}},pr.isBW?(pr.bestReps+"rep max"):(pr.best1rm+"kg")))
         )
       ),
+      // PR detail card (mantenida como estaba — funciona bien)
       prView&&e("div",{style:{background:"linear-gradient(135deg,#1a1d26 0%,#1e2230 100%)",borderRadius:16,padding:"16px 16px 14px",marginBottom:12,border:"1px solid "+C.borderL,position:"relative",overflow:"hidden"}},
         e("div",{style:{position:"absolute",top:-30,right:-30,width:100,height:100,borderRadius:"50%",background:"rgba(106,143,192,.1)",filter:"blur(20px)",pointerEvents:"none"}}),
         e("div",{style:{fontSize:9,fontFamily:mono,color:C.tx3,letterSpacing:1,marginBottom:6,textTransform:"uppercase"}},prView.name),
@@ -14392,80 +15793,46 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
         })()
       )
     ),
-    e("div",{style:{display:"flex",gap:8,marginTop:14,marginBottom:14}},
-      [{l:es?"SEMANA":lang==="fr"?"SEMAINE":lang==="it"?"SETTIMANA":lang==="de"?"WOCHE":"WEEK",v:weekVol>=1000?(Math.round(weekVol/100)/10)+"t":Math.round(weekVol)+"kg",sub:weekSets+" sets",accent:"#5faa88",icon:"⚡"},
-       {l:es?"RACHA":lang==="fr"?"SÉRIE":lang==="it"?"SERIE":lang==="de"?"SERIE":"STREAK",v:streak,sub:streak>=3?(es?"días 🔥":"days 🔥"):(es?"días":"days"),accent:streak>=3?"#ff7a3a":"#888",icon:"🔥"},
-       {l:"PRs",v:prs.length,sub:es?"récords":lang==="fr"?"records":lang==="it"?"record":lang==="de"?"BestW.":"records",accent:"#f0a818",icon:"🏆"},
-      ].map((s,i)=>e("div",{key:i,style:{
-        flex:1,
-        background:`linear-gradient(180deg, rgba(${s.accent==='#5faa88'?'95,170,136':s.accent==='#ff7a3a'?'255,122,58':s.accent==='#f0a818'?'240,168,24':'120,120,120'},0.06) 0%, ${C.bg3} 60%)`,
-        border:"1px solid "+C.bd,
-        borderRadius:12,
-        padding:"11px 11px 9px",
-        position:"relative",
-        overflow:"hidden"
-      }},
-        // Accent bar top
-        e("div",{style:{position:"absolute",top:0,left:0,right:0,height:2,background:s.accent,opacity:0.5}}),
-        e("div",{style:{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:4,display:"flex",alignItems:"center",gap:4}},
-          s.l,
-          e("button",{onClick:()=>{const el=document.getElementById("stat-help-"+i);if(el)el.style.display=el.style.display==="none"?"":"none";},
-            style:{width:13,height:13,borderRadius:"50%",border:"1px solid rgba(255,255,255,.2)",background:"rgba(255,255,255,.06)",
-              color:"rgba(255,255,255,.6)",fontSize:8,cursor:"pointer",display:"inline-flex",alignItems:"center",justifyContent:"center",
-              padding:0,flexShrink:0,lineHeight:1}},
-            "?")
-        ),
-        e("div",{id:"stat-help-"+i,style:{display:"none",fontSize:9,color:"rgba(255,255,255,.55)",fontFamily:mono,
-          lineHeight:1.5,marginBottom:6,padding:"6px 8px",background:"rgba(255,255,255,.04)",
-          borderRadius:6,border:"1px solid rgba(255,255,255,.08)"}},
-          i===0
-            ? (es?"Tonelaje semanal = series × reps × kg. Mide tu volumen total. Sube poco a poco para ganar masa muscular."
-               :lang==="fr"?"Tonnage = séries × reps × kg. Mesure ton volume."
-               :lang==="it"?"Tonnellaggio = serie × reps × kg. Misura il tuo volume."
-               :lang==="de"?"Tonnage = Sätze × Wdh × kg. Misst dein Gesamtvolumen."
-               :"Weekly tonnage = sets × reps × kg. Measures total volume. Increase slowly to gain muscle.")
-            : i===1
-            ? (es?"Días entrenados consecutivos. Construir el hábito > intensidad. La constancia gana siempre."
-               :lang==="fr"?"Jours consécutifs entraînés. La régularité gagne."
-               :lang==="it"?"Giorni consecutivi allenati. La costanza vince sempre."
-               :lang==="de"?"Aufeinanderfolgende Trainingstage. Beständigkeit gewinnt."
-               :"Consecutive days trained. Building the habit beats intensity. Consistency wins.")
-            : (es?"Récords personales (PRs) — tu mejor 1RM por ejercicio. Cada PR nuevo = una victoria registrada."
-               :lang==="fr"?"Records personnels — ton meilleur 1RM par exercice."
-               :lang==="it"?"Record personali — il tuo miglior 1RM per esercizio."
-               :lang==="de"?"Persönliche Bestleistungen — dein bestes 1RM pro Übung."
-               :"Personal Records — your best 1RM per exercise. Every new PR = a victory logged.")
-        ),
-        e("div",{style:{fontSize:24,fontWeight:900,color:s.accent,fontFamily:sans,letterSpacing:-1.2,lineHeight:1}},s.v),
-        e("div",{style:{fontSize:8,fontFamily:mono,color:C.tx3,marginTop:3,letterSpacing:0.5}},s.sub)
-      ))
-    ),
-    e("div",{style:{background:C.bg3,border:"1px solid "+C.bd,borderRadius:12,padding:"12px 12px 10px",marginTop:4}},
-      e("div",{style:{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:10,textTransform:"uppercase"}},
-        es?"ACTIVIDAD ÚLTIMAS 10 SEMANAS":lang==="fr"?"ACTIVITÉ 10 DERNIÈRES SEMAINES":lang==="it"?"ATTIVITÀ ULTIME 10 SETTIMANE":lang==="de"?"AKTIVITÄT LETZTE 10 WOCHEN":"LAST 10 WEEKS"
+
+    // ─── ACTIVIDAD 10 SEMANAS — más bonita ───
+    e("div",{style:{
+      background:"linear-gradient(180deg,rgba(255,255,255,0.025) 0%,rgba(255,255,255,0.01) 100%)",
+      border:"1px solid "+C.bd,
+      borderRadius:16,
+      padding:"14px 14px 12px",marginTop:12,
+      position:"relative",overflow:"hidden"
+    }},
+      e("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}},
+        e("div",{style:{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:2.5,textTransform:"uppercase",fontWeight:700,display:"flex",alignItems:"center",gap:6}},
+          e("span",null,"📊"),
+          e("span",null,es?"ACTIVIDAD · 10 SEMANAS":lang==="fr"?"ACTIVITÉ · 10 SEMAINES":lang==="it"?"ATTIVITÀ · 10 SETTIMANE":lang==="de"?"AKTIVITÄT · 10 WOCHEN":"ACTIVITY · 10 WEEKS")
+        )
       ),
-      e("div",{style:{display:"flex",gap:3}},
+      e("div",{style:{display:"flex",gap:4,padding:"4px 0"}},
         grid.map((week,wi)=>
-          e("div",{key:wi,style:{display:"flex",flexDirection:"column",gap:3}},
+          e("div",{key:wi,style:{display:"flex",flexDirection:"column",gap:4,flex:1}},
             week.map((day,di)=>{
-              const opacity=day.vol>0?0.25+0.75*(day.vol/maxVol):0.06;
-              const bg=day.vol>0?`rgba(95,170,136,${opacity})`:"rgba(255,255,255,0.04)";
+              const opacity=day.vol>0?0.30+0.70*(day.vol/maxVol):0.04;
+              const bg=day.vol>0?`rgba(95,170,136,${opacity})`:"rgba(255,255,255,0.025)";
               return e("div",{key:di,style:{
-                width:10,height:10,borderRadius:2,background:bg,
-                border:day.isToday?"1px solid rgba(232,224,208,0.6)":"1px solid transparent",
+                width:"100%",aspectRatio:"1/1",borderRadius:3.5,
+                background:bg,
+                border:day.isToday?"1px solid rgba(232,224,208,0.7)":"1px solid transparent",
+                boxShadow:day.vol>0?"0 0 6px "+(`rgba(95,170,136,${opacity*0.4})`):"none",
+                transition:"all 0.2s ease"
               }});
             })
           )
         )
       ),
-      e("div",{style:{display:"flex",justifyContent:"flex-end",marginTop:6,gap:4,alignItems:"center"}},
-        e("span",{style:{fontSize:7,fontFamily:mono,color:C.tx3}},es?"menos":lang==="fr"?"moins":lang==="it"?"meno":lang==="de"?"weniger":"less"),
-        e("div",{style:{width:8,height:8,borderRadius:1.5,background:"rgba(95,170,136,0.06)"}}),
-        e("div",{style:{width:8,height:8,borderRadius:1.5,background:"rgba(95,170,136,0.25)"}}),
-        e("div",{style:{width:8,height:8,borderRadius:1.5,background:"rgba(95,170,136,0.5)"}}),
-        e("div",{style:{width:8,height:8,borderRadius:1.5,background:"rgba(95,170,136,0.75)"}}),
-        e("div",{style:{width:8,height:8,borderRadius:1.5,background:"rgba(95,170,136,1)"}}),
-        e("span",{style:{fontSize:7,fontFamily:mono,color:C.tx3}},es?"más":lang==="fr"?"plus":lang==="it"?"più":lang==="de"?"mehr":"more")
+      e("div",{style:{display:"flex",justifyContent:"flex-end",marginTop:10,gap:4,alignItems:"center"}},
+        e("span",{style:{fontSize:7,fontFamily:mono,color:C.tx3,letterSpacing:0.5}},es?"menos":lang==="fr"?"moins":lang==="it"?"meno":lang==="de"?"weniger":"less"),
+        e("div",{style:{width:9,height:9,borderRadius:2,background:"rgba(95,170,136,0.06)"}}),
+        e("div",{style:{width:9,height:9,borderRadius:2,background:"rgba(95,170,136,0.30)"}}),
+        e("div",{style:{width:9,height:9,borderRadius:2,background:"rgba(95,170,136,0.55)"}}),
+        e("div",{style:{width:9,height:9,borderRadius:2,background:"rgba(95,170,136,0.80)"}}),
+        e("div",{style:{width:9,height:9,borderRadius:2,background:"rgba(95,170,136,1)",boxShadow:"0 0 6px rgba(95,170,136,0.5)"}}),
+        e("span",{style:{fontSize:7,fontFamily:mono,color:C.tx3,letterSpacing:0.5}},es?"más":lang==="fr"?"plus":lang==="it"?"più":lang==="de"?"mehr":"more")
       )
     )
   );
