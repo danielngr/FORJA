@@ -8,7 +8,7 @@
 // - Mejor handling de navigate requests (fallback al HTML cacheado)
 // ════════════════════════════════════════════════════════════════════
 
-const CACHE_VERSION = 'forja-v1.0.2';
+const CACHE_VERSION = 'forja-v1.0.3';
 const APP_CACHE    = `${CACHE_VERSION}-app`;
 const ASSETS_CACHE = `${CACHE_VERSION}-assets`;
 const VIDEOS_CACHE = `${CACHE_VERSION}-videos`;
@@ -16,6 +16,7 @@ const VIDEOS_CACHE = `${CACHE_VERSION}-videos`;
 const APP_SHELL = [
   './',
   './forja_paywall_fix.html',
+  './forja_body.glb',  // GLB del maniquí — crítico para onboarding visual
 ];
 
 const VIDEO_PATTERN    = /\.mp4$/i;
