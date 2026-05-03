@@ -283,13 +283,6 @@ input[type=number]{-moz-appearance:textfield;}
     margin-bottom:14px;
     opacity:0;animation:fadeUp .8s .8s forwards;
   }
-  #forja-onboarding #s0 .welcome-title{
-    font-family:'Archivo Black',sans-serif;
-    font-size:64px;line-height:0.95;letter-spacing:-1px;
-    color:#fff;
-    opacity:0;animation:fadeUp 1s 1.2s forwards;
-  }
-  #forja-onboarding #s0 .welcome-title em{font-style:normal;color:#ff5e5e;display:block;}
   #forja-onboarding #s0 .welcome-sub{
     font-family:'DM Sans',sans-serif;font-weight:400;
     font-size:14px;color:rgba(255,255,255,0.55);
@@ -1314,11 +1307,14 @@ input[type=number]{-moz-appearance:textfield;}
   }
   #forja-onboarding .welcome-title{
     font-family:'Archivo Black',sans-serif;
-    font-size:46px;line-height:0.95;
+    font-size:clamp(34px,11vw,46px);
+    line-height:0.95;
     letter-spacing:-1px;
     color:#fff;
     text-align:center;
-    margin-bottom:48px;
+    margin-bottom:clamp(28px,7vw,48px);
+    padding:0 8px;
+    word-break:keep-all;
     text-shadow:
       0 0 30px rgba(0,0,0,0.95),
       0 0 12px rgba(0,0,0,0.85),
