@@ -2755,7 +2755,13 @@ function completeOnboarding(){
       if(routine) localStorage.setItem('fv8r', JSON.stringify(routine));
     }
     // Mark onboarded
-    try{ localStorage.setItem('forja_onboarded','1'); }catch(_){}
+    try{
+      localStorage.setItem('forja_onboarded','1');
+      // Guardar fecha de signup si no existe — para contar "días en FORJA"
+      if(!localStorage.getItem('forja_signup_date')){
+        localStorage.setItem('forja_signup_date', new Date().toISOString().slice(0,10));
+      }
+    }catch(_){}
     // Call FORJA bridge — for celeb mode go directly to home (99), not to old picker
     var targetStep = 99;
     if(typeof window.__forjaOnboardingDone === 'function'){
@@ -8238,7 +8244,7 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
     };
   },[]);
 
-  // ECG monitor effect — líneas que dibujan QRS pulsante
+  // ECG monitor effect — estilo Apple Watch con scan trail
   React.useEffect(function(){
     var canvas=ecgCanvasRef.current;
     if(!canvas) return;
@@ -8251,77 +8257,144 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
       W=r.width;H=r.height;
       canvas.width=W*dpr;canvas.height=H*dpr;
       canvas.style.width=W+"px";canvas.style.height=H+"px";
+      ctx.setTransform(1,0,0,1,0,0);
       ctx.scale(dpr,dpr);
     }
     resize();
     var ro;try{ro=new ResizeObserver(resize);ro.observe(canvas);}catch(_){}
 
-    // ECG QRS waveform: P-Q-R-S-T points (normalized x: 0-1, y: -1 to 1)
-    var qrs=[
-      {x:0.0,y:0},{x:0.18,y:0},
-      {x:0.22,y:0.08},{x:0.26,y:0},   // P wave
-      {x:0.30,y:0},{x:0.36,y:-0.12},  // Q dip
-      {x:0.39,y:0.85},                // R spike
-      {x:0.42,y:-0.35},               // S
-      {x:0.46,y:0},{x:0.55,y:0},
-      {x:0.62,y:0.15},{x:0.70,y:0.10},{x:0.76,y:0},  // T wave
-      {x:1.0,y:0}
-    ];
-    function interp(t){
-      // Find segment
-      for(var i=0;i<qrs.length-1;i++){
-        if(t>=qrs[i].x&&t<=qrs[i+1].x){
-          var seg=(t-qrs[i].x)/(qrs[i+1].x-qrs[i].x+1e-6);
-          return qrs[i].y*(1-seg)+qrs[i+1].y*seg;
-        }
+    // QRS waveform realista: time normalizado [0,1] dentro de un beat
+    // Cada punto es {t, y} donde y es desplazamiento (-1 a 1)
+    function ecgValue(t){
+      // Reset baseline
+      if(t < 0.10) return 0;
+      // P wave: pequeña curva positiva (suavizada)
+      if(t < 0.22){
+        var p = (t - 0.10) / 0.12;
+        return Math.sin(p * Math.PI) * 0.12;
+      }
+      // PR segment baseline
+      if(t < 0.30) return 0;
+      // Q dip
+      if(t < 0.34){
+        var p2 = (t - 0.30) / 0.04;
+        return -p2 * 0.18;
+      }
+      // R spike (subida rápida)
+      if(t < 0.38){
+        var p3 = (t - 0.34) / 0.04;
+        return -0.18 + p3 * 1.18; // de -0.18 sube a 1.0
+      }
+      // R peak descenso
+      if(t < 0.42){
+        var p4 = (t - 0.38) / 0.04;
+        return 1.0 - p4 * 1.55; // de 1.0 baja a -0.55
+      }
+      // S valley → recover
+      if(t < 0.48){
+        var p5 = (t - 0.42) / 0.06;
+        return -0.55 + p5 * 0.55; // de -0.55 sube a 0
+      }
+      // ST segment baseline
+      if(t < 0.58) return 0;
+      // T wave: curva positiva amplia
+      if(t < 0.78){
+        var p6 = (t - 0.58) / 0.20;
+        return Math.sin(p6 * Math.PI) * 0.28;
       }
       return 0;
     }
+
     var phase=0;
     var raf;
     var lastTime=performance.now();
+
     function frame(now){
-      var dt=Math.min((now-lastTime)/1000,0.1);
+      var dt=Math.min((now-lastTime)/1000, 0.1);
       lastTime=now;
-      // Use HR for cycle speed (60-100 bpm typical)
-      var hr=(profile&&profile.hr)?profile.hr:65;
-      var cyclesPerSec=hr/60;
-      phase+=dt*cyclesPerSec;
-      if(phase>1) phase-=1;
-      ctx.clearRect(0,0,W,H);
-      // Center line
-      var cy=H*0.5;
-      var amplitude=H*0.35;
-      // Draw ECG line trail (last 1.6 cycles visible)
-      ctx.lineWidth=1.2;
-      var grad=ctx.createLinearGradient(0,0,W,0);
-      grad.addColorStop(0,"rgba(255,94,94,0)");
-      grad.addColorStop(0.3,"rgba(255,94,94,0.35)");
-      grad.addColorStop(0.85,"rgba(255,94,94,0.7)");
-      grad.addColorStop(1,"rgba(255,150,100,0.95)");
-      ctx.strokeStyle=grad;
-      ctx.shadowBlur=4;
-      ctx.shadowColor="rgba(255,94,94,0.5)";
-      ctx.beginPath();
-      var nPts=160;
-      for(var i=0;i<nPts;i++){
-        var px=(i/(nPts-1))*W;
-        var t=(i/(nPts-1)+phase)%1;
-        var py=cy-interp(t)*amplitude;
-        if(i===0) ctx.moveTo(px,py);
-        else ctx.lineTo(px,py);
+      var hr = (profile && profile.hr) ? profile.hr : 65;
+      var cyclesPerSec = hr / 60;
+      phase += dt * cyclesPerSec;
+      if(phase > 1) phase -= 1;
+
+      ctx.clearRect(0, 0, W, H);
+
+      var cy = H * 0.5;
+      var amplitude = H * 0.32;
+      var nPts = 220;
+
+      // Build trail of points: most recent point at the right
+      // Each point's "age" (how far back in time) determines opacity
+      // The scan position = `phase` (0 at left, 1 at right)
+      // We render going LEFT from phase, fading out
+
+      // Step 1: gather all points along the visible width
+      var points = [];
+      for(var i=0; i<nPts; i++){
+        var x = (i / (nPts - 1)) * W;
+        // What time within the cycle does this x represent?
+        // Most recent at right. As we move left, we go back in time.
+        var tAtX = (phase - (1 - i/(nPts-1)) * 0.85 + 1) % 1;
+        var y = cy - ecgValue(tAtX) * amplitude;
+        points.push({x: x, y: y, t: tAtX, age: 1 - i/(nPts-1)});
       }
-      ctx.stroke();
-      // Bright trailing dot
-      var endT=phase%1;
-      var endY=cy-interp(endT)*amplitude;
-      ctx.shadowBlur=10;
-      ctx.shadowColor="#ff5e5e";
-      ctx.fillStyle="#ff8a3a";
+
+      // Step 2: Draw the line as multiple segments with fading alpha
+      // Build path
+      ctx.lineWidth = 1.5;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+
+      // Draw segments grouped to allow gradient fade
+      // We use multiple stroke passes for cleaner result
+      for(var seg=0; seg < points.length - 1; seg++){
+        var p1 = points[seg];
+        var p2 = points[seg+1];
+        // Opacity based on position (oldest = transparent, newest = full)
+        var alpha = Math.pow(1 - p1.age, 2.2); // ease-in for fade
+        if(alpha < 0.02) continue;
+        // Color shifts with QRS phase: red on R-spike, orange on T-wave
+        var amp = (cy - p1.y) / amplitude; // negative for downward, positive up
+        var color;
+        if(amp > 0.5){
+          // R spike — bright red/orange
+          color = "rgba(255,140,80," + (alpha * 0.95) + ")";
+        } else if(amp < -0.2){
+          // S valley — deep red
+          color = "rgba(220,60,60," + (alpha * 0.85) + ")";
+        } else if(p1.t > 0.58 && p1.t < 0.78){
+          // T wave — softer orange
+          color = "rgba(240,140,90," + (alpha * 0.75) + ")";
+        } else {
+          // Baseline — subtle red
+          color = "rgba(200,100,100," + (alpha * 0.55) + ")";
+        }
+        ctx.strokeStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+      }
+
+      // Step 3: Bright leading dot at the right
+      var lastP = points[points.length - 1];
+      var ampNow = Math.abs((cy - lastP.y) / amplitude);
+
+      // Outer glow
+      ctx.shadowBlur = 14 + ampNow * 12;
+      ctx.shadowColor = ampNow > 0.5 ? "#ff5e5e" : "#ff9060";
+      ctx.fillStyle = ampNow > 0.5 ? "#ffaf60" : "#ff8050";
       ctx.beginPath();
-      ctx.arc(W,endY,2.5,0,Math.PI*2);
+      ctx.arc(lastP.x, lastP.y, 2.2 + ampNow * 1.5, 0, Math.PI * 2);
       ctx.fill();
-      ctx.shadowBlur=0;
+
+      // Inner bright core
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = "#fff";
+      ctx.beginPath();
+      ctx.arc(lastP.x, lastP.y, 0.8 + ampNow * 0.6, 0, Math.PI * 2);
+      ctx.fill();
+
       raf=requestAnimationFrame(frame);
     }
     raf=requestAnimationFrame(frame);
@@ -8388,6 +8461,44 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
       e("div",null,
         e("div",{style:{fontSize:10,color:"rgba(255,255,255,0.4)",marginBottom:2,fontFamily:mono,letterSpacing:0.5}},greeting||""),
         e("div",{style:{fontSize:22,fontWeight:700,color:"#fff",letterSpacing:-0.5,lineHeight:1}},userName||""),
+        // Quote del día — rotando según día del año
+        (function(){
+          var nowDate = new Date();
+          var es2 = lang==="es"||lang==="pt";
+          var quotes_es = [
+            "Hoy se forja el de mañana.",
+            "El cuerpo es el reflejo de la mente.",
+            "La constancia gana al talento.",
+            "Suma un día más a la cadena.",
+            "Lo difícil es la única salida.",
+            "El dolor es información, no enemigo.",
+            "No entrenas para hoy, entrenas para los 50.",
+            "Cada rep cuenta, aunque no sumes.",
+            "La forma > el peso. Siempre.",
+            "Los músculos se construyen, la disciplina también."
+          ];
+          var quotes_en = [
+            "Today forges tomorrow.",
+            "The body reflects the mind.",
+            "Consistency beats talent.",
+            "Add one more day to the chain.",
+            "Hard is the only way out.",
+            "Pain is data, not the enemy.",
+            "You don't train for today, you train for 50.",
+            "Every rep counts, even when they don't add up.",
+            "Form > weight. Always.",
+            "Muscles build. So does discipline."
+          ];
+          var qs = es2 ? quotes_es : quotes_en;
+          var dayOfYear = Math.floor((nowDate - new Date(nowDate.getFullYear(),0,0)) / 86400000);
+          var q = qs[dayOfYear % qs.length];
+          return e("div",{style:{
+            fontSize:9,fontFamily:"'DM Sans',sans-serif",fontStyle:"italic",
+            color:"rgba(255,255,255,0.32)",
+            marginTop:5,maxWidth:200,lineHeight:1.35,
+            letterSpacing:0.2
+          }},q);
+        })(),
         (profile&&profile.mode==="celebrity"&&profile.celebrity)?e("div",{style:{
           display:"inline-flex",alignItems:"center",gap:5,
           marginTop:6,padding:"3px 9px",borderRadius:999,
@@ -8461,20 +8572,20 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
       e("canvas",{ref:ecgCanvasRef,style:{
         position:"absolute",top:"50%",left:0,
         transform:"translateY(-50%)",
-        width:"100%",height:"60%",
+        width:"100%",height:"75%",
         zIndex:1,
         pointerEvents:"none",
-        opacity:0.85
+        opacity:0.95
       }}),
-      // Subtle medical grid overlay
+      // Subtle medical grid overlay (dots, no lines — más limpio)
       e("div",{style:{
         position:"absolute",inset:0,
         zIndex:1,pointerEvents:"none",
-        opacity:0.18,
-        backgroundImage:"linear-gradient(rgba(255,94,94,0.08) 1px,transparent 1px),linear-gradient(90deg,rgba(255,94,94,0.08) 1px,transparent 1px)",
-        backgroundSize:"20px 20px",
-        maskImage:"radial-gradient(ellipse 70% 80% at 50% 50%, black 30%, transparent 80%)",
-        WebkitMaskImage:"radial-gradient(ellipse 70% 80% at 50% 50%, black 30%, transparent 80%)"
+        opacity:0.3,
+        backgroundImage:"radial-gradient(circle, rgba(255,94,94,0.18) 0.8px, transparent 1.2px)",
+        backgroundSize:"14px 14px",
+        maskImage:"radial-gradient(ellipse 65% 75% at 50% 50%, black 25%, transparent 75%)",
+        WebkitMaskImage:"radial-gradient(ellipse 65% 75% at 50% 50%, black 25%, transparent 75%)"
       }}),
       // BPM indicator top-right
       profile&&profile.hr?e("div",{style:{
@@ -10575,7 +10686,38 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
   var ringDash=(trainTotal>0?(trainDone/trainTotal)*182.2:0).toFixed(1)+" 182.2";
 
   var hr=now.getHours();
-  var greeting=lang==="es"||lang==="pt"?(hr<12?"Buenos días,":(hr<19?"Buenas tardes,":"Buenas noches,")):(hr<12?"Good morning,":(hr<19?"Good afternoon,":"Good evening,"));
+  // Greeting contextual: cambia según hora, día del workout, racha, etc.
+  var es = lang==="es"||lang==="pt";
+  var greeting;
+
+  // Caso 1: Si es la primera vez del día y tiene racha activa
+  var hasStreakToday = false;
+  try{
+    var todayStr = now.toISOString().slice(0,10);
+    var allLogs = JSON.parse(localStorage.getItem("fv8l")||"{}");
+    Object.values(allLogs).forEach(function(arr){
+      if(arr && arr[0] && arr[0].d === todayStr) hasStreakToday = true;
+    });
+  }catch(_){}
+
+  if(hr >= 4 && hr < 12){
+    // Mañana
+    if(es) greeting = streak >= 7 ? "Otro día, otro paso adelante," : streak >= 3 ? "El fuego sigue encendido," : "Listo para forjar,";
+    else greeting = streak >= 7 ? "Another day, another step forward," : streak >= 3 ? "The fire's still burning," : "Ready to forge,";
+  } else if(hr >= 12 && hr < 18){
+    // Tarde
+    if(es) greeting = hasStreakToday ? "Ya hiciste lo difícil hoy," : "Hora de moverse,";
+    else greeting = hasStreakToday ? "You did the hard part today," : "Time to move,";
+  } else if(hr >= 18 && hr < 23){
+    // Noche
+    if(es) greeting = hasStreakToday ? "Buen trabajo hoy," : "Aún hay tiempo,";
+    else greeting = hasStreakToday ? "Good work today," : "Still time,";
+  } else {
+    // Madrugada (23-4)
+    if(es) greeting = "Mentalidad de élite,";
+    else greeting = "Elite mindset,";
+  }
+
   var userName=profile&&profile.name?profile.name:"Atleta";
 
   var lastPRName="",lastPRVal="";
