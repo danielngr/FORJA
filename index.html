@@ -79,6 +79,7 @@ input[type=number]{-moz-appearance:textfield;}
 @keyframes streakPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
 @keyframes streakHueShift{0%,100%{filter:hue-rotate(0deg)}50%{filter:hue-rotate(15deg)}}
 @keyframes heartGlow{0%,100%{opacity:0.4;transform:translate(-50%,-50%) scale(1)}10%{opacity:1;transform:translate(-50%,-50%) scale(1.08)}25%{opacity:0.5;transform:translate(-50%,-50%) scale(1)}40%{opacity:0.85;transform:translate(-50%,-50%) scale(1.04)}55%{opacity:0.4;transform:translate(-50%,-50%) scale(1)}}
+@keyframes sparkFly{0%{transform:translate(0,0) scale(0);opacity:0}20%{opacity:1;transform:translate(calc(var(--sx)*0.3),calc(var(--sy)*0.3)) scale(1.4)}100%{transform:translate(var(--sx),var(--sy)) scale(0);opacity:0}}
 ::placeholder{color:#606678;}
 #forja-sync{position:fixed;bottom:14px;right:14px;width:7px;height:7px;border-radius:50%;background:#525a6e;z-index:9999;pointer-events:none;transition:background .4s;}
 #forja-sync.ok{background:#5faa88;animation:syncPulse 3s ease-in-out infinite;}
@@ -2689,6 +2690,8 @@ function completeOnboarding(){
       celebrity: d.athleteId || null,
       activeCelebId: d.athleteId || null,
       celebIntensity: (typeof d.athleteIntensity === 'number') ? d.athleteIntensity : 0.3,
+      appleWatch: !!d.appleWatch,
+      hr: d.hr || null, // alias práctico para componentes
       celebAc: (function(){
         if(!d.athleteId || typeof CELEB_LIST==='undefined') return null;
         var c = CELEB_LIST.find(function(x){return x.id===d.athleteId;});
@@ -6174,6 +6177,283 @@ const BW_EXERCISES=new Set(["pull up","weighted pull up","chin up","push up","de
 // Time-based exercises (cardio, etc — no se calcula volumen con peso)
 const NO_TIME_EX=["cardio suave","cardio moderado","cardio","estiramientos","estiramiento","yoga","pilates","sprint 200m","saltar la cuerda","jumping jacks","arm haulers","mountain climbers","bear crawl","farmer walk","cardio (carrera)","cardio caminata","movilidad"];
 
+// ─────────────────────────────────────────────────────────────────
+// WorkoutCompleteScreen — Pantalla cinemática de finalización
+// con count-up XP, chispas, notas post-workout y share Strava-style
+// ─────────────────────────────────────────────────────────────────
+function WorkoutCompleteScreen({totalReps,totalVol,volDisplay,totalXP,fmtSess,celebMsg,onBack,lang,L,day,exs,sets}){
+  const es=lang==="es"||lang==="pt";
+  // Count-up animations
+  const [animXP, setAnimXP] = React.useState(0);
+  const [animReps, setAnimReps] = React.useState(0);
+  const [animVol, setAnimVol] = React.useState(0);
+  const [showSparks, setShowSparks] = React.useState(false);
+  // Sparks data (positions)
+  const [sparks] = React.useState(()=>{
+    const arr=[];
+    for(let i=0;i<14;i++){
+      arr.push({
+        angle: (i/14)*Math.PI*2 + Math.random()*0.3,
+        delay: Math.random()*0.4,
+        dist: 60+Math.random()*40
+      });
+    }
+    return arr;
+  });
+  // Note states
+  const [feeling, setFeeling] = React.useState(null);
+  const [energy, setEnergy] = React.useState(null);
+  const [noteSaved, setNoteSaved] = React.useState(false);
+  const [showShare, setShowShare] = React.useState(false);
+  const shareRef = React.useRef(null);
+
+  // Count-up animation effect
+  React.useEffect(()=>{
+    const startTime = performance.now();
+    const duration = 1800;
+    let raf;
+    function tick(now){
+      const t = Math.min((now-startTime)/duration, 1);
+      // ease-out cubic
+      const eased = 1 - Math.pow(1-t, 3);
+      setAnimXP(Math.round(totalXP * eased));
+      setAnimReps(Math.round(totalReps * eased));
+      setAnimVol(Math.round(totalVol * eased));
+      if(t < 1){ raf = requestAnimationFrame(tick); }
+      else {
+        setShowSparks(true);
+        try{ navigator.vibrate && navigator.vibrate([30,40,30]); }catch(_){}
+      }
+    }
+    // Wait a bit before starting
+    const timeout = setTimeout(()=>{ raf = requestAnimationFrame(tick); }, 600);
+    return ()=>{ if(raf) cancelAnimationFrame(raf); clearTimeout(timeout); };
+  },[totalXP,totalReps,totalVol]);
+
+  function saveNote(){
+    if(!feeling && !energy) return;
+    try{
+      const key = "forja_workout_notes";
+      const arr = JSON.parse(localStorage.getItem(key) || "[]");
+      arr.push({
+        date: new Date().toISOString(),
+        day: day && day.l,
+        feeling: feeling,
+        energy: energy,
+        reps: totalReps,
+        vol: totalVol,
+        xp: totalXP
+      });
+      localStorage.setItem(key, JSON.stringify(arr.slice(-100)));
+      setNoteSaved(true);
+      try{ navigator.vibrate && navigator.vibrate(30); }catch(_){}
+    }catch(_){}
+  }
+
+  async function handleShare(){
+    try{
+      const node = shareRef.current;
+      if(!node) return;
+      // Use html2canvas-like approach: render via foreignObject SVG → canvas → blob
+      // Since we don't have html2canvas, use a simpler text-only share
+      const text = (es
+        ? `🔥 Acabo de completar un entreno con FORJA\n${day&&day.l?day.l+" · ":""}${totalReps} reps · ${volDisplay} volumen · ${fmtSess()}\n+${totalXP} XP\n\n#FORJA`
+        : `🔥 Just crushed a workout with FORJA\n${day&&day.l?day.l+" · ":""}${totalReps} reps · ${volDisplay} volume · ${fmtSess()}\n+${totalXP} XP\n\n#FORJA`);
+      if(navigator.share){
+        await navigator.share({title:'FORJA Workout',text:text});
+      } else if(navigator.clipboard){
+        await navigator.clipboard.writeText(text);
+        alert(es?"Texto copiado":"Copied to clipboard");
+      }
+    }catch(_){}
+  }
+
+  const volDisplayLive = animVol>=1000 ? (Math.round(animVol/100)/10)+"t" : Math.round(animVol)+"kg";
+
+  return (
+    <div style={{position:"fixed",inset:0,background:"#04080f",display:"flex",flexDirection:"column",alignItems:"center",overflow:"auto",padding:"40px 20px 30px",fontFamily:"sans-serif"}}>
+      {/* Check icon */}
+      <div style={{position:"relative",width:80,height:80,marginBottom:18}}>
+        {/* Sparks ring */}
+        {showSparks && sparks.map((sp,i)=>(
+          <div key={i} style={{
+            position:"absolute",top:"50%",left:"50%",
+            width:3,height:3,borderRadius:"50%",
+            background:i%3===0?"#a08cff":i%3===1?"#3fcf8e":"#f0a818",
+            boxShadow:"0 0 8px currentColor",
+            animation:`sparkFly 1.2s ${sp.delay}s ease-out forwards`,
+            "--sx":Math.cos(sp.angle)*sp.dist+"px",
+            "--sy":Math.sin(sp.angle)*sp.dist+"px"
+          }}/>
+        ))}
+        <div style={{
+          width:80,height:80,borderRadius:20,
+          background:"rgba(72,120,255,0.08)",
+          border:"1px solid rgba(72,120,255,0.4)",
+          borderTop:"1px solid rgba(130,175,255,0.6)",
+          display:"flex",alignItems:"center",justifyContent:"center",
+          boxShadow:"0 0 48px rgba(72,120,255,0.25)",
+          animation:"celebrate .6s cubic-bezier(.34,1.56,.64,1) both"
+        }}>
+          <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+            <path d="M7 20L16 29L33 11" stroke="rgba(130,175,255,0.95)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </div>
+      </div>
+
+      <div style={{fontFamily:"'Archivo Black','Impact',sans-serif",fontSize:38,letterSpacing:1,color:"rgba(240,242,245,0.95)",textAlign:"center",padding:"0 20px",animation:"fu .5s .25s both",lineHeight:0.95}}>{celebMsg}</div>
+      <div style={{fontFamily:"'SF Mono','Courier New',monospace",fontSize:8.5,color:"rgba(72,120,255,0.65)",letterSpacing:3,marginTop:10,animation:"fu .5s .4s both",textAlign:"center",padding:"0 20px"}}>
+        {es?"EL TRABAJO DE HOY FORJA EL ATLETA DE MAÑANA":lang==="fr"?"LE TRAVAIL D'AUJOURD'HUI FORGE L'ATHLÈTE DE DEMAIN":lang==="it"?"IL LAVORO DI OGGI FORGIA L'ATLETA DI DOMANI":lang==="de"?"DIE ARBEIT VON HEUTE SCHMIEDET DEN ATHLETEN VON MORGEN":"TODAY'S WORK BUILDS TOMORROW'S ATHLETE"}
+      </div>
+
+      {/* XP HERO — Animation count-up */}
+      <div style={{
+        marginTop:24,padding:"18px 26px",
+        borderRadius:18,
+        background:"linear-gradient(135deg,rgba(160,140,255,0.18) 0%,rgba(110,90,220,0.10) 100%)",
+        border:"1px solid rgba(160,140,255,0.4)",
+        borderTop:"1px solid rgba(180,160,255,0.5)",
+        boxShadow:"0 8px 32px rgba(160,140,255,0.25), inset 0 1px 0 rgba(255,255,255,0.08)",
+        position:"relative",overflow:"hidden",
+        animation:"fu .5s .55s both"
+      }}>
+        <div style={{position:"absolute",inset:0,background:"radial-gradient(ellipse 60% 50% at 50% 0%, rgba(180,160,255,0.15) 0%, transparent 70%)",pointerEvents:"none"}}/>
+        <div style={{display:"flex",alignItems:"center",gap:12,position:"relative"}}>
+          <div style={{fontSize:32,filter:"drop-shadow(0 0 12px rgba(160,140,255,0.6))"}}>⚡</div>
+          <div>
+            <div style={{fontFamily:"'SF Mono','Courier New',monospace",fontSize:8,color:"rgba(180,160,255,0.7)",letterSpacing:3,fontWeight:700,marginBottom:2}}>
+              {es||lang==="it"?"XP GANADO":"XP EARNED"}
+            </div>
+            <div style={{fontFamily:"'Archivo Black','Impact',sans-serif",fontSize:48,color:"#b8a4ff",letterSpacing:-2,lineHeight:1,textShadow:"0 0 24px rgba(160,140,255,0.5)"}}>
+              +{animXP}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats grid */}
+      <div style={{width:"100%",maxWidth:380,display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginTop:14,padding:"0 4px",animation:"fu .5s .65s both"}}>
+        <div style={{padding:"12px 10px",borderRadius:12,background:"linear-gradient(180deg,rgba(63,207,142,0.1),rgba(63,207,142,0.04))",border:"1px solid rgba(63,207,142,0.25)"}}>
+          <div style={{fontFamily:"'SF Mono','Courier New',monospace",fontSize:7,color:"rgba(63,207,142,0.7)",letterSpacing:1.5,marginBottom:3}}>
+            {es?"REPS":lang==="fr"?"REPS":"REPS"}
+          </div>
+          <div style={{fontSize:22,fontWeight:900,color:"#3fcf8e",letterSpacing:-0.5,lineHeight:1}}>{animReps}</div>
+        </div>
+        <div style={{padding:"12px 10px",borderRadius:12,background:"linear-gradient(180deg,rgba(240,168,24,0.1),rgba(240,168,24,0.04))",border:"1px solid rgba(240,168,24,0.25)"}}>
+          <div style={{fontFamily:"'SF Mono','Courier New',monospace",fontSize:7,color:"rgba(240,168,24,0.75)",letterSpacing:1.5,marginBottom:3}}>
+            {es?"VOLUMEN":"VOLUME"}
+          </div>
+          <div style={{fontSize:18,fontWeight:900,color:"#f0a818",letterSpacing:-0.5,lineHeight:1}}>{totalVol>0?volDisplayLive:"—"}</div>
+        </div>
+        <div style={{padding:"12px 10px",borderRadius:12,background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.08)"}}>
+          <div style={{fontFamily:"'SF Mono','Courier New',monospace",fontSize:7,color:"rgba(255,255,255,0.5)",letterSpacing:1.5,marginBottom:3}}>
+            {es?"TIEMPO":"TIME"}
+          </div>
+          <div style={{fontSize:18,fontWeight:900,color:"rgba(255,255,255,0.92)",letterSpacing:-0.5,lineHeight:1}}>{fmtSess()}</div>
+        </div>
+      </div>
+
+      {/* Notes post-workout */}
+      {!noteSaved ? (
+        <div style={{width:"100%",maxWidth:380,marginTop:18,padding:"14px 14px",
+          borderRadius:14,background:"rgba(255,255,255,0.025)",
+          border:"1px dashed rgba(255,255,255,0.1)",
+          animation:"fu .5s .85s both"}}>
+          <div style={{fontFamily:"'SF Mono','Courier New',monospace",fontSize:7.5,color:"rgba(255,255,255,0.45)",letterSpacing:2,marginBottom:8,fontWeight:700}}>
+            {es?"¿CÓMO TE SENTISTE?":lang==="fr"?"COMMENT ÇA S'EST PASSÉ?":lang==="it"?"COME TI SEI SENTITO?":lang==="de"?"WIE WAR ES?":"HOW DID IT FEEL?"}
+          </div>
+          <div style={{display:"flex",gap:6,marginBottom:10}}>
+            {[
+              {v:"easy",emoji:"😎",label:es?"FÁCIL":"EASY"},
+              {v:"good",emoji:"💪",label:es?"BIEN":"GOOD"},
+              {v:"hard",emoji:"😤",label:es?"DURO":"HARD"},
+              {v:"max",emoji:"🔥",label:es?"AL MÁXIMO":"MAX"}
+            ].map(f=>(
+              <button key={f.v} onClick={()=>setFeeling(f.v)} style={{
+                flex:1,padding:"8px 4px",borderRadius:10,
+                border:feeling===f.v?"1px solid rgba(63,207,142,0.5)":"1px solid rgba(255,255,255,0.06)",
+                background:feeling===f.v?"rgba(63,207,142,0.12)":"rgba(255,255,255,0.02)",
+                cursor:"pointer",
+                display:"flex",flexDirection:"column",alignItems:"center",gap:3
+              }}>
+                <span style={{fontSize:18}}>{f.emoji}</span>
+                <span style={{fontFamily:"'SF Mono','Courier New',monospace",fontSize:6.5,color:feeling===f.v?"#3fcf8e":"rgba(255,255,255,0.5)",letterSpacing:1,fontWeight:700}}>{f.label}</span>
+              </button>
+            ))}
+          </div>
+          <div style={{fontFamily:"'SF Mono','Courier New',monospace",fontSize:7.5,color:"rgba(255,255,255,0.45)",letterSpacing:2,marginBottom:8,fontWeight:700}}>
+            {es?"ENERGÍA":lang==="fr"?"ÉNERGIE":lang==="it"?"ENERGIA":lang==="de"?"ENERGIE":"ENERGY"}
+          </div>
+          <div style={{display:"flex",gap:6,marginBottom:12}}>
+            {[1,2,3,4,5].map(n=>(
+              <button key={n} onClick={()=>setEnergy(n)} style={{
+                flex:1,padding:"8px 0",borderRadius:8,
+                border:energy===n?"1px solid rgba(240,168,24,0.5)":"1px solid rgba(255,255,255,0.06)",
+                background:energy>=n&&energy?"rgba(240,168,24,0.15)":"rgba(255,255,255,0.02)",
+                cursor:"pointer",
+                fontFamily:"'Archivo Black',sans-serif",fontSize:14,
+                color:energy>=n&&energy?"#f0a818":"rgba(255,255,255,0.3)"
+              }}>{n}</button>
+            ))}
+          </div>
+          <button onClick={saveNote} disabled={!feeling&&!energy} style={{
+            width:"100%",padding:"10px",borderRadius:10,
+            border:"none",cursor:(feeling||energy)?"pointer":"not-allowed",
+            background:(feeling||energy)?"rgba(63,207,142,0.18)":"rgba(255,255,255,0.04)",
+            color:(feeling||energy)?"#3fcf8e":"rgba(255,255,255,0.3)",
+            fontFamily:"'SF Mono','Courier New',monospace",fontSize:9,letterSpacing:2,fontWeight:700
+          }}>
+            {es?"GUARDAR NOTA":"SAVE NOTE"}
+          </button>
+        </div>
+      ) : (
+        <div style={{width:"100%",maxWidth:380,marginTop:14,padding:"10px 14px",
+          borderRadius:12,background:"rgba(63,207,142,0.06)",
+          border:"1px solid rgba(63,207,142,0.2)",
+          display:"flex",alignItems:"center",gap:8,
+          animation:"fu .3s both"}}>
+          <span style={{fontSize:13}}>✓</span>
+          <span style={{fontFamily:"'SF Mono','Courier New',monospace",fontSize:9,color:"rgba(63,207,142,0.85)",letterSpacing:1.5}}>
+            {es?"NOTA GUARDADA":"NOTE SAVED"}
+          </span>
+        </div>
+      )}
+
+      {/* Action buttons */}
+      <div style={{width:"100%",maxWidth:380,marginTop:16,display:"flex",gap:8,animation:"fu .5s .95s both"}}>
+        <button onClick={handleShare} style={{
+          flex:1,padding:"13px 0",
+          background:"rgba(255,255,255,0.04)",
+          color:"rgba(255,255,255,0.7)",
+          border:"1px solid rgba(255,255,255,0.12)",
+          borderRadius:14,
+          fontFamily:"'SF Mono','Courier New',monospace",fontSize:9,fontWeight:700,letterSpacing:2,
+          cursor:"pointer",
+          display:"flex",alignItems:"center",justifyContent:"center",gap:6
+        }}>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
+            <path d="M16 6l-4-4-4 4M12 2v13M5 12v8a2 2 0 002 2h10a2 2 0 002-2v-8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          {es?"COMPARTIR":"SHARE"}
+        </button>
+        <button onClick={onBack} style={{
+          flex:2,padding:"13px 0",
+          background:"linear-gradient(180deg,rgba(72,120,255,0.9),rgba(50,90,200,0.85))",
+          color:"#fff",
+          border:"none",
+          borderTop:"1px solid rgba(130,175,255,0.4)",
+          borderRadius:14,
+          fontFamily:"'SF Mono','Courier New',monospace",fontSize:10,fontWeight:700,letterSpacing:3,
+          cursor:"pointer",
+          boxShadow:"0 0 28px rgba(72,120,255,0.25)"
+        }}>
+          {es?"VOLVER":"BACK"} →
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBack,tourStep=null,setTourStep=()=>{},acwr={ratio:0,acute:0,chronic:0}}){
   const[wsTourStep,setWsTourStep]=React.useState(null);
   const[expandedEx,setExpandedEx]=React.useState(null);
@@ -6268,6 +6548,20 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
     return{dur:goalDefault,msg:""};
   }
   function startRest(ei,si){
+    // En circuitos no descansamos entre ejercicios (la idea es hacerlos seguidos)
+    // Solo dar descanso cuando se completa toda una ronda
+    if(day&&day.circuit){
+      // Verificar si terminamos todos los ejercicios de la ronda
+      const allCircuitDone = exs.every((_,exIdx)=>{
+        if(exIdx===ei) return true; // este se acaba de marcar
+        return sets[exIdx]&&sets[exIdx][0]&&sets[exIdx][0].done;
+      });
+      if(!allCircuitDone) return; // no descansar, sigue al siguiente ejercicio
+      // Completaste una ronda — descanso de 90s entre rondas
+      const rondaDur = 90;
+      setRestDur(rondaDur);setRestSecs(rondaDur);setRestActive(true);setRestCtx({ei,si,isCircuitRound:true});
+      return;
+    }
     const{dur}=calcRest(ei,si);
     setRestDur(dur);setRestSecs(dur);setRestActive(true);setRestCtx({ei,si});
   }
@@ -6441,52 +6735,11 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
     });
     const volDisplay = totalVol>=1000 ? (Math.round(totalVol/100)/10)+"t" : Math.round(totalVol)+"kg";
     return(
-      <div style={{position:"fixed",inset:0,background:"#04080f",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:"sans-serif",overflow:"hidden",padding:"20px"}}>
-        
-        <div style={{width:80,height:80,borderRadius:20,background:"rgba(72,120,255,0.08)",border:"1px solid rgba(72,120,255,0.4)",borderTop:"1px solid rgba(130,175,255,0.6)",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 0 48px rgba(72,120,255,0.18)",marginBottom:24,animation:"celebrate .6s cubic-bezier(.34,1.56,.64,1) both"}}>
-          <svg width="40" height="40" viewBox="0 0 40 40" fill="none"><path d="M7 20L16 29L33 11" stroke="rgba(130,175,255,0.95)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
-        </div>
-        <div style={{fontFamily:"'Archivo Black','Impact',sans-serif",fontSize:42,letterSpacing:1,color:"rgba(240,242,245,0.95)",textAlign:"center",padding:"0 20px",animation:"fu .5s .25s both",lineHeight:0.95}}>{celebMsg}</div>
-        <div style={{fontFamily:"'SF Mono','Courier New',monospace",fontSize:9,color:"rgba(72,120,255,0.65)",letterSpacing:3,marginTop:10,animation:"fu .5s .4s both",textAlign:"center",padding:"0 20px"}}>
-          {lang==="es"?"EL TRABAJO DE HOY FORJA EL ATLETA DE MAÑANA":lang==="fr"?"LE TRAVAIL D'AUJOURD'HUI FORGE L'ATHLÈTE DE DEMAIN":lang==="it"?"IL LAVORO DI OGGI FORGIA L'ATLETA DI DOMANI":lang==="de"?"DIE ARBEIT VON HEUTE SCHMIEDET DEN ATHLETEN VON MORGEN":lang==="pt"?"O TRABALHO DE HOJE FORJA O ATLETA DE AMANHÃ":"TODAY'S WORK BUILDS TOMORROW'S ATHLETE"}
-        </div>
-
-        {/* Stats grid mejorado: 2 filas */}
-        <div style={{width:"100%",maxWidth:380,display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:30,padding:"0 4px",animation:"fu .5s .55s both"}}>
-          {/* Reps totales — para circuitos/calistenia más motivante */}
-          <div style={{padding:"14px 12px",borderRadius:14,background:"linear-gradient(180deg,rgba(63,207,142,0.1),rgba(63,207,142,0.04))",border:"1px solid rgba(63,207,142,0.25)",borderTop:"1px solid rgba(100,230,160,0.4)"}}>
-            <div style={{fontFamily:"'SF Mono','Courier New',monospace",fontSize:8,color:"rgba(63,207,142,0.7)",letterSpacing:2,marginBottom:4}}>
-              {lang==="es"?"REPS TOTALES":lang==="fr"?"REPS TOTAL":lang==="it"?"REPS TOTALI":lang==="de"?"GESAMT REPS":"TOTAL REPS"}
-            </div>
-            <div style={{fontSize:32,fontWeight:900,color:"#3fcf8e",letterSpacing:-1,lineHeight:1}}>{totalReps}</div>
-          </div>
-          {/* Volumen total — para entrenadores con peso */}
-          <div style={{padding:"14px 12px",borderRadius:14,background:"linear-gradient(180deg,rgba(240,168,24,0.1),rgba(240,168,24,0.04))",border:"1px solid rgba(240,168,24,0.25)",borderTop:"1px solid rgba(255,200,80,0.4)"}}>
-            <div style={{fontFamily:"'SF Mono','Courier New',monospace",fontSize:8,color:"rgba(240,168,24,0.75)",letterSpacing:2,marginBottom:4}}>
-              {lang==="es"?"VOLUMEN":lang==="fr"?"VOLUME":lang==="it"?"VOLUME":lang==="de"?"VOLUMEN":"VOLUME"}
-            </div>
-            <div style={{fontSize:28,fontWeight:900,color:"#f0a818",letterSpacing:-1,lineHeight:1}}>{totalVol>0?volDisplay:"—"}</div>
-          </div>
-          {/* Duración */}
-          <div style={{padding:"12px 12px",borderRadius:14,background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.08)"}}>
-            <div style={{fontFamily:"'SF Mono','Courier New',monospace",fontSize:8,color:"rgba(255,255,255,0.5)",letterSpacing:2,marginBottom:4}}>
-              {lang==="es"?"TIEMPO":lang==="fr"?"TEMPS":lang==="it"?"TEMPO":lang==="de"?"ZEIT":"TIME"}
-            </div>
-            <div style={{fontSize:22,fontWeight:900,color:"rgba(255,255,255,0.92)",letterSpacing:-0.5,lineHeight:1}}>{fmtSess()}</div>
-          </div>
-          {/* XP ganado */}
-          <div style={{padding:"12px 12px",borderRadius:14,background:"linear-gradient(180deg,rgba(160,140,255,0.1),rgba(160,140,255,0.03))",border:"1px solid rgba(160,140,255,0.22)"}}>
-            <div style={{fontFamily:"'SF Mono','Courier New',monospace",fontSize:8,color:"rgba(160,140,255,0.7)",letterSpacing:2,marginBottom:4}}>
-              {lang==="es"||lang==="pt"||lang==="it"?"XP GANADO":"XP EARNED"}
-            </div>
-            <div style={{fontSize:22,fontWeight:900,color:"#a08cff",letterSpacing:-0.5,lineHeight:1}}>+{totalXP}</div>
-          </div>
-        </div>
-
-        <button onClick={onBack} style={{marginTop:30,padding:"15px 0",width:"100%",maxWidth:340,background:"linear-gradient(180deg,rgba(72,120,255,0.9),rgba(50,90,200,0.85))",color:"#fff",border:"none",borderTop:"1px solid rgba(130,175,255,0.4)",borderRadius:14,fontFamily:"'SF Mono','Courier New',monospace",fontSize:11,fontWeight:700,letterSpacing:3,cursor:"pointer",animation:"fu .5s .7s both",boxShadow:"0 0 28px rgba(72,120,255,0.25)"}}>
-          {"← "+(L[lang]||L.en).back}
-        </button>
-      </div>
+      <WorkoutCompleteScreen
+        totalReps={totalReps} totalVol={totalVol} volDisplay={volDisplay}
+        totalXP={totalXP} fmtSess={fmtSess} celebMsg={celebMsg}
+        onBack={onBack} lang={lang} L={L} day={day} exs={exs} sets={sets}
+      />
     );
   }
   const mono="'SF Mono','Fira Code','Courier New',monospace";
@@ -6501,8 +6754,11 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
           animation:"fogIn .2s ease",
         }}>
           {restCtx&&(
-            <div style={{fontFamily:mono,fontSize:9,color:C2.tx3,letterSpacing:3,textTransform:"uppercase",marginBottom:20}}>
-              {sets[restCtx.ei]&&exs[restCtx.ei]?.e} — {lang==="es"||lang==="pt"?"SERIE":lang==="fr"?"SÉRIE":lang==="it"?"SERIE":lang==="de"?"SATZ":"SET"} {restCtx.si+1}
+            <div style={{fontFamily:mono,fontSize:9,color:restCtx.isCircuitRound?"#f0a818":C2.tx3,letterSpacing:3,textTransform:"uppercase",marginBottom:20}}>
+              {restCtx.isCircuitRound
+                ? (lang==="es"||lang==="pt"?"🔄 RONDA COMPLETADA · DESCANSA":lang==="fr"?"🔄 ROUND TERMINÉ · REPOS":lang==="it"?"🔄 GIRO COMPLETATO · RIPOSO":lang==="de"?"🔄 RUNDE FERTIG · PAUSE":"🔄 ROUND DONE · REST")
+                : <>{sets[restCtx.ei]&&exs[restCtx.ei]?.e} — {lang==="es"||lang==="pt"?"SERIE":lang==="fr"?"SÉRIE":lang==="it"?"SERIE":lang==="de"?"SATZ":"SET"} {restCtx.si+1}</>
+              }
             </div>
           )}
           <div style={{position:"relative",width:220,height:220,marginBottom:32}}>
@@ -8235,6 +8491,13 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
         borderRadius:6,
         padding:"3px 7px"
       }},
+        // Apple Watch icon si está conectado
+        profile.appleWatch?e("span",{style:{
+          fontSize:9,
+          marginRight:2,
+          opacity:0.85,
+          filter:"drop-shadow(0 0 4px rgba(255,255,255,0.3))"
+        }},""):null,
         e("span",{style:{
           fontSize:11,fontWeight:900,
           color:"rgba(255,140,120,0.95)",
@@ -9927,7 +10190,7 @@ var FORJA_TOUR_STEPS=[
   {anchor:"mode-selector",pad:6,tab:"train",
    title:{es:"MODO",en:"MODE",fr:"MODE",it:"MODO",de:"MODUS"},
    body:{
-     es:"FORJA genera tu rutina automática, o elige un atleta como guía.",
+     es:"FORJA genera tu rutina automática, o elige un atleta como guía e inspira tu entrenamiento.",
      en:"FORJA builds your routine, or pick an athlete as your template.",
      fr:"FORJA génère ta routine, ou choisis un athlète comme guide.",
      it:"FORJA genera la tua routine, o scegli un atleta come guida.",
@@ -9936,11 +10199,11 @@ var FORJA_TOUR_STEPS=[
   {anchor:"hero-heart",pad:8,tab:"train",
    title:{es:"TU CORAZÓN",en:"YOUR HEART",fr:"TON CŒUR",it:"IL TUO CUORE",de:"DEIN HERZ"},
    body:{
-     es:"Tu edad cardiovascular real, calculada con tu VO2max según el modelo científico NTNU.",
-     en:"Your real cardiovascular age, calculated from your VO2max using the scientific NTNU model.",
-     fr:"Ton âge cardiovasculaire réel, calculé via ton VO2max selon le modèle scientifique NTNU.",
-     it:"La tua età cardiovascolare reale, calcolata dal VO2max secondo il modello scientifico NTNU.",
-     de:"Dein echtes kardiovaskuläres Alter, berechnet via VO2max nach dem NTNU-Modell."
+     es:"Tu edad cardiovascular real, calculada con el modelo NTNU. Pulsa al ritmo de tu HR.",
+     en:"Your real cardiovascular age via NTNU model. Pulses with your HR.",
+     fr:"Ton âge cardiovasculaire réel, calculé via le modèle NTNU.",
+     it:"La tua età cardiovascolare reale, calcolata con il modello NTNU.",
+     de:"Dein echtes kardiovaskuläres Alter via NTNU-Modell."
    }},
   {anchor:"cal-day",pad:8,tab:"train",
    title:{es:"SEMANA",en:"WEEK",fr:"SEMAINE",it:"SETTIMANA",de:"WOCHE"},
@@ -9954,11 +10217,11 @@ var FORJA_TOUR_STEPS=[
   {anchor:"start-workout",pad:6,tab:"train",
    title:{es:"ENTRENA",en:"TRAIN",fr:"ENTRAÎNE",it:"ALLENA",de:"TRAINIERE"},
    body:{
-     es:"Toca la mancuerna para empezar tu sesión del día.",
-     en:"Tap the dumbbell to start today's session.",
-     fr:"Touche l'haltère pour commencer la séance du jour.",
-     it:"Tocca il manubrio per iniziare la sessione.",
-     de:"Antippen um die heutige Sitzung zu starten."
+     es:"Toca la mancuerna para empezar tu sesión. Cada workout suma XP a tus músculos.",
+     en:"Tap the dumbbell to start. Each workout adds XP to your muscles.",
+     fr:"Touche l'haltère pour commencer. Chaque séance ajoute de l'XP.",
+     it:"Tocca il manubrio per iniziare. Ogni sessione aggiunge XP.",
+     de:"Antippen um zu starten. Jedes Workout gibt deinen Muskeln XP."
    }},
   {anchor:"vol-weekly",pad:8,tab:"train",
    title:{es:"VOLUMEN",en:"VOLUME",fr:"VOLUME",it:"VOLUME",de:"VOLUMEN"},
@@ -9972,8 +10235,8 @@ var FORJA_TOUR_STEPS=[
   {anchor:"tab-body",pad:6,tab:"train",
    title:{es:"CUERPO 3D",en:"3D BODY",fr:"CORPS 3D",it:"CORPO 3D",de:"3D-KÖRPER"},
    body:{
-     es:"Aquí abres tu maniquí 3D interactivo con el estado de cada músculo.",
-     en:"This opens your interactive 3D mannequin with each muscle's state.",
+     es:"Aquí abres tu maniquí 3D interactivo con el estado y XP de cada músculo.",
+     en:"This opens your interactive 3D mannequin with each muscle's state and XP.",
      fr:"Ouvre ton mannequin 3D avec l'état de chaque muscle.",
      it:"Apre il tuo manichino 3D con lo stato di ogni muscolo.",
      de:"Öffnet dein 3D-Modell mit dem Status jedes Muskels."
@@ -9981,14 +10244,288 @@ var FORJA_TOUR_STEPS=[
   {anchor:"mannequin",pad:4,tab:"body",needsTabSwitch:true,
    title:{es:"MANIQUÍ 3D",en:"3D MANNEQUIN",fr:"MANNEQUIN 3D",it:"MANICHINO 3D",de:"3D-MODELL"},
    body:{
-     es:"Toca un músculo para ver XP. Arrastra para girar. Rojo=activo, verde=listo.",
-     en:"Tap a muscle for XP. Drag to rotate. Red=active, green=ready.",
-     fr:"Touche un muscle pour l'XP. Glisse pour tourner. Rouge=actif, vert=prêt.",
-     it:"Tocca un muscolo per XP. Trascina per ruotare. Rosso=attivo, verde=pronto.",
-     de:"Tippe Muskel für XP. Ziehen zum Drehen. Rot=aktiv, Grün=bereit."
+     es:"Toca un músculo para ver XP. Arrastra para girar. Rojo=activo, verde=listo. Comparte con el botón ↗.",
+     en:"Tap a muscle for XP. Drag to rotate. Red=active, green=ready. Share with ↗ button.",
+     fr:"Touche un muscle pour l'XP. Glisse pour tourner. Partage avec ↗.",
+     it:"Tocca un muscolo per XP. Trascina per ruotare. Condividi con ↗.",
+     de:"Tippe Muskel für XP. Ziehen zum Drehen. Teile mit ↗."
+   }},
+  {anchor:"balance-score",pad:6,tab:"body",needsTabSwitch:true,
+   title:{es:"BALANCE",en:"BALANCE",fr:"ÉQUILIBRE",it:"BILANCIAMENTO",de:"BALANCE"},
+   body:{
+     es:"Mide qué tan equilibrada está tu rutina entre todos los grupos musculares. 100 = perfecto.",
+     en:"Shows how balanced your training is across muscle groups. 100 = perfect.",
+     fr:"Montre l'équilibre de ton entraînement. 100 = parfait.",
+     it:"Mostra l'equilibrio del tuo allenamento. 100 = perfetto.",
+     de:"Zeigt das Gleichgewicht deines Trainings. 100 = perfekt."
    }}
 ];
 
+
+// ─────────────────────────────────────────────────────────────────
+// Coach de intensidad — Analiza performance del user vs target del atleta
+// y sugiere bajar/subir intensidad. Auto-aprende.
+// ─────────────────────────────────────────────────────────────────
+function IntensityCoachCard({profile,sp,lang,mono}){
+  var e=React.createElement;
+  var es=lang==="es"||lang==="pt";
+  var [analysis,setAnalysis]=React.useState(null);
+  var [dismissed,setDismissed]=React.useState(false);
+
+  React.useEffect(function(){
+    if(!profile||!profile.celebrity) return;
+    var celebId=profile.celebrity;
+    var currentPct=Math.round((profile.celebIntensity||0.3)*100);
+    // Cargar performance log de los últimos 30 días
+    try{
+      var raw=localStorage.getItem("forja_celeb_perf_"+celebId);
+      if(!raw) return;
+      var arr=JSON.parse(raw);
+      if(!Array.isArray(arr)||arr.length<10) return; // mínimo 10 sets registrados
+      // Solo últimos 30 días
+      var cutoff=new Date();cutoff.setDate(cutoff.getDate()-30);
+      var cutoffStr=cutoff.toISOString().slice(0,10);
+      var recent=arr.filter(function(r){return r.date>=cutoffStr;});
+      if(recent.length<10) return;
+      // Solo considerar últimas 3 sesiones distintas
+      var sessionDates={};
+      recent.forEach(function(r){if(!sessionDates[r.date])sessionDates[r.date]=[];sessionDates[r.date].push(r);});
+      var dates=Object.keys(sessionDates).sort().slice(-3);
+      if(dates.length<3) return;
+      var lastSets=[];
+      dates.forEach(function(d){lastSets=lastSets.concat(sessionDates[d]);});
+      // Calcular % promedio
+      var avgPct=lastSets.reduce(function(s,r){return s+(r.pct||0);},0)/lastSets.length;
+      var lowCount=lastSets.filter(function(r){return r.pct<0.7;}).length;
+      var highCount=lastSets.filter(function(r){return r.pct>=1.0;}).length;
+      // Diagnóstico
+      if(lowCount/lastSets.length>=0.6 && currentPct>20){
+        // Sugerir bajar
+        setAnalysis({
+          type:"down",
+          newPct:Math.max(20,currentPct-10),
+          currentPct:currentPct,
+          avgPct:Math.round(avgPct*100),
+          sessions:dates.length
+        });
+      } else if(highCount/lastSets.length>=0.7 && currentPct<100){
+        // Sugerir subir
+        setAnalysis({
+          type:"up",
+          newPct:Math.min(100,currentPct+10),
+          currentPct:currentPct,
+          avgPct:Math.round(avgPct*100),
+          sessions:dates.length
+        });
+      }
+    }catch(_){}
+  },[profile&&profile.celebrity,profile&&profile.celebIntensity]);
+
+  if(!analysis||dismissed) return null;
+
+  var goingDown=analysis.type==="down";
+  var primary=goingDown?"#3fcf8e":"#ff7a3a";
+  var primaryRgb=goingDown?"63,207,142":"255,122,58";
+
+  function handleAdjust(){
+    var newProfile=Object.assign({},profile,{celebIntensity:analysis.newPct/100});
+    sp(newProfile);
+    try{localStorage.setItem("forja_intensity_"+profile.celebrity,String(analysis.newPct));}catch(_){}
+    try{
+      // Marcar como ajustado para no volver a sugerir hasta nuevas 3 sesiones
+      localStorage.removeItem("forja_celeb_perf_"+profile.celebrity);
+    }catch(_){}
+    setDismissed(true);
+    try{navigator.vibrate&&navigator.vibrate(40);}catch(_){}
+  }
+
+  return e("div",{style:{
+    margin:"12px 18px 0",
+    padding:"14px 14px 12px",
+    borderRadius:14,
+    background:"linear-gradient(135deg,rgba("+primaryRgb+",0.10) 0%,rgba("+primaryRgb+",0.04) 100%)",
+    border:"1px solid rgba("+primaryRgb+",0.28)",
+    borderTop:"1px solid rgba("+primaryRgb+",0.45)",
+    position:"relative",
+    overflow:"hidden"
+  }},
+    // Botón cerrar
+    e("button",{onClick:function(){setDismissed(true);},style:{
+      position:"absolute",top:8,right:8,
+      width:22,height:22,borderRadius:"50%",
+      background:"rgba(255,255,255,0.05)",
+      border:"none",cursor:"pointer",
+      color:"rgba(255,255,255,0.4)",
+      fontSize:11,padding:0,lineHeight:1,
+      display:"flex",alignItems:"center",justifyContent:"center"
+    }},"×"),
+    e("div",{style:{display:"flex",alignItems:"center",gap:10,marginBottom:8}},
+      e("div",{style:{
+        width:32,height:32,borderRadius:10,
+        background:"rgba("+primaryRgb+",0.15)",
+        border:"1px solid rgba("+primaryRgb+",0.35)",
+        display:"flex",alignItems:"center",justifyContent:"center",
+        fontSize:14,flexShrink:0
+      }},goingDown?"💡":"🔥"),
+      e("div",null,
+        e("div",{style:{
+          fontFamily:"'DM Mono',monospace",fontSize:7.5,letterSpacing:2.5,
+          color:"rgba("+primaryRgb+",0.7)",fontWeight:700,marginBottom:1
+        }},es?"COACH DE INTENSIDAD":"INTENSITY COACH"),
+        e("div",{style:{
+          fontFamily:"'Archivo Black','Impact',sans-serif",fontSize:14,
+          color:"rgba(255,255,255,0.95)",letterSpacing:0.3,lineHeight:1.1
+        }},
+          goingDown
+            ? (es?"Esto está siendo muy duro":"This is too hard right now")
+            : (es?"¡Estás dominando esto!":"You're crushing this!")
+        )
+      )
+    ),
+    e("div",{style:{
+      fontFamily:"'DM Sans',sans-serif",fontSize:11.5,lineHeight:1.45,
+      color:"rgba(255,255,255,0.7)",marginBottom:12,paddingRight:24
+    }},
+      goingDown
+        ? (es
+            ? "Llevas "+analysis.sessions+" sesiones bajo el target ("+analysis.avgPct+"% promedio). Bajar a "+analysis.newPct+"% te ayudará a progresar sin lesiones."
+            : "You've been under target for "+analysis.sessions+" sessions ("+analysis.avgPct+"% average). Lowering to "+analysis.newPct+"% will help you progress without injury.")
+        : (es
+            ? "Has superado el target en "+analysis.sessions+" sesiones consecutivas. Es hora de subir a "+analysis.newPct+"% del atleta real."
+            : "You've crushed target for "+analysis.sessions+" sessions in a row. Time to step up to "+analysis.newPct+"% of the real athlete.")
+    ),
+    e("div",{style:{display:"flex",gap:8}},
+      e("button",{onClick:handleAdjust,style:{
+        flex:1,padding:"10px 12px",
+        background:"linear-gradient(180deg,"+primary+" 0%,rgba("+primaryRgb+",0.85) 100%)",
+        border:"none",borderRadius:10,
+        color:"#000",fontFamily:"'Archivo Black','Impact',sans-serif",
+        fontSize:11,letterSpacing:0.8,cursor:"pointer",
+        boxShadow:"0 3px 12px rgba("+primaryRgb+",0.3)",
+        textTransform:"uppercase"
+      }},
+        goingDown?(es?"BAJAR A "+analysis.newPct+"%":"LOWER TO "+analysis.newPct+"%"):(es?"SUBIR A "+analysis.newPct+"%":"RAISE TO "+analysis.newPct+"%")
+      ),
+      e("button",{onClick:function(){setDismissed(true);},style:{
+        padding:"10px 14px",background:"transparent",
+        border:"1px solid rgba(255,255,255,0.1)",borderRadius:10,
+        color:"rgba(255,255,255,0.5)",fontFamily:"'DM Sans',sans-serif",
+        fontSize:11,cursor:"pointer"
+      }},es?"Mantener":"Keep")
+    )
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+// AthleteProgressCard — visualiza el % actual del user vs siguiente meta
+// con barra animada y tier name del atleta
+// ─────────────────────────────────────────────────────────────────
+function AthleteProgressCard({profile,lang,mono}){
+  var e=React.createElement;
+  var es=lang==="es"||lang==="pt";
+  var celebId=profile&&profile.celebrity;
+  var pctNum=Math.round((profile&&profile.celebIntensity||0.3)*100);
+
+  // Atleta info para mostrar nombre
+  var celebName="ATLETA";
+  try{
+    if(typeof CELEB_LIST!=='undefined'){
+      var c=CELEB_LIST.find(function(x){return x.id===celebId;});
+      if(c) celebName=(c.label||"").toUpperCase();
+    }
+  }catch(_){}
+
+  // Tier names progresivos
+  var tiers=[
+    {pct:20,label:es?"PRINCIPIANTE":"BEGINNER",color:"#3fcf8e"},
+    {pct:35,label:es?"NOVATO+":"NOVICE+",color:"#7dd87d"},
+    {pct:50,label:es?"INTERMEDIO":"INTERMEDIATE",color:"#f0a818"},
+    {pct:70,label:es?"AVANZADO":"ADVANCED",color:"#ff7e3a"},
+    {pct:85,label:es?"AMATEUR":"AMATEUR",color:"#ff5544"},
+    {pct:100,label:es?"ATLETA REAL":"REAL ATHLETE",color:"#cc0000"}
+  ];
+
+  // Tier actual
+  var currentTier=tiers[0];
+  var nextTier=tiers[tiers.length-1];
+  for(var i=0;i<tiers.length;i++){
+    if(pctNum>=tiers[i].pct){
+      currentTier=tiers[i];
+      nextTier=tiers[i+1]||null;
+    } else break;
+  }
+
+  var ac=(profile&&profile.celebAc)||"#f0a818";
+  var acRgb=ac.replace("#","").match(/.{2}/g).map(function(h){return parseInt(h,16);}).join(",");
+
+  return e("div",{style:{
+    margin:"10px 18px 0",
+    padding:"13px 14px 14px",
+    borderRadius:14,
+    background:"linear-gradient(135deg,rgba("+acRgb+",0.06) 0%,rgba(255,255,255,0.02) 100%)",
+    border:"1px solid rgba(255,255,255,0.06)",
+    borderTop:"1px solid rgba("+acRgb+",0.25)",
+    overflow:"hidden",
+    position:"relative"
+  }},
+    // Header
+    e("div",{style:{display:"flex",alignItems:"baseline",justifyContent:"space-between",marginBottom:10}},
+      e("div",null,
+        e("div",{style:{
+          fontFamily:"'DM Mono',monospace",fontSize:7.5,letterSpacing:2.5,
+          color:"rgba(255,255,255,0.4)",fontWeight:700,marginBottom:2
+        }},es?"TU NIVEL EN":"YOUR LEVEL IN"),
+        e("div",{style:{
+          fontFamily:"'Archivo Black','Impact',sans-serif",fontSize:13,
+          color:"#fff",letterSpacing:1.2,lineHeight:1
+        }},celebName)
+      ),
+      e("div",{style:{textAlign:"right"}},
+        e("div",{style:{
+          fontFamily:"'Archivo Black','Impact',sans-serif",fontSize:24,
+          color:currentTier.color,letterSpacing:-0.8,lineHeight:1,
+          textShadow:"0 0 12px "+currentTier.color+"66"
+        }},pctNum+"%"),
+        e("div",{style:{
+          fontFamily:"'DM Mono',monospace",fontSize:7,letterSpacing:1.8,
+          color:currentTier.color,fontWeight:600,marginTop:2,opacity:0.85
+        }},currentTier.label)
+      )
+    ),
+    // Barra de progreso
+    e("div",{style:{
+      height:6,borderRadius:3,
+      background:"rgba(255,255,255,0.05)",
+      overflow:"hidden",position:"relative",marginBottom:10
+    }},
+      e("div",{style:{
+        height:"100%",
+        width:pctNum+"%",
+        background:"linear-gradient(90deg,#3fcf8e 0%,#f0a818 50%,#ff7e3a 75%,#ff4444 100%)",
+        borderRadius:3,
+        transition:"width 1.2s cubic-bezier(0.22,1,0.36,1)",
+        boxShadow:"0 0 8px "+currentTier.color+"55"
+      }})
+    ),
+    // Próxima meta
+    nextTier?e("div",{style:{
+      display:"flex",alignItems:"center",gap:8,
+      fontFamily:"'DM Sans',sans-serif",fontSize:11,
+      color:"rgba(255,255,255,0.55)"
+    }},
+      e("span",{style:{fontSize:13,opacity:0.7}},"→"),
+      e("span",null,
+        es?"Próxima meta · ":"Next goal · ",
+        e("span",{style:{color:nextTier.color,fontWeight:700}},nextTier.pct+"% "+nextTier.label),
+        e("span",{style:{color:"rgba(255,255,255,0.35)",marginLeft:6,fontSize:10}},"+"+(nextTier.pct-pctNum)+"%")
+      )
+    ):e("div",{style:{
+      fontFamily:"'DM Sans',sans-serif",fontSize:11,
+      color:"rgba(255,68,68,0.9)",fontWeight:600,
+      display:"flex",alignItems:"center",gap:6
+    }},"👑 ",es?"Has alcanzado el nivel del atleta real":"You've reached real athlete level")
+  );
+}
 
 function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk,showSet,setShowSet,setShowBotChat,mono,profile,tab,setTab,setSel,sel,sp,sr,setStep}){
   var e=React.createElement;
@@ -10143,6 +10680,16 @@ function BannerDashboard({routine,done,muscleXP,lang,weekOff,setWeekOff,today,wk
       lastPRName:lastPRName,lastPRVal:lastPRVal,
       profile:profile
     }),
+
+    // Coach de intensidad — analiza performance reciente y sugiere ajustar
+    profile&&profile.mode==="celebrity"&&profile.celebrity?e(IntensityCoachCard,{
+      profile:profile,sp:sp,lang:lang,mono:mono
+    }):null,
+
+    // Mini progreso del atleta — visualización del % actual vs próxima meta
+    profile&&profile.mode==="celebrity"&&profile.celebrity?e(AthleteProgressCard,{
+      profile:profile,lang:lang,mono:mono
+    }):null,
 
     // Cuadro de días — liquid glass bubble
     e("div",{"data-tour":"cal-day",style:{
@@ -10762,7 +11309,20 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
           <div style={{fontFamily:mono,fontSize:8,color:"rgba(255,255,255,0.3)",letterSpacing:1.5,marginBottom:14}}>
             {trialLabel}
           </div>
-          <button onClick={handleSubscribe} style={{width:"100%",padding:"15px",borderRadius:14,border:"none",background:"linear-gradient(135deg,#c0a870,#a08850)",color:"#fff",fontFamily:mono,fontSize:11,fontWeight:700,letterSpacing:2,cursor:"pointer",marginBottom:10}}>
+
+          {/* Trust badges */}
+          <div style={{display:"flex",gap:6,justifyContent:"center",marginBottom:14,flexWrap:"wrap"}}>
+            <div style={{display:"flex",alignItems:"center",gap:4,padding:"4px 9px",borderRadius:8,background:"rgba(63,207,142,0.06)",border:"0.5px solid rgba(63,207,142,0.18)"}}>
+              <span style={{fontSize:9,color:"rgba(63,207,142,0.9)"}}>✓</span>
+              <span style={{fontFamily:mono,fontSize:7.5,color:"rgba(63,207,142,0.85)",letterSpacing:1.2,fontWeight:700}}>{isSpanish?"CANCELA CUANDO QUIERAS":isFrench?"ANNULE QUAND VEUX":isItalian?"ANNULLA QUANDO VUOI":isGerman?"JEDERZEIT KÜNDBAR":"CANCEL ANYTIME"}</span>
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:4,padding:"4px 9px",borderRadius:8,background:"rgba(63,207,142,0.06)",border:"0.5px solid rgba(63,207,142,0.18)"}}>
+              <span style={{fontSize:9,color:"rgba(63,207,142,0.9)"}}>✓</span>
+              <span style={{fontFamily:mono,fontSize:7.5,color:"rgba(63,207,142,0.85)",letterSpacing:1.2,fontWeight:700}}>{isSpanish?"SIN COMPROMISO":isFrench?"SANS ENGAGEMENT":isItalian?"NO IMPEGNI":isGerman?"OHNE BINDUNG":"NO COMMITMENT"}</span>
+            </div>
+          </div>
+
+          <button onClick={handleSubscribe} style={{width:"100%",padding:"15px",borderRadius:14,border:"none",background:"linear-gradient(135deg,#c0a870,#a08850)",color:"#fff",fontFamily:mono,fontSize:11,fontWeight:700,letterSpacing:2,cursor:"pointer",marginBottom:10,boxShadow:"0 6px 24px rgba(192,168,112,0.35)"}}>
             {startTrialLabel}
           </button>
           <button onClick={()=>setShowProModal(false)} style={{width:"100%",padding:"10px",borderRadius:12,border:"1px solid rgba(255,255,255,0.08)",background:"transparent",color:"rgba(255,255,255,0.3)",fontFamily:mono,fontSize:9,letterSpacing:1.5,cursor:"pointer"}}>
@@ -13711,17 +14271,32 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
         e("div",{style:{position:"absolute",top:0,left:0,right:0,height:2,background:s.accent,opacity:0.5}}),
         e("div",{style:{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:4,display:"flex",alignItems:"center",gap:4}},
           s.l,
-          i===0&&e("button",{onClick:()=>{const el=document.getElementById("weekvol-help");if(el)el.style.display=el.style.display==="none"?"":"none";},
+          e("button",{onClick:()=>{const el=document.getElementById("stat-help-"+i);if(el)el.style.display=el.style.display==="none"?"":"none";},
             style:{width:13,height:13,borderRadius:"50%",border:"1px solid rgba(255,255,255,.2)",background:"rgba(255,255,255,.06)",
               color:"rgba(255,255,255,.6)",fontSize:8,cursor:"pointer",display:"inline-flex",alignItems:"center",justifyContent:"center",
               padding:0,flexShrink:0,lineHeight:1}},
             "?")
         ),
-        i===0&&e("div",{id:"weekvol-help",style:{display:"none",fontSize:9,color:"rgba(255,255,255,.55)",fontFamily:mono,
+        e("div",{id:"stat-help-"+i,style:{display:"none",fontSize:9,color:"rgba(255,255,255,.55)",fontFamily:mono,
           lineHeight:1.5,marginBottom:6,padding:"6px 8px",background:"rgba(255,255,255,.04)",
           borderRadius:6,border:"1px solid rgba(255,255,255,.08)"}},
-          es?"Tonelaje = series × reps × kg. Con 10kg × 10 reps × 3 series = 300kg. Suma de todos los ejercicios de la semana."
-            :"Tonnage = sets × reps × kg. E.g. 10kg × 10 reps × 3 sets = 300kg. Sum of all weekly exercises."
+          i===0
+            ? (es?"Tonelaje semanal = series × reps × kg. Mide tu volumen total. Sube poco a poco para ganar masa muscular."
+               :lang==="fr"?"Tonnage = séries × reps × kg. Mesure ton volume."
+               :lang==="it"?"Tonnellaggio = serie × reps × kg. Misura il tuo volume."
+               :lang==="de"?"Tonnage = Sätze × Wdh × kg. Misst dein Gesamtvolumen."
+               :"Weekly tonnage = sets × reps × kg. Measures total volume. Increase slowly to gain muscle.")
+            : i===1
+            ? (es?"Días entrenados consecutivos. Construir el hábito > intensidad. La constancia gana siempre."
+               :lang==="fr"?"Jours consécutifs entraînés. La régularité gagne."
+               :lang==="it"?"Giorni consecutivi allenati. La costanza vince sempre."
+               :lang==="de"?"Aufeinanderfolgende Trainingstage. Beständigkeit gewinnt."
+               :"Consecutive days trained. Building the habit beats intensity. Consistency wins.")
+            : (es?"Récords personales (PRs) — tu mejor 1RM por ejercicio. Cada PR nuevo = una victoria registrada."
+               :lang==="fr"?"Records personnels — ton meilleur 1RM par exercice."
+               :lang==="it"?"Record personali — il tuo miglior 1RM per esercizio."
+               :lang==="de"?"Persönliche Bestleistungen — dein bestes 1RM pro Übung."
+               :"Personal Records — your best 1RM per exercise. Every new PR = a victory logged.")
         ),
         e("div",{style:{fontSize:24,fontWeight:900,color:s.accent,fontFamily:sans,letterSpacing:-1.2,lineHeight:1}},s.v),
         e("div",{style:{fontSize:8,fontFamily:mono,color:C.tx3,marginTop:3,letterSpacing:0.5}},s.sub)
