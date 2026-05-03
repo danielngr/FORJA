@@ -76,6 +76,9 @@ input[type=number]{-moz-appearance:textfield;}
 @keyframes nextPulse{0%,100%{background:transparent}50%{background:rgba(106,143,192,.15)}}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
 @keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+@keyframes streakPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+@keyframes streakHueShift{0%,100%{filter:hue-rotate(0deg)}50%{filter:hue-rotate(15deg)}}
+@keyframes heartGlow{0%,100%{opacity:0.4;transform:translate(-50%,-50%) scale(1)}10%{opacity:1;transform:translate(-50%,-50%) scale(1.08)}25%{opacity:0.5;transform:translate(-50%,-50%) scale(1)}40%{opacity:0.85;transform:translate(-50%,-50%) scale(1.04)}55%{opacity:0.4;transform:translate(-50%,-50%) scale(1)}}
 ::placeholder{color:#606678;}
 #forja-sync{position:fixed;bottom:14px;right:14px;width:7px;height:7px;border-radius:50%;background:#525a6e;z-index:9999;pointer-events:none;transition:background .4s;}
 #forja-sync.ok{background:#5faa88;animation:syncPulse 3s ease-in-out infinite;}
@@ -795,46 +798,132 @@ input[type=number]{-moz-appearance:textfield;}
     font-family:'DM Mono',monospace;
     font-size:10px;letter-spacing:5px;
     color:rgba(255,94,94,0.85);font-weight:600;
-    margin-bottom:24px;
+    margin-bottom:10px;
     opacity:0;animation:fadeUp .8s 1.2s forwards;
+    text-align:center;
   }
   #forja-onboarding #s8 .reveal-label{
     font-family:'DM Mono',monospace;
-    font-size:11px;letter-spacing:3px;
-    color:rgba(255,255,255,0.55);
-    font-weight:500;margin-bottom:8px;
+    font-size:9px;letter-spacing:2.5px;
+    color:rgba(255,255,255,0.4);
+    font-weight:500;margin-bottom:18px;
     opacity:0;animation:fadeUp .8s 1.5s forwards;
+    text-align:center;
+  }
+  #forja-onboarding #s8 .reveal-stage{
+    position:relative;
+    display:flex;align-items:center;justify-content:center;
+    margin:0 auto 20px;
+  }
+  #forja-onboarding #s8 .reveal-ring-wrap{
+    position:relative;
+    display:flex;align-items:center;justify-content:center;
+    width:220px;height:220px;
+  }
+  #forja-onboarding #s8 .reveal-ring{
+    position:absolute;top:0;left:0;
+    filter:drop-shadow(0 0 30px rgba(255,94,94,0.35));
   }
   #forja-onboarding #s8 .reveal-age{
     font-family:'Archivo Black',sans-serif;
-    font-size:140px;line-height:0.9;letter-spacing:-3px;
+    font-size:96px;line-height:1;letter-spacing:-3px;
     color:#fff;
     background:linear-gradient(180deg,#fff 0%,#ff5e5e 100%);
     -webkit-background-clip:text;
     -webkit-text-fill-color:transparent;
     text-shadow:0 0 60px rgba(255,94,94,0.4);
     opacity:0;animation:fadeUp 1s 1.8s forwards;
+    z-index:2;
   }
   #forja-onboarding #s8 .reveal-years{
-    font-family:'Archivo Black',sans-serif;
-    font-size:18px;letter-spacing:3px;
-    color:rgba(255,255,255,0.65);margin-top:0;
+    position:absolute;
+    bottom:20px;left:50%;transform:translateX(-50%);
+    font-family:'DM Mono',monospace;
+    font-size:9px;letter-spacing:4px;
+    color:rgba(255,255,255,0.4);font-weight:600;
     opacity:0;animation:fadeUp .8s 2.2s forwards;
+    z-index:2;
+  }
+  #forja-onboarding #s8 .reveal-compare{
+    width:100%;max-width:340px;
+    margin:0 auto 18px;
+    padding:14px 16px;
+    background:rgba(255,255,255,0.03);
+    border:1px solid rgba(255,255,255,0.06);
+    border-radius:14px;
+    opacity:0;animation:fadeUp .8s 2.5s forwards;
+  }
+  #forja-onboarding #s8 .reveal-compare-row{
+    display:flex;align-items:center;gap:10px;
+    padding:6px 0;
+  }
+  #forja-onboarding #s8 .reveal-compare-label{
+    font-family:'DM Mono',monospace;
+    font-size:8px;letter-spacing:1.5px;
+    color:rgba(255,255,255,0.4);font-weight:600;
+    flex-shrink:0;width:64px;
+  }
+  #forja-onboarding #s8 .reveal-compare-bar{
+    flex:1;height:6px;border-radius:3px;
+    background:rgba(255,255,255,0.05);
+    overflow:hidden;
+  }
+  #forja-onboarding #s8 .reveal-bar-fill{
+    height:100%;border-radius:3px;
+    transition:width 1.2s cubic-bezier(0.22, 1, 0.36, 1) 2.8s;
+    width:0%!important;
+  }
+  #forja-onboarding #s8 .reveal-compare-row.animated .reveal-bar-fill{
+    width:var(--bar-width)!important;
+  }
+  #forja-onboarding #s8 .reveal-compare-val{
+    font-family:'Archivo Black',sans-serif;
+    font-size:18px;letter-spacing:-0.5px;
+    color:rgba(255,255,255,0.6);
+    flex-shrink:0;width:32px;text-align:right;
+  }
+  #forja-onboarding #s8 .reveal-compare-val-hl{
+    color:#ff7e3a;
+    text-shadow:0 0 15px rgba(255,126,58,0.4);
   }
   #forja-onboarding #s8 .reveal-meta{
-    margin-top:30px;
+    margin-top:6px;
     display:flex;flex-direction:column;gap:8px;
-    opacity:0;animation:fadeUp .8s 2.6s forwards;
+    opacity:0;animation:fadeUp .8s 3.0s forwards;
+    align-items:center;
   }
-  #forja-onboarding #s8 .reveal-line{
+  #forja-onboarding #s8 .reveal-status{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:8px 16px;
+    background:rgba(63,207,142,0.08);
+    border:1px solid rgba(63,207,142,0.25);
+    border-radius:20px;
     font-family:'DM Sans',sans-serif;font-size:13px;
-    color:rgba(255,255,255,0.6);line-height:1.5;
-    max-width:300px;
+    color:rgba(255,255,255,0.9);
+    line-height:1.3;
   }
-  #forja-onboarding #s8 .reveal-line strong{color:#ff5e5e;font-weight:700;}
+  #forja-onboarding #s8 .reveal-status-icon{
+    font-size:14px;
+    color:rgba(63,207,142,0.95);
+  }
+  /* Status colors variants */
+  #forja-onboarding #s8 .reveal-status.warn{
+    background:rgba(255,126,58,0.08);
+    border-color:rgba(255,126,58,0.3);
+  }
+  #forja-onboarding #s8 .reveal-status.warn .reveal-status-icon{
+    color:rgba(255,126,58,0.95);
+  }
+  #forja-onboarding #s8 .reveal-status.bad{
+    background:rgba(255,68,68,0.08);
+    border-color:rgba(255,68,68,0.3);
+  }
+  #forja-onboarding #s8 .reveal-status.bad .reveal-status-icon{
+    color:rgba(255,68,68,0.95);
+  }
   #forja-onboarding #s8 .reveal-btn{
-    margin-top:36px;
-    opacity:0;animation:fadeUp .8s 3.2s forwards;
+    margin-top:24px;
+    opacity:0;animation:fadeUp .8s 3.4s forwards;
   }
 
   /* Athlete picker grid */
@@ -1061,15 +1150,21 @@ input[type=number]{-moz-appearance:textfield;}
   }
   #forja-onboarding .im-card{
     position:relative;
-    width:100%;max-width:360px;
-    background:linear-gradient(180deg,#1a1d24 0%,#0e1015 100%);
-    border:1px solid rgba(255,255,255,0.10);
-    border-radius:24px;
-    padding:24px 22px 18px;
-    box-shadow:0 20px 80px rgba(0,0,0,0.6);
+    width:100%;max-width:380px;
+    background:radial-gradient(ellipse 100% 70% at 50% 0%, rgba(192,168,112,0.10) 0%, transparent 60%), linear-gradient(180deg,#15171e 0%,#08090d 100%);
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:28px;
+    padding:28px 22px 18px;
+    box-shadow:0 24px 100px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.06);
     text-align:center;
     transform:translateY(20px) scale(0.97);
-    transition:transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition:transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    overflow:hidden;
+  }
+  #forja-onboarding .im-card::before{
+    content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
+    width:60%;height:1px;
+    background:linear-gradient(90deg,transparent 0%,rgba(192,168,112,0.5) 50%,transparent 100%);
   }
   #forja-onboarding .intensity-modal.visible .im-card{
     transform:translateY(0) scale(1);
@@ -1097,11 +1192,12 @@ input[type=number]{-moz-appearance:textfield;}
   }
   #forja-onboarding .im-pct{
     font-family:'Archivo Black',sans-serif;
-    font-size:64px;line-height:1;
+    font-size:74px;line-height:1;
     color:var(--intensity-color);
-    letter-spacing:-2px;
-    transition:color 0.2s ease;
-    text-shadow:0 0 30px rgba(240,168,24,0.25);
+    letter-spacing:-3px;
+    transition:color 0.25s ease;
+    text-shadow:0 0 40px rgba(240,168,24,0.35);
+    font-weight:900;
   }
   #forja-onboarding .im-label{
     font-family:'DM Mono',monospace;
@@ -1112,21 +1208,25 @@ input[type=number]{-moz-appearance:textfield;}
   }
   #forja-onboarding .im-slider{
     -webkit-appearance:none;appearance:none;
-    width:100%;height:6px;
-    background:rgba(255,255,255,0.08);
-    border-radius:3px;
+    width:100%;height:8px;
+    background:linear-gradient(90deg,rgba(63,207,142,0.15) 0%,rgba(63,207,142,0.15) 30%,rgba(240,168,24,0.18) 50%,rgba(255,126,58,0.18) 70%,rgba(255,68,68,0.2) 100%);
+    border-radius:4px;
     outline:none;
-    margin:14px 0 6px;
+    margin:18px 0 8px;
     cursor:pointer;
+    border:1px solid rgba(255,255,255,0.06);
   }
   #forja-onboarding .im-slider::-webkit-slider-thumb{
     -webkit-appearance:none;appearance:none;
-    width:24px;height:24px;border-radius:50%;
-    background:var(--intensity-color);
+    width:28px;height:28px;border-radius:50%;
+    background:radial-gradient(circle at 30% 30%, rgba(255,255,255,0.4), var(--intensity-color) 70%);
     cursor:pointer;
-    border:3px solid #0e1015;
-    box-shadow:0 0 14px rgba(240,168,24,0.5);
-    transition:background 0.2s ease;
+    border:3px solid #08090d;
+    box-shadow:0 0 18px var(--intensity-color), 0 2px 8px rgba(0,0,0,0.5);
+    transition:transform 0.15s ease;
+  }
+  #forja-onboarding .im-slider::-webkit-slider-thumb:active{
+    transform:scale(1.15);
   }
   #forja-onboarding .im-slider::-moz-range-thumb{
     width:18px;height:18px;border-radius:50%;
@@ -1163,19 +1263,20 @@ input[type=number]{-moz-appearance:textfield;}
   }
   #forja-onboarding .im-btn-primary{
     width:100%;
-    padding:14px 16px;
-    background:linear-gradient(180deg,#f0a818 0%,#d49210 100%);
+    padding:15px 16px;
+    background:linear-gradient(180deg,var(--intensity-color) 0%,rgba(212,146,16,0.92) 100%);
     border:none;
-    border-radius:14px;
-    color:#1a1100;
+    border-radius:16px;
+    color:#000;
     font-family:'Archivo Black',sans-serif;
-    font-size:14px;letter-spacing:0.5px;
+    font-size:14px;letter-spacing:0.8px;
     cursor:pointer;
     margin-bottom:6px;
-    box-shadow:0 4px 14px rgba(240,168,24,0.3);
-    transition:transform 0.15s ease;
+    box-shadow:0 6px 22px rgba(240,168,24,0.35), inset 0 1px 0 rgba(255,255,255,0.3);
+    transition:transform 0.15s ease, box-shadow 0.2s ease;
+    text-transform:uppercase;
   }
-  #forja-onboarding .im-btn-primary:active{transform:scale(0.97);}
+  #forja-onboarding .im-btn-primary:active{transform:scale(0.97);box-shadow:0 3px 12px rgba(240,168,24,0.3);}
   #forja-onboarding .im-btn-secondary{
     width:100%;
     padding:10px;
@@ -1187,7 +1288,80 @@ input[type=number]{-moz-appearance:textfield;}
     cursor:pointer;
   }
 
-  /* Header back button */
+  /* ─── WELCOME SCREEN (s0) ─── */
+  #forja-onboarding .welcome-content{
+    display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    padding:60px 20px 0;
+    flex:1;
+  }
+  #forja-onboarding .welcome-logo{
+    font-family:'Archivo Black',sans-serif;
+    font-size:14px;letter-spacing:8px;
+    color:#ff5e5e;
+    margin-bottom:6px;
+    text-shadow:
+      0 0 20px rgba(255,94,94,0.6),
+      0 0 6px rgba(0,0,0,0.9);
+  }
+  #forja-onboarding .welcome-tag{
+    font-family:'DM Mono',monospace;
+    font-size:8px;letter-spacing:4px;
+    color:rgba(255,255,255,0.4);
+    margin-bottom:48px;
+    text-shadow:0 0 10px rgba(0,0,0,0.9);
+  }
+  #forja-onboarding .welcome-title{
+    font-family:'Archivo Black',sans-serif;
+    font-size:46px;line-height:0.95;
+    letter-spacing:-1px;
+    color:#fff;
+    text-align:center;
+    margin-bottom:48px;
+    text-shadow:
+      0 0 30px rgba(0,0,0,0.95),
+      0 0 12px rgba(0,0,0,0.85),
+      0 2px 4px rgba(0,0,0,0.7);
+  }
+  #forja-onboarding .welcome-title em{
+    font-style:normal;color:#ff5e5e;
+    text-shadow:
+      0 0 30px rgba(255,94,94,0.5),
+      0 0 12px rgba(0,0,0,0.85),
+      0 2px 4px rgba(0,0,0,0.7);
+  }
+  #forja-onboarding .welcome-features{
+    display:flex;flex-direction:column;gap:14px;
+    width:100%;max-width:300px;
+  }
+  #forja-onboarding .welcome-feature{
+    display:flex;align-items:center;gap:12px;
+    padding:11px 14px;
+    background:rgba(20,22,28,0.5);
+    backdrop-filter:blur(12px);
+    -webkit-backdrop-filter:blur(12px);
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:14px;
+  }
+  #forja-onboarding .wf-emoji{
+    font-size:18px;flex-shrink:0;
+    filter:drop-shadow(0 0 8px rgba(255,94,94,0.3));
+  }
+  #forja-onboarding .wf-text{
+    font-family:'DM Sans',sans-serif;
+    font-size:13px;line-height:1.3;
+    color:rgba(255,255,255,0.92);
+  }
+  #forja-onboarding .welcome-time{
+    font-family:'DM Mono',monospace;
+    font-size:9px;letter-spacing:2px;
+    color:rgba(255,255,255,0.4);
+    text-align:center;margin-top:14px;
+    text-shadow:0 0 10px rgba(0,0,0,0.9);
+  }
+
+  /* Hide back button on welcome screen */
+  #forja-onboarding[data-step="0"] .back-btn{display:none;}
   #forja-onboarding .back-btn{
     position:absolute;top:16px;left:18px;
     width:40px;height:40px;border-radius:50%;
@@ -1313,16 +1487,36 @@ input[type=number]{-moz-appearance:textfield;}
   <div class="screens">
 
     <!-- ═══════════════════════════════════ -->
-    <!-- SCREEN 0: WELCOME -->
+    <!-- SCREEN 0: WELCOME + VALUE PROP -->
     <!-- ═══════════════════════════════════ -->
     <div class="screen active" id="s0">
-      <div class="welcome-title">FORJA<br><em>TU RUTINA.</em></div>
-      <button class="btn-continue welcome-btn" onclick="next()">EMPEZAR →</button>
+      <div class="welcome-content">
+        <div class="welcome-logo">FORJA</div>
+        <div class="welcome-tag">FITNESS · 3D</div>
+
+        <h1 class="welcome-title">VE TU<br><em>CUERPO</em><br>EVOLUCIONAR</h1>
+
+        <div class="welcome-features">
+          <div class="welcome-feature">
+            <span class="wf-emoji">🔥</span>
+            <span class="wf-text">Mapa muscular 3D en vivo</span>
+          </div>
+          <div class="welcome-feature">
+            <span class="wf-emoji">⚡</span>
+            <span class="wf-text">Inspirado en atletas reales</span>
+          </div>
+          <div class="welcome-feature">
+            <span class="wf-emoji">📊</span>
+            <span class="wf-text">Tu edad cardiovascular real</span>
+          </div>
+        </div>
+      </div>
+      <div class="bottom-area">
+        <button class="btn-continue" onclick="next()">EMPEZAR →</button>
+        <div class="welcome-time">2 minutos · gratis</div>
+      </div>
     </div>
 
-    <!-- ═══════════════════════════════════ -->
-    <!-- SCREEN 1: NOMBRE -->
-    <!-- ═══════════════════════════════════ -->
     <div class="screen" id="s1">
       <div class="screen-tag">01 · IDENTIDAD</div>
       <div class="spacer" style="flex:0.5;"></div>
@@ -1624,12 +1818,55 @@ input[type=number]{-moz-appearance:textfield;}
     <div class="screen" id="s8">
       <div class="reveal-tag">TU EDAD CARDIOVASCULAR</div>
       <div class="reveal-label">CALCULADA POR LA FÓRMULA NTNU</div>
-      <div class="reveal-age" id="reveal-age">24</div>
-      <div class="reveal-years">AÑOS</div>
-      <div class="reveal-meta">
-        <div class="reveal-line">Edad real: <strong id="reveal-real">25</strong> años · Diferencia: <strong id="reveal-diff">−1</strong></div>
-        <div class="reveal-line" id="reveal-msg">Tu corazón es más joven que tú. <strong>Mantenlo así.</strong></div>
+
+      <!-- Big age + comparison ring -->
+      <div class="reveal-stage">
+        <div class="reveal-ring-wrap">
+          <svg class="reveal-ring" viewBox="0 0 200 200" width="220" height="220">
+            <!-- background ring -->
+            <circle cx="100" cy="100" r="92" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="3"/>
+            <!-- progress ring (filled by JS) -->
+            <circle id="reveal-progress-ring" cx="100" cy="100" r="92" fill="none"
+              stroke="url(#revealGrad)" stroke-width="3"
+              stroke-linecap="round"
+              stroke-dasharray="578"
+              stroke-dashoffset="578"
+              transform="rotate(-90 100 100)"
+              style="transition: stroke-dashoffset 1.8s cubic-bezier(0.22, 1, 0.36, 1) 1.6s;"/>
+            <defs>
+              <linearGradient id="revealGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#ff5e5e"/>
+                <stop offset="100%" stop-color="#ff8a3a"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <div class="reveal-age" id="reveal-age">24</div>
+          <div class="reveal-years">AÑOS</div>
+        </div>
       </div>
+
+      <!-- Comparison bar -->
+      <div class="reveal-compare">
+        <div class="reveal-compare-row">
+          <div class="reveal-compare-label">EDAD REAL</div>
+          <div class="reveal-compare-bar"><div class="reveal-bar-fill" id="reveal-bar-real" style="width:50%;background:rgba(255,255,255,0.3);"></div></div>
+          <div class="reveal-compare-val" id="reveal-real">25</div>
+        </div>
+        <div class="reveal-compare-row">
+          <div class="reveal-compare-label">CV EDAD</div>
+          <div class="reveal-compare-bar"><div class="reveal-bar-fill" id="reveal-bar-cv" style="width:48%;background:linear-gradient(90deg,#ff5e5e,#ff8a3a);"></div></div>
+          <div class="reveal-compare-val reveal-compare-val-hl" id="reveal-cv">24</div>
+        </div>
+      </div>
+
+      <!-- Status message -->
+      <div class="reveal-meta">
+        <div class="reveal-status" id="reveal-status">
+          <span class="reveal-status-icon" id="reveal-status-icon">✓</span>
+          <span id="reveal-msg">Tu corazón es más joven que tú</span>
+        </div>
+      </div>
+
       <button class="btn-continue reveal-btn" onclick="completeOnboarding()">FORJAR MI CUERPO →</button>
     </div>
 
@@ -2318,24 +2555,63 @@ function continueWithFreePlan(){
 function finalize(){
   // Compute CV age (or use defaults if waist/hr were skipped)
   const dataForCalc = Object.assign({}, _obState.data);
-  if(dataForCalc.waist === null) dataForCalc.waist = (dataForCalc.sex==='F'?78:88); // average values
+  if(dataForCalc.waist === null) dataForCalc.waist = (dataForCalc.sex==='F'?78:88);
   if(dataForCalc.hr === null) dataForCalc.hr = 70;
   const calc = calculateCVAge(dataForCalc);
   const diff = calc.fitnessAge - _obState.data.age;
-  document.getElementById('reveal-age').textContent = calc.fitnessAge;
-  document.getElementById('reveal-real').textContent = _obState.data.age;
-  document.getElementById('reveal-diff').textContent = (diff>0?'+':'')+diff;
-  let msg;
-  if(_obState.data.waist === null && _obState.data.hr === null){
-    msg = 'Estimación inicial. <strong>Registra tus medidas para calcularla con precisión.</strong>';
-  } else if(diff <= -5) msg = `Tu corazón es ${Math.abs(diff)} años más joven que tú. <strong>Eres una élite.</strong>`;
-  else if(diff <= -2) msg = `Tu corazón es más joven que tú. <strong>Mantenlo así.</strong>`;
-  else if(diff <= 2) msg = `Tu edad cardiovascular está alineada con tu edad real. <strong>Hay margen para mejorar.</strong>`;
-  else if(diff <= 5) msg = `Tu corazón es ligeramente mayor. <strong>FORJA puede revertir esto.</strong>`;
-  else msg = `Tu corazón está envejecido. <strong>Es hora de actuar.</strong>`;
-  document.getElementById('reveal-msg').innerHTML = msg;
+  const realAge = _obState.data.age;
+  const cvAge = calc.fitnessAge;
 
-  // Transition to s8 (reveal) — could be coming from s7 (auto) or s7b (celeb)
+  document.getElementById('reveal-age').textContent = cvAge;
+  document.getElementById('reveal-real').textContent = realAge;
+  document.getElementById('reveal-cv').textContent = cvAge;
+
+  // Animar las barras: 100 años máximo. Edad real → % proportional, CV age → similar
+  const realPct = Math.min(100, (realAge/80)*100);
+  const cvPct = Math.min(100, (cvAge/80)*100);
+
+  // Animar ring central (proportional to age)
+  // Circumference = 2π * 92 ≈ 578
+  const ringMax = 578;
+  const ringFill = ringMax - (cvPct/100)*ringMax;
+
+  // Status & color de la card de estado
+  let msg, statusClass = '', icon = '✓';
+  if(_obState.data.waist === null && _obState.data.hr === null){
+    msg = 'Estimación inicial · Registra tus medidas para precisión';
+    statusClass = 'warn';
+    icon = 'i';
+  } else if(diff <= -5){
+    msg = `Tu corazón es ${Math.abs(diff)} años más joven · Élite`;
+    statusClass = '';
+    icon = '✓';
+  } else if(diff <= -2){
+    msg = `Tu corazón es más joven que tú · Mantenlo así`;
+    statusClass = '';
+    icon = '✓';
+  } else if(diff <= 2){
+    msg = `Edad CV alineada · Hay margen para mejorar`;
+    statusClass = 'warn';
+    icon = '~';
+  } else if(diff <= 5){
+    msg = `Corazón ligeramente mayor · FORJA puede revertir esto`;
+    statusClass = 'warn';
+    icon = '!';
+  } else {
+    msg = `Corazón envejecido · Es hora de actuar`;
+    statusClass = 'bad';
+    icon = '!';
+  }
+
+  document.getElementById('reveal-msg').textContent = msg;
+  const statusEl = document.getElementById('reveal-status');
+  if(statusEl){
+    statusEl.classList.remove('warn','bad');
+    if(statusClass) statusEl.classList.add(statusClass);
+    document.getElementById('reveal-status-icon').textContent = icon;
+  }
+
+  // Transition to s8 (reveal)
   document.querySelectorAll('#forja-onboarding .screen').forEach(s=>s.classList.remove('active','exit'));
   setTimeout(()=>{
     const s8 = document.getElementById('s8');
@@ -2344,6 +2620,24 @@ function finalize(){
     updateProgress();
     updateBackBtn();
     if(window.heart3D) heart3D.setStage(8);
+
+    // Animar el ring SVG
+    setTimeout(()=>{
+      const ring = document.getElementById('reveal-progress-ring');
+      if(ring) ring.style.strokeDashoffset = ringFill;
+
+      // Setear width var en barras y disparar animación
+      const realRow = document.querySelector('#reveal-bar-real')?.parentElement?.parentElement;
+      const cvRow = document.querySelector('#reveal-bar-cv')?.parentElement?.parentElement;
+      const realBar = document.getElementById('reveal-bar-real');
+      const cvBar = document.getElementById('reveal-bar-cv');
+      if(realBar) realBar.style.setProperty('--bar-width', realPct+'%');
+      if(cvBar) cvBar.style.setProperty('--bar-width', cvPct+'%');
+      setTimeout(()=>{
+        if(realRow) realRow.classList.add('animated');
+        if(cvRow) cvRow.classList.add('animated');
+      }, 100);
+    }, 100);
   },50);
   haptic('heavy');
 }
@@ -3239,6 +3533,20 @@ function signInWithGoogle(){
   });
 }
 window.signInWithGoogle=signInWithGoogle;
+
+function signInWithApple(){
+  const sb=getSB();
+  if(!sb){console.error('Supabase not available');return;}
+  const redirectTo='https://danielngr.github.io/FORJA/';
+  console.log('Starting Apple OAuth, redirectTo:', redirectTo);
+  sb.auth.signInWithOAuth({
+    provider:'apple',
+    options:{redirectTo,scopes:'email name'}
+  }).then(({error})=>{
+    if(error) console.error('Apple OAuth error:',error.message);
+  });
+}
+window.signInWithApple=signInWithApple;
 
 function signOut(){
   const sb=getSB();
@@ -5862,7 +6170,7 @@ const EX_META={
 };
 
 // Bodyweight exercises (no se permite peso manual - usa peso del user)
-const BW_EXERCISES=new Set(["pull up","weighted pull up","chin up","push up","decline push up","dips","bench dips","diamond push ups","plank","mountain climber","hanging knee raises","box jump","bodyweight squat","dominadas","dominadas agarre supino","dominadas lastradas","fondos","fondos en banco","flexiones","flexión","sentadilla peso corporal","sentadilla con salto","burpee","plancha","crunch","abs","zancada con salto","pistol squat","step up","superman","hiperextensión","elevación de piernas","flutter kicks","russian twist","hollow body","v-up","sit up","salto al cajón","saltar la cuerda","sprint","caminar","subir escaleras","remo australiano"]);
+const BW_EXERCISES=new Set(["pull up","weighted pull up","chin up","push up","decline push up","dips","bench dips","diamond push ups","plank","mountain climber","mountain climbers","hanging knee raises","box jump","bodyweight squat","dominadas","dominadas agarre supino","dominadas lastradas","dominadas agarre amplio","dominadas neutro","fondos","fondos en banco","fondos paralelas","flexiones","flexión","flexiones diamante","flexiones explosivas","sentadilla peso corporal","sentadillas peso corporal","sentadilla con salto","burpee","plancha","plancha lateral","crunch","crunch bicicleta","abs","zancada con salto","zancadas peso corporal","zancada peso corporal","pistol squat","step up","superman","hiperextensión","elevación de piernas","flutter kicks","russian twist","hollow body","v-up","sit up","salto al cajón","saltar la cuerda","sprint","sprint 200m","caminar","subir escaleras","remo australiano","jumping jacks","arm haulers","farmer walk"]);
 // Time-based exercises (cardio, etc — no se calcula volumen con peso)
 const NO_TIME_EX=["cardio suave","cardio moderado","cardio","estiramientos","estiramiento","yoga","pilates","sprint 200m","saltar la cuerda","jumping jacks","arm haulers","mountain climbers","bear crawl","farmer walk","cardio (carrera)","cardio caminata","movilidad"];
 
@@ -6018,6 +6326,18 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
       setFinalSecs(sessSecs);setAllDone(true);FStore.saveSession(day&&day.l,exs,sessSecs);
       // Trigger bot celebración
       if(window.FORJA_BOT) window.FORJA_BOT.trigger("victory");
+      // Tracking de sesiones completadas + rating prompt
+      try{
+        const cnt = parseInt(localStorage.getItem('forja_sess_count')||'0') + 1;
+        localStorage.setItem('forja_sess_count', String(cnt));
+        const askedRating = localStorage.getItem('forja_rated') === '1';
+        // Pedir rating después de 3 sesiones (cuando ya está enganchado)
+        if(cnt === 3 && !askedRating){
+          setTimeout(()=>{
+            try{ window.dispatchEvent(new CustomEvent('forja:askRating')); }catch(_){}
+          }, 3500); // después de la celebración
+        }
+      }catch(_){}
     },700);
   }
   function addSet(ei){
@@ -6106,31 +6426,64 @@ function WorkoutScreen({day,sel,done,logs,onToggle,onSaveLog,t,lang,profile,onBa
   });
   if(allDone){
     const confettiColors=["#3fcf8e","#6a8fc0","#f0b429","#8878c0","#F0F2F5","#e05555"];
+    // Calcular stats reales del workout
+    let totalReps=0, totalVol=0, totalXP=0;
+    sets.forEach((exSets,ei)=>{
+      exSets.forEach(s=>{
+        if(s.done){
+          const reps=parseInt(s.rp)||0;
+          const kg=parseFloat(s.kg)||0;
+          totalReps += reps;
+          if(kg>0) totalVol += kg*reps;
+          totalXP += Math.max(1, Math.round(reps * 0.8));
+        }
+      });
+    });
+    const volDisplay = totalVol>=1000 ? (Math.round(totalVol/100)/10)+"t" : Math.round(totalVol)+"kg";
     return(
-      <div style={{position:"fixed",inset:0,background:"#04080f",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:"sans-serif",overflow:"hidden"}}>
+      <div style={{position:"fixed",inset:0,background:"#04080f",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:"sans-serif",overflow:"hidden",padding:"20px"}}>
         
         <div style={{width:80,height:80,borderRadius:20,background:"rgba(72,120,255,0.08)",border:"1px solid rgba(72,120,255,0.4)",borderTop:"1px solid rgba(130,175,255,0.6)",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 0 48px rgba(72,120,255,0.18)",marginBottom:24,animation:"celebrate .6s cubic-bezier(.34,1.56,.64,1) both"}}>
           <svg width="40" height="40" viewBox="0 0 40 40" fill="none"><path d="M7 20L16 29L33 11" stroke="rgba(130,175,255,0.95)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
         </div>
-        <div style={{fontFamily:"'Archivo Black','Impact',sans-serif",fontSize:48,letterSpacing:1,color:"rgba(240,242,245,0.95)",textAlign:"center",padding:"0 28px",animation:"fu .5s .25s both"}}>{celebMsg}</div>
-        <div style={{fontFamily:"'SF Mono','Courier New',monospace",fontSize:9,color:"rgba(72,120,255,0.65)",letterSpacing:3,marginTop:10,animation:"fu .5s .4s both"}}>
+        <div style={{fontFamily:"'Archivo Black','Impact',sans-serif",fontSize:42,letterSpacing:1,color:"rgba(240,242,245,0.95)",textAlign:"center",padding:"0 20px",animation:"fu .5s .25s both",lineHeight:0.95}}>{celebMsg}</div>
+        <div style={{fontFamily:"'SF Mono','Courier New',monospace",fontSize:9,color:"rgba(72,120,255,0.65)",letterSpacing:3,marginTop:10,animation:"fu .5s .4s both",textAlign:"center",padding:"0 20px"}}>
           {lang==="es"?"EL TRABAJO DE HOY FORJA EL ATLETA DE MAÑANA":lang==="fr"?"LE TRAVAIL D'AUJOURD'HUI FORGE L'ATHLÈTE DE DEMAIN":lang==="it"?"IL LAVORO DI OGGI FORGIA L'ATLETA DI DOMANI":lang==="de"?"DIE ARBEIT VON HEUTE SCHMIEDET DEN ATHLETEN VON MORGEN":lang==="pt"?"O TRABALHO DE HOJE FORJA O ATLETA DE AMANHÃ":"TODAY'S WORK BUILDS TOMORROW'S ATHLETE"}
         </div>
-        <div style={{display:"flex",gap:10,marginTop:32,padding:"0 24px",animation:"fu .5s .55s both"}}>
-          {[{v:exs.length,l:lang==="es"||lang==="pt"?"EJERCICIOS":lang==="fr"?"EXERCICES":lang==="it"?"ESERCIZI":lang==="de"?"ÜBUNGEN":"EXERCISES",c:C2.tx},
-            {v:doneSets,l:(L[lang]||L.en).sets,c:C2.green},
-            {v:fmtSess(),l:lang==="es"||lang==="pt"?"DURACIÓN":lang==="fr"?"DURÉE":lang==="it"?"DURATA":lang==="de"?"DAUER":"DURATION",c:C2.blue}
-          ].map((stat,i)=>(
-            <React.Fragment key={i}>
-              {i>0&&<div style={{width:1,background:C2.borderL}}/>}
-              <div style={{textAlign:"center"}}>
-                <div style={{fontSize:28,fontWeight:900,color:stat.c}}>{stat.v}</div>
-                <div style={{fontFamily:"'SF Mono','Courier New',monospace",fontSize:8,color:C2.tx3,letterSpacing:2,marginTop:3}}>{stat.l}</div>
-              </div>
-            </React.Fragment>
-          ))}
+
+        {/* Stats grid mejorado: 2 filas */}
+        <div style={{width:"100%",maxWidth:380,display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:30,padding:"0 4px",animation:"fu .5s .55s both"}}>
+          {/* Reps totales — para circuitos/calistenia más motivante */}
+          <div style={{padding:"14px 12px",borderRadius:14,background:"linear-gradient(180deg,rgba(63,207,142,0.1),rgba(63,207,142,0.04))",border:"1px solid rgba(63,207,142,0.25)",borderTop:"1px solid rgba(100,230,160,0.4)"}}>
+            <div style={{fontFamily:"'SF Mono','Courier New',monospace",fontSize:8,color:"rgba(63,207,142,0.7)",letterSpacing:2,marginBottom:4}}>
+              {lang==="es"?"REPS TOTALES":lang==="fr"?"REPS TOTAL":lang==="it"?"REPS TOTALI":lang==="de"?"GESAMT REPS":"TOTAL REPS"}
+            </div>
+            <div style={{fontSize:32,fontWeight:900,color:"#3fcf8e",letterSpacing:-1,lineHeight:1}}>{totalReps}</div>
+          </div>
+          {/* Volumen total — para entrenadores con peso */}
+          <div style={{padding:"14px 12px",borderRadius:14,background:"linear-gradient(180deg,rgba(240,168,24,0.1),rgba(240,168,24,0.04))",border:"1px solid rgba(240,168,24,0.25)",borderTop:"1px solid rgba(255,200,80,0.4)"}}>
+            <div style={{fontFamily:"'SF Mono','Courier New',monospace",fontSize:8,color:"rgba(240,168,24,0.75)",letterSpacing:2,marginBottom:4}}>
+              {lang==="es"?"VOLUMEN":lang==="fr"?"VOLUME":lang==="it"?"VOLUME":lang==="de"?"VOLUMEN":"VOLUME"}
+            </div>
+            <div style={{fontSize:28,fontWeight:900,color:"#f0a818",letterSpacing:-1,lineHeight:1}}>{totalVol>0?volDisplay:"—"}</div>
+          </div>
+          {/* Duración */}
+          <div style={{padding:"12px 12px",borderRadius:14,background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.08)"}}>
+            <div style={{fontFamily:"'SF Mono','Courier New',monospace",fontSize:8,color:"rgba(255,255,255,0.5)",letterSpacing:2,marginBottom:4}}>
+              {lang==="es"?"TIEMPO":lang==="fr"?"TEMPS":lang==="it"?"TEMPO":lang==="de"?"ZEIT":"TIME"}
+            </div>
+            <div style={{fontSize:22,fontWeight:900,color:"rgba(255,255,255,0.92)",letterSpacing:-0.5,lineHeight:1}}>{fmtSess()}</div>
+          </div>
+          {/* XP ganado */}
+          <div style={{padding:"12px 12px",borderRadius:14,background:"linear-gradient(180deg,rgba(160,140,255,0.1),rgba(160,140,255,0.03))",border:"1px solid rgba(160,140,255,0.22)"}}>
+            <div style={{fontFamily:"'SF Mono','Courier New',monospace",fontSize:8,color:"rgba(160,140,255,0.7)",letterSpacing:2,marginBottom:4}}>
+              {lang==="es"||lang==="pt"||lang==="it"?"XP GANADO":"XP EARNED"}
+            </div>
+            <div style={{fontSize:22,fontWeight:900,color:"#a08cff",letterSpacing:-0.5,lineHeight:1}}>+{totalXP}</div>
+          </div>
         </div>
-        <button onClick={onBack} style={{marginTop:36,padding:"15px 0",width:"80%",background:"linear-gradient(180deg,rgba(72,120,255,0.9),rgba(50,90,200,0.85))",color:"#fff",border:"none",borderTop:"1px solid rgba(130,175,255,0.4)",borderRadius:14,fontFamily:"'SF Mono','Courier New',monospace",fontSize:11,fontWeight:700,letterSpacing:3,cursor:"pointer",animation:"fu .5s .7s both",boxShadow:"0 0 28px rgba(72,120,255,0.25)"}}>
+
+        <button onClick={onBack} style={{marginTop:30,padding:"15px 0",width:"100%",maxWidth:340,background:"linear-gradient(180deg,rgba(72,120,255,0.9),rgba(50,90,200,0.85))",color:"#fff",border:"none",borderTop:"1px solid rgba(130,175,255,0.4)",borderRadius:14,fontFamily:"'SF Mono','Courier New',monospace",fontSize:11,fontWeight:700,letterSpacing:3,cursor:"pointer",animation:"fu .5s .7s both",boxShadow:"0 0 28px rgba(72,120,255,0.25)"}}>
           {"← "+(L[lang]||L.en).back}
         </button>
       </div>
@@ -7318,6 +7671,8 @@ window.__forjaSampleBodyPoints = function(N){
 
 function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ageDiff,weeklyDelta,deltaSign,deltaColor,deltaAbs,onShowNTNU,greeting,userName,streak,lvl,lvlName,lvlNext,lvlColor,xpPct,trainDone,trainTotal,ringDash,lastPRName,lastPRVal,profile}){
   var heartStageRef=React.useRef(null);
+  var ecgCanvasRef=React.useRef(null);
+  var glowRef=React.useRef(null);
   var isAliveRef=React.useRef(false);
 
   var dayExs=day?(day.ex||[]):[];
@@ -7631,6 +7986,99 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
     };
   },[]);
 
+  // ECG monitor effect — líneas que dibujan QRS pulsante
+  React.useEffect(function(){
+    var canvas=ecgCanvasRef.current;
+    if(!canvas) return;
+    var ctx=canvas.getContext("2d");
+    if(!ctx) return;
+    var W,H,dpr;
+    function resize(){
+      var r=canvas.getBoundingClientRect();
+      dpr=Math.min(window.devicePixelRatio||1,2);
+      W=r.width;H=r.height;
+      canvas.width=W*dpr;canvas.height=H*dpr;
+      canvas.style.width=W+"px";canvas.style.height=H+"px";
+      ctx.scale(dpr,dpr);
+    }
+    resize();
+    var ro;try{ro=new ResizeObserver(resize);ro.observe(canvas);}catch(_){}
+
+    // ECG QRS waveform: P-Q-R-S-T points (normalized x: 0-1, y: -1 to 1)
+    var qrs=[
+      {x:0.0,y:0},{x:0.18,y:0},
+      {x:0.22,y:0.08},{x:0.26,y:0},   // P wave
+      {x:0.30,y:0},{x:0.36,y:-0.12},  // Q dip
+      {x:0.39,y:0.85},                // R spike
+      {x:0.42,y:-0.35},               // S
+      {x:0.46,y:0},{x:0.55,y:0},
+      {x:0.62,y:0.15},{x:0.70,y:0.10},{x:0.76,y:0},  // T wave
+      {x:1.0,y:0}
+    ];
+    function interp(t){
+      // Find segment
+      for(var i=0;i<qrs.length-1;i++){
+        if(t>=qrs[i].x&&t<=qrs[i+1].x){
+          var seg=(t-qrs[i].x)/(qrs[i+1].x-qrs[i].x+1e-6);
+          return qrs[i].y*(1-seg)+qrs[i+1].y*seg;
+        }
+      }
+      return 0;
+    }
+    var phase=0;
+    var raf;
+    var lastTime=performance.now();
+    function frame(now){
+      var dt=Math.min((now-lastTime)/1000,0.1);
+      lastTime=now;
+      // Use HR for cycle speed (60-100 bpm typical)
+      var hr=(profile&&profile.hr)?profile.hr:65;
+      var cyclesPerSec=hr/60;
+      phase+=dt*cyclesPerSec;
+      if(phase>1) phase-=1;
+      ctx.clearRect(0,0,W,H);
+      // Center line
+      var cy=H*0.5;
+      var amplitude=H*0.35;
+      // Draw ECG line trail (last 1.6 cycles visible)
+      ctx.lineWidth=1.2;
+      var grad=ctx.createLinearGradient(0,0,W,0);
+      grad.addColorStop(0,"rgba(255,94,94,0)");
+      grad.addColorStop(0.3,"rgba(255,94,94,0.35)");
+      grad.addColorStop(0.85,"rgba(255,94,94,0.7)");
+      grad.addColorStop(1,"rgba(255,150,100,0.95)");
+      ctx.strokeStyle=grad;
+      ctx.shadowBlur=4;
+      ctx.shadowColor="rgba(255,94,94,0.5)";
+      ctx.beginPath();
+      var nPts=160;
+      for(var i=0;i<nPts;i++){
+        var px=(i/(nPts-1))*W;
+        var t=(i/(nPts-1)+phase)%1;
+        var py=cy-interp(t)*amplitude;
+        if(i===0) ctx.moveTo(px,py);
+        else ctx.lineTo(px,py);
+      }
+      ctx.stroke();
+      // Bright trailing dot
+      var endT=phase%1;
+      var endY=cy-interp(endT)*amplitude;
+      ctx.shadowBlur=10;
+      ctx.shadowColor="#ff5e5e";
+      ctx.fillStyle="#ff8a3a";
+      ctx.beginPath();
+      ctx.arc(W,endY,2.5,0,Math.PI*2);
+      ctx.fill();
+      ctx.shadowBlur=0;
+      raf=requestAnimationFrame(frame);
+    }
+    raf=requestAnimationFrame(frame);
+    return function(){
+      if(raf) cancelAnimationFrame(raf);
+      try{if(ro) ro.disconnect();}catch(_){}
+    };
+  },[profile&&profile.hr]);
+
   if(compact){
     return React.createElement("div",{
       onClick:onStart,
@@ -7698,21 +8146,46 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
           e("span",{style:{
             fontSize:8,fontFamily:mono,letterSpacing:2,fontWeight:700,
             color:profile.celebAc||"#4878ff",textTransform:"uppercase"
-          }},"MODO "+(profile.celebrity||"ATLETA").toString().toUpperCase())
+          }},(profile.celebrity||"ATLETA").toString().toUpperCase()+(profile.celebIntensity?" · "+Math.round(profile.celebIntensity*100)+"%":""))
         ):null
       ),
-      e("div",{style:{
-        padding:"6px 13px",borderRadius:22,
-        background:"rgba(255,255,255,0.06)",
-        backdropFilter:"blur(20px)",
-        WebkitBackdropFilter:"blur(20px)",
-        border:"0.5px solid rgba(255,255,255,0.15)",
-        display:"flex",alignItems:"center",gap:6
-      }},
-        e("span",{style:{fontSize:14}},"⚡"),
-        e("span",{style:{fontSize:30,fontWeight:700,color:"rgba(255,220,180,0.95)",lineHeight:0.9}},streak||0),
-        e("span",{style:{fontSize:10,fontFamily:mono,letterSpacing:1.5,color:"rgba(255,220,180,0.5)"}}," DÍAS")
-      )
+      // STREAK BADGE — escalado visual según días consecutivos
+      (()=>{
+        const days = streak||0;
+        // Niveles: 0 (frío), 1-2 (calentando), 3-6 (fuego), 7-13 (intenso), 14-29 (épico), 30+ (legendario)
+        const tier =
+          days===0 ? 'cold' :
+          days<3 ? 'warming' :
+          days<7 ? 'fire' :
+          days<14 ? 'intense' :
+          days<30 ? 'epic' :
+          'legendary';
+        const tierConfig = {
+          cold:     {emoji:'·', primary:'rgba(255,255,255,0.4)', secondary:'rgba(255,255,255,0.2)', border:'rgba(255,255,255,0.1)', glow:'none', anim:'none'},
+          warming:  {emoji:'✨', primary:'rgba(255,200,140,0.95)', secondary:'rgba(255,200,140,0.5)', border:'rgba(255,200,140,0.3)', glow:'0 0 12px rgba(255,200,140,0.25)', anim:'none'},
+          fire:     {emoji:'🔥', primary:'rgba(255,160,80,0.98)',  secondary:'rgba(255,160,80,0.6)',  border:'rgba(255,160,80,0.45)', glow:'0 0 18px rgba(255,140,60,0.35)', anim:'streakPulse 2.4s ease-in-out infinite'},
+          intense:  {emoji:'🔥', primary:'rgba(255,120,60,1)',     secondary:'rgba(255,120,60,0.65)', border:'rgba(255,120,60,0.55)', glow:'0 0 24px rgba(255,100,40,0.5)',  anim:'streakPulse 1.8s ease-in-out infinite'},
+          epic:     {emoji:'⚡', primary:'rgba(255,90,40,1)',      secondary:'rgba(255,90,40,0.7)',   border:'rgba(255,90,40,0.65)',  glow:'0 0 30px rgba(255,80,30,0.6)',   anim:'streakPulse 1.2s ease-in-out infinite'},
+          legendary:{emoji:'👑', primary:'rgba(255,215,0,1)',      secondary:'rgba(255,180,0,0.75)',  border:'rgba(255,180,0,0.7)',   glow:'0 0 36px rgba(255,200,0,0.65)',  anim:'streakPulse 0.9s ease-in-out infinite, streakHueShift 4s linear infinite'}
+        };
+        const cfg = tierConfig[tier];
+        return e("div",{style:{
+          padding:tier==='cold'?"5px 11px":"6px 13px",
+          borderRadius:22,
+          background:tier==='cold'?"rgba(255,255,255,0.04)":"linear-gradient(135deg,rgba(255,140,60,0.12) 0%,rgba(255,255,255,0.04) 100%)",
+          backdropFilter:"blur(20px)",
+          WebkitBackdropFilter:"blur(20px)",
+          border:"0.5px solid "+cfg.border,
+          display:"flex",alignItems:"center",gap:6,
+          boxShadow:cfg.glow,
+          animation:cfg.anim,
+          transition:"all 0.3s ease"
+        }},
+          e("span",{style:{fontSize:14,filter:tier==='cold'?'none':'drop-shadow(0 0 8px '+cfg.secondary+')'}},cfg.emoji),
+          e("span",{style:{fontSize:tier==='legendary'?32:30,fontWeight:900,color:cfg.primary,lineHeight:0.9,letterSpacing:-1,textShadow:tier==='cold'?'none':'0 0 12px '+cfg.secondary}},days),
+          e("span",{style:{fontSize:9,fontFamily:mono,letterSpacing:1.5,color:cfg.secondary,fontWeight:600}}," DÍAS")
+        );
+      })()
     ),
     onShowNTNU?e("button",{onClick:onShowNTNU,style:{
       position:"absolute",top:52,right:12,zIndex:21,
@@ -7732,6 +8205,59 @@ function FrozenHeartBanner({day,done,sel,lang,mono,onStart,compact,fitnessAge,ag
       marginTop:2,marginBottom:8,
       display:"flex",alignItems:"center",justifyContent:"center"
     }},
+      // ECG monitor canvas behind everything
+      e("canvas",{ref:ecgCanvasRef,style:{
+        position:"absolute",top:"50%",left:0,
+        transform:"translateY(-50%)",
+        width:"100%",height:"60%",
+        zIndex:1,
+        pointerEvents:"none",
+        opacity:0.85
+      }}),
+      // Subtle medical grid overlay
+      e("div",{style:{
+        position:"absolute",inset:0,
+        zIndex:1,pointerEvents:"none",
+        opacity:0.18,
+        backgroundImage:"linear-gradient(rgba(255,94,94,0.08) 1px,transparent 1px),linear-gradient(90deg,rgba(255,94,94,0.08) 1px,transparent 1px)",
+        backgroundSize:"20px 20px",
+        maskImage:"radial-gradient(ellipse 70% 80% at 50% 50%, black 30%, transparent 80%)",
+        WebkitMaskImage:"radial-gradient(ellipse 70% 80% at 50% 50%, black 30%, transparent 80%)"
+      }}),
+      // BPM indicator top-right
+      profile&&profile.hr?e("div",{style:{
+        position:"absolute",top:6,right:8,
+        zIndex:5,pointerEvents:"none",
+        display:"flex",alignItems:"baseline",gap:3,
+        background:"rgba(13,15,20,0.5)",
+        backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)",
+        border:"0.5px solid rgba(255,94,94,0.18)",
+        borderRadius:6,
+        padding:"3px 7px"
+      }},
+        e("span",{style:{
+          fontSize:11,fontWeight:900,
+          color:"rgba(255,140,120,0.95)",
+          fontFamily:"'SF Mono','Courier New',monospace",
+          letterSpacing:-0.3,
+          textShadow:"0 0 8px rgba(255,94,94,0.4)"
+        }},profile.hr),
+        e("span",{style:{
+          fontSize:6.5,fontFamily:mono,
+          letterSpacing:1.2,
+          color:"rgba(255,94,94,0.55)",fontWeight:700
+        }},"BPM")
+      ):null,
+      // Pulsing glow behind heart
+      e("div",{ref:glowRef,style:{
+        position:"absolute",top:"50%",left:"50%",
+        transform:"translate(-50%,-50%)",
+        width:"35%",height:"110%",
+        zIndex:2,pointerEvents:"none",
+        background:"radial-gradient(ellipse 50% 50% at 50% 50%, rgba(255,94,94,0.20) 0%, rgba(255,94,94,0.08) 35%, transparent 70%)",
+        animation:"heartGlow "+(60/((profile&&profile.hr)||65))+"s ease-in-out infinite",
+        filter:"blur(8px)"
+      }}),
       e("div",{ref:heartStageRef,style:{
         position:"absolute",top:"50%",left:"50%",
         transform:"translate(-50%,-50%)",
@@ -8864,32 +9390,64 @@ function ProfileSheet({show,onClose,profile,lang,mono,sp,setStep}){
           }
 
           if(!isLoggedIn){
-            return e("div",{
-              onClick:function(){
-                try{if(typeof doGoogleSignIn==='function')doGoogleSignIn();}catch(_){}
+            return e("div",{style:{margin:"0 16px 24px"}},
+              // Google button
+              e("div",{
+                onClick:function(){
+                  try{if(typeof doGoogleSignIn==='function')doGoogleSignIn();}catch(_){}
+                },
+                style:{
+                  padding:"14px 18px",
+                  borderRadius:18,cursor:"pointer",
+                  background:"rgba(66,133,244,0.08)",
+                  border:"1px solid rgba(66,133,244,0.25)",
+                  borderTop:"1px solid rgba(120,170,255,0.35)",
+                  display:"flex",alignItems:"center",gap:14,
+                  marginBottom:10
+                }
               },
-              style:{
-                margin:"0 16px 24px",padding:"16px 20px",
-                borderRadius:18,cursor:"pointer",
-                background:"rgba(66,133,244,0.08)",
-                border:"1px solid rgba(66,133,244,0.25)",
-                borderTop:"1px solid rgba(120,170,255,0.35)",
-                display:"flex",alignItems:"center",gap:16
-              }
-            },
-              e("div",{style:{
-                width:44,height:44,borderRadius:14,flexShrink:0,
-                background:"rgba(66,133,244,0.12)",
-                border:"1px solid rgba(66,133,244,0.25)",
-                display:"flex",alignItems:"center",justifyContent:"center",fontSize:20
-              }},"☁️"),
-              e("div",{style:{flex:1}},
-                e("div",{style:{fontFamily:BN,fontSize:20,color:"rgba(170,200,255,0.95)",letterSpacing:1,lineHeight:1,marginBottom:4}},
-                  l==="en"?"SIGN IN WITH GOOGLE":"ENTRAR CON GOOGLE"),
-                e("div",{style:{fontFamily:MN,fontSize:9,color:"rgba(170,200,255,0.5)",letterSpacing:0.5}},
-                  l==="en"?"Sync across devices":"Sincroniza tus dispositivos")
+                e("div",{style:{
+                  width:38,height:38,borderRadius:12,flexShrink:0,
+                  background:"rgba(66,133,244,0.12)",
+                  border:"1px solid rgba(66,133,244,0.25)",
+                  display:"flex",alignItems:"center",justifyContent:"center",fontSize:18
+                }},"G"),
+                e("div",{style:{flex:1}},
+                  e("div",{style:{fontFamily:BN,fontSize:16,color:"rgba(170,200,255,0.95)",letterSpacing:0.8,lineHeight:1,marginBottom:3}},
+                    l==="en"?"SIGN IN WITH GOOGLE":"ENTRAR CON GOOGLE"),
+                  e("div",{style:{fontFamily:MN,fontSize:8.5,color:"rgba(170,200,255,0.5)",letterSpacing:0.5}},
+                    l==="en"?"Sync across devices":"Sincroniza tus dispositivos")
+                ),
+                e("div",{style:{fontFamily:MN,fontSize:13,color:"rgba(170,200,255,0.7)"}},"→")
               ),
-              e("div",{style:{fontFamily:MN,fontSize:14,color:"rgba(170,200,255,0.7)"}},"→")
+              // Apple button
+              e("div",{
+                onClick:function(){
+                  try{if(typeof signInWithApple==='function')signInWithApple();}catch(_){}
+                },
+                style:{
+                  padding:"14px 18px",
+                  borderRadius:18,cursor:"pointer",
+                  background:"rgba(255,255,255,0.04)",
+                  border:"1px solid rgba(255,255,255,0.18)",
+                  borderTop:"1px solid rgba(255,255,255,0.28)",
+                  display:"flex",alignItems:"center",gap:14
+                }
+              },
+                e("div",{style:{
+                  width:38,height:38,borderRadius:12,flexShrink:0,
+                  background:"rgba(255,255,255,0.06)",
+                  border:"1px solid rgba(255,255,255,0.15)",
+                  display:"flex",alignItems:"center",justifyContent:"center",fontSize:18
+                }},""),
+                e("div",{style:{flex:1}},
+                  e("div",{style:{fontFamily:BN,fontSize:16,color:"rgba(255,255,255,0.95)",letterSpacing:0.8,lineHeight:1,marginBottom:3}},
+                    l==="en"?"SIGN IN WITH APPLE":"ENTRAR CON APPLE"),
+                  e("div",{style:{fontFamily:MN,fontSize:8.5,color:"rgba(255,255,255,0.5)",letterSpacing:0.5}},
+                    l==="en"?"Privacy-first sign in":"Acceso con privacidad")
+                ),
+                e("div",{style:{fontFamily:MN,fontSize:13,color:"rgba(255,255,255,0.7)"}},"→")
+              )
             );
           }
 
@@ -10226,6 +10784,7 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
             <button onClick={()=>{setStep(1);setShowSet(false);}} style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(255,255,255,0.08)",background:"transparent",color:"rgba(255,255,255,0.5)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>{t.reconfig.toUpperCase()}</button>
             <button onClick={()=>{try{localStorage.removeItem("fv8_toured");}catch{}setTourAskVisible(true);setTourStep(null);setShowSet(false);}} style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(255,255,255,0.08)",background:"transparent",color:"rgba(255,255,255,0.5)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>TUTORIAL</button>
             {isUserAnonymous()&&<button onClick={doGoogleSignIn} style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(66,133,244,0.3)",background:"rgba(66,133,244,0.08)",color:"rgba(66,133,244,0.8)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>GOOGLE</button>}
+            {isUserAnonymous()&&<button onClick={()=>{try{if(typeof signInWithApple==='function')signInWithApple();}catch(_){}}} style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(255,255,255,0.18)",background:"rgba(255,255,255,0.04)",color:"rgba(255,255,255,0.85)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>APPLE</button>}
             {!isUserAnonymous()&&<button onClick={doSignOut} style={{padding:"5px 9px",borderRadius:6,border:"0.5px solid rgba(63,207,142,0.2)",background:"transparent",color:"rgba(63,207,142,0.6)",fontSize:8,fontFamily:mono,letterSpacing:1,cursor:"pointer"}}>&#10003; {getUserEmail()?.split("@")[0]||"Google"}</button>}
           </div>
         )}
@@ -10263,25 +10822,85 @@ function Main({lang,setLang,profile,routine,sp,sr,setStep}){
                   />
                 </div>
                 <div style={{fontSize:38,fontWeight:900,letterSpacing:-2,textTransform:"uppercase"}}>{t.rest}</div>
-                <div style={{fontSize:13,color:C.tx3,marginTop:8}}>{t.restSub}</div>
+                <div style={{fontSize:13,color:C.tx3,marginTop:8,marginBottom:18}}>{t.restSub}</div>
+                {/* Beneficios de descanso */}
+                <div style={{display:"flex",flexDirection:"column",gap:8,maxWidth:340,margin:"0 auto"}}>
+                  {[
+                    {icon:"💪",text:lang==="es"?"Tus músculos se reconstruyen ahora":lang==="fr"?"Tes muscles se reconstruisent":lang==="it"?"I tuoi muscoli si ricostruiscono":lang==="de"?"Deine Muskeln bauen sich auf":"Your muscles rebuild now"},
+                    {icon:"🧠",text:lang==="es"?"El sistema nervioso se recupera":lang==="fr"?"Ton système nerveux récupère":lang==="it"?"Il sistema nervoso si recupera":lang==="de"?"Nervensystem erholt sich":"Your nervous system recovers"},
+                    {icon:"⚡",text:lang==="es"?"Volverás más fuerte mañana":lang==="fr"?"Tu reviendras plus fort":lang==="it"?"Tornerai più forte":lang==="de"?"Du kommst stärker zurück":"You'll come back stronger"}
+                  ].map((b,i)=>(
+                    <div key={i} style={{
+                      display:"flex",alignItems:"center",gap:10,
+                      padding:"10px 14px",
+                      background:"rgba(255,255,255,0.03)",
+                      border:"1px solid rgba(255,255,255,0.06)",
+                      borderRadius:10,
+                      textAlign:"left"
+                    }}>
+                      <span style={{fontSize:18,flexShrink:0,opacity:0.85}}>{b.icon}</span>
+                      <span style={{fontSize:11.5,color:"rgba(255,255,255,0.75)",lineHeight:1.4,fontFamily:"'DM Sans',sans-serif"}}>{b.text}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             ):(
               <>
-                {/* Mancuerna */}
+                {/* Mancuerna — Hero card de inicio de workout */}
                 <div id="forja-dumbbell-wrap"
                   data-tour="start-workout"
-                  style={{width:"100%",height:260,borderRadius:16,overflow:"hidden",position:"relative",background:C.bg,cursor:"pointer",marginBottom:10}}
+                  style={{
+                    width:"100%",height:280,
+                    borderRadius:18,overflow:"hidden",
+                    position:"relative",
+                    background:"radial-gradient(ellipse 70% 60% at 50% 65%, rgba(192,168,112,0.10) 0%, rgba(192,168,112,0.03) 35%, transparent 70%), #07080a",
+                    cursor:"pointer",
+                    marginBottom:12,
+                    border:"1px solid rgba(192,168,112,0.12)",
+                    boxShadow:"0 4px 30px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)",
+                  }}
                   onClick={()=>{if(day&&day.ex&&day.ex.length)setInWorkout(true);}}
                 >
+                  {/* Tag con día del split arriba */}
+                  {day&&day.l&&(
+                    <div style={{position:"absolute",top:14,left:14,zIndex:3,
+                      padding:"4px 10px",
+                      background:"rgba(13,15,20,0.7)",
+                      backdropFilter:"blur(10px)",WebkitBackdropFilter:"blur(10px)",
+                      border:"1px solid rgba(255,255,255,0.08)",
+                      borderRadius:6,
+                      fontFamily:mono,fontSize:8,letterSpacing:2,
+                      color:"rgba(192,168,112,0.85)",fontWeight:700,
+                      textTransform:"uppercase"}}>
+                      {lang==="es"?"HOY":lang==="fr"?"AUJOURD'HUI":lang==="it"?"OGGI":lang==="de"?"HEUTE":"TODAY"} · {day.l}
+                    </div>
+                  )}
+                  {/* Badge de # ejercicios arriba derecha */}
+                  {day&&day.ex&&day.ex.length>0&&(
+                    <div style={{position:"absolute",top:14,right:14,zIndex:3,
+                      padding:"4px 10px",
+                      background:"rgba(13,15,20,0.7)",
+                      backdropFilter:"blur(10px)",WebkitBackdropFilter:"blur(10px)",
+                      border:"1px solid rgba(255,255,255,0.08)",
+                      borderRadius:6,
+                      display:"flex",alignItems:"center",gap:5}}>
+                      <span style={{fontFamily:"'Archivo Black','Impact',sans-serif",fontSize:13,color:"#fff",letterSpacing:0,lineHeight:1}}>{day.ex.length}</span>
+                      <span style={{fontFamily:mono,fontSize:8,letterSpacing:1.5,color:"rgba(255,255,255,0.5)",fontWeight:600}}>EX</span>
+                    </div>
+                  )}
                   <canvas id="forja-dumbbell-canvas" style={{width:"100%",height:"100%",display:"block"}}></canvas>
-                  <div style={{position:"absolute",bottom:16,left:"50%",transform:"translateX(-50%)",
-                    background:"rgba(240,242,245,0.12)",backdropFilter:"blur(8px)",
-                    border:"1px solid rgba(240,242,245,0.20)",
-                    padding:"7px 20px",borderRadius:20,
-                    fontSize:10,fontFamily:"monospace",color:C.tx,letterSpacing:2,fontWeight:700,
+                  {/* Botón principal con gradient prominente */}
+                  <div style={{position:"absolute",bottom:18,left:"50%",transform:"translateX(-50%)",
+                    background:"linear-gradient(135deg,rgba(192,168,112,0.95) 0%,rgba(232,168,40,0.92) 100%)",
+                    boxShadow:"0 6px 24px rgba(192,168,112,0.4), 0 0 0 1px rgba(255,210,140,0.5) inset",
+                    padding:"11px 28px",borderRadius:24,
+                    fontSize:11,fontFamily:"'Archivo Black','Impact',sans-serif",
+                    color:"#1a1100",letterSpacing:1.5,fontWeight:900,
                     whiteSpace:"nowrap",pointerEvents:"none",
-                    animation:"pulse 2.2s ease-in-out infinite"}}>
-                    ▶ {t.startWorkout}
+                    display:"flex",alignItems:"center",gap:8,
+                    animation:"pulse 2.4s ease-in-out infinite"}}>
+                    <span style={{fontSize:11}}>▶</span>
+                    <span>{t.startWorkout}</span>
                   </div>
                 </div>
 
@@ -12299,7 +12918,7 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
     if(!gl){ setPTxt("WebGL no disponible"); setProgress(0); return; }
     let ren;
     try{
-      ren=new THREE.WebGLRenderer({canvas:cvsRef.current,antialias:true,powerPreference:'low-power'});
+      ren=new THREE.WebGLRenderer({canvas:cvsRef.current,antialias:true,powerPreference:'low-power',preserveDrawingBuffer:true});
     }catch(e){
       console.error('WebGL init failed:',e);
       setPTxt("Error 3D"); setProgress(0); return;
@@ -12796,6 +13415,61 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
       ),
       activeZone&&e("div",{style:{position:"absolute",bottom:10,left:"50%",transform:"translateX(-50%)",background:"rgba(10,10,13,0.85)",backdropFilter:"blur(12px)",border:"1px solid "+C.bd2,borderRadius:30,padding:"6px 16px",fontSize:10,fontFamily:mono,color:C.acc,letterSpacing:"0.08em",pointerEvents:"none",whiteSpace:"nowrap"}},
         (ZONE_LABELS_3D[activeZone]||activeZone).toUpperCase()+" . "+getStatusText(activeZone)
+      ),
+      // Botón compartir (bottom-right)
+      loaded&&e("div",{
+        onClick:async (ev)=>{
+          ev.stopPropagation();
+          try{
+            const cvs=cvsRef.current;
+            if(!cvs) return;
+            // Capturar canvas como blob
+            const blob = await new Promise(res=>cvs.toBlob(res,'image/png'));
+            if(!blob) return;
+            const file = new File([blob],'forja-heatmap.png',{type:'image/png'});
+            // Si tiene Web Share API con archivos (móvil)
+            if(navigator.canShare && navigator.canShare({files:[file]})){
+              await navigator.share({
+                files:[file],
+                title:'Mi cuerpo en FORJA',
+                text:(lang==='es'?'Mi mapa muscular en FORJA 🔥 #FORJA':
+                      lang==='en'?'My muscle map in FORJA 🔥 #FORJA':
+                      'Mi cuerpo FORJA 🔥')
+              });
+            } else {
+              // Fallback: descargar
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = 'forja-heatmap-'+new Date().toISOString().slice(0,10)+'.png';
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              setTimeout(()=>URL.revokeObjectURL(url),1000);
+            }
+            try{navigator.vibrate&&navigator.vibrate(20);}catch(_){}
+          }catch(err){
+            console.warn('Share failed:',err);
+          }
+        },
+        style:{position:"absolute",bottom:8,right:8,zIndex:10,
+          width:36,height:36,borderRadius:"50%",
+          background:"rgba(13,15,20,0.85)",
+          border:"1px solid rgba(192,168,112,0.45)",
+          cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",
+          backdropFilter:"blur(10px)",
+          WebkitBackdropFilter:"blur(10px)",
+          boxShadow:"0 2px 12px rgba(0,0,0,0.4)",
+          transition:"transform 0.15s ease"
+        },
+        onMouseDown:(ev)=>{ev.currentTarget.style.transform='scale(0.92)';},
+        onMouseUp:(ev)=>{ev.currentTarget.style.transform='scale(1)';},
+        onMouseLeave:(ev)=>{ev.currentTarget.style.transform='scale(1)';}
+      },
+        e("svg",{width:14,height:14,viewBox:"0 0 24 24",fill:"none"},
+          e("path",{d:"M16 6l-4-4-4 4 M12 2v13 M5 12v8a2 2 0 002 2h10a2 2 0 002-2v-8",
+            stroke:"#c0a870",strokeWidth:"2",strokeLinecap:"round",strokeLinejoin:"round"})
+        )
       )
     ),
     e("div",{style:{display:"flex",gap:10,padding:"8px 0 14px",flexWrap:"wrap",borderBottom:"1px solid "+C.bd}},
@@ -12948,8 +13622,31 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
           )
         )
       ),
-      prs.length===0&&e("div",{style:{padding:"12px 0",fontSize:11,color:C.tx3,fontFamily:mono,letterSpacing:1}},
-        es?"Registra sets para ver tus récords aquí":lang==="fr"?"Enregistre des séries pour voir tes records":lang==="it"?"Registra serie per vedere i tuoi record":lang==="de"?"Sätze loggen um Bestleistungen zu sehen":"Log sets to see your records here"
+      prs.length===0&&e("div",{style:{
+        padding:"22px 18px",margin:"6px 0 12px",
+        background:"linear-gradient(135deg,rgba(72,120,255,0.08) 0%,rgba(160,140,255,0.05) 100%)",
+        border:"1px dashed rgba(140,160,220,0.25)",
+        borderRadius:14,
+        display:"flex",alignItems:"center",gap:14
+      }},
+        e("div",{style:{
+          fontSize:28,opacity:0.75,
+          filter:"drop-shadow(0 0 8px rgba(72,120,255,0.3))"
+        }},"🏆"),
+        e("div",{style:{flex:1}},
+          e("div",{style:{
+            fontFamily:"'Archivo Black','Impact',sans-serif",fontSize:13,
+            color:"rgba(255,255,255,0.92)",letterSpacing:0.5,lineHeight:1.1,marginBottom:3
+          }},
+            es?"TU PRIMER PR TE ESPERA":lang==="fr"?"TON PREMIER RECORD T'ATTEND":lang==="it"?"IL TUO PRIMO RECORD TI ASPETTA":lang==="de"?"DEIN ERSTER REKORD WARTET":"YOUR FIRST PR AWAITS"
+          ),
+          e("div",{style:{
+            fontFamily:"'DM Sans',sans-serif",fontSize:11,
+            color:"rgba(255,255,255,0.55)",lineHeight:1.4
+          }},
+            es?"Marca tu primer set para empezar a registrar récords":lang==="fr"?"Marque ta première série pour commencer":lang==="it"?"Segna la tua prima serie per iniziare":lang==="de"?"Markiere deinen ersten Satz um zu starten":"Log your first set to start tracking records"
+          )
+        )
       ),
       prs.length>1&&e("div",{style:{display:"flex",gap:6,overflowX:"auto",paddingBottom:8,marginBottom:10}},
         prs.slice(0,8).map((pr,i)=>
@@ -12998,10 +13695,20 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
       )
     ),
     e("div",{style:{display:"flex",gap:8,marginTop:14,marginBottom:14}},
-      [{l:es?"SEMANA":lang==="fr"?"SEMAINE":lang==="it"?"SETTIMANA":lang==="de"?"WOCHE":"WEEK",v:weekVol>=1000?(Math.round(weekVol/100)/10)+"t":Math.round(weekVol)+"kg",sub:weekSets+" sets"},
-       {l:es?"RACHA":lang==="fr"?"SÉRIE":lang==="it"?"SERIE":lang==="de"?"SERIE":"STREAK",v:streak,sub:streak>=3?"🔥":"días"},
-       {l:"PRs",v:prs.length,sub:es?"ejercicios":lang==="fr"?"exercices":lang==="it"?"esercizi":lang==="de"?"Übungen":"exercises"},
-      ].map((s,i)=>e("div",{key:i,style:{flex:1,background:C.bg3,border:"1px solid "+C.bd,borderRadius:10,padding:"10px 10px 8px"}},
+      [{l:es?"SEMANA":lang==="fr"?"SEMAINE":lang==="it"?"SETTIMANA":lang==="de"?"WOCHE":"WEEK",v:weekVol>=1000?(Math.round(weekVol/100)/10)+"t":Math.round(weekVol)+"kg",sub:weekSets+" sets",accent:"#5faa88",icon:"⚡"},
+       {l:es?"RACHA":lang==="fr"?"SÉRIE":lang==="it"?"SERIE":lang==="de"?"SERIE":"STREAK",v:streak,sub:streak>=3?(es?"días 🔥":"days 🔥"):(es?"días":"days"),accent:streak>=3?"#ff7a3a":"#888",icon:"🔥"},
+       {l:"PRs",v:prs.length,sub:es?"récords":lang==="fr"?"records":lang==="it"?"record":lang==="de"?"BestW.":"records",accent:"#f0a818",icon:"🏆"},
+      ].map((s,i)=>e("div",{key:i,style:{
+        flex:1,
+        background:`linear-gradient(180deg, rgba(${s.accent==='#5faa88'?'95,170,136':s.accent==='#ff7a3a'?'255,122,58':s.accent==='#f0a818'?'240,168,24':'120,120,120'},0.06) 0%, ${C.bg3} 60%)`,
+        border:"1px solid "+C.bd,
+        borderRadius:12,
+        padding:"11px 11px 9px",
+        position:"relative",
+        overflow:"hidden"
+      }},
+        // Accent bar top
+        e("div",{style:{position:"absolute",top:0,left:0,right:0,height:2,background:s.accent,opacity:0.5}}),
         e("div",{style:{fontSize:8,fontFamily:mono,color:C.tx3,letterSpacing:2,marginBottom:4,display:"flex",alignItems:"center",gap:4}},
           s.l,
           i===0&&e("button",{onClick:()=>{const el=document.getElementById("weekvol-help");if(el)el.style.display=el.style.display==="none"?"":"none";},
@@ -13016,8 +13723,8 @@ function BodyHeatmapTab({logs, routine, lang, profile, muscleXP={}, xpLevelUps=[
           es?"Tonelaje = series × reps × kg. Con 10kg × 10 reps × 3 series = 300kg. Suma de todos los ejercicios de la semana."
             :"Tonnage = sets × reps × kg. E.g. 10kg × 10 reps × 3 sets = 300kg. Sum of all weekly exercises."
         ),
-        e("div",{style:{fontSize:22,fontWeight:900,color:C.tx,fontFamily:sans,letterSpacing:-1}},s.v),
-        e("div",{style:{fontSize:8,fontFamily:mono,color:C.tx3,marginTop:2}},s.sub)
+        e("div",{style:{fontSize:24,fontWeight:900,color:s.accent,fontFamily:sans,letterSpacing:-1.2,lineHeight:1}},s.v),
+        e("div",{style:{fontSize:8,fontFamily:mono,color:C.tx3,marginTop:3,letterSpacing:0.5}},s.sub)
       ))
     ),
     e("div",{style:{background:C.bg3,border:"1px solid "+C.bd,borderRadius:12,padding:"12px 12px 10px",marginTop:4}},
@@ -13057,6 +13764,13 @@ function App(){
   const setLang=useCallback(l=>{
     setLangS(l);
     try{if(l)localStorage.setItem('fv8_lang',l);}catch{}
+  },[]);
+  // Rating prompt state
+  const[showRating,setShowRating]=useState(false);
+  useEffect(()=>{
+    const handler=()=>setShowRating(true);
+    window.addEventListener('forja:askRating',handler);
+    return ()=>window.removeEventListener('forja:askRating',handler);
   },[]);
   const[step,setStep]=useState(0);
   window._fss=setStep;
@@ -13218,7 +13932,70 @@ function App(){
   // Cuando termine llama window.__forjaOnboardingDone(profile, routine, 99) → setStep(99)
   // Mientras tanto renderizamos un placeholder vacío para no flashear contenido viejo
   if(step<99) return <div style={{minHeight:"100vh",background:"#04080f"}}></div>;
-  return <Main lang={lang} setLang={setLang} profile={profile} routine={routine} sp={sp} sr={sr} setStep={setStep}/>;
+  return <>
+    <Main lang={lang} setLang={setLang} profile={profile} routine={routine} sp={sp} sr={sr} setStep={setStep}/>
+    {showRating && <RatingModal lang={lang} onClose={()=>setShowRating(false)}/>}
+  </>;
+}
+
+function RatingModal({lang,onClose}){
+  const es=lang==='es'||lang==='pt';
+  const handleRate=(stars)=>{
+    try{ localStorage.setItem('forja_rated','1'); }catch(_){}
+    if(stars>=4){
+      // Si le gusta: pedirle review en App Store (cuando tengas la app real)
+      // Por ahora: agradecer + pedirle compartir
+      try{
+        if(navigator.share){
+          navigator.share({
+            title:'FORJA',
+            text:es?'Estoy entrenando con FORJA — la mejor app de fitness 🔥':'I\'m training with FORJA — the best fitness app 🔥',
+            url:'https://danielngr.github.io/FORJA/'
+          });
+        }
+      }catch(_){}
+    }
+    setTimeout(onClose,400);
+  };
+  return (
+    <div style={{position:"fixed",inset:0,zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:20,
+      background:"rgba(0,0,0,0.75)",backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)",
+      animation:"fadeIn 0.25s ease"}}>
+      <div style={{width:"100%",maxWidth:340,
+        background:"linear-gradient(180deg,#1a1d24 0%,#0e1015 100%)",
+        border:"1px solid rgba(255,255,255,0.10)",
+        borderRadius:24,padding:"24px 22px 18px",
+        boxShadow:"0 20px 80px rgba(0,0,0,0.6)",
+        textAlign:"center"}}>
+        <div style={{fontSize:36,marginBottom:8}}>👋</div>
+        <div style={{fontFamily:"'Archivo Black',sans-serif",fontSize:20,letterSpacing:0.5,color:"#fff",marginBottom:6,lineHeight:1.1}}>
+          {es?"¿CÓMO TE VA CON FORJA?":"HOW'S FORJA TREATING YOU?"}
+        </div>
+        <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:"rgba(255,255,255,0.7)",marginBottom:22,lineHeight:1.4}}>
+          {es?"Tu opinión nos ayuda a mejorar la app para todos.":"Your opinion helps us improve the app for everyone."}
+        </div>
+        <div style={{display:"flex",justifyContent:"center",gap:8,marginBottom:18}}>
+          {[1,2,3,4,5].map(n=>(
+            <button key={n} onClick={()=>handleRate(n)}
+              style={{background:"transparent",border:"none",cursor:"pointer",
+                fontSize:34,padding:4,transition:"transform 0.15s ease"}}
+              onMouseDown={(ev)=>{ev.currentTarget.style.transform='scale(1.2)';}}
+              onMouseUp={(ev)=>{ev.currentTarget.style.transform='scale(1)';}}
+              onMouseLeave={(ev)=>{ev.currentTarget.style.transform='scale(1)';}}>
+              ⭐
+            </button>
+          ))}
+        </div>
+        <button onClick={onClose}
+          style={{background:"transparent",border:"none",
+            color:"rgba(255,255,255,0.45)",
+            fontFamily:"'DM Sans',sans-serif",fontSize:11,
+            cursor:"pointer",padding:"8px 14px"}}>
+          {es?"Más tarde":"Later"}
+        </button>
+      </div>
+    </div>
+  );
 }
 const _root=ReactDOM.createRoot(document.getElementById("root"));
 _root.render(<App/>);
